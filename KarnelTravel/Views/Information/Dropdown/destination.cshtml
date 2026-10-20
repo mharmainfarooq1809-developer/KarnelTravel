@@ -1,0 +1,143 @@
+﻿@{
+    ViewData["Title"] = "Discover Pakistan — Tourist Spots | Karnel Travel Guide";
+    ViewData["Description"] = "Discover tourist spots across Pakistan — mountains, valleys, beaches and historical places.";
+}
+
+@section Styles {
+    <style>
+        .page-hero { padding: calc(var(--header-h) + 60px) 0 60px; background: var(--sand); }
+        .page-hero h1 { max-width: 14ch; }
+        .page-hero p { color: var(--muted); font-size: 1.05rem; max-width: 62ch; }
+
+        .listing-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 28px;
+        }
+        .listing-card {
+            display: flex;
+            flex-direction: column;
+            background: var(--white);
+            border: 1px solid var(--line);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            transition: transform .4s var(--ease), box-shadow .4s var(--ease);
+        }
+        .listing-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-md); }
+        .listing-card .media { aspect-ratio: 4 / 3; }
+        .listing-card:hover .media img { transform: scale(1.05); }
+        .listing-card__body { padding: 22px; display: flex; flex-direction: column; gap: 10px; flex: 1; }
+        .listing-card__meta { font-size: .68rem; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); }
+        .listing-card h3 { margin: 0; font-size: 1.25rem; }
+        .listing-card__desc { color: var(--muted); font-size: .92rem; margin: 0; flex: 1; }
+        .listing-card__footer {
+            display: flex; justify-content: space-between; align-items: center;
+            padding-top: 14px; border-top: 1px solid var(--line); margin-top: auto;
+        }
+
+        .cta-band {
+            background: var(--forest-deep); color: var(--ivory);
+            padding: clamp(56px, 8vw, 100px) 0; text-align: center;
+        }
+        .cta-band h2 { color: var(--ivory); }
+        .cta-band p { color: rgba(248, 246, 240, .78); max-width: 56ch; margin: 0 auto 28px; }
+    </style>
+}
+
+<header class="page-hero">
+    <div class="container" data-reveal>
+        <p class="eyebrow">Discover More · Tourist Spots</p>
+        <h1>Discover Pakistan.</h1>
+        <p>Mountains, valleys, coastal stretches and historical places. Each entry below is
+           an illustrative summary — details will be expanded once the destination data is
+           connected.</p>
+    </div>
+</header>
+
+<section class="section section--ivory">
+    <div class="container">
+        <div class="listing-grid" data-reveal-group>
+
+            <article class="listing-card" data-reveal>
+                <div class="media" data-fallback-label="Hunza Valley">
+                    <img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=900&q=70"
+                         alt="Hunza Valley surrounded by snow-capped mountains" loading="lazy" />
+                </div>
+                <div class="listing-card__body">
+                    <span class="listing-card__meta">Gilgit-Baltistan</span>
+                    <h3>Hunza Valley</h3>
+                    <p class="listing-card__desc">Forts, orchards and views of Rakaposhi. A classic northern base.</p>
+                </div>
+            </article>
+
+            <article class="listing-card" data-reveal>
+                <div class="media" data-fallback-label="Skardu">
+                    <img src="https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=900&q=70"
+                         alt="Alpine lake near Skardu" loading="lazy" />
+                </div>
+                <div class="listing-card__body">
+                    <span class="listing-card__meta">Baltistan</span>
+                    <h3>Skardu</h3>
+                    <p class="listing-card__desc">Cold desert, alpine lakes and access to high peaks.</p>
+                </div>
+            </article>
+
+            <article class="listing-card" data-reveal>
+                <div class="media" data-fallback-label="Swat Valley">
+                    <img src="https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=900&q=70"
+                         alt="Green valley with river" loading="lazy" />
+                </div>
+                <div class="listing-card__body">
+                    <span class="listing-card__meta">Khyber Pakhtunkhwa</span>
+                    <h3>Swat Valley</h3>
+                    <p class="listing-card__desc">Rivers, pine forests and quiet meadow trails.</p>
+                </div>
+            </article>
+
+            <article class="listing-card" data-reveal>
+                <div class="media" data-fallback-label="Fairy Meadows">
+                    <img src="https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=900&q=70"
+                         alt="Fairy Meadows with Nanga Parbat in the distance" loading="lazy" />
+                </div>
+                <div class="listing-card__body">
+                    <span class="listing-card__meta">Diamer</span>
+                    <h3>Fairy Meadows</h3>
+                    <p class="listing-card__desc">High pasture with a direct view of Nanga Parbat.</p>
+                </div>
+            </article>
+
+            <article class="listing-card" data-reveal>
+                <div class="media" data-fallback-label="Lahore">
+                    <img src="https://images.unsplash.com/photo-1567532939604-b6b5b0db2604?auto=format&fit=crop&w=900&q=70"
+                         alt="Historical architecture in Lahore" loading="lazy" />
+                </div>
+                <div class="listing-card__body">
+                    <span class="listing-card__meta">Punjab</span>
+                    <h3>Lahore</h3>
+                    <p class="listing-card__desc">Mughal architecture, Walled City streets and food culture.</p>
+                </div>
+            </article>
+
+            <article class="listing-card" data-reveal>
+                <div class="media" data-fallback-label="Karachi coast">
+                    <img src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=900&q=70"
+                         alt="Coastal beach near Karachi" loading="lazy" />
+                </div>
+                <div class="listing-card__body">
+                    <span class="listing-card__meta">Sindh</span>
+                    <h3>Karachi Coast</h3>
+                    <p class="listing-card__desc">Seaside promenades and easy access to local dining.</p>
+                </div>
+            </article>
+
+        </div>
+    </div>
+</section>
+
+<section class="cta-band">
+    <div class="container" data-reveal>
+        <h2>Want to combine several destinations?</h2>
+        <p>Send an inquiry through Get in Touch and we'll help you arrange a route.</p>
+        <a class="btn btn--light" href="@Url.Action("Index", "Contact")">Get in Touch</a>
+    </div>
+</section>

@@ -1,0 +1,772 @@
+﻿@{
+    ViewData["Title"] = "Karnel Travel Guide | Discover Your Next Journey";
+    ViewData["Description"] = "Discover destinations, transport, hotels, restaurants, resorts and travel packages across Pakistan with Karnel Travel Guide.";
+    ViewData["BodyClass"] = "has-hero";
+}
+
+@section Styles {
+    <style>
+        /* ================= HERO ================= */
+        .hero {
+            position: relative;
+            min-height: 92vh;
+            display: grid;
+            align-items: center;
+            padding: calc(var(--header-h) + 60px) 0 180px;
+            overflow: hidden;
+            color: var(--ivory);
+        }
+        .hero__media {
+            position: absolute;
+            inset: 0;
+            border-radius: 0;
+            background: var(--forest-deep);
+        }
+        .hero__media img { width: 100%; height: 100%; object-fit: cover; }
+        .hero__overlay {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(180deg, rgba(20, 39, 31, .35) 0%, rgba(20, 39, 31, .55) 45%, rgba(20, 39, 31, .82) 100%);
+        }
+        .hero__content { position: relative; z-index: 2; max-width: 900px; }
+
+        .hero .eyebrow { color: var(--sage); }
+        .hero h1 {
+            color: var(--ivory);
+            font-size: clamp(2.8rem, 6.2vw, 5.4rem);
+            max-width: 15ch;
+        }
+        .hero h1 em {
+            font-style: italic;
+            color: var(--sand);
+        }
+        .hero__lede {
+            color: rgba(248, 246, 240, .82);
+            font-size: clamp(1rem, 1.4vw, 1.15rem);
+            max-width: 52ch;
+            margin-bottom: 32px;
+        }
+        .hero__cta { display: flex; flex-wrap: wrap; gap: 14px; }
+        .hero__scroll {
+            position: absolute;
+            left: 50%;
+            bottom: 42px;
+            z-index: 2;
+            transform: translateX(-50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            font-size: .68rem;
+            letter-spacing: .26em;
+            text-transform: uppercase;
+            color: rgba(248, 246, 240, .7);
+        }
+        .hero__scroll::after {
+            content: "";
+            width: 1px;
+            height: 40px;
+            background: currentColor;
+            animation: heroScroll 2.4s var(--ease) infinite;
+            transform-origin: top;
+        }
+        @@keyframes heroScroll {
+            0%   { transform: scaleY(0); opacity: 0; }
+            40%  { transform: scaleY(1); opacity: 1; }
+            100% { transform: scaleY(1); opacity: 0; }
+        }
+
+        /* Staggered hero entrance */
+        .hero__content > * {
+            opacity: 0;
+            transform: translateY(24px);
+            animation: heroIn .9s var(--ease) forwards;
+        }
+        .hero__content > *:nth-child(1) { animation-delay: .15s; }
+        .hero__content > *:nth-child(2) { animation-delay: .3s; }
+        .hero__content > *:nth-child(3) { animation-delay: .45s; }
+        .hero__content > *:nth-child(4) { animation-delay: .6s; }
+        @@keyframes heroIn { to { opacity: 1; transform: none; } }
+
+        /* ================= SEARCH BAND ================= */
+        .search-band {
+            position: relative;
+            z-index: 5;
+            margin-top: -100px;
+            padding-bottom: 40px;
+        }
+        .search-panel {
+            background: var(--ivory);
+            border: 1px solid var(--line);
+            border-radius: var(--radius-lg);
+            padding: 28px 28px 26px;
+            box-shadow: var(--shadow-lg);
+        }
+        .search-panel__head {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            gap: 16px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+        .search-panel__head h2 { margin: 0; font-size: 1.35rem; }
+        .search-panel__head .badge { background: var(--sand); }
+
+        .search-grid {
+            display: grid;
+            grid-template-columns: 1.4fr 1fr 1fr auto;
+            gap: 14px;
+            align-items: end;
+        }
+        .field { display: flex; flex-direction: column; gap: 6px; }
+        .field > span {
+            font-size: .66rem;
+            letter-spacing: .18em;
+            text-transform: uppercase;
+            color: var(--muted);
+        }
+        .field input,
+        .field select {
+            height: 52px;
+            padding: 0 16px;
+            border: 1px solid var(--line);
+            border-radius: var(--radius);
+            background: var(--white);
+            color: var(--charcoal);
+            font: inherit;
+            font-size: .95rem;
+            transition: border-color .3s var(--ease), box-shadow .3s var(--ease);
+        }
+        .field input:focus,
+        .field select:focus {
+            outline: none;
+            border-color: var(--moss);
+            box-shadow: 0 0 0 3px rgba(83, 107, 80, .16);
+        }
+        .field--submit { justify-content: flex-end; }
+        .field--submit .btn { height: 52px; padding: 0 30px; }
+
+        .search-panel__note {
+            display: block;
+            margin-top: 16px;
+            font-size: .72rem;
+            color: var(--muted);
+        }
+        .search-panel__note a { color: var(--forest); border-bottom: 1px solid currentColor; }
+
+        /* ================= SHARED CARD GRID ================= */
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 28px;
+        }
+        .cards-grid--feature .card:first-child { grid-row: span 2; }
+        @@media (min-width: 900px) {
+            .cards-grid--feature { grid-template-columns: 1.3fr 1fr 1fr; }
+            .cards-grid--feature .card:first-child .media { aspect-ratio: auto; min-height: 100%; }
+        }
+
+        .card {
+            display: flex;
+            flex-direction: column;
+            background: var(--white);
+            border: 1px solid var(--line);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            transition: transform .4s var(--ease), box-shadow .4s var(--ease);
+        }
+        .card:hover { transform: translateY(-4px); box-shadow: var(--shadow-md); }
+        .card .media { aspect-ratio: 4 / 3; }
+        .card:hover .media img { transform: scale(1.05); }
+        .card__body { padding: 22px; display: flex; flex-direction: column; gap: 10px; flex: 1; }
+        .card__meta { font-size: .68rem; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); }
+        .card h3 { margin: 0; font-size: 1.25rem; }
+        .card p { color: var(--muted); font-size: .92rem; margin: 0; flex: 1; }
+
+        /* ================= TRANSPORT STRIP ================= */
+        .transport-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 22px;
+        }
+        .transport-item {
+            padding: 30px 26px;
+            background: var(--white);
+            border: 1px solid var(--line);
+            border-radius: var(--radius-lg);
+            transition: border-color .3s var(--ease), transform .3s var(--ease);
+        }
+        .transport-item:hover { border-color: var(--moss); transform: translateY(-3px); }
+        .transport-item__num {
+            font-family: var(--serif);
+            font-size: 2rem;
+            color: var(--sage);
+            line-height: 1;
+            margin-bottom: 14px;
+        }
+        .transport-item h3 { font-size: 1.1rem; margin-bottom: 8px; }
+        .transport-item p { font-size: .9rem; color: var(--muted); margin: 0; }
+
+        /* ================= SPLIT (Taste Trails + Resort) ================= */
+        .split {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+        }
+        .split__col {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+        .split__col h3 { font-size: 1.7rem; }
+        .split__col p { color: var(--muted); max-width: 48ch; }
+        .mini-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 16px; }
+        .mini-list li {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+            padding: 14px;
+            background: var(--white);
+            border: 1px solid var(--line);
+            border-radius: var(--radius);
+        }
+        .mini-list .media { width: 72px; height: 72px; flex: 0 0 auto; border-radius: var(--radius); }
+        .mini-list h4 { margin: 0; font-family: var(--serif); font-size: 1rem; }
+        .mini-list span { font-size: .78rem; color: var(--muted); }
+
+        /* ================= PACKAGES ================= */
+        .package-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 24px;
+        }
+        .package {
+            position: relative;
+            padding: 32px 28px;
+            background: var(--white);
+            border: 1px solid var(--line);
+            border-radius: var(--radius-lg);
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            transition: transform .4s var(--ease), box-shadow .4s var(--ease);
+        }
+        .package:hover { transform: translateY(-4px); box-shadow: var(--shadow-md); }
+        .package h3 { font-size: 1.35rem; margin: 0; }
+        .package__meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            font-size: .78rem;
+            color: var(--muted);
+        }
+        .package__meta span {
+            padding: 4px 10px;
+            border-radius: 999px;
+            background: var(--ivory);
+            border: 1px solid var(--line);
+        }
+        .package ul { margin: 0; padding-left: 18px; color: var(--muted); font-size: .9rem; }
+        .package__footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            padding-top: 16px;
+            margin-top: auto;
+            border-top: 1px solid var(--line);
+        }
+        .package__price { font-family: var(--serif); font-size: 1.35rem; color: var(--forest-deep); }
+        .package__price small {
+            display: block;
+            font-family: var(--sans);
+            font-size: .66rem;
+            letter-spacing: .14em;
+            text-transform: uppercase;
+            color: var(--muted);
+            font-weight: 400;
+            margin-bottom: 2px;
+        }
+
+        /* ================= WHY / TRUST ================= */
+        .trust-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+            gap: 32px;
+        }
+        .trust-item { padding-top: 24px; border-top: 1px solid var(--line); }
+        .trust-item h3 { font-size: 1.15rem; margin: 0 0 8px; }
+        .trust-item p { color: var(--muted); font-size: .9rem; margin: 0; }
+
+        /* ================= CTA BAND ================= */
+        .cta-band {
+            background: var(--forest-deep);
+            color: var(--ivory);
+            padding: clamp(64px, 8vw, 108px) 0;
+            text-align: center;
+        }
+        .cta-band h2 { color: var(--ivory); max-width: 22ch; margin: 0 auto 20px; }
+        .cta-band p { color: rgba(248, 246, 240, .78); max-width: 56ch; margin: 0 auto 32px; }
+        .cta-band__actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 14px; }
+
+        /* ================= RESPONSIVE ================= */
+        @@media (max-width: 900px) {
+            .hero { padding: calc(var(--header-h) + 40px) 0 160px; }
+            .search-grid { grid-template-columns: 1fr 1fr; }
+            .split { grid-template-columns: 1fr; }
+        }
+        @@media (max-width: 600px) {
+            .hero { min-height: auto; padding: calc(var(--header-h) + 40px) 0 140px; }
+            .search-grid { grid-template-columns: 1fr; }
+            .search-band { margin-top: -80px; padding-bottom: 30px; }
+            .search-panel { padding: 22px; }
+            .hero__scroll { display: none; }
+        }
+    </style>
+}
+
+<!-- ==================== A. HERO ==================== -->
+<section class="hero">
+    <div class="hero__media media" data-fallback-label="Northern Pakistan mountain landscape">
+        <img
+            src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=1920&q=80"
+            alt="Snow-capped mountains of northern Pakistan at golden hour"
+            fetchpriority="high" />
+        <div class="hero__overlay" aria-hidden="true"></div>
+    </div>
+
+    <div class="container hero__content">
+        <p class="eyebrow">Your Next Chapter Begins Here</p>
+        <h1>Find your way to <em>somewhere wonderful.</em></h1>
+        <p class="hero__lede">
+            Karnel Travel Guide brings destinations, transport, accommodation, dining and
+            travel packages together, so your next journey across Pakistan starts with
+            confidence.
+        </p>
+        <div class="hero__cta">
+            <a class="btn btn--light" href="@Url.Action("Index", "Search")">Explore Destinations</a>
+            <a class="btn btn--ghost-light" href="@Url.Action("Index", "Contact")">Plan Your Journey</a>
+        </div>
+    </div>
+
+    <div class="hero__scroll" aria-hidden="true">Scroll</div>
+</section>
+
+<!-- ==================== B. SEARCH PANEL ==================== -->
+<section class="search-band">
+    <div class="container">
+        <form class="search-panel" id="home-search" novalidate>
+            <div class="search-panel__head">
+                <h2>Start your search</h2>
+                <span class="badge badge--sample">Frontend demo — not yet connected to database</span>
+            </div>
+
+            <div class="search-grid">
+                <label class="field">
+                    <span>Destination or keyword</span>
+                    <input type="text" name="keyword" placeholder="e.g. Hunza, Skardu, Lahore" autocomplete="off" />
+                </label>
+
+                <label class="field">
+                    <span>Travel category</span>
+                    <select name="category">
+                        <option value="">All categories</option>
+                        <option value="destinations">Tourist Spots</option>
+                        <option value="hotels">Hotels</option>
+                        <option value="restaurants">Restaurants</option>
+                        <option value="resorts">Resorts</option>
+                        <option value="transport">Transportation</option>
+                    </select>
+                </label>
+
+                <label class="field">
+                    <span>Approx. budget (PKR)</span>
+                    <select name="budget">
+                        <option value="">Any budget</option>
+                        <option value="25000">Up to 25,000</option>
+                        <option value="50000">Up to 50,000</option>
+                        <option value="100000">Up to 100,000</option>
+                        <option value="200000">Up to 200,000</option>
+                    </select>
+                </label>
+
+                <div class="field field--submit">
+                    <button class="btn" type="submit">Search</button>
+                </div>
+            </div>
+
+            <span class="search-panel__note">
+                Looking for more control? Try
+                <a href="@Url.Action("Advanced", "Search")">Advanced Discovery</a>
+                to refine by region, facilities and rating.
+            </span>
+        </form>
+    </div>
+</section>
+
+<!-- ==================== C. FEATURED DESTINATIONS ==================== -->
+<section class="section section--ivory" aria-labelledby="featured-title">
+    <div class="container">
+        <div class="section-head" data-reveal>
+            <p class="eyebrow">Featured Destinations</p>
+            <h2 id="featured-title">Places worth the detour.</h2>
+            <p>A small, curated collection of regions across Pakistan — chosen for their
+               landscape, history and quiet moments in between.</p>
+        </div>
+
+        <div class="cards-grid cards-grid--feature" data-reveal-group>
+            <article class="card" data-reveal>
+                <div class="media" data-fallback-label="Hunza Valley">
+                    <img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=1200&q=75"
+                         alt="Hunza Valley surrounded by snow-capped mountains" loading="lazy" />
+                </div>
+                <div class="card__body">
+                    <span class="card__meta">Gilgit-Baltistan</span>
+                    <h3>Hunza Valley</h3>
+                    <p>Famous for apricot orchards, forts and views of Rakaposhi — a scenic
+                       base for northern exploration.</p>
+                    <a class="link-arrow" href="@Url.Action("Index", "Destinations")">View destination</a>
+                </div>
+            </article>
+
+            <article class="card" data-reveal>
+                <div class="media" data-fallback-label="Skardu">
+                    <img src="https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=900&q=75"
+                         alt="Mountain lake near Skardu" loading="lazy" />
+                </div>
+                <div class="card__body">
+                    <span class="card__meta">Baltistan</span>
+                    <h3>Skardu</h3>
+                    <p>Cold desert, alpine lakes and a gateway to some of the world's highest peaks.</p>
+                    <a class="link-arrow" href="@Url.Action("Index", "Destinations")">View destination</a>
+                </div>
+            </article>
+
+            <article class="card" data-reveal>
+                <div class="media" data-fallback-label="Swat Valley">
+                    <img src="https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=900&q=75"
+                         alt="Green valley in Swat with river and pine forest" loading="lazy" />
+                </div>
+                <div class="card__body">
+                    <span class="card__meta">Khyber Pakhtunkhwa</span>
+                    <h3>Swat Valley</h3>
+                    <p>Rivers, pine forests and meadow trails — a quieter side of the north.</p>
+                    <a class="link-arrow" href="@Url.Action("Index", "Destinations")">View destination</a>
+                </div>
+            </article>
+        </div>
+    </div>
+</section>
+
+<!-- ==================== D. WAYS TO WANDER ==================== -->
+<section class="section section--sand" aria-labelledby="transport-title">
+    <div class="container">
+        <div class="section-head" data-reveal>
+            <p class="eyebrow">Ways to Wander</p>
+            <h2 id="transport-title">Getting there is part of the story.</h2>
+            <p>Travel options between destinations — described for guidance only. Actual
+               schedules, fares and availability will be connected to the database later.</p>
+        </div>
+
+        <div class="transport-grid" data-reveal-group>
+            <div class="transport-item" data-reveal>
+                <div class="transport-item__num">01</div>
+                <h3>Bus &amp; Coach</h3>
+                <p>Intercity coaches on popular northern and central routes.</p>
+            </div>
+            <div class="transport-item" data-reveal>
+                <div class="transport-item__num">02</div>
+                <h3>Private Car</h3>
+                <p>Chauffeur-driven or self-drive options for flexible itineraries.</p>
+            </div>
+            <div class="transport-item" data-reveal>
+                <div class="transport-item__num">03</div>
+                <h3>Shared Transport</h3>
+                <p>Shared vans and jeeps for common mountain routes.</p>
+            </div>
+            <div class="transport-item" data-reveal>
+                <div class="transport-item__num">04</div>
+                <h3>Air Travel</h3>
+                <p>Domestic flights to northern hubs — details to be confirmed.</p>
+            </div>
+        </div>
+
+        <p style="margin-top:32px;" data-reveal>
+            <a class="link-arrow" href="@Url.Action("Index", "Transport")">See all travel information</a>
+        </p>
+    </div>
+</section>
+
+<!-- ==================== E. STAY & UNWIND ==================== -->
+<section class="section section--ivory" aria-labelledby="hotels-title">
+    <div class="container">
+        <div class="section-head" data-reveal>
+            <p class="eyebrow">Stay &amp; Unwind</p>
+            <h2 id="hotels-title">Somewhere quiet to come back to.</h2>
+            <p>Illustrative accommodation examples. Sample prices are marked and are not live rates.</p>
+        </div>
+
+        <div class="cards-grid" data-reveal-group>
+            <article class="card" data-reveal>
+                <div class="media" data-fallback-label="Mountain lodge">
+                    <img src="https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=900&q=75"
+                         alt="Mountain lodge room with a valley view" loading="lazy" />
+                </div>
+                <div class="card__body">
+                    <span class="card__meta">Hunza · Sample listing</span>
+                    <h3>Valley View Lodge</h3>
+                    <p>Mountain-facing rooms, breakfast included, walking distance from the bazaar.</p>
+                    <div class="package__meta" style="padding-top:8px;">
+                        <span>Wi-Fi</span><span>Breakfast</span><span>Parking</span>
+                    </div>
+                    <div class="package__footer">
+                        <div class="package__price"><small>Sample price / night</small>PKR 18,500</div>
+                        <a class="link-arrow" href="@Url.Action("Index", "Hotels")">Details</a>
+                    </div>
+                </div>
+            </article>
+
+            <article class="card" data-reveal>
+                <div class="media" data-fallback-label="City hotel">
+                    <img src="https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=900&q=75"
+                         alt="Modern hotel exterior at dusk" loading="lazy" />
+                </div>
+                <div class="card__body">
+                    <span class="card__meta">Lahore · Sample listing</span>
+                    <h3>Old City Courtyard</h3>
+                    <p>Heritage-style rooms near Walled City landmarks and food streets.</p>
+                    <div class="package__meta" style="padding-top:8px;">
+                        <span>Wi-Fi</span><span>Restaurant</span><span>Laundry</span>
+                    </div>
+                    <div class="package__footer">
+                        <div class="package__price"><small>Sample price / night</small>PKR 24,000</div>
+                        <a class="link-arrow" href="@Url.Action("Index", "Hotels")">Details</a>
+                    </div>
+                </div>
+            </article>
+
+            <article class="card" data-reveal>
+                <div class="media" data-fallback-label="Seaside hotel">
+                    <img src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=900&q=75"
+                         alt="Seaside hotel with a beach in the foreground" loading="lazy" />
+                </div>
+                <div class="card__body">
+                    <span class="card__meta">Karachi · Sample listing</span>
+                    <h3>Seabreeze Suites</h3>
+                    <p>Comfortable rooms close to the coast, with easy access to nearby restaurants.</p>
+                    <div class="package__meta" style="padding-top:8px;">
+                        <span>Wi-Fi</span><span>Sea view</span><span>Parking</span>
+                    </div>
+                    <div class="package__footer">
+                        <div class="package__price"><small>Sample price / night</small>PKR 21,000</div>
+                        <a class="link-arrow" href="@Url.Action("Index", "Hotels")">Details</a>
+                    </div>
+                </div>
+            </article>
+        </div>
+    </div>
+</section>
+
+<!-- ==================== F. TASTE TRAILS + RESORTS ==================== -->
+<section class="section section--sand" aria-labelledby="taste-title">
+    <div class="container">
+        <div class="split" data-reveal-group>
+            <div class="split__col" data-reveal>
+                <p class="eyebrow">Taste Trails</p>
+                <h3 id="taste-title">Food that remembers the road.</h3>
+                <p>Regional dishes, street food and quieter dining rooms — organised by
+                   location. All restaurant entries on this site are illustrative examples.</p>
+                <ul class="mini-list">
+                    <li>
+                        <div class="media" data-fallback-label="Restaurant">
+                            <img src="https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=300&q=70"
+                                 alt="Restaurant interior" loading="lazy" />
+                        </div>
+                        <div>
+                            <h4>The Apricot Table</h4>
+                            <span>Hunza · Sample restaurant</span>
+                        </div>
+                    </li>
+                    <li>
+                        <div class="media" data-fallback-label="Restaurant">
+                            <img src="https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=300&q=70"
+                                 alt="Regional dish being served" loading="lazy" />
+                        </div>
+                        <div>
+                            <h4>Old Lahore Kitchen</h4>
+                            <span>Lahore · Sample restaurant</span>
+                        </div>
+                    </li>
+                </ul>
+                <a class="link-arrow" href="@Url.Action("Index", "Restaurants")">Explore Taste Trails</a>
+            </div>
+
+            <div class="split__col" data-reveal>
+                <p class="eyebrow">Resort Escapes</p>
+                <h3>Slow mornings, wide horizons.</h3>
+                <p>Resorts for longer stays and quieter travel, from lakeside retreats to
+                   hillside getaways. All listings are sample content.</p>
+                <ul class="mini-list">
+                    <li>
+                        <div class="media" data-fallback-label="Resort">
+                            <img src="https://images.unsplash.com/photo-1571003123894-1f0594d2b5d9?auto=format&fit=crop&w=300&q=70"
+                                 alt="Resort pool overlooking a landscape" loading="lazy" />
+                        </div>
+                        <div>
+                            <h4>Lakeview Retreat</h4>
+                            <span>Skardu · Sample resort</span>
+                        </div>
+                    </li>
+                    <li>
+                        <div class="media" data-fallback-label="Resort">
+                            <img src="https://images.unsplash.com/photo-1571003123894-1f0594d2b5d9?auto=format&fit=crop&w=300&q=70"
+                                 alt="Resort bungalows in a forest setting" loading="lazy" />
+                        </div>
+                        <div>
+                            <h4>Pinewood Heights</h4>
+                            <span>Murree · Sample resort</span>
+                        </div>
+                    </li>
+                </ul>
+                <a class="link-arrow" href="@Url.Action("Index", "Resorts")">Explore Resort Escapes</a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ==================== G. PACKAGES ==================== -->
+<section class="section section--ivory" aria-labelledby="packages-title">
+    <div class="container">
+        <div class="section-head" data-reveal>
+            <p class="eyebrow">Curated Getaways</p>
+            <h2 id="packages-title">Sample travel packages.</h2>
+            <p>Illustrative itineraries to show how package information will be presented
+               once the backend is connected. Prices are examples, not confirmed rates.</p>
+        </div>
+
+        <div class="package-grid" data-reveal-group>
+            <article class="package" data-reveal>
+                <h3>Northern Escape</h3>
+                <div class="package__meta">
+                    <span>Hunza · Skardu</span>
+                    <span>7 nights</span>
+                </div>
+                <ul>
+                    <li>Sample accommodation in each location</li>
+                    <li>Intercity transport (illustrative)</li>
+                    <li>Selected guided day trips</li>
+                </ul>
+                <div class="package__footer">
+                    <div class="package__price"><small>Sample price / person</small>PKR 145,000</div>
+                    <a class="link-arrow" href="@Url.Action("Index", "Contact")">Send inquiry</a>
+                </div>
+            </article>
+
+            <article class="package" data-reveal>
+                <h3>Heritage &amp; Coast</h3>
+                <div class="package__meta">
+                    <span>Lahore · Karachi</span>
+                    <span>5 nights</span>
+                </div>
+                <ul>
+                    <li>City-stay accommodation (sample)</li>
+                    <li>Guided heritage walks</li>
+                    <li>Optional coastal day trip</li>
+                </ul>
+                <div class="package__footer">
+                    <div class="package__price"><small>Sample price / person</small>PKR 98,000</div>
+                    <a class="link-arrow" href="@Url.Action("Index", "Contact")">Send inquiry</a>
+                </div>
+            </article>
+
+            <article class="package" data-reveal>
+                <h3>Valley &amp; Meadow</h3>
+                <div class="package__meta">
+                    <span>Swat · Kalam</span>
+                    <span>4 nights</span>
+                </div>
+                <ul>
+                    <li>Riverside stay (sample)</li>
+                    <li>Local transfers</li>
+                    <li>Two guided trail walks</li>
+                </ul>
+                <div class="package__footer">
+                    <div class="package__price"><small>Sample price / person</small>PKR 72,000</div>
+                    <a class="link-arrow" href="@Url.Action("Index", "Contact")">Send inquiry</a>
+                </div>
+            </article>
+        </div>
+    </div>
+</section>
+
+<!-- ==================== H. WHY TRAVEL WITH KARNEL ==================== -->
+<section class="section section--sand" aria-labelledby="why-title">
+    <div class="container">
+        <div class="section-head" data-reveal>
+            <p class="eyebrow">Why Travel With Karnel</p>
+            <h2 id="why-title">A guide, not just a catalogue.</h2>
+            <p>Karnel Travel Guide is organised around the practical questions travellers ask
+               before they set out.</p>
+        </div>
+
+        <div class="trust-grid" data-reveal-group>
+            <div class="trust-item" data-reveal>
+                <h3>One place to discover</h3>
+                <p>Destinations, transport, accommodation, dining and resorts side by side.</p>
+            </div>
+            <div class="trust-item" data-reveal>
+                <h3>Clear information</h3>
+                <p>Package details and pricing shown honestly, with sample content clearly marked.</p>
+            </div>
+            <div class="trust-item" data-reveal>
+                <h3>Inquiry support</h3>
+                <p>A direct way to send questions before committing to a plan.</p>
+            </div>
+            <div class="trust-item" data-reveal>
+                <h3>Room to grow</h3>
+                <p>Built so a live backend and real availability can be added without a redesign.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ==================== I. FINAL CTA ==================== -->
+<section class="cta-band">
+    <div class="container" data-reveal>
+        <h2>Ready to plan your next journey?</h2>
+        <p>Start with a destination, or tell us what you have in mind and we'll help you take it from there.</p>
+        <div class="cta-band__actions">
+            <a class="btn btn--light" href="@Url.Action("Index", "Search")">Explore Destinations</a>
+            <a class="btn btn--ghost-light" href="@Url.Action("Index", "Contact")">Get in Touch</a>
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+    <script>
+        /* Home page — search panel forwards to Explore */
+        (function () {
+            'use strict';
+            var form = document.getElementById('home-search');
+            if (!form) { return; }
+
+            form.addEventListener('submit', function (event) {
+                event.preventDefault();
+
+                var data = new FormData(form);
+                var params = new URLSearchParams();
+
+                ['keyword', 'category', 'budget'].forEach(function (key) {
+                    var value = (data.get(key) || '').toString().trim();
+                    if (value) { params.set(key, value); }
+                });
+
+                // Forward to the Explore page so the user's intent is preserved.
+                var target = '@Url.Action("Index", "Search")';
+                if (params.toString()) { target += '?' + params.toString(); }
+                window.location.href = target;
+            });
+        })();
+    </script>
+}

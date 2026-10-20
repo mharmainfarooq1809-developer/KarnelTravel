@@ -1,0 +1,175 @@
+﻿@{
+    ViewData["Title"] = "Discover More | Karnel Travel Guide";
+    ViewData["Description"] = "Five curated information categories: tourist spots, transport, hotels, restaurants and resorts across Pakistan.";
+}
+
+@section Styles {
+    <style>
+        .info-hero {
+            padding: calc(var(--header-h) + 80px) 0 80px;
+            background: var(--sand);
+        }
+        .info-hero h1 { max-width: 18ch; }
+        .info-hero p { color: var(--muted); font-size: 1.05rem; max-width: 60ch; }
+
+        .category-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 26px;
+        }
+        .category-card {
+            position: relative;
+            overflow: hidden;
+            border-radius: var(--radius-lg);
+            background: var(--forest-deep);
+            color: var(--ivory);
+            min-height: 380px;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            padding: 32px;
+            isolation: isolate;
+            transition: transform .5s var(--ease), box-shadow .5s var(--ease);
+        }
+        .category-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); }
+        .category-card__media {
+            position: absolute;
+            inset: 0;
+            z-index: -1;
+            border-radius: 0;
+        }
+        .category-card__media img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 1.2s var(--ease);
+        }
+        .category-card:hover .category-card__media img { transform: scale(1.06); }
+        .category-card::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            z-index: -1;
+            background: linear-gradient(180deg, rgba(20, 39, 31, .1) 0%, rgba(20, 39, 31, .85) 100%);
+        }
+        .category-card__num {
+            font-family: var(--serif);
+            font-size: 1rem;
+            letter-spacing: .15em;
+            color: var(--sage);
+            margin-bottom: 12px;
+        }
+        .category-card h2 {
+            color: var(--ivory);
+            margin: 0 0 8px;
+            font-size: 1.7rem;
+        }
+        .category-card__sub {
+            font-size: .72rem;
+            letter-spacing: .18em;
+            text-transform: uppercase;
+            color: var(--sand);
+            margin-bottom: 16px;
+        }
+        .category-card p {
+            color: rgba(248, 246, 240, .82);
+            font-size: .94rem;
+            margin: 0 0 20px;
+            max-width: 44ch;
+        }
+        .category-card .link-arrow { color: var(--ivory); }
+        .category-card .link-arrow:hover { border-color: var(--sand); }
+
+        @@media (max-width: 600px) {
+            .category-card { min-height: 320px; padding: 24px; }
+            .category-card h2 { font-size: 1.4rem; }
+        }
+    </style>
+}
+
+<header class="info-hero">
+    <div class="container" data-reveal>
+        <p class="eyebrow">Discover More</p>
+        <h1>Five categories, one guide.</h1>
+        <p>Each category below has its own page. Choose where to begin — from landscapes
+           to where to sleep at the end of the day.</p>
+    </div>
+</header>
+
+<section class="section section--ivory">
+    <div class="container">
+        <div class="category-grid" data-reveal-group>
+
+            <a class="category-card" href="@Url.Action("Index", "Destinations")" data-reveal>
+                <div class="category-card__media media" data-fallback-label="Mountain landscape">
+                    <img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=900&q=70"
+                         alt="Mountain landscape in northern Pakistan" loading="lazy" />
+                </div>
+                <span class="category-card__num">01</span>
+                <h2>Discover Pakistan</h2>
+                <span class="category-card__sub">Tourist Spots</span>
+                <p>Mountains, valleys, coastlines and historical places — organised by region.</p>
+                <span class="link-arrow">Explore</span>
+            </a>
+
+            <a class="category-card" href="@Url.Action("Index", "Transport")" data-reveal>
+                <div class="category-card__media media" data-fallback-label="Coach on a road">
+                    <img src="https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&w=900&q=70"
+                         alt="Coach travelling on a mountain road" loading="lazy" />
+                </div>
+                <span class="category-card__num">02</span>
+                <h2>Ways to Wander</h2>
+                <span class="category-card__sub">Travel Information</span>
+                <p>Bus, car, shared transport and air travel — described for guidance only.</p>
+                <span class="link-arrow">Explore</span>
+            </a>
+
+            <a class="category-card" href="@Url.Action("Index", "Hotels")" data-reveal>
+                <div class="category-card__media media" data-fallback-label="Hotel room">
+                    <img src="https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=900&q=70"
+                         alt="Hotel room with a window" loading="lazy" />
+                </div>
+                <span class="category-card__num">03</span>
+                <h2>Stay &amp; Unwind</h2>
+                <span class="category-card__sub">Hotel Information</span>
+                <p>Room types, facilities and sample price references across cities.</p>
+                <span class="link-arrow">Explore</span>
+            </a>
+
+            <a class="category-card" href="@Url.Action("Index", "Restaurants")" data-reveal>
+                <div class="category-card__media media" data-fallback-label="Restaurant">
+                    <img src="https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=900&q=70"
+                         alt="Restaurant interior" loading="lazy" />
+                </div>
+                <span class="category-card__num">04</span>
+                <h2>Taste Trails</h2>
+                <span class="category-card__sub">Restaurant Information</span>
+                <p>Regional dishes, cuisine and dining references, organised by city.</p>
+                <span class="link-arrow">Explore</span>
+            </a>
+
+            <a class="category-card" href="@Url.Action("Index", "Resorts")" data-reveal>
+                <div class="category-card__media media" data-fallback-label="Resort pool">
+                    <img src="https://images.unsplash.com/photo-1571003123894-1f0594d2b5d9?auto=format&fit=crop&w=900&q=70"
+                         alt="Resort pool overlooking a lake" loading="lazy" />
+                </div>
+                <span class="category-card__num">05</span>
+                <h2>Resort Escapes</h2>
+                <span class="category-card__sub">Resorts Information</span>
+                <p>Longer stays in quieter settings — sample listings only.</p>
+                <span class="link-arrow">Explore</span>
+            </a>
+
+        </div>
+    </div>
+</section>
+
+<section class="section section--sand" style="text-align:center;">
+    <div class="container" data-reveal>
+        <h2>Or start with a broader search.</h2>
+        <p style="color: var(--muted); max-width: 52ch; margin: 0 auto 28px;">
+            The Explore page combines all five categories so you can compare side by side.
+        </p>
+        <a class="btn" href="@Url.Action("Index", "Search")">Open Explore</a>
+    </div>
+</section>

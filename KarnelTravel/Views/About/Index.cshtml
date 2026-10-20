@@ -1,0 +1,148 @@
+﻿@{
+    ViewData["Title"] = "Our Story | Karnel Travel Guide";
+    ViewData["Description"] = "Learn about Karnel Travel Guide — a travel and tourism guide for destinations, transport, accommodation and packages across Pakistan.";
+}
+
+@section Styles {
+    <style>
+        .about-hero {
+            padding: calc(var(--header-h) + 80px) 0 80px;
+            background: var(--sand);
+        }
+        .about-hero__inner {
+            display: grid;
+            grid-template-columns: 1.1fr 1fr;
+            gap: 60px;
+            align-items: center;
+        }
+        .about-hero h1 { max-width: 14ch; }
+        .about-hero p { color: var(--muted); font-size: 1.05rem; max-width: 52ch; }
+        .about-hero .media { aspect-ratio: 4 / 5; border-radius: var(--radius-lg); }
+
+        .story-grid {
+            display: grid;
+            grid-template-columns: 1fr 1.3fr;
+            gap: 60px;
+            align-items: start;
+        }
+        .story-grid h2 { max-width: 12ch; }
+        .story-grid p { color: var(--muted); font-size: 1.02rem; }
+
+        .service-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 24px;
+        }
+        .service {
+            padding: 32px 28px;
+            background: var(--white);
+            border: 1px solid var(--line);
+            border-radius: var(--radius-lg);
+            transition: transform .4s var(--ease), box-shadow .4s var(--ease);
+        }
+        .service:hover { transform: translateY(-4px); box-shadow: var(--shadow-md); }
+        .service h3 { font-size: 1.2rem; margin: 0 0 10px; }
+        .service p { color: var(--muted); font-size: .92rem; margin: 0; }
+
+        .mission {
+            background: var(--forest-deep);
+            color: var(--ivory);
+            padding: clamp(64px, 8vw, 108px) 0;
+        }
+        .mission h2 { color: var(--ivory); max-width: 20ch; }
+        .mission p { color: rgba(248, 246, 240, .8); max-width: 60ch; }
+
+        @@media (max-width: 900px) {
+            .about-hero__inner, .story-grid { grid-template-columns: 1fr; gap: 40px; }
+            .about-hero .media { aspect-ratio: 16 / 10; }
+        }
+    </style>
+}
+
+<header class="about-hero">
+    <div class="container about-hero__inner">
+        <div data-reveal>
+            <p class="eyebrow">Our Story</p>
+            <h1>A travel guide written around the questions travellers actually ask.</h1>
+            <p>Karnel Travels is a travel and tourism company. Karnel Travel Guide is the
+               front door: a single place to explore destinations, compare transport options,
+               read about accommodation, and send an inquiry about a package.</p>
+        </div>
+        <div class="media" data-fallback-label="Travelers on a mountain path" data-reveal>
+            <img src="https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1200&q=75"
+                 alt="Travellers walking a mountain trail" loading="lazy" />
+        </div>
+    </div>
+</header>
+
+<section class="section section--ivory">
+    <div class="container story-grid">
+        <div data-reveal>
+            <p class="eyebrow">The idea</p>
+            <h2>One place, before the journey begins.</h2>
+        </div>
+        <div data-reveal>
+            <p>Planning a trip across Pakistan usually means juggling several sources at
+               once: one for destination ideas, another for transport, another for hotels,
+               and a final one for food. Karnel Travel Guide is designed to bring those
+               threads together without pretending that every listing is live inventory.</p>
+            <p>Where information is still a placeholder, we label it clearly. Where a
+               package is sample content, the page says so. The aim is a guide that stays
+               useful even before the database behind it is finished.</p>
+        </div>
+    </div>
+</section>
+
+<section class="section section--sand">
+    <div class="container">
+        <div class="section-head" data-reveal>
+            <p class="eyebrow">What we offer</p>
+            <h2>Services and information.</h2>
+            <p>The original brief for Karnel Travels covers tourist spots, travel facilities,
+               hotels, restaurants, resorts, packages, discounts and customer inquiries. Each
+               of these has a dedicated page on this site.</p>
+        </div>
+
+        <div class="service-grid" data-reveal-group>
+            <article class="service" data-reveal>
+                <h3>Tourist spots</h3>
+                <p>Destination introductions, region notes and imagery — see Discover Pakistan.</p>
+            </article>
+            <article class="service" data-reveal>
+                <h3>Transportation</h3>
+                <p>Illustrative bus, car, shared transport and air travel options — see Ways to Wander.</p>
+            </article>
+            <article class="service" data-reveal>
+                <h3>Accommodation</h3>
+                <p>Hotels and resorts with sample listings — see Stay &amp; Unwind and Resort Escapes.</p>
+            </article>
+            <article class="service" data-reveal>
+                <h3>Dining</h3>
+                <p>Restaurants organised by location — see Taste Trails.</p>
+            </article>
+            <article class="service" data-reveal>
+                <h3>Travel packages</h3>
+                <p>Illustrative itineraries that show how package information will be presented.</p>
+            </article>
+            <article class="service" data-reveal>
+                <h3>Customer inquiries</h3>
+                <p>An inquiry form for order-type questions and a feedback form on Get in Touch.</p>
+            </article>
+        </div>
+    </div>
+</section>
+
+<section class="mission">
+    <div class="container" data-reveal>
+        <p class="eyebrow" style="color: var(--sage);">Mission &amp; Philosophy</p>
+        <h2>Clear information, thoughtfully presented.</h2>
+        <p>Our mission is to make the early stages of travel planning easier: to describe
+           destinations honestly, present options transparently, and give travellers a
+           straightforward way to ask questions before they commit. Company history and
+           verified achievements will be published here once those details have been
+           provided by the business.</p>
+        <p style="margin-top: 28px;">
+            <a class="btn btn--light" href="@Url.Action("Index", "Destinations")">Explore Destinations</a>
+        </p>
+    </div>
+</section>

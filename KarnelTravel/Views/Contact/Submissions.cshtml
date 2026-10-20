@@ -1,0 +1,26 @@
+@model IEnumerable<KarnelTravel.Models.ContactInquiry>
+@{
+    ViewData["Title"] = "Contact Submissions";
+}
+
+<div class="container section">
+    <h1>Contact Submissions (Demo)</h1>
+
+    <table>
+        <thead>
+            <tr><th>Id</th><th>Name</th><th>Email</th><th>Category</th><th>Submitted</th></tr>
+        </thead>
+        <tbody>
+        @foreach (var s in Model)
+        {
+            <tr>
+                <td>@s.Id</td>
+                <td>@s.Name</td>
+                <td>@s.Email</td>
+                <td>@s.Category</td>
+                <td>@s.SubmittedAt.ToLocalTime()</td>
+            </tr>
+        }
+        </tbody>
+    </table>
+</div>

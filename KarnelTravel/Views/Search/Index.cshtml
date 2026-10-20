@@ -1,0 +1,398 @@
+﻿@{
+    ViewData["Title"] = "Explore | Karnel Travel Guide";
+    ViewData["Description"] = "Search destinations, hotels, restaurants, resorts and transport across Pakistan. Sample-data filtering is fully functional in this frontend demo.";
+}
+
+@section Styles {
+    <style>
+        .search-hero {
+            padding: calc(var(--header-h) + 60px) 0 40px;
+            background: var(--sand);
+        }
+        .search-hero h1 { max-width: 16ch; }
+        .search-hero p { color: var(--muted); max-width: 60ch; }
+
+        .filter-bar {
+            background: var(--white);
+            border: 1px solid var(--line);
+            border-radius: var(--radius-lg);
+            padding: 22px 24px;
+            box-shadow: var(--shadow-sm);
+            display: grid;
+            grid-template-columns: 1.4fr 1fr 1fr 1fr 1fr;
+            gap: 14px;
+            margin-top: -20px;
+            position: relative;
+            z-index: 2;
+        }
+        .filter-bar__actions {
+            grid-column: 1 / -1;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+            flex-wrap: wrap;
+            padding-top: 8px;
+            border-top: 1px solid var(--line);
+            margin-top: 4px;
+        }
+        .filter-bar__actions .muted { font-size: .78rem; color: var(--muted); }
+
+        .results-section { padding-block: 56px 96px; }
+        .results-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            gap: 16px;
+            flex-wrap: wrap;
+            margin-bottom: 28px;
+        }
+        .results-head h2 { margin: 0; }
+        .results-count { font-size: .82rem; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+
+        .listing-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 26px;
+        }
+        .listing-card {
+            display: flex;
+            flex-direction: column;
+            background: var(--white);
+            border: 1px solid var(--line);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            transition: transform .4s var(--ease), box-shadow .4s var(--ease);
+        }
+        .listing-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-md); }
+        .listing-card .media { aspect-ratio: 4 / 3; }
+        .listing-card__body { padding: 20px 22px 22px; display: flex; flex-direction: column; gap: 10px; flex: 1; }
+        .listing-card__meta { font-size: .68rem; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); }
+        .listing-card h3 { margin: 0; font-size: 1.2rem; }
+        .listing-card__desc { color: var(--muted); font-size: .9rem; margin: 0; flex: 1; }
+        .listing-card__footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 14px;
+            border-top: 1px solid var(--line);
+            margin-top: auto;
+            gap: 10px;
+        }
+        .listing-card__price { font-family: var(--serif); font-size: 1.1rem; color: var(--forest-deep); }
+        .listing-card__price small {
+            display: block;
+            font-family: var(--sans);
+            font-size: .66rem;
+            letter-spacing: .12em;
+            text-transform: uppercase;
+            color: var(--muted);
+            font-weight: 400;
+        }
+
+        .empty-state {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 60px 24px;
+            border: 1px dashed var(--line);
+            border-radius: var(--radius-lg);
+            background: var(--white);
+        }
+        .empty-state h3 { margin: 0 0 8px; }
+        .empty-state p { color: var(--muted); margin: 0; }
+
+        @@media (max-width: 1080px) {
+            .filter-bar { grid-template-columns: 1fr 1fr 1fr; }
+        }
+        @@media (max-width: 640px) {
+            .filter-bar { grid-template-columns: 1fr; }
+        }
+    </style>
+}
+
+<header class="search-hero">
+    <div class="container" data-reveal>
+        <p class="eyebrow">Explore</p>
+        <h1>Search across destinations, stays and journeys.</h1>
+        <p>This page filters sample records so you can see how the catalogue will behave
+           once the SQL Server backend is connected. Sample prices and availability are
+           marked, not live.</p>
+    </div>
+</header>
+
+<section class="container">
+    <form class="filter-bar" id="explore-filters" novalidate>
+        <label class="field" style="grid-column: span 1;">
+            <span>Keyword</span>
+            <input type="search" name="keyword" placeholder="e.g. Hunza, hotel, bus" autocomplete="off" />
+        </label>
+        <label class="field">
+            <span>Category</span>
+            <select name="category">
+                <option value="">All categories</option>
+                <option value="destinations">Tourist Spots</option>
+                <option value="hotels">Hotels</option>
+                <option value="restaurants">Restaurants</option>
+                <option value="resorts">Resorts</option>
+                <option value="transport">Transportation</option>
+            </select>
+        </label>
+        <label class="field">
+            <span>Location</span>
+            <input type="text" name="location" placeholder="e.g. Hunza" autocomplete="off" />
+        </label>
+        <label class="field">
+            <span>Min budget (PKR)</span>
+            <input type="number" name="minBudget" min="0" step="1000" placeholder="0" />
+        </label>
+        <label class="field">
+            <span>Max budget (PKR)</span>
+            <input type="number" name="maxBudget" min="0" step="1000" placeholder="Any" />
+        </label>
+
+        <div class="filter-bar__actions">
+            <span class="muted">Filters apply as you type. Sample data only.</span>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;">
+                <a class="btn btn--outline" href="@Url.Action("Advanced", "Search")">Advanced Discovery</a>
+                <button class="btn" type="submit" style="display:none;">Search</button>
+                <button class="btn btn--outline" type="reset">Clear filters</button>
+            </div>
+        </div>
+    </form>
+</section>
+
+<section class="results-section">
+    <div class="container">
+        <div class="results-head">
+            <h2 id="results-title">Results</h2>
+            <span class="results-count"><span id="results-count">0</span> result(s)</span>
+        </div>
+
+        <div class="listing-grid" id="results-grid">
+
+            <!-- ==== SAMPLE RECORDS — clearly illustrative ==== -->
+
+            <article class="listing-card" data-card
+                     data-name="Hunza Valley" data-category="destinations"
+                     data-location="Hunza" data-budget="80000">
+                <div class="media" data-fallback-label="Hunza Valley">
+                    <img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=800&q=70"
+                         alt="Hunza Valley" loading="lazy" />
+                </div>
+                <div class="listing-card__body">
+                    <span class="listing-card__meta">Gilgit-Baltistan · Tourist spot</span>
+                    <h3>Hunza Valley</h3>
+                    <p class="listing-card__desc">Apricot orchards, forts and views of Rakaposhi — a classic northern base.</p>
+                    <div class="listing-card__footer">
+                        <div class="listing-card__price"><small>Sample estimate</small>PKR 80,000</div>
+                        <a class="link-arrow" href="@Url.Action("Index", "Destinations")">View</a>
+                    </div>
+                </div>
+            </article>
+
+            <article class="listing-card" data-card
+                     data-name="Skardu" data-category="destinations"
+                     data-location="Skardu" data-budget="95000">
+                <div class="media" data-fallback-label="Skardu">
+                    <img src="https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=800&q=70"
+                         alt="Skardu" loading="lazy" />
+                </div>
+                <div class="listing-card__body">
+                    <span class="listing-card__meta">Baltistan · Tourist spot</span>
+                    <h3>Skardu</h3>
+                    <p class="listing-card__desc">Cold desert, alpine lakes and access to high peaks.</p>
+                    <div class="listing-card__footer">
+                        <div class="listing-card__price"><small>Sample estimate</small>PKR 95,000</div>
+                        <a class="link-arrow" href="@Url.Action("Index", "Destinations")">View</a>
+                    </div>
+                </div>
+            </article>
+
+            <article class="listing-card" data-card
+                     data-name="Old City Courtyard" data-category="hotels"
+                     data-location="Lahore" data-budget="24000">
+                <div class="media" data-fallback-label="Old City Courtyard">
+                    <img src="https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=800&q=70"
+                         alt="Heritage hotel in Lahore" loading="lazy" />
+                </div>
+                <div class="listing-card__body">
+                    <span class="listing-card__meta">Lahore · Hotel</span>
+                    <h3>Old City Courtyard</h3>
+                    <p class="listing-card__desc">Heritage-style rooms near Walled City landmarks.</p>
+                    <div class="listing-card__footer">
+                        <div class="listing-card__price"><small>Sample / night</small>PKR 24,000</div>
+                        <a class="link-arrow" href="@Url.Action("Index", "Hotels")">View</a>
+                    </div>
+                </div>
+            </article>
+
+            <article class="listing-card" data-card
+                     data-name="Seabreeze Suites" data-category="hotels"
+                     data-location="Karachi" data-budget="21000">
+                <div class="media" data-fallback-label="Seabreeze Suites">
+                    <img src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=70"
+                         alt="Seaside hotel in Karachi" loading="lazy" />
+                </div>
+                <div class="listing-card__body">
+                    <span class="listing-card__meta">Karachi · Hotel</span>
+                    <h3>Seabreeze Suites</h3>
+                    <p class="listing-card__desc">Comfortable rooms close to the coast.</p>
+                    <div class="listing-card__footer">
+                        <div class="listing-card__price"><small>Sample / night</small>PKR 21,000</div>
+                        <a class="link-arrow" href="@Url.Action("Index", "Hotels")">View</a>
+                    </div>
+                </div>
+            </article>
+
+            <article class="listing-card" data-card
+                     data-name="The Apricot Table" data-category="restaurants"
+                     data-location="Hunza" data-budget="3500">
+                <div class="media" data-fallback-label="The Apricot Table">
+                    <img src="https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=800&q=70"
+                         alt="Restaurant interior" loading="lazy" />
+                </div>
+                <div class="listing-card__body">
+                    <span class="listing-card__meta">Hunza · Restaurant</span>
+                    <h3>The Apricot Table</h3>
+                    <p class="listing-card__desc">Regional dishes from northern Pakistan.</p>
+                    <div class="listing-card__footer">
+                        <div class="listing-card__price"><small>Sample / person</small>PKR 3,500</div>
+                        <a class="link-arrow" href="@Url.Action("Index", "Restaurants")">View</a>
+                    </div>
+                </div>
+            </article>
+
+            <article class="listing-card" data-card
+                     data-name="Lakeview Retreat" data-category="resorts"
+                     data-location="Skardu" data-budget="32000">
+                <div class="media" data-fallback-label="Lakeview Retreat">
+                    <img src="https://images.unsplash.com/photo-1571003123894-1f0594d2b5d9?auto=format&fit=crop&w=800&q=70"
+                         alt="Resort overlooking a lake" loading="lazy" />
+                </div>
+                <div class="listing-card__body">
+                    <span class="listing-card__meta">Skardu · Resort</span>
+                    <h3>Lakeview Retreat</h3>
+                    <p class="listing-card__desc">Quieter lakeside stay for longer journeys.</p>
+                    <div class="listing-card__footer">
+                        <div class="listing-card__price"><small>Sample / night</small>PKR 32,000</div>
+                        <a class="link-arrow" href="@Url.Action("Index", "Resorts")">View</a>
+                    </div>
+                </div>
+            </article>
+
+            <article class="listing-card" data-card
+                     data-name="Northern Coach Line" data-category="transport"
+                     data-location="Islamabad" data-budget="6500">
+                <div class="media" data-fallback-label="Northern Coach Line">
+                    <img src="https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&w=800&q=70"
+                         alt="Coach travelling north" loading="lazy" />
+                </div>
+                <div class="listing-card__body">
+                    <span class="listing-card__meta">Islamabad → Gilgit · Transport</span>
+                    <h3>Northern Coach Line</h3>
+                    <p class="listing-card__desc">Sample intercity coach service on the northern route.</p>
+                    <div class="listing-card__footer">
+                        <div class="listing-card__price"><small>Sample / seat</small>PKR 6,500</div>
+                        <a class="link-arrow" href="@Url.Action("Index", "Transport")">View</a>
+                    </div>
+                </div>
+            </article>
+
+            <article class="listing-card" data-card
+                     data-name="Private Car Service" data-category="transport"
+                     data-location="Lahore" data-budget="18000">
+                <div class="media" data-fallback-label="Private Car Service">
+                    <img src="https://images.unsplash.com/photo-1494976388531-d1058494cdd8?auto=format&fit=crop&w=800&q=70"
+                         alt="Car on a scenic road" loading="lazy" />
+                </div>
+                <div class="listing-card__body">
+                    <span class="listing-card__meta">Lahore · Transport</span>
+                    <h3>Private Car Service</h3>
+                    <p class="listing-card__desc">Sample chauffeur-driven day hire.</p>
+                    <div class="listing-card__footer">
+                        <div class="listing-card__price"><small>Sample / day</small>PKR 18,000</div>
+                        <a class="link-arrow" href="@Url.Action("Index", "Transport")">View</a>
+                    </div>
+                </div>
+            </article>
+
+            <div class="empty-state" id="empty-state" hidden>
+                <h3>No results match your filters.</h3>
+                <p>Try clearing filters or adjusting your budget range.</p>
+            </div>
+
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+    <script>
+        /* Explore — working frontend filter on sample records */
+        (function () {
+            'use strict';
+            var form = document.getElementById('explore-filters');
+            var cards = Array.prototype.slice.call(document.querySelectorAll('[data-card]'));
+            var countEl = document.getElementById('results-count');
+            var emptyEl = document.getElementById('empty-state');
+            if (!form || !cards.length) { return; }
+
+            var keywordEl = form.querySelector('[name="keyword"]');
+            var categoryEl = form.querySelector('[name="category"]');
+            var locationEl = form.querySelector('[name="location"]');
+            var minEl = form.querySelector('[name="minBudget"]');
+            var maxEl = form.querySelector('[name="maxBudget"]');
+
+            function apply() {
+                var kw = (keywordEl.value || '').toLowerCase().trim();
+                var cat = categoryEl.value;
+                var loc = (locationEl.value || '').toLowerCase().trim();
+                var min = parseFloat(minEl.value) || 0;
+                var max = parseFloat(maxEl.value) || Infinity;
+                if (max < min) { max = min; }
+
+                var visible = 0;
+                cards.forEach(function (card) {
+                    var name = (card.dataset.name || '').toLowerCase();
+                    var text = (card.textContent || '').toLowerCase();
+                    var category = card.dataset.category;
+                    var location = (card.dataset.location || '').toLowerCase();
+                    var budget = parseFloat(card.dataset.budget) || 0;
+
+                    var match =
+                        (!kw || name.indexOf(kw) !== -1 || text.indexOf(kw) !== -1) &&
+                        (!cat || category === cat) &&
+                        (!loc || location.indexOf(loc) !== -1) &&
+                        (budget >= min) &&
+                        (budget <= max);
+
+                    card.hidden = !match;
+                    if (match) { visible++; }
+                });
+
+                countEl.textContent = visible;
+                emptyEl.hidden = visible > 0;
+            }
+
+            form.addEventListener('submit', function (e) { e.preventDefault(); apply(); });
+            form.addEventListener('input', apply);
+            form.addEventListener('reset', function () {
+                // Reset is fired before values clear; defer so we read empty inputs.
+                setTimeout(apply, 0);
+            });
+
+            // Read query string (from the home search panel) once on load.
+            var params = new URLSearchParams(window.location.search);
+            ['keyword', 'category', 'location'].forEach(function (key) {
+                if (params.get(key)) {
+                    var el = form.querySelector('[name="' + key + '"]');
+                    if (el) { el.value = params.get(key); }
+                }
+            });
+            if (params.get('budget')) {
+                maxEl.value = params.get('budget');
+            }
+
+            apply();
+        })();
+    </script>
+}

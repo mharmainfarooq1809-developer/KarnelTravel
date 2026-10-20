@@ -1,0 +1,446 @@
+﻿@{
+    ViewData["Title"] = "Advanced Discovery | Karnel Travel Guide";
+    ViewData["Description"] = "Refine your search with region, category, budget, accommodation type, facilities and transport preferences.";
+}
+
+@section Styles {
+    <style>
+        .adv-hero {
+            padding: calc(var(--header-h) + 60px) 0 40px;
+            background: var(--forest-deep);
+            color: var(--ivory);
+        }
+        .adv-hero h1 { color: var(--ivory); max-width: 16ch; }
+        .adv-hero p { color: rgba(248, 246, 240, .8); max-width: 60ch; }
+        .adv-hero .eyebrow { color: var(--sage); }
+
+        .adv-layout {
+            display: grid;
+            grid-template-columns: 320px 1fr;
+            gap: 40px;
+            padding-block: 56px 96px;
+        }
+        .adv-panel {
+            background: var(--white);
+            border: 1px solid var(--line);
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            position: sticky;
+            top: calc(var(--header-h) + 24px);
+            align-self: start;
+            max-height: calc(100vh - var(--header-h) - 48px);
+            overflow-y: auto;
+        }
+        .adv-panel h2 { font-size: 1.1rem; margin: 0 0 18px; }
+        .adv-group + .adv-group { margin-top: 22px; padding-top: 22px; border-top: 1px solid var(--line); }
+        .adv-group > h3 {
+            font-family: var(--sans);
+            font-size: .68rem;
+            letter-spacing: .18em;
+            text-transform: uppercase;
+            color: var(--muted);
+            margin: 0 0 12px;
+        }
+        .adv-checks { display: grid; gap: 8px; }
+        .adv-checks label {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: .9rem;
+            cursor: pointer;
+        }
+        .adv-checks input { accent-color: var(--forest); }
+        .adv-panel .field + .field { margin-top: 12px; }
+        .adv-panel__actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 22px;
+            padding-top: 22px;
+            border-top: 1px solid var(--line);
+        }
+
+        .results-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            gap: 16px;
+            flex-wrap: wrap;
+            margin-bottom: 24px;
+        }
+        .results-head h2 { margin: 0; }
+        .results-count { font-size: .82rem; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+
+        .listing-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 26px;
+        }
+        .listing-card {
+            display: flex;
+            flex-direction: column;
+            background: var(--white);
+            border: 1px solid var(--line);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            transition: transform .4s var(--ease), box-shadow .4s var(--ease);
+        }
+        .listing-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-md); }
+        .listing-card .media { aspect-ratio: 4 / 3; }
+        .listing-card__body { padding: 20px 22px 22px; display: flex; flex-direction: column; gap: 10px; flex: 1; }
+        .listing-card__meta { font-size: .68rem; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); }
+        .listing-card h3 { margin: 0; font-size: 1.2rem; }
+        .listing-card__desc { color: var(--muted); font-size: .9rem; margin: 0; flex: 1; }
+        .listing-card__tags { display: flex; flex-wrap: wrap; gap: 6px; }
+        .listing-card__tags span {
+            font-size: .68rem;
+            padding: 3px 10px;
+            background: var(--ivory);
+            border: 1px solid var(--line);
+            border-radius: 999px;
+            color: var(--forest);
+        }
+        .listing-card__footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 14px;
+            border-top: 1px solid var(--line);
+            margin-top: auto;
+            gap: 10px;
+        }
+        .listing-card__price { font-family: var(--serif); font-size: 1.1rem; color: var(--forest-deep); }
+        .listing-card__price small {
+            display: block;
+            font-family: var(--sans);
+            font-size: .66rem;
+            letter-spacing: .12em;
+            text-transform: uppercase;
+            color: var(--muted);
+            font-weight: 400;
+        }
+
+        .empty-state {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 60px 24px;
+            border: 1px dashed var(--line);
+            border-radius: var(--radius-lg);
+            background: var(--white);
+        }
+
+        @@media (max-width: 900px) {
+            .adv-layout { grid-template-columns: 1fr; }
+            .adv-panel { position: static; max-height: none; }
+        }
+    </style>
+}
+
+<header class="adv-hero">
+    <div class="container" data-reveal>
+        <p class="eyebrow">Advanced Discovery</p>
+        <h1>Refine the search until it fits.</h1>
+        <p>Narrow by region, category, budget, accommodation type, facilities and
+           transport preferences. Sample data only — availability will appear once the
+           backend is connected.</p>
+    </div>
+</header>
+
+<section class="container adv-layout">
+    <form class="adv-panel" id="advanced-form" novalidate>
+        <h2>Filters</h2>
+
+        <div class="adv-group">
+            <h3>Keyword &amp; region</h3>
+            <label class="field">
+                <span>Destination / keyword</span>
+                <input type="search" name="keyword" autocomplete="off" placeholder="e.g. Hunza" />
+            </label>
+            <label class="field">
+                <span>Region / city</span>
+                <input type="text" name="location" autocomplete="off" placeholder="e.g. Lahore" />
+            </label>
+        </div>
+
+        <div class="adv-group">
+            <h3>Category</h3>
+            <label class="field">
+                <select name="category">
+                    <option value="">All categories</option>
+                    <option value="destinations">Tourist Spots</option>
+                    <option value="hotels">Hotels</option>
+                    <option value="restaurants">Restaurants</option>
+                    <option value="resorts">Resorts</option>
+                    <option value="transport">Transportation</option>
+                </select>
+            </label>
+        </div>
+
+        <div class="adv-group">
+            <h3>Budget (PKR)</h3>
+            <label class="field">
+                <span>Minimum</span>
+                <input type="number" name="minBudget" min="0" step="1000" placeholder="0" />
+            </label>
+            <label class="field">
+                <span>Maximum</span>
+                <input type="number" name="maxBudget" min="0" step="1000" placeholder="Any" />
+            </label>
+        </div>
+
+        <div class="adv-group">
+            <h3>Accommodation type</h3>
+            <label class="field">
+                <select name="accommodation">
+                    <option value="">Any</option>
+                    <option value="hotel">Hotel</option>
+                    <option value="resort">Resort</option>
+                    <option value="lodge">Lodge / guesthouse</option>
+                </select>
+            </label>
+        </div>
+
+        <div class="adv-group">
+            <h3>Facilities</h3>
+            <div class="adv-checks">
+                <label><input type="checkbox" name="facilities" value="wifi" /> Wi-Fi</label>
+                <label><input type="checkbox" name="facilities" value="breakfast" /> Breakfast</label>
+                <label><input type="checkbox" name="facilities" value="parking" /> Parking</label>
+                <label><input type="checkbox" name="facilities" value="seaview" /> Sea view</label>
+            </div>
+        </div>
+
+        <div class="adv-group">
+            <h3>Transport preference</h3>
+            <label class="field">
+                <select name="transport">
+                    <option value="">Any</option>
+                    <option value="bus">Bus / coach</option>
+                    <option value="car">Private car</option>
+                    <option value="shared">Shared transport</option>
+                    <option value="air">Air travel</option>
+                </select>
+            </label>
+        </div>
+
+        <div class="adv-group">
+            <h3>Quality / rating</h3>
+            <label class="field">
+                <select name="rating">
+                    <option value="">Any</option>
+                    <option value="3">3+ stars</option>
+                    <option value="4">4+ stars</option>
+                    <option value="5">5 stars</option>
+                </select>
+            </label>
+        </div>
+
+        <div class="adv-panel__actions">
+            <button class="btn" type="submit">Apply filters</button>
+            <button class="btn btn--outline" type="reset">Reset</button>
+        </div>
+    </form>
+
+    <div>
+        <div class="results-head">
+            <h2>Results</h2>
+            <span class="results-count"><span id="adv-count">0</span> result(s)</span>
+        </div>
+
+        <div class="listing-grid" id="adv-results">
+
+            <!-- ==== SAMPLE RECORDS ==== -->
+
+            <article class="listing-card" data-card
+                     data-name="Hunza Valley" data-category="destinations"
+                     data-location="Hunza" data-budget="80000"
+                     data-accommodation="" data-facilities="wifi,breakfast"
+                     data-transport="car" data-rating="4">
+                <div class="media" data-fallback-label="Hunza Valley">
+                    <img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=800&q=70"
+                         alt="Hunza Valley" loading="lazy" />
+                </div>
+                <div class="listing-card__body">
+                    <span class="listing-card__meta">Gilgit-Baltistan · Tourist spot</span>
+                    <h3>Hunza Valley</h3>
+                    <p class="listing-card__desc">Apricot orchards, forts and mountain views.</p>
+                    <div class="listing-card__tags">
+                        <span>Wi-Fi nearby</span><span>Mountain views</span>
+                    </div>
+                    <div class="listing-card__footer">
+                        <div class="listing-card__price"><small>Sample estimate</small>PKR 80,000</div>
+                        <a class="link-arrow" href="@Url.Action("Index", "Destinations")">View</a>
+                    </div>
+                </div>
+            </article>
+
+            <article class="listing-card" data-card
+                     data-name="Old City Courtyard" data-category="hotels"
+                     data-location="Lahore" data-budget="24000"
+                     data-accommodation="hotel" data-facilities="wifi,breakfast,parking"
+                     data-transport="" data-rating="4">
+                <div class="media" data-fallback-label="Old City Courtyard">
+                    <img src="https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=800&q=70"
+                         alt="Heritage hotel" loading="lazy" />
+                </div>
+                <div class="listing-card__body">
+                    <span class="listing-card__meta">Lahore · Hotel</span>
+                    <h3>Old City Courtyard</h3>
+                    <p class="listing-card__desc">Heritage-style rooms near Walled City landmarks.</p>
+                    <div class="listing-card__tags">
+                        <span>Wi-Fi</span><span>Breakfast</span><span>Parking</span>
+                    </div>
+                    <div class="listing-card__footer">
+                        <div class="listing-card__price"><small>Sample / night</small>PKR 24,000</div>
+                        <a class="link-arrow" href="@Url.Action("Index", "Hotels")">View</a>
+                    </div>
+                </div>
+            </article>
+
+            <article class="listing-card" data-card
+                     data-name="Seabreeze Suites" data-category="hotels"
+                     data-location="Karachi" data-budget="21000"
+                     data-accommodation="hotel" data-facilities="wifi,seaview"
+                     data-transport="" data-rating="4">
+                <div class="media" data-fallback-label="Seabreeze Suites">
+                    <img src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=70"
+                         alt="Seaside hotel" loading="lazy" />
+                </div>
+                <div class="listing-card__body">
+                    <span class="listing-card__meta">Karachi · Hotel</span>
+                    <h3>Seabreeze Suites</h3>
+                    <p class="listing-card__desc">Coastal hotel with easy access to restaurants.</p>
+                    <div class="listing-card__tags">
+                        <span>Wi-Fi</span><span>Sea view</span>
+                    </div>
+                    <div class="listing-card__footer">
+                        <div class="listing-card__price"><small>Sample / night</small>PKR 21,000</div>
+                        <a class="link-arrow" href="@Url.Action("Index", "Hotels")">View</a>
+                    </div>
+                </div>
+            </article>
+
+            <article class="listing-card" data-card
+                     data-name="Lakeview Retreat" data-category="resorts"
+                     data-location="Skardu" data-budget="32000"
+                     data-accommodation="resort" data-facilities="wifi,breakfast,parking"
+                     data-transport="car" data-rating="5">
+                <div class="media" data-fallback-label="Lakeview Retreat">
+                    <img src="https://images.unsplash.com/photo-1571003123894-1f0594d2b5d9?auto=format&fit=crop&w=800&q=70"
+                         alt="Lakeside resort" loading="lazy" />
+                </div>
+                <div class="listing-card__body">
+                    <span class="listing-card__meta">Skardu · Resort</span>
+                    <h3>Lakeview Retreat</h3>
+                    <p class="listing-card__desc">Lakeside stay for slower journeys.</p>
+                    <div class="listing-card__tags">
+                        <span>Wi-Fi</span><span>Breakfast</span><span>Parking</span>
+                    </div>
+                    <div class="listing-card__footer">
+                        <div class="listing-card__price"><small>Sample / night</small>PKR 32,000</div>
+                        <a class="link-arrow" href="@Url.Action("Index", "Resorts")">View</a>
+                    </div>
+                </div>
+            </article>
+
+            <article class="listing-card" data-card
+                     data-name="Northern Coach Line" data-category="transport"
+                     data-location="Islamabad" data-budget="6500"
+                     data-accommodation="" data-facilities=""
+                     data-transport="bus" data-rating="">
+                <div class="media" data-fallback-label="Northern Coach Line">
+                    <img src="https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&w=800&q=70"
+                         alt="Coach bus" loading="lazy" />
+                </div>
+                <div class="listing-card__body">
+                    <span class="listing-card__meta">Islamabad → Gilgit · Transport</span>
+                    <h3>Northern Coach Line</h3>
+                    <p class="listing-card__desc">Sample intercity coach service.</p>
+                    <div class="listing-card__tags">
+                        <span>Coach</span>
+                    </div>
+                    <div class="listing-card__footer">
+                        <div class="listing-card__price"><small>Sample / seat</small>PKR 6,500</div>
+                        <a class="link-arrow" href="@Url.Action("Index", "Transport")">View</a>
+                    </div>
+                </div>
+            </article>
+
+            <div class="empty-state" id="adv-empty" hidden>
+                <h3>No results match these filters.</h3>
+                <p>Try reducing filters or widening the budget range.</p>
+            </div>
+
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+    <script>
+        /* Advanced Discovery — frontend filter over sample records */
+        (function () {
+            'use strict';
+            var form = document.getElementById('advanced-form');
+            var cards = Array.prototype.slice.call(document.querySelectorAll('#adv-results [data-card]'));
+            var countEl = document.getElementById('adv-count');
+            var emptyEl = document.getElementById('adv-empty');
+            if (!form || !cards.length) { return; }
+
+            function valuesOf(name) {
+                var els = form.querySelectorAll('[name="' + name + '"]');
+                if (!els.length) { return []; }
+                if (els[0].type === 'checkbox') {
+                    return Array.prototype.slice.call(els)
+                        .filter(function (el) { return el.checked; })
+                        .map(function (el) { return el.value; });
+                }
+                return [els[0].value].filter(Boolean);
+            }
+
+            function apply() {
+                var kw = (form.querySelector('[name="keyword"]').value || '').toLowerCase().trim();
+                var loc = (form.querySelector('[name="location"]').value || '').toLowerCase().trim();
+                var cat = form.querySelector('[name="category"]').value;
+                var min = parseFloat(form.querySelector('[name="minBudget"]').value) || 0;
+                var max = parseFloat(form.querySelector('[name="maxBudget"]').value) || Infinity;
+                if (max < min) { max = min; }
+                var acc = form.querySelector('[name="accommodation"]').value;
+                var transport = form.querySelector('[name="transport"]').value;
+                var rating = parseFloat(form.querySelector('[name="rating"]').value) || 0;
+                var facilities = valuesOf('facilities');
+
+                var visible = 0;
+                cards.forEach(function (card) {
+                    var name = (card.dataset.name || '').toLowerCase();
+                    var text = (card.textContent || '').toLowerCase();
+                    var location = (card.dataset.location || '').toLowerCase();
+                    var budget = parseFloat(card.dataset.budget) || 0;
+                    var cardFacilities = (card.dataset.facilities || '').split(',').filter(Boolean);
+                    var cardRating = parseFloat(card.dataset.rating) || 0;
+
+                    var match =
+                        (!kw || name.indexOf(kw) !== -1 || text.indexOf(kw) !== -1) &&
+                        (!loc || location.indexOf(loc) !== -1) &&
+                        (!cat || card.dataset.category === cat) &&
+                        (budget >= min && budget <= max) &&
+                        (!acc || card.dataset.accommodation === acc) &&
+                        (!transport || card.dataset.transport === transport) &&
+                        (!rating || cardRating >= rating) &&
+                        facilities.every(function (f) { return cardFacilities.indexOf(f) !== -1; });
+
+                    card.hidden = !match;
+                    if (match) { visible++; }
+                });
+
+                countEl.textContent = visible;
+                emptyEl.hidden = visible > 0;
+            }
+
+            form.addEventListener('submit', function (e) { e.preventDefault(); apply(); });
+            form.addEventListener('change', apply);
+            form.addEventListener('input', apply);
+            form.addEventListener('reset', function () { setTimeout(apply, 0); });
+
+            apply();
+        })();
+    </script>
+}

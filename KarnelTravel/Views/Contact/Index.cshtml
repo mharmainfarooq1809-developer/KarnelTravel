@@ -1,0 +1,58 @@
+@model KarnelTravel.Models.ContactInquiry
+@{
+    ViewData["Title"] = "Contact Us";
+}
+
+<div class="container section">
+    <h1>Contact Us</h1>
+
+    @if (TempData["ContactSuccess"] != null)
+    {
+        <div class="notice success">@TempData["ContactSuccess"]</div>
+    }
+
+    <form asp-action="Index" method="post" novalidate>
+        <div>
+            <label for="Name">Name</label>
+            <input asp-for="Name" id="Name" />
+            <span asp-validation-for="Name" class="validation"></span>
+        </div>
+
+        <div>
+            <label for="Email">Email</label>
+            <input asp-for="Email" id="Email" />
+            <span asp-validation-for="Email" class="validation"></span>
+        </div>
+
+        <div>
+            <label for="Phone">Phone</label>
+            <input asp-for="Phone" id="Phone" />
+            <span asp-validation-for="Phone" class="validation"></span>
+        </div>
+
+        <div>
+            <label for="Category">Category</label>
+            <select asp-for="Category" id="Category">
+                <option value="General">General</option>
+                <option value="Destinations">Destinations</option>
+                <option value="Transport">Transport</option>
+                <option value="Hotels">Hotels</option>
+                <option value="Restaurants">Restaurants</option>
+                <option value="Resorts">Resorts</option>
+            </select>
+            <span asp-validation-for="Category" class="validation"></span>
+        </div>
+
+        <div>
+            <label for="Message">Message</label>
+            <textarea asp-for="Message" id="Message"></textarea>
+            <span asp-validation-for="Message" class="validation"></span>
+        </div>
+
+        <div>
+            <button type="submit">Send inquiry</button>
+        </div>
+    </form>
+
+    <partial name="_ValidationScriptsPartial" />
+</div>
