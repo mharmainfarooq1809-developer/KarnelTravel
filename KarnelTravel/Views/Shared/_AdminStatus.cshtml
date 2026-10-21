@@ -1,0 +1,5 @@
+@{
+    var status = ViewData["Status"] as string ?? "Published";
+    var statusClass = status.ToLowerInvariant().Replace(" ", "-");
+}
+<span class="status status-@statusClass"><i></i>@status</span>

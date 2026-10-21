@@ -1,0 +1,62 @@
+@{
+    var pageTitle = ViewData["Title"] as string ?? "Admin workspace";
+    var currentPath = Context.Request.Path.Value?.ToLowerInvariant() ?? string.Empty;
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@pageTitle · Karnel Admin</title>
+    <meta name="description" content="Karnel Travel Guide administration prototype" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="~/css/admin.css" asp-append-version="true" />
+</head>
+<body class="admin-body">
+    <div class="admin-shell">
+        <header class="admin-topbar">
+            <a class="admin-brand" asp-controller="Admin" asp-action="Dashboard" aria-label="Karnel admin home">
+                <span class="brand-mark">K</span>
+                <span><strong>Karnel</strong><small>TRAVEL GUIDE</small></span>
+            </a>
+            <button class="nav-toggle" type="button" aria-label="Open navigation" aria-expanded="false" data-nav-toggle>
+                <span></span><span></span>
+            </button>
+            <nav class="admin-nav" data-admin-nav aria-label="Primary administration">
+                <a class="@(currentPath.Contains("/admin/dashboard") || currentPath == "/admin" ? "is-active" : "")" asp-controller="Admin" asp-action="Dashboard">Overview</a>
+                <a class="@(currentPath.Contains("/admin/destinations") ? "is-active" : "")" asp-controller="Admin" asp-action="Destinations">Destinations</a>
+                <a class="@(currentPath.Contains("/admin/properties") ? "is-active" : "")" asp-controller="Admin" asp-action="Properties">Stays</a>
+                <a class="@(currentPath.Contains("/admin/tours") ? "is-active" : "")" asp-controller="Admin" asp-action="Tours">Experiences</a>
+                <a class="@(currentPath.Contains("/admin/transport") || currentPath.Contains("/admin/calendar") ? "is-active" : "")" asp-controller="Admin" asp-action="Transport">Transport</a>
+                <a class="@(currentPath.Contains("/admin/bookings") ? "is-active" : "")" asp-controller="Admin" asp-action="Bookings">Bookings</a>
+                <details class="nav-more" data-nav-more>
+                    <summary>More <span>⌄</span></summary>
+                    <div class="nav-popover">
+                        <a asp-controller="Admin" asp-action="Inquiries">Inquiries</a>
+                        <a asp-controller="Admin" asp-action="Reviews">Reviews</a>
+                        <a asp-controller="Admin" asp-action="WebsiteContent">Website content</a>
+                        <a asp-controller="Admin" asp-action="Reports">Reports</a>
+                        <a asp-controller="Admin" asp-action="Settings">Settings</a>
+                    </div>
+                </details>
+            </nav>
+            <div class="admin-actions">
+                <button class="icon-button" type="button" aria-label="View notifications" data-toast="No new alerts. Your workspace is up to date.">♢<span class="notification-dot"></span></button>
+                <button class="profile-chip" type="button" data-toast="Signed in as Muhammad Harmain"><span class="avatar">MH</span><span class="profile-name">Muhammad Harmain</span></button>
+            </div>
+        </header>
+        <main class="admin-main">
+            @RenderBody()
+        </main>
+        <footer class="admin-footer">
+            <span>© 2025 Karnel Travel Guide</span>
+            <span><i class="live-dot"></i> Prototype workspace · Mock data only</span>
+        </footer>
+    </div>
+    <div class="toast" role="status" aria-live="polite" data-toast-region></div>
+    <script src="~/js/admin.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>
