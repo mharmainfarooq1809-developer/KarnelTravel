@@ -1,0 +1,23 @@
+﻿@* Views/Account/Denied.cshtml *@
+@{
+    ViewData["Title"] = "Access denied";
+    Layout = "~/Views/Admin/_AdminLayout.cshtml";
+}
+
+<section class="panel" style="padding:clamp(32px,5vw,64px); text-align:center; max-width:640px; margin:60px auto;">
+    <p class="eyebrow" style="margin-bottom:12px;">Access denied</p>
+    <h1 class="serif" style="font-family:var(--serif); font-weight:400; font-size:clamp(28px,3.6vw,42px); color:var(--forest); letter-spacing:-.015em; margin:0 0 12px;">
+        You don’t have permission to view that.
+    </h1>
+    <p class="lede" style="margin:0 auto 28px; max-width:48ch;">
+        Your account doesn’t have the role needed for this section. If you think this is a mistake,
+        contact the workspace owner.
+    </p>
+    <div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
+        <a class="btn btn-primary" asp-controller="Admin" asp-action="Dashboard">Back to overview</a>
+        <form method="post" asp-controller="Account" asp-action="Logout" style="margin:0;">
+            @Html.AntiForgeryToken()
+            <button type="submit" class="btn btn-quiet">Sign out</button>
+        </form>
+    </div>
+</section>

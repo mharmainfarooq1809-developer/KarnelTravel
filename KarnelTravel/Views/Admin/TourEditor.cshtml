@@ -1,3 +1,179 @@
-@{ Layout = "_AdminLayout"; ViewData["Title"] = "Experience editor"; }
-<div class="page-heading"><div><div class="eyebrow">Experiences / Package editor</div><h1>Compose the journey.</h1><p>Move through each layer of a package before it meets the world.</p></div><a class="btn btn-quiet" href="/Admin/Tours">← All packages</a></div>
-<form data-demo-submit><div class="steps" data-steps><button type="button" class="step is-active" data-step="basic">01 Basic</button><button type="button" class="step" data-step="itinerary">02 Itinerary</button><button type="button" class="step" data-step="details">03 Inclusions</button><button type="button" class="step" data-step="pricing">04 Pricing</button><button type="button" class="step" data-step="dates">05 Dates</button><button type="button" class="step" data-step="publish">06 Publish</button><div class="step-panel is-active" data-panel="basic"><section class="form-section"><h2>The headline</h2><p>Give this journey a clear point of view.</p><div class="form-grid"><div class="field"><label>Package name</label><input class="input" value="Hunza in Autumn" /></div><div class="field"><label>Destination</label><select class="select"><option>Hunza Valley</option><option>Skardu</option></select></div><div class="field full"><label>Intro</label><textarea class="input">A six-day journey through apricot orchards, ancient forts and the golden light of the Karakoram.</textarea></div></div></section></div><div class="step-panel" data-panel="itinerary"><section class="form-section"><h2>Shape the route</h2><p>Day-by-day details will appear here.</p><div class="field"><label>Itinerary</label><textarea class="input">Day 1 — Islamabad to Chilas\nDay 2 — Chilas to Hunza\nDay 3 — Baltit Fort & Karimabad</textarea></div></section></div><div class="step-panel" data-panel="details"><section class="form-section"><h2>What’s included</h2><p>Set expectations with clarity.</p><div class="form-grid"><div class="field"><label>Inclusions</label><textarea class="input">Accommodation\nDaily breakfast\nLocal guide</textarea></div><div class="field"><label>Exclusions</label><textarea class="input">International flights\nTravel insurance</textarea></div></div></section></div><div class="step-panel" data-panel="pricing"><section class="form-section"><h2>Price & group</h2><div class="form-grid"><div class="field"><label>Price per person</label><input class="input" value="$680" /></div><div class="field"><label>Maximum group size</label><input class="input" value="12" /></div></div></section></div><div class="step-panel" data-panel="dates"><section class="form-section"><h2>Departure dates</h2><div class="field"><label>Upcoming departures</label><input class="input" value="18 Oct 2025 · 22 Oct 2025 · 01 Nov 2025" /></div></section></div><div class="step-panel" data-panel="publish"><section class="form-section"><h2>Ready when you are</h2><p>Review the preview, then choose a publication state.</p><button class="btn btn-primary" type="submit">Save prototype package</button></section></div></div></form>
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Experience editor";
+}
+
+<div class="page-heading">
+    <div>
+        <div class="eyebrow">Experiences / Package editor</div>
+        <h1>Compose the journey.</h1>
+        <p>Move through each layer of a package before it meets the world.</p>
+    </div>
+    <a class="btn btn-quiet" asp-controller="Admin" asp-action="Tours">← All packages</a>
+</div>
+
+<form data-demo-submit novalidate>
+
+    <!-- Step navigation (buttons only — panels live below) -->
+    <nav class="steps" data-tour-steps aria-label="Editor sections">
+        <button type="button" class="step is-active" data-step="0">01 Basic</button>
+        <button type="button" class="step" data-step="1">02 Itinerary</button>
+        <button type="button" class="step" data-step="2">03 Inclusions</button>
+        <button type="button" class="step" data-step="3">04 Pricing</button>
+        <button type="button" class="step" data-step="4">05 Dates</button>
+        <button type="button" class="step" data-step="5">06 Publish</button>
+    </nav>
+
+    <!-- Panels — one visible at a time -->
+    <div data-tour-panels>
+
+        <!-- Step 1 — Basic -->
+        <section class="step-panel is-active" data-panel="0">
+            <div class="form-section">
+                <h2>The headline</h2>
+                <p>Give this journey a clear point of view.</p>
+
+                <div class="form-grid">
+                    <div class="field">
+                        <label for="tour-name">Package name</label>
+                        <input id="tour-name" class="input" value="Hunza in Autumn" required />
+                    </div>
+                    <div class="field">
+                        <label for="tour-destination">Destination</label>
+                        <select id="tour-destination" class="select">
+                            <option>Hunza Valley</option>
+                            <option>Skardu</option>
+                        </select>
+                    </div>
+                    <div class="field full">
+                        <label for="tour-intro">Intro</label>
+                        <textarea id="tour-intro" class="input" rows="3">A six-day journey through apricot orchards, ancient forts and the golden light of the Karakoram.</textarea>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Step 2 — Itinerary -->
+        <section class="step-panel" data-panel="1">
+            <div class="form-section">
+                <h2>Shape the route</h2>
+                <p>Day-by-day details will appear here.</p>
+
+                <div class="field">
+                    <label for="tour-itinerary">Itinerary</label>
+                    <textarea id="tour-itinerary" class="input" rows="8">Day 1 — Islamabad to Chilas
+Day 2 — Chilas to Hunza
+Day 3 — Baltit Fort &amp; Karimabad</textarea>
+                </div>
+            </div>
+        </section>
+
+        <!-- Step 3 — Inclusions -->
+        <section class="step-panel" data-panel="2">
+            <div class="form-section">
+                <h2>What’s included</h2>
+                <p>Set expectations with clarity.</p>
+
+                <div class="form-grid">
+                    <div class="field">
+                        <label for="tour-inclusions">Inclusions</label>
+                        <textarea id="tour-inclusions" class="input" rows="6">Accommodation
+Daily breakfast
+Local guide</textarea>
+                    </div>
+                    <div class="field">
+                        <label for="tour-exclusions">Exclusions</label>
+                        <textarea id="tour-exclusions" class="input" rows="6">International flights
+Travel insurance</textarea>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Step 4 — Pricing -->
+        <section class="step-panel" data-panel="3">
+            <div class="form-section">
+                <h2>Price &amp; group</h2>
+
+                <div class="form-grid">
+                    <div class="field">
+                        <label for="tour-price">Price per person</label>
+                        <input id="tour-price" class="input" value="$680" />
+                    </div>
+                    <div class="field">
+                        <label for="tour-max">Maximum group size</label>
+                        <input id="tour-max" class="input" value="12" />
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Step 5 — Dates -->
+        <section class="step-panel" data-panel="4">
+            <div class="form-section">
+                <h2>Departure dates</h2>
+
+                <div class="field">
+                    <label for="tour-departures">Upcoming departures</label>
+                    <input id="tour-departures" class="input"
+                           value="18 Oct 2025 · 22 Oct 2025 · 01 Nov 2025" />
+                </div>
+            </div>
+        </section>
+
+        <!-- Step 6 — Publish -->
+        <section class="step-panel" data-panel="5">
+            <div class="form-section">
+                <h2>Ready when you are</h2>
+                <p>Review the preview, then choose a publication state.</p>
+
+                <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;">
+                    <button class="btn btn-primary" type="submit">Save prototype package</button>
+                    <button class="btn" type="button"
+                            data-prototype="Preview is design-only in this phase.">
+                        Preview package ↗
+                    </button>
+                </div>
+            </div>
+        </section>
+
+    </div>
+</form>
+
+@section Scripts {
+    <script>
+        /* Step switcher for the tour editor.
+           Only runs on this page; no effect on other admin routes. */
+        (function () {
+            var nav    = document.querySelector('[data-tour-steps]');
+            var wrap   = document.querySelector('[data-tour-panels]');
+            if (!nav || !wrap) return;
+
+            var steps  = nav.querySelectorAll('.step');
+            var panels = wrap.querySelectorAll('.step-panel');
+
+            function activate(index) {
+                steps.forEach(function (s) {
+                    var active = parseInt(s.dataset.step, 10) === index;
+                    s.classList.toggle('is-active', active);
+                    s.setAttribute('aria-selected', active ? 'true' : 'false');
+                });
+                panels.forEach(function (p) {
+                    var active = parseInt(p.dataset.panel, 10) === index;
+                    p.classList.toggle('is-active', active);
+                    if (active) p.removeAttribute('hidden');
+                    else p.setAttribute('hidden', '');
+                });
+            }
+
+            steps.forEach(function (btn) {
+                btn.setAttribute('role', 'tab');
+                btn.addEventListener('click', function () {
+                    activate(parseInt(btn.dataset.step, 10));
+                });
+            });
+
+            activate(0);
+        })();
+    </script>
+}
