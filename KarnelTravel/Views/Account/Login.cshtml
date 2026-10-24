@@ -14,7 +14,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
 
-    <link rel="stylesheet" href="~/css/admin/admin.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/admin.css" asp-append-version="true" />
 </head>
 <body class="admin-body">
 
@@ -55,7 +55,10 @@
 
                 <p class="eyebrow">Welcome back</p>
                 <h1>Sign in to Karnel.</h1>
-                <p>Use your admin credentials to continue to the operations workspace.</p>
+                <p>
+                    Use your admin credentials to continue. Don't have an account?
+                    <a asp-controller="Account" asp-action="Register" style="color:var(--accent); font-weight:600; text-decoration: underline; text-underline-offset:3px;">Sign up</a>.
+                </p>
 
                 @if (!ViewData.ModelState.IsValid)
                 {
@@ -116,7 +119,7 @@
                         <input type="checkbox"
                                name="rememberMe"
                                value="true"
-                               @(ViewData["RememberMe"] is true ? "checked" : "") />
+                        @(ViewData["RememberMe"] is true ? "checked" : "") />
                         Remember me for 14 days
                     </label>
                     <a href="#" data-prototype="Password reset is design-only until email delivery is configured.">
@@ -144,14 +147,14 @@
     </div>
 
     <script>
-        document.querySelectorAll('[data-password-toggle]').forEach(function (btn) {
-            btn.addEventListener('click', function () {
-                var input = btn.parentElement.querySelector('input');
-                var show = input.type === 'password';
-                input.type = show ? 'text' : 'password';
-                btn.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
+            document.querySelectorAll('[data-password-toggle]').forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    var input = btn.parentElement.querySelector('input');
+                    var show = input.type === 'password';
+                    input.type = show ? 'text' : 'password';
+                    btn.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
+                });
             });
-        });
     </script>
 
 </body>

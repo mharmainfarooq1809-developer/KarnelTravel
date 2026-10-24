@@ -24,7 +24,7 @@ namespace KarnelTravel.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
-            modelBuilder.Entity("KarnelTravelGuide.Models.AdminUser", b =>
+            modelBuilder.Entity("KarnelTravel.Models.AdminUser", b =>
                 {
                     b.Property<string>("Id")
                         .HasMaxLength(64)

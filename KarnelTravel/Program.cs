@@ -1,6 +1,6 @@
 using KarnelTravel.Data;
-using KarnelTravelGuide.Models;
-using KarnelTravelGuide.Services;
+using KarnelTravel.Models;
+using KarnelTravel.Services;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -20,13 +20,11 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 
 // ----------------------------------------------------------------
 //  Admin authentication
-//    - PasswordHasher: PBKDF2-HMAC-SHA512 with per-user salt
-//    - AuthService:    in-memory seeded users for the design phase.
-//                      Swap to EfAdminAuthService once you've created
-//                      the AdminUsers table via migrations.
 // ----------------------------------------------------------------
 builder.Services.AddSingleton<IPasswordHasher<AdminUser>, PasswordHasher<AdminUser>>();
-builder.Services.AddSingleton<IAdminAuthService, InMemoryAdminAuthService>();
+
+// ✅ CHANGED: Now using the SQL Server database service instead of In-Memory
+builder.Services.AddScoped<IAdminAuthService, EfAdminAuthService>();
 
 builder.Services
     .AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)

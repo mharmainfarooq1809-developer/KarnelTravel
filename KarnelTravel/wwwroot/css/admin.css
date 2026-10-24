@@ -20,14 +20,16 @@
     16.  Tables
     17.  Tabs
     18.  Editor layout
-    19.  Drawer
-    20.  Calendar
-    21.  Reviews
-    22.  Website content preview
-    23.  Reports chart
-    24.  Settings
-    25.  Toast
-    26.  Responsive
+    19.  Steps (multi-step editor)
+    20.  Drawer
+    21.  Calendar
+    22.  Reviews
+    23.  Website content preview
+    24.  Reports chart
+    25.  Settings
+    26.  Toast
+    27.  Login page
+    28.  Responsive
    ============================================================ */
 
 /* ---------- 1. Tokens ---------- */
@@ -1624,7 +1626,334 @@ textarea.input {
     }
 
 /* ============================================================
-   Responsive
+   27. LOGIN PAGE
+   ============================================================ */
+.login-shell {
+    min-height: 100vh;
+    display: grid;
+    grid-template-columns: 1.05fr 1fr;
+    background: var(--paper);
+}
+
+/* ----- Left visual side ----- */
+.login-visual {
+    position: relative;
+    background: linear-gradient(180deg, rgba(15,50,37,.35), rgba(15,50,37,.85)), url('https://images.unsplash.com/photo-1533105079780-92b9be482077?auto=format&fit=crop&w=1600&q=80') center/cover;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: clamp(28px, 4vw, 56px);
+    color: #fff;
+    overflow: hidden;
+    isolation: isolate;
+}
+
+    .login-visual::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(100% 70% at 100% 100%, transparent 40%, rgba(15,50,37,.5));
+        z-index: -1;
+        pointer-events: none;
+    }
+
+.login-brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+    .login-brand .brand-mark {
+        width: 44px;
+        height: 44px;
+        display: grid;
+        place-items: center;
+        border-radius: 50%;
+        background: var(--forest);
+        color: #d7e9d5;
+        font-family: var(--serif);
+        font-size: 26px;
+        line-height: 1;
+        box-shadow: 0 4px 18px -6px rgba(22,71,52,.55);
+    }
+
+    .login-brand strong {
+        display: block;
+        font-family: var(--serif);
+        font-size: 24px;
+        font-weight: 400;
+        color: #fff;
+        letter-spacing: -.01em;
+        line-height: 1;
+    }
+
+    .login-brand small {
+        display: block;
+        font-size: 9px;
+        letter-spacing: .22em;
+        text-transform: uppercase;
+        color: #b9d9bd;
+        margin-top: 4px;
+        font-weight: 600;
+    }
+
+.login-quote {
+    max-width: 480px;
+    margin-top: auto;
+}
+
+    .login-quote .eyebrow {
+        color: #b9d9bd;
+    }
+
+    .login-quote h2 {
+        font-family: var(--serif);
+        font-weight: 400;
+        font-size: clamp(28px, 3.2vw, 42px);
+        line-height: 1.12;
+        letter-spacing: -.015em;
+        color: #fff;
+        margin: 0 0 16px;
+    }
+
+    .login-quote p {
+        margin: 0;
+        color: #dbe7dc;
+        font-size: 14px;
+        line-height: 1.6;
+        max-width: 44ch;
+    }
+
+.login-quote-meta {
+    margin-top: 26px;
+    display: flex;
+    gap: 22px;
+    flex-wrap: wrap;
+    font-size: 11px;
+    color: #b9d9bd;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    font-weight: 600;
+}
+
+    .login-quote-meta span {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+    }
+
+        .login-quote-meta span::before {
+            content: "";
+            width: 6px;
+            height: 6px;
+            background: var(--accent);
+            border-radius: 50%;
+        }
+
+/* ----- Right form side ----- */
+.login-form-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: clamp(28px, 4vw, 56px);
+    background: var(--paper);
+}
+
+.login-form {
+    width: 100%;
+    max-width: 400px;
+}
+
+    .login-form .eyebrow {
+        margin-bottom: 12px;
+    }
+
+    .login-form h1 {
+        font-family: var(--serif);
+        font-weight: 400;
+        color: var(--forest);
+        font-size: clamp(30px, 3vw, 40px);
+        line-height: 1.1;
+        letter-spacing: -.015em;
+        margin: 0 0 10px;
+    }
+
+    .login-form > p {
+        color: var(--muted);
+        margin: 0 0 28px;
+        font-size: 14px;
+        line-height: 1.6;
+    }
+
+.login-field {
+    display: grid;
+    gap: 7px;
+    margin-bottom: 16px;
+}
+
+    .login-field label {
+        font-size: 12.5px;
+        font-weight: 700;
+        color: var(--ink);
+        letter-spacing: .01em;
+    }
+
+    .login-field .input {
+        min-height: 46px;
+        padding: 12px 14px;
+        font-size: 14px;
+        background: var(--white);
+    }
+
+.login-password-wrap {
+    position: relative;
+}
+
+    .login-password-wrap .input {
+        padding-right: 46px;
+    }
+
+.login-password-toggle {
+    position: absolute;
+    right: 6px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 34px;
+    height: 34px;
+    display: grid;
+    place-items: center;
+    border-radius: 7px;
+    color: var(--muted);
+    transition: background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
+}
+
+    .login-password-toggle:hover {
+        background: var(--soft);
+        color: var(--forest);
+    }
+
+.login-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin: 6px 0 22px;
+    font-size: 13px;
+}
+
+.login-check {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--muted);
+    cursor: pointer;
+    user-select: none;
+}
+
+    .login-check input {
+        width: 16px;
+        height: 16px;
+        accent-color: var(--forest);
+        cursor: pointer;
+        margin: 0;
+    }
+
+.login-row a {
+    color: var(--accent);
+    font-weight: 600;
+    font-size: 12.5px;
+}
+
+    .login-row a:hover {
+        text-decoration: underline;
+        text-underline-offset: 3px;
+    }
+
+.login-submit {
+    width: 100%;
+    padding: 13px 18px;
+    font-size: 14px;
+    min-height: 48px;
+}
+
+.login-error {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 12px 14px;
+    background: rgba(174,93,80,.08);
+    border: 1px solid rgba(174,93,80,.22);
+    border-radius: 8px;
+    color: #8b4137;
+    font-size: 13px;
+    margin-bottom: 18px;
+    line-height: 1.5;
+}
+
+    .login-error svg {
+        flex-shrink: 0;
+        margin-top: 1px;
+    }
+
+.login-demo {
+    margin-top: 28px;
+    padding: 16px 18px;
+    background: var(--soft);
+    border-radius: var(--radius);
+    border: 1px solid var(--line);
+}
+
+    .login-demo strong {
+        display: block;
+        color: var(--forest);
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: .1em;
+        margin-bottom: 8px;
+        font-weight: 700;
+    }
+
+    .login-demo p {
+        margin: 0;
+        font-size: 12.5px;
+        color: var(--ink);
+        line-height: 1.6;
+        font-family: ui-monospace, 'SF Mono', 'Cascadia Code', monospace;
+    }
+
+        .login-demo p + p {
+            margin-top: 2px;
+        }
+
+.login-foot {
+    margin-top: 26px;
+    font-size: 11.5px;
+    color: var(--muted);
+    text-align: center;
+    line-height: 1.6;
+}
+
+/* ----- Login Responsive ----- */
+@media (max-width: 900px) {
+    .login-shell {
+        grid-template-columns: 1fr;
+    }
+
+    .login-visual {
+        min-height: 220px;
+        padding: 26px;
+    }
+
+    .login-quote {
+        display: none;
+    }
+
+    .login-form-wrap {
+        padding: 32px 20px 48px;
+    }
+}
+/* ============================================================
+   28. RESPONSIVE
    ============================================================ */
 @media (max-width: 1050px) {
     .admin-topbar {
@@ -1653,6 +1982,26 @@ textarea.input {
 
     .metric-row {
         grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 900px) {
+    /* Login stacks to a single column */
+    .login-shell {
+        grid-template-columns: 1fr;
+    }
+
+    .login-visual {
+        min-height: 220px;
+        padding: 26px;
+    }
+
+    .login-quote {
+        display: none;
+    }
+
+    .login-form-wrap {
+        padding: 32px 20px 48px;
     }
 }
 

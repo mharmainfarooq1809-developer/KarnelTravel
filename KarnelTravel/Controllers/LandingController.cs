@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 
-namespace KarnelTravelGuide.Controllers
+namespace KarnelTravel.Controllers
 {
     public class LandingController : Controller
     {
