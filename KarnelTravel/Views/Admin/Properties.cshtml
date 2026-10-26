@@ -1,5 +1,806 @@
-@{ Layout = "_AdminLayout"; ViewData["Title"] = "Stays"; }
-<div class="page-heading"><div><div class="eyebrow">Places to pause</div><h1>Stays, with character.</h1><p>A considered collection of hotels, restaurants and resorts.</p></div><button class="btn btn-primary" data-toast="Property creation is visual only in this prototype.">＋ Add property</button></div>
-<div class="tabs" data-tabs="properties-list"><button class="tab is-active" data-tab="all">Hotels <small>24</small></button><button class="tab" data-tab="restaurant">Restaurants <small>18</small></button><button class="tab" data-tab="resort">Resorts <small>9</small></button></div>
-<div class="toolbar"><div class="filters"><input class="input search-input" placeholder="Search properties…" data-filter-target="properties-list" /><select class="select" data-status-filter="properties-list"><option value="all">All status</option><option>Published</option><option>Draft</option></select></div><button class="btn btn-quiet" data-toast="Filters are ready for connection to SQL Server later.">More filters ≡</button></div>
-<div class="table-wrap"><table class="data-table" id="properties-list"><thead><tr><th>Property</th><th>Category</th><th>Location</th><th>Price range</th><th>Status</th><th></th></tr></thead><tbody><tr class="filterable" data-status="Published" data-category="hotel"><td><img class="thumb" src="https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=120&q=80" alt="" /><span class="record-name">Serena Shigar Fort</span></td><td>Hotel</td><td>Skardu</td><td>$$$</td><td><span class="status status-confirmed"><i></i>Published</span></td><td class="row-actions">View · Edit · Archive</td></tr><tr class="filterable" data-status="Published" data-category="restaurant"><td><img class="thumb" src="https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=120&q=80" alt="" /><span class="record-name">The Monal</span></td><td>Restaurant</td><td>Islamabad</td><td>$$</td><td><span class="status status-confirmed"><i></i>Published</span></td><td class="row-actions">View · Edit · Archive</td></tr><tr class="filterable" data-status="Draft" data-category="resort"><td><img class="thumb" src="https://images.unsplash.com/photo-1584132967334-10e028bd69f7?auto=format&fit=crop&w=120&q=80" alt="" /><span class="record-name">Rama Meadows Lodge</span></td><td>Resort</td><td>Astore</td><td>$$</td><td><span class="status status-draft"><i></i>Draft</span></td><td class="row-actions">View · Edit · Archive</td></tr></tbody></table></div>
+@model KarnelTravel.ViewModels.AdminPropertiesViewModel
+
+@{
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    ViewData["Title"] = "Stays & Properties";
+    ViewData["Section"] = "Stays";
+}
+
+<section class="admin-page properties-page">
+
+    <div class="admin-page-header">
+        <div>
+            <p class="admin-eyebrow">PROPERTY MANAGEMENT</p>
+            <h1>Stays &amp; Properties</h1>
+            <p class="admin-description">
+                Manage hotels, restaurants, and resorts listed on Karnel Travel Guide.
+            </p>
+        </div>
+
+        <a href="#property-list" class="admin-button admin-button-primary">
+            View properties
+        </a>
+    </div>
+
+    @if (TempData["SuccessMessage"] is string successMessage)
+    {
+        <div class="admin-alert admin-alert-success" role="status">
+            @successMessage
+        </div>
+    }
+
+    @if (TempData["ErrorMessage"] is string errorMessage)
+    {
+        <div class="admin-alert admin-alert-error" role="alert">
+            @errorMessage
+        </div>
+    }
+
+    <div class="property-stat-grid">
+
+        <article class="property-stat-card">
+            <div class="property-stat-icon">▦</div>
+            <p>Total properties</p>
+            <h2>@Model.Properties.Count</h2>
+            <span>All property types</span>
+        </article>
+
+        <article class="property-stat-card">
+            <div class="property-stat-icon">⌂</div>
+            <p>Hotels</p>
+            <h2>@Model.HotelCount</h2>
+            <span>Accommodation listings</span>
+        </article>
+
+        <article class="property-stat-card">
+            <div class="property-stat-icon">♨</div>
+            <p>Restaurants</p>
+            <h2>@Model.RestaurantCount</h2>
+            <span>Dining listings</span>
+        </article>
+
+        <article class="property-stat-card">
+            <div class="property-stat-icon">⌁</div>
+            <p>Resorts</p>
+            <h2>@Model.ResortCount</h2>
+            <span>Resort listings</span>
+        </article>
+
+    </div>
+
+    <div class="property-status-grid">
+
+        <div class="property-status-card">
+            <span class="status-dot status-dot-published"></span>
+            <div>
+                <span>Published</span>
+                <strong>@Model.PublishedCount</strong>
+            </div>
+        </div>
+
+        <div class="property-status-card">
+            <span class="status-dot status-dot-draft"></span>
+            <div>
+                <span>Drafts</span>
+                <strong>@Model.DraftCount</strong>
+            </div>
+        </div>
+
+    </div>
+
+    <section class="property-panel" id="property-list">
+
+        <div class="property-panel-header">
+            <div>
+                <h2>All properties</h2>
+                <p>Review the property records currently stored in your database.</p>
+            </div>
+
+            <span class="property-total-badge">
+                @Model.Properties.Count records
+            </span>
+        </div>
+
+        <div class="property-toolbar">
+            <div class="property-search">
+                <span aria-hidden="true">⌕</span>
+                <input type="search"
+                       id="propertySearch"
+                       placeholder="Search name, location or destination..."
+                       aria-label="Search properties" />
+            </div>
+
+            <select id="propertyTypeFilter" aria-label="Filter by property type">
+                <option value="">All types</option>
+                <option value="hotel">Hotels</option>
+                <option value="restaurant">Restaurants</option>
+                <option value="resort">Resorts</option>
+            </select>
+
+            <select id="propertyStatusFilter" aria-label="Filter by publication status">
+                <option value="">All statuses</option>
+                <option value="published">Published</option>
+                <option value="draft">Draft</option>
+            </select>
+        </div>
+
+        @if (Model.Properties.Count == 0)
+        {
+            <div class="property-empty-state">
+                <div class="property-empty-icon">▦</div>
+                <h3>No properties found</h3>
+                <p>
+                    Your database currently has no hotel, restaurant, or resort records.
+                    Properties will appear here when records are added.
+                </p>
+            </div>
+        }
+        else
+        {
+            <div class="property-table-wrapper">
+                <table class="property-table">
+                    <thead>
+                        <tr>
+                            <th>Property</th>
+                            <th>Type</th>
+                            <th>Location</th>
+                            <th>Destination</th>
+                            <th>Starting price</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+
+                    <tbody id="propertyTableBody">
+                        @foreach (var property in Model.Properties)
+                        {
+                            var normalizedType = property.Category?.ToLowerInvariant() ?? "";
+                            var normalizedStatus = property.IsPublished ? "published" : "draft";
+                            var price = Convert.ToDecimal(property.Price);
+
+                            <tr class="property-row"
+                                data-name="@property.Name"
+                                data-location="@property.Location"
+                                data-destination="@property.DestinationName"
+                                data-type="@normalizedType"
+                                data-status="@normalizedStatus">
+
+                                <td>
+                                    <div class="property-name-cell">
+                                        @if (!string.IsNullOrWhiteSpace(property.ImageUrl))
+                                        {
+                                            <img class="property-thumbnail"
+                                                 src="@property.ImageUrl"
+                                                 alt=""
+                                                 loading="lazy"
+                                                 onerror="this.style.display='none';" />
+                                        }
+                                        else
+                                        {
+                                            <div class="property-thumbnail-placeholder">
+                                                @((property.Name ?? "?").Substring(0, 1).ToUpperInvariant())
+                                            </div>
+                                        }
+
+                                        <div class="property-name-details">
+                                            <strong>@property.Name</strong>
+
+                                            @if (property.IsFeatured)
+                                            {
+                                                <span class="featured-label">Featured</span>
+                                            }
+                                        </div>
+                                    </div>
+                                </td>
+
+                                <td>
+                                    <span class="property-type-badge @($"type-{normalizedType}")">
+                                        @property.Category
+                                    </span>
+                                </td>
+
+                                <td>
+                                    @(string.IsNullOrWhiteSpace(property.Location)
+                                        ? "Not specified"
+                                        : property.Location)
+                                </td>
+
+                                <td>
+                                    @(string.IsNullOrWhiteSpace(property.DestinationName)
+                                        ? "—"
+                                        : property.DestinationName)
+                                </td>
+
+                                <td class="property-price">
+                                    @if (price > 0)
+                                    {
+                                        <strong>PKR @price.ToString("N0")</strong>
+                                        <span>
+                                            @(normalizedType == "restaurant"
+                                                ? "per meal (average)"
+                                                : "per night")
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span>Not set</span>
+                                    }
+                                </td>
+
+                                <td>
+                                    <span class="property-status-badge @(property.IsPublished ? "published" : "draft")">
+                                        <span class="status-dot"></span>
+                                        @(property.IsPublished ? "Published" : "Draft")
+                                    </span>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <div id="propertyNoResults" class="property-no-results" hidden>
+                <h3>No matching properties</h3>
+                <p>Try a different search term or filter.</p>
+            </div>
+
+            <div class="property-table-footer">
+                <span id="propertyResultCount">
+                    Showing @Model.Properties.Count properties
+                </span>
+            </div>
+        }
+
+    </section>
+
+</section>
+
+<style>
+    .properties-page {
+        color: var(--admin-text, #e9edf5);
+        padding-bottom: 36px;
+    }
+
+    .admin-page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 24px;
+        margin-bottom: 28px;
+    }
+
+    .admin-eyebrow {
+        margin: 0 0 9px;
+        color: #62a5ff;
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 2px;
+    }
+
+    .admin-page-header h1 {
+        margin: 0;
+        font-size: clamp(25px, 3vw, 34px);
+        letter-spacing: -1px;
+    }
+
+    .admin-description {
+        margin: 10px 0 0;
+        color: var(--admin-muted, #9ca7b8);
+        line-height: 1.7;
+        font-size: 14px;
+    }
+
+    .admin-button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 12px 18px;
+        border-radius: 9px;
+        font-size: 13px;
+        font-weight: 700;
+        text-decoration: none;
+        white-space: nowrap;
+        transition: transform .2s ease, opacity .2s ease;
+    }
+
+        .admin-button:hover {
+            transform: translateY(-2px);
+            opacity: .9;
+        }
+
+    .admin-button-primary {
+        background: #2878f0;
+        color: #fff;
+    }
+
+    .admin-alert {
+        padding: 14px 17px;
+        margin-bottom: 20px;
+        border-radius: 10px;
+        font-size: 13px;
+    }
+
+    .admin-alert-success {
+        background: rgba(38, 166, 112, .12);
+        border: 1px solid rgba(38, 166, 112, .35);
+        color: #69dda9;
+    }
+
+    .admin-alert-error {
+        background: rgba(235, 80, 80, .12);
+        border: 1px solid rgba(235, 80, 80, .35);
+        color: #ff9999;
+    }
+
+    .property-stat-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 16px;
+        margin-bottom: 18px;
+    }
+
+    .property-stat-card {
+        padding: 21px;
+        background: var(--admin-card, #151b26);
+        border: 1px solid var(--admin-border, #293244);
+        border-radius: 14px;
+        min-width: 0;
+    }
+
+    .property-stat-icon {
+        width: 39px;
+        height: 39px;
+        display: grid;
+        place-items: center;
+        margin-bottom: 17px;
+        border-radius: 10px;
+        background: rgba(40, 120, 240, .13);
+        color: #78b2ff;
+        font-size: 23px;
+    }
+
+    .property-stat-card p {
+        margin: 0 0 8px;
+        color: var(--admin-muted, #9ca7b8);
+        font-size: 13px;
+    }
+
+    .property-stat-card h2 {
+        margin: 0;
+        font-size: 29px;
+        font-weight: 750;
+    }
+
+    .property-stat-card > span {
+        display: block;
+        margin-top: 7px;
+        color: var(--admin-muted, #9ca7b8);
+        font-size: 11px;
+    }
+
+    .property-status-grid {
+        display: flex;
+        gap: 15px;
+        margin-bottom: 26px;
+    }
+
+    .property-status-card {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex: 1;
+        padding: 15px 18px;
+        background: var(--admin-card, #151b26);
+        border: 1px solid var(--admin-border, #293244);
+        border-radius: 12px;
+    }
+
+        .property-status-card > div {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+            .property-status-card > div span {
+                color: var(--admin-muted, #9ca7b8);
+                font-size: 12px;
+            }
+
+        .property-status-card strong {
+            font-size: 20px;
+        }
+
+    .status-dot {
+        display: inline-block;
+        width: 7px;
+        height: 7px;
+        flex-shrink: 0;
+        border-radius: 50%;
+    }
+
+    .status-dot-published {
+        background: #35cc8a;
+    }
+
+    .status-dot-draft {
+        background: #e5a344;
+    }
+
+    .property-panel {
+        overflow: hidden;
+        background: var(--admin-card, #151b26);
+        border: 1px solid var(--admin-border, #293244);
+        border-radius: 15px;
+    }
+
+    .property-panel-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 15px;
+        padding: 23px 24px;
+        border-bottom: 1px solid var(--admin-border, #293244);
+    }
+
+        .property-panel-header h2 {
+            margin: 0;
+            font-size: 18px;
+        }
+
+        .property-panel-header p {
+            margin: 7px 0 0;
+            color: var(--admin-muted, #9ca7b8);
+            font-size: 12px;
+            line-height: 1.6;
+        }
+
+    .property-total-badge {
+        padding: 7px 10px;
+        border: 1px solid var(--admin-border, #293244);
+        border-radius: 7px;
+        color: var(--admin-muted, #aab5c5);
+        font-size: 11px;
+        white-space: nowrap;
+    }
+
+    .property-toolbar {
+        display: flex;
+        gap: 12px;
+        padding: 18px 24px;
+        border-bottom: 1px solid var(--admin-border, #293244);
+    }
+
+    .property-search {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex: 1;
+        min-width: 150px;
+        padding: 0 12px;
+        border: 1px solid var(--admin-border, #293244);
+        border-radius: 8px;
+        color: var(--admin-muted, #9ca7b8);
+    }
+
+        .property-search > span {
+            font-size: 23px;
+        }
+
+        .property-search input,
+        .property-toolbar select {
+            min-height: 42px;
+            color: var(--admin-text, #e9edf5);
+            background: transparent;
+            font: inherit;
+            font-size: 12px;
+            outline: none;
+        }
+
+        .property-search input {
+            width: 100%;
+            min-width: 0;
+            border: 0;
+        }
+
+            .property-search input::placeholder {
+                color: var(--admin-muted, #8c97a8);
+            }
+
+    .property-toolbar select {
+        max-width: 160px;
+        padding: 0 11px;
+        border: 1px solid var(--admin-border, #293244);
+        border-radius: 8px;
+    }
+
+        .property-toolbar select option {
+            background: #151b26;
+            color: #e9edf5;
+        }
+
+    .property-table-wrapper {
+        width: 100%;
+        overflow-x: auto;
+    }
+
+    .property-table {
+        width: 100%;
+        border-collapse: collapse;
+        text-align: left;
+        white-space: nowrap;
+    }
+
+        .property-table th {
+            padding: 14px 19px;
+            background: rgba(255, 255, 255, .018);
+            color: var(--admin-muted, #9ca7b8);
+            font-size: 10px;
+            font-weight: 750;
+            text-transform: uppercase;
+            letter-spacing: .8px;
+        }
+
+        .property-table td {
+            padding: 17px 19px;
+            border-top: 1px solid var(--admin-border, #293244);
+            font-size: 12px;
+            color: var(--admin-text, #dce3ee);
+        }
+
+        .property-table tbody tr {
+            transition: background .18s ease;
+        }
+
+            .property-table tbody tr:hover {
+                background: rgba(255, 255, 255, .025);
+            }
+
+    .property-name-cell {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        min-width: 190px;
+    }
+
+    .property-thumbnail,
+    .property-thumbnail-placeholder {
+        width: 43px;
+        height: 43px;
+        flex-shrink: 0;
+        border-radius: 9px;
+        object-fit: cover;
+        background: #202b3b;
+    }
+
+    .property-thumbnail-placeholder {
+        display: grid;
+        place-items: center;
+        color: #85b7ff;
+        font-size: 17px;
+        font-weight: 750;
+    }
+
+    .property-name-details {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 6px;
+        white-space: normal;
+    }
+
+        .property-name-details strong {
+            max-width: 220px;
+            line-height: 1.5;
+            font-size: 12px;
+        }
+
+    .featured-label {
+        padding: 3px 6px;
+        border-radius: 4px;
+        background: rgba(226, 177, 76, .12);
+        color: #e9bd65;
+        font-size: 9px;
+    }
+
+    .property-type-badge,
+    .property-status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        padding: 6px 9px;
+        border-radius: 6px;
+        font-size: 10px;
+        font-weight: 700;
+    }
+
+    .type-hotel {
+        background: rgba(79, 145, 255, .12);
+        color: #80b4ff;
+    }
+
+    .type-restaurant {
+        background: rgba(224, 159, 80, .12);
+        color: #efb36d;
+    }
+
+    .type-resort {
+        background: rgba(58, 196, 139, .12);
+        color: #71d9ae;
+    }
+
+    .property-status-badge.published {
+        background: rgba(53, 204, 138, .1);
+        color: #62dba6;
+    }
+
+    .property-status-badge.draft {
+        background: rgba(229, 163, 68, .1);
+        color: #e9b66a;
+    }
+
+    .property-status-badge.published .status-dot {
+        background: #35cc8a;
+    }
+
+    .property-status-badge.draft .status-dot {
+        background: #e5a344;
+    }
+
+    .property-price {
+        white-space: normal;
+    }
+
+        .property-price strong,
+        .property-price span {
+            display: block;
+        }
+
+        .property-price strong {
+            font-size: 12px;
+        }
+
+        .property-price span {
+            margin-top: 5px;
+            color: var(--admin-muted, #9ca7b8);
+            font-size: 10px;
+        }
+
+    .property-empty-state,
+    .property-no-results {
+        padding: 55px 24px;
+        text-align: center;
+    }
+
+    .property-empty-icon {
+        margin-bottom: 15px;
+        color: #75adff;
+        font-size: 36px;
+    }
+
+    .property-empty-state h3,
+    .property-no-results h3 {
+        margin: 0 0 10px;
+        font-size: 17px;
+    }
+
+    .property-empty-state p,
+    .property-no-results p {
+        max-width: 430px;
+        margin: 0 auto;
+        color: var(--admin-muted, #9ca7b8);
+        font-size: 12px;
+        line-height: 1.8;
+    }
+
+    .property-no-results[hidden] {
+        display: none;
+    }
+
+    .property-table-footer {
+        padding: 15px 22px;
+        border-top: 1px solid var(--admin-border, #293244);
+        color: var(--admin-muted, #9ca7b8);
+        font-size: 11px;
+    }
+
+    @@media (max-width: 1050px) {
+        .property-stat-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+
+    @@media (max-width: 650px) {
+        .admin-page-header {
+            align-items: flex-start;
+            flex-direction: column;
+        }
+
+        .property-toolbar {
+            flex-direction: column;
+        }
+
+            .property-toolbar select {
+                width: 100%;
+                max-width: none;
+            }
+
+        .property-stat-grid {
+            gap: 10px;
+        }
+
+        .property-stat-card {
+            padding: 15px;
+        }
+
+        .property-panel-header {
+            align-items: flex-start;
+            flex-direction: column;
+            padding: 18px;
+        }
+
+        .property-status-grid {
+            flex-direction: column;
+        }
+    }
+</style>
+
+<script>
+    (() => {
+        const searchInput = document.getElementById("propertySearch");
+        const typeFilter = document.getElementById("propertyTypeFilter");
+        const statusFilter = document.getElementById("propertyStatusFilter");
+        const tableBody = document.getElementById("propertyTableBody");
+        const noResults = document.getElementById("propertyNoResults");
+        const resultCount = document.getElementById("propertyResultCount");
+
+        if (!searchInput || !typeFilter || !statusFilter || !tableBody) {
+            return;
+        }
+
+        const rows = Array.from(tableBody.querySelectorAll(".property-row"));
+
+        function filterProperties() {
+            const search = searchInput.value.trim().toLowerCase();
+            const selectedType = typeFilter.value;
+            const selectedStatus = statusFilter.value;
+            let visibleCount = 0;
+
+            rows.forEach(row => {
+                const searchableText = [
+                    row.dataset.name,
+                    row.dataset.location,
+                    row.dataset.destination
+                ].join(" ").toLowerCase();
+
+                const matchesSearch = searchableText.includes(search);
+                const matchesType =
+                    !selectedType || row.dataset.type === selectedType;
+                const matchesStatus =
+                    !selectedStatus || row.dataset.status === selectedStatus;
+
+                const visible =
+                    matchesSearch && matchesType && matchesStatus;
+
+                row.hidden = !visible;
+
+                if (visible) {
+                    visibleCount++;
+                }
+            });
+
+            if (noResults) {
+                noResults.hidden = visibleCount !== 0;
+            }
+
+            if (resultCount) {
+                resultCount.textContent =
+                    `Showing ${visibleCount} of ${rows.length} properties`;
+            }
+        }
+
+        searchInput.addEventListener("input", filterProperties);
+        typeFilter.addEventListener("change", filterProperties);
+        statusFilter.addEventListener("change", filterProperties);
+
+        filterProperties();
+    })();
+</script>

@@ -1,7 +1,7 @@
-﻿using KarnelTravel.Models;
+﻿
 using KarnelTravel.Models;
 
-namespace KarnelTravel.Services; // <-- Changed from KarnelTravel
+namespace KarnelTravel.Services;
 
 public interface IAdminAuthService
 {

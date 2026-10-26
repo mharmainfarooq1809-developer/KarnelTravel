@@ -155,6 +155,9 @@ namespace KarnelTravel.Migrations
                         .HasMaxLength(2000)
                         .HasColumnType("nvarchar(2000)");
 
+                    b.Property<int?>("DestinationId")
+                        .HasColumnType("int");
+
                     b.Property<int>("DisplayOrder")
                         .HasColumnType("int");
 
@@ -196,6 +199,8 @@ namespace KarnelTravel.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("DestinationId");
+
                     b.HasIndex("Slug")
                         .IsUnique();
 
@@ -232,6 +237,9 @@ namespace KarnelTravel.Migrations
                         .IsRequired()
                         .HasMaxLength(2000)
                         .HasColumnType("nvarchar(2000)");
+
+                    b.Property<int?>("DestinationId")
+                        .HasColumnType("int");
 
                     b.Property<int>("DisplayOrder")
                         .HasColumnType("int");
@@ -270,6 +278,8 @@ namespace KarnelTravel.Migrations
                         .HasColumnType("datetime2");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("DestinationId");
 
                     b.HasIndex("Slug")
                         .IsUnique();
@@ -317,6 +327,9 @@ namespace KarnelTravel.Migrations
                         .HasMaxLength(2000)
                         .HasColumnType("nvarchar(2000)");
 
+                    b.Property<int?>("DestinationId")
+                        .HasColumnType("int");
+
                     b.Property<int>("DisplayOrder")
                         .HasColumnType("int");
 
@@ -351,6 +364,8 @@ namespace KarnelTravel.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("DestinationId");
+
                     b.HasIndex("Slug")
                         .IsUnique();
 
@@ -372,6 +387,9 @@ namespace KarnelTravel.Migrations
                         .IsRequired()
                         .HasMaxLength(3000)
                         .HasColumnType("nvarchar(3000)");
+
+                    b.Property<int?>("DestinationId")
+                        .HasColumnType("int");
 
                     b.Property<string>("DestinationName")
                         .IsRequired()
@@ -433,6 +451,8 @@ namespace KarnelTravel.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("DestinationId");
+
                     b.HasIndex("Slug")
                         .IsUnique();
 
@@ -464,6 +484,9 @@ namespace KarnelTravel.Migrations
                         .IsRequired()
                         .HasMaxLength(150)
                         .HasColumnType("nvarchar(150)");
+
+                    b.Property<int?>("DestinationId")
+                        .HasColumnType("int");
 
                     b.Property<int>("DisplayOrder")
                         .HasColumnType("int");
@@ -510,6 +533,8 @@ namespace KarnelTravel.Migrations
                         .HasColumnType("nvarchar(100)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("DestinationId");
 
                     b.ToTable("TransportServices", (string)null);
                 });
@@ -589,6 +614,51 @@ namespace KarnelTravel.Migrations
                         .IsUnique();
 
                     b.ToTable("TripInquiries", (string)null);
+                });
+
+            modelBuilder.Entity("KarnelTravel.Models.Hotel", b =>
+                {
+                    b.HasOne("KarnelTravel.Models.Destination", "Destination")
+                        .WithMany()
+                        .HasForeignKey("DestinationId");
+
+                    b.Navigation("Destination");
+                });
+
+            modelBuilder.Entity("KarnelTravel.Models.Resort", b =>
+                {
+                    b.HasOne("KarnelTravel.Models.Destination", "Destination")
+                        .WithMany()
+                        .HasForeignKey("DestinationId");
+
+                    b.Navigation("Destination");
+                });
+
+            modelBuilder.Entity("KarnelTravel.Models.Restaurant", b =>
+                {
+                    b.HasOne("KarnelTravel.Models.Destination", "Destination")
+                        .WithMany()
+                        .HasForeignKey("DestinationId");
+
+                    b.Navigation("Destination");
+                });
+
+            modelBuilder.Entity("KarnelTravel.Models.TourPackage", b =>
+                {
+                    b.HasOne("KarnelTravel.Models.Destination", "Destination")
+                        .WithMany()
+                        .HasForeignKey("DestinationId");
+
+                    b.Navigation("Destination");
+                });
+
+            modelBuilder.Entity("KarnelTravel.Models.TransportService", b =>
+                {
+                    b.HasOne("KarnelTravel.Models.Destination", "Destination")
+                        .WithMany()
+                        .HasForeignKey("DestinationId");
+
+                    b.Navigation("Destination");
                 });
 #pragma warning restore 612, 618
         }

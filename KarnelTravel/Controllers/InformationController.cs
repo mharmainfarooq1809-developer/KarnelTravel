@@ -1,18 +1,35 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿
+using KarnelTravel.Data;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace KarnelTravel.Controllers
 {
     public class InformationController : Controller
     {
+        private readonly ApplicationDbContext _context;
+
+        public InformationController(ApplicationDbContext context)
+        {
+            _context = context;
+        }
+
         public IActionResult Index()
         {
             return View();
         }
 
         [HttpGet("/destinations")]
-        public IActionResult Destination()
+        public async Task<IActionResult> Destination()
         {
-            return View("Dropdown/destination");
+            var destinations = await _context.Destinations
+                .AsNoTracking()
+                .Where(d => d.IsPublished)
+                .OrderBy(d => d.DisplayOrder)
+                .ThenBy(d => d.Name)
+                .ToListAsync();
+
+            return View("Dropdown/destination", destinations);
         }
 
         [HttpGet("/transport")]

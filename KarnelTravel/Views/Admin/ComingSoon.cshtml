@@ -1,0 +1,30 @@
+```cshtml
+@{
+    ViewData["Title"] = "Coming Soon";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div style="padding: 48px 24px; max-width: 850px; margin: 0 auto;">
+    <div style="border: 1px solid #e5e7eb; border-radius: 16px; padding: 36px; background: #fff;">
+        <p style="font-size: 12px; font-weight: 700; letter-spacing: 2px; color: #64748b;">
+            KARNEL TRAVEL · ADMIN
+        </p>
+
+        <h1 style="font-size: 32px; margin: 16px 0; color: #14251d;">
+            @ViewData["Title"]
+        </h1>
+
+        <p style="font-size: 16px; line-height: 1.7; color: #64748b;">
+            This section is not available yet. The page will be activated
+            when its management features are implemented.
+        </p>
+
+        <a href="/Admin"
+           style="display: inline-block; margin-top: 20px; padding: 12px 20px;
+                  background: #173d30; color: white; text-decoration: none;
+                  border-radius: 8px;">
+            Back to Admin
+        </a>
+    </div>
+</div>
+```

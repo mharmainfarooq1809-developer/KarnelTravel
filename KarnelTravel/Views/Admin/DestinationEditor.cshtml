@@ -1,144 +1,262 @@
+
+@model KarnelTravel.Models.Destination
+
 @{
     Layout = "_AdminLayout";
-    ViewData["Title"] = "Destination editor";
+    bool isEdit = Model.Id > 0;
+
+    ViewData["Title"] = isEdit ? "Edit destination" : "New destination";
+    ViewData["Section"] = "Destinations";
 }
 
 <div class="page-heading">
     <div>
         <div class="eyebrow">Atlas / Destination editor</div>
-        <h1>Tell a better story.</h1>
-        <p>Draft a destination page that feels as considered as the journey itself.</p>
+        <h1>@(isEdit ? "Refine the story." : "Tell a better story.")</h1>
+        <p>Manage destination details saved to the Karnel travel database.</p>
     </div>
-    <div style="display:flex; gap:8px; flex-wrap:wrap;">
-        <a class="btn btn-quiet" asp-controller="Admin" asp-action="Destinations">← Back to atlas</a>
-        <button class="btn btn-primary" type="button"
-                data-prototype="Preview opened in prototype mode.">
-            Preview page ↗
-        </button>
-    </div>
+
+    <a class="btn btn-quiet" href="/Admin/Destinations">
+        ← Back to atlas
+    </a>
 </div>
 
-<form data-demo-submit novalidate>
+<form method="post"
+      enctype="multipart/form-data"
+      action="@(isEdit ? $"/Admin/Destinations/Edit/{Model.Id}" : "/Admin/Destinations/Create")">
+
+    @Html.AntiForgeryToken()
+
+    <input type="hidden" asp-for="Id" />
+
+    <div asp-validation-summary="ModelOnly"
+         class="text-danger"
+         role="alert"></div>
+
     <div class="editor-layout">
-
         <div>
-
-            <!-- Identity -->
             <section class="form-section">
                 <h2>Identity</h2>
                 <p>The essentials visitors see first.</p>
 
                 <div class="form-grid">
                     <div class="field">
-                        <label for="destination-name">Destination name</label>
-                        <input id="destination-name" class="input" value="Hunza Valley" required />
+                        <label asp-for="Name">Destination name</label>
+                        <input asp-for="Name"
+                               class="input"
+                               required
+                               maxlength="150" />
+                        <span asp-validation-for="Name" class="text-danger"></span>
                     </div>
+
                     <div class="field">
-                        <label for="slug">URL slug</label>
-                        <input id="slug" class="input" value="hunza-valley" required />
+                        <label asp-for="Slug">URL slug</label>
+                        <input asp-for="Slug"
+                               class="input"
+                               required
+                               maxlength="180" />
+                        <span asp-validation-for="Slug" class="text-danger"></span>
                     </div>
+
                     <div class="field">
-                        <label for="region">Region</label>
-                        <select id="region" class="select">
-                            <option>Gilgit-Baltistan</option>
-                            <option>Punjab</option>
-                            <option>Sindh</option>
-                        </select>
+                        <label asp-for="Region">Region</label>
+                        <input asp-for="Region"
+                               class="input"
+                               placeholder="e.g. Gilgit-Baltistan"
+                               maxlength="100" />
+                        <span asp-validation-for="Region" class="text-danger"></span>
                     </div>
+
                     <div class="field">
-                        <label for="status">Publication</label>
-                        <select id="status" class="select">
-                            <option>Published</option>
-                            <option>Draft</option>
-                        </select>
+                        <label asp-for="DisplayOrder">Display order</label>
+                        <input asp-for="DisplayOrder"
+                               class="input"
+                               type="number"
+                               min="0" />
+                        <span asp-validation-for="DisplayOrder" class="text-danger"></span>
                     </div>
+
                     <div class="field full">
-                        <label for="summary">Short summary</label>
-                        <textarea id="summary" class="input" rows="2">A valley of apricot orchards, turquoise rivers and impossibly high passes.</textarea>
+                        <label asp-for="ShortDescription">Short summary</label>
+                        <textarea asp-for="ShortDescription"
+                                  class="input"
+                                  rows="3"
+                                  maxlength="500"></textarea>
+                        <span asp-validation-for="ShortDescription" class="text-danger"></span>
                     </div>
+
                     <div class="field full">
-                        <label for="description">Long description</label>
-                        <textarea id="description" class="input" rows="6">Write the long-form editorial introduction here. Keep the voice warm, useful and grounded in place.</textarea>
+                        <label asp-for="Description">Long description</label>
+                        <textarea asp-for="Description"
+                                  class="input"
+                                  rows="7"></textarea>
+                        <span asp-validation-for="Description" class="text-danger"></span>
                     </div>
                 </div>
             </section>
 
-            <!-- Travel notes -->
             <section class="form-section">
                 <h2>Travel notes</h2>
-                <p>Make planning feel simple and personal.</p>
+                <p>Help visitors plan their trip.</p>
 
                 <div class="form-grid">
-                    <div class="field">
-                        <label for="best-time">Best time to visit</label>
-                        <input id="best-time" class="input" value="April – October" />
-                    </div>
-                    <div class="field">
-                        <label for="attractions">Tourist attractions</label>
-                        <input id="attractions" class="input" value="Baltit Fort, Passu Cones, Attabad Lake" />
-                    </div>
                     <div class="field full">
-                        <label for="practical">Practical information</label>
-                        <textarea id="practical" class="input" rows="3">Road access from Islamabad · 12–14 hours by road · Keep a light layer for high passes.</textarea>
+                        <label asp-for="BestTimeToVisit">Best time to visit</label>
+                        <input asp-for="BestTimeToVisit"
+                               class="input"
+                               placeholder="e.g. April to October"
+                               maxlength="150" />
+                        <span asp-validation-for="BestTimeToVisit" class="text-danger"></span>
                     </div>
                 </div>
             </section>
 
-            <!-- Search appearance -->
             <section class="form-section">
-                <h2>Search appearance</h2>
-                <p>Helpful metadata for the public guide.</p>
+                <h2>Media</h2>
+                <p>Select an image from your computer. It will be uploaded to your website.</p>
 
-                <div class="form-grid">
-                    <div class="field full">
-                        <label for="seo-title">SEO title</label>
-                        <input id="seo-title" class="input" value="Hunza Valley Travel Guide | Karnel" />
-                    </div>
-                    <div class="field full">
-                        <label for="seo-desc">Meta description</label>
-                        <textarea id="seo-desc" class="input" rows="3">Explore Hunza Valley with thoughtful itineraries, local stays and practical travel guidance from Karnel.</textarea>
-                    </div>
+                <div class="field full">
+                    <label for="imageFile">Main destination image</label>
+
+                    @if (!string.IsNullOrWhiteSpace(Model.ImageUrl))
+                    {
+                        <div style="margin-bottom:12px;">
+                            <img src="@Model.ImageUrl"
+                                 alt="Current destination image"
+                                 style="width:100%;max-width:420px;max-height:240px;object-fit:cover;border-radius:12px;" />
+                            <p class="muted">Current image</p>
+                        </div>
+                    }
+
+                    <input type="file"
+                           id="imageFile"
+                           name="imageFile"
+                           class="input"
+                           accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" />
+
+                    <span asp-validation-for="ImageUrl" class="text-danger"></span>
+
+                    <p class="muted">JPG, PNG or WebP · Maximum 5 MB</p>
+
+                    <img id="image-preview"
+                         alt="Selected image preview"
+                         style="display:none;width:100%;max-width:420px;max-height:240px;object-fit:cover;border-radius:12px;margin-top:12px;" />
                 </div>
             </section>
 
-            <!-- Actions -->
-            <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:8px;">
-                <button class="btn btn-primary" type="submit">Save prototype draft</button>
-                <button class="btn" type="button"
-                        data-prototype="No real upload or database save is connected.">
-                    Upload gallery
-                </button>
-            </div>
+            <section class="form-section">
+                <h2>Publication</h2>
+                <p>Control how this destination is managed.</p>
 
+                <div class="field">
+                    <label>
+                        <input asp-for="IsPublished" />
+                        Published
+                    </label>
+                </div>
+
+                <div class="field">
+                    <label>
+                        <input asp-for="IsFeatured" />
+                        Featured destination
+                    </label>
+                </div>
+            </section>
+
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;">
+                <button class="btn btn-primary" type="submit">
+                    @(isEdit ? "Save changes" : "Create destination")
+                </button>
+
+                <a class="btn btn-quiet" href="/Admin/Destinations">
+                    Cancel
+                </a>
+            </div>
         </div>
 
-        <!-- Aside -->
         <aside class="editor-aside">
-
-            <div class="preview-card">
-                <img src="https://images.unsplash.com/photo-1518005020951-eccb494ad742?auto=format&fit=crop&w=800&q=80"
-                     alt="Mountain valley preview" />
-                <div>
-                    <div class="eyebrow">Main image</div>
-                    <strong>hunza-cover.jpg</strong>
-                    <p class="muted" style="margin:4px 0 10px;font-size:12px;">1600 × 1000 · JPG</p>
-                    <button class="btn btn-quiet" type="button"
-                            data-prototype="Image picker is visual only.">
-                        Change image
-                    </button>
-                </div>
-            </div>
-
             <div class="panel section-space">
                 <div class="panel-title">
-                    <h3>Editorial checklist</h3>
+                    <h3>Before publishing</h3>
                 </div>
-                <p>✓ Summary is concise</p>
-                <p>✓ Main image selected</p>
-                <p class="muted">○ Add at least 3 gallery images</p>
+
+                <p>✓ Add a clear destination name</p>
+                <p>✓ Use a unique URL slug</p>
+                <p>✓ Write a useful summary</p>
+                <p>✓ Select a suitable image</p>
+                <p>✓ Check publication status</p>
             </div>
 
-        </aside>
+            @if (isEdit)
+            {
+                <div class="panel section-space">
+                    <div class="panel-title">
+                        <h3>Record information</h3>
+                    </div>
 
+                    <p>Destination ID: @Model.Id</p>
+                    <p>Created: @Model.CreatedAt.ToString("dd MMM yyyy")</p>
+
+                    @if (Model.UpdatedAt.HasValue)
+                    {
+                        <p>Last updated: @Model.UpdatedAt.Value.ToString("dd MMM yyyy")</p>
+                    }
+                </div>
+            }
+        </aside>
     </div>
 </form>
+
+<script>
+    (() => {
+        const input = document.getElementById("imageFile");
+        const preview = document.getElementById("image-preview");
+
+        let previousUrl = null;
+
+        input.addEventListener("change", () => {
+            const file = input.files && input.files[0];
+
+            if (previousUrl) {
+                URL.revokeObjectURL(previousUrl);
+                previousUrl = null;
+            }
+
+            if (!file) {
+                preview.style.display = "none";
+                preview.removeAttribute("src");
+                return;
+            }
+
+            const allowedTypes = [
+                "image/jpeg",
+                "image/png",
+                "image/webp"
+            ];
+
+            if (!allowedTypes.includes(file.type)) {
+                alert("Choose a JPG, PNG, or WebP image.");
+                input.value = "";
+                preview.style.display = "none";
+                preview.removeAttribute("src");
+                return;
+            }
+
+            if (file.size > 5 * 1024 * 1024) {
+                alert("Image size must not exceed 5 MB.");
+                input.value = "";
+                preview.style.display = "none";
+                preview.removeAttribute("src");
+                return;
+            }
+
+            previousUrl = URL.createObjectURL(file);
+            preview.src = previousUrl;
+            preview.style.display = "block";
+        });
+    })();
+</script>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

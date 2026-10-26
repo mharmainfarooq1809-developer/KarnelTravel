@@ -1,22 +1,23 @@
-using KarnelTravel.Models;
 using Microsoft.AspNetCore.Mvc;
-using System.Diagnostics;
+using Microsoft.EntityFrameworkCore;
+using KarnelTravel.Data; // adjust to your namespace
+using KarnelTravel.Models;
 
-namespace KarnelTravel.Controllers
+public class HomeController : Controller
 {
-    public class HomeController : Controller
+    private readonly ApplicationDbContext _db;
+
+    public HomeController(ApplicationDbContext db) => _db = db;
+
+    public async Task<IActionResult> Index()
     {
-        public IActionResult Index()
-        {
-            return View();
-        }
+        ViewBag.FeaturedDestinations = await _db.Destinations
+            .Where(d => d.IsPublished && d.IsFeatured)   // adjust to your flags
+            .OrderBy(d => d.Name)
+            .Take(3)                                     // matches the 3-card feature grid
+            .AsNoTracking()
+            .ToListAsync();
 
-      
-
-        [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
-        public IActionResult Error()
-        {
-            return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
-        }
+        return View();
     }
 }

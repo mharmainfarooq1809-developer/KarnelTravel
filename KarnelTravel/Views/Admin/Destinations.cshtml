@@ -1,6 +1,178 @@
-@{ Layout = "_AdminLayout"; ViewData["Title"] = "Destinations"; }
-<div class="page-heading"><div><div class="eyebrow">The atlas · 12 regions</div><h1>Places with a pulse.</h1><p>Shape the visual story of every destination in the Karnel guide.</p></div><a class="btn btn-primary" href="/Admin/Destinations/Create">＋ Add destination</a></div>
-<section class="destination-banner"><div><div class="eyebrow">Featured region</div><h1>The Northern Arc</h1><p>High passes, glacial rivers and the generous quiet of the mountains.</p></div></section>
-<div class="toolbar"><div class="filters"><input class="input search-input" placeholder="Search destinations…" data-filter-target="destination-list" /><select class="select" data-status-filter="destination-list"><option value="all">All regions</option><option>North</option><option>Punjab</option><option>Sindh</option></select></div><button class="btn btn-quiet" data-toast="Map view is ready for the next design phase.">◎ Map view</button></div>
-<div class="destination-grid" id="destination-list"><article class="destination-card filterable" data-status="North" style="background-image:url('https://images.unsplash.com/photo-1518005020951-eccb494ad742?auto=format&fit=crop&w=1000&q=80')"><div class="destination-card-content"><span class="status status-confirmed"><i></i>Published · North</span><h3>Hunza Valley</h3><p>18 stories · 9 highlights</p><a href="/Admin/Destinations/Edit/hunza">Manage story →</a></div></article><article class="destination-card filterable" data-status="North" style="background-image:url('https://images.unsplash.com/photo-1548013146-72479768bada?auto=format&fit=crop&w=800&q=80')"><div class="destination-card-content"><span class="status status-confirmed"><i></i>Published</span><h3>Skardu</h3><p>12 stories · 7 highlights</p></div></article><article class="destination-card filterable" data-status="Punjab" style="background-image:url('https://images.unsplash.com/photo-1582972236019-ea9e94af0e5c?auto=format&fit=crop&w=800&q=80')"><div class="destination-card-content"><span class="status status-pending"><i></i>Draft</span><h3>Lahore</h3><p>21 stories · 14 highlights</p></div></article><article class="destination-card filterable" data-status="Sindh" style="background-image:url('https://images.unsplash.com/photo-1539650116574-75c0c6d73f6e?auto=format&fit=crop&w=1000&q=80')"><div class="destination-card-content"><span class="status status-confirmed"><i></i>Published · Sindh</span><h3>Thatta & Makli</h3><p>8 stories · 5 highlights</p></div></article></div>
-<div class="drawer-backdrop"></div><aside class="drawer" id="destination-details"><button class="drawer-close" data-drawer-close>×</button><div class="eyebrow">Destination detail</div><h2>Hunza Valley</h2><p>Pakistan’s highland jewel, framed by apricot orchards and the Karakoram.</p><div class="image-preview"></div><div class="section-space"><p><strong>18 published stories</strong><br /><span class="muted">9 tourist spots · 4 seasonal guides · 5 editorial notes</span></p><a class="btn btn-primary" href="/Admin/Destinations/Edit/hunza">Edit destination</a></div></aside>
+
+@model IEnumerable<KarnelTravel.Models.Destination>
+
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Destinations";
+
+    var destinations = Model.ToList();
+    var regions = destinations
+        .Where(d => !string.IsNullOrWhiteSpace(d.Region))
+        .Select(d => d.Region!)
+        .Distinct()
+        .OrderBy(r => r)
+        .ToList();
+}
+
+<div class="page-heading">
+    <div>
+        <div class="eyebrow">The atlas · @destinations.Count destinations</div>
+        <h1>Places with a pulse.</h1>
+        <p>Shape the visual story of every destination in the Karnel guide.</p>
+    </div>
+    <a class="btn btn-primary" href="/Admin/Destinations/Create">
+        ＋ Add destination
+    </a>
+</div>
+
+@if (TempData["SuccessMessage"] is string success)
+{
+    <div class="status status-confirmed" role="status">@success</div>
+}
+
+@if (TempData["ErrorMessage"] is string error)
+{
+    <div class="status status-pending" role="alert">@error</div>
+}
+
+<section class="destination-banner">
+    <div>
+        <div class="eyebrow">Your travel atlas</div>
+        <h1>Discover Pakistan.</h1>
+        <p>Manage destinations, descriptions, imagery and publication status.</p>
+    </div>
+</section>
+
+<div class="toolbar">
+    <div class="filters">
+        <input class="input search-input"
+               id="destination-search"
+               placeholder="Search destinations..."
+               aria-label="Search destinations" />
+
+        <select class="select" id="region-filter" aria-label="Filter by region">
+            <option value="">All regions</option>
+            @foreach (var region in regions)
+            {
+                <option value="@region">@region</option>
+            }
+        </select>
+
+        <select class="select" id="status-filter" aria-label="Filter by publication status">
+            <option value="">All statuses</option>
+            <option value="published">Published</option>
+            <option value="draft">Draft</option>
+            <option value="featured">Featured</option>
+        </select>
+    </div>
+</div>
+
+<div class="destination-grid" id="destination-list">
+    @foreach (var destination in destinations)
+    {
+        var status = destination.IsPublished ? "published" : "draft";
+        var region = destination.Region ?? "";
+        var image = string.IsNullOrWhiteSpace(destination.ImageUrl)
+            ? "https://images.unsplash.com/photo-1518005020951-eccb494ad742?auto=format&fit=crop&w=1000&q=80"
+            : destination.ImageUrl;
+
+        <article class="destination-card filterable"
+                 data-name="@destination.Name"
+                 data-region="@region"
+                 data-status="@status"
+                 data-featured="@destination.IsFeatured.ToString().ToLowerInvariant()"
+                 style="background-image: linear-gradient(0deg, rgba(0,0,0,.88), rgba(0,0,0,.05)), url('@image'); background-size: cover; background-position: center;">
+
+            <div class="destination-card-content">
+                <span class="status @(destination.IsPublished ? "status-confirmed" : "status-pending")">
+                    <i></i>
+                    @(destination.IsPublished ? "Published" : "Draft")
+                    @if (!string.IsNullOrWhiteSpace(region))
+                    {
+                        <text> · @region</text>
+                    }
+                </span>
+
+                @if (destination.IsFeatured)
+                {
+                    <span class="eyebrow">★ Featured</span>
+                }
+
+                <h3>@destination.Name</h3>
+
+                <p>
+                    @(string.IsNullOrWhiteSpace(destination.ShortDescription)
+                        ? "No summary added yet."
+                        : destination.ShortDescription)
+                </p>
+
+                <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+                    <a class="btn btn-primary"
+                       href="/Admin/Destinations/Edit/@destination.Id">
+                        Edit destination →
+                    </a>
+
+                    <form method="post"
+                          action="/Admin/Destinations/Delete/@destination.Id"
+                          onsubmit="return confirm('Delete this destination permanently?');">
+                        @Html.AntiForgeryToken()
+                        <button class="btn btn-quiet" type="submit">
+                            Delete
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </article>
+    }
+</div>
+
+<p id="no-destinations"
+   class="muted"
+   style="display:@(destinations.Count == 0 ? "block" : "none");">
+    No destinations have been added yet. Select “Add destination” to create your first one.
+</p>
+
+<p id="no-filter-results" class="muted" style="display:none;">
+    No destinations match your filters.
+</p>
+
+<script>
+    (() => {
+        const search = document.getElementById("destination-search");
+        const region = document.getElementById("region-filter");
+        const status = document.getElementById("status-filter");
+        const cards = [...document.querySelectorAll("#destination-list .destination-card")];
+        const noResults = document.getElementById("no-filter-results");
+
+        function filterDestinations() {
+            const query = search.value.trim().toLowerCase();
+            const selectedRegion = region.value.toLowerCase();
+            const selectedStatus = status.value;
+            let visible = 0;
+
+            cards.forEach(card => {
+                const name = (card.dataset.name || "").toLowerCase();
+                const cardRegion = (card.dataset.region || "").toLowerCase();
+                const cardStatus = card.dataset.status;
+                const featured = card.dataset.featured === "true";
+
+                const matches =
+                    name.includes(query) &&
+                    (!selectedRegion || cardRegion === selectedRegion) &&
+                    (!selectedStatus ||
+                        cardStatus === selectedStatus ||
+                        (selectedStatus === "featured" && featured));
+
+                card.style.display = matches ? "" : "none";
+                if (matches) visible++;
+            });
+
+            noResults.style.display =
+                cards.length > 0 && visible === 0 ? "block" : "none";
+        }
+
+        search.addEventListener("input", filterDestinations);
+        region.addEventListener("change", filterDestinations);
+        status.addEventListener("change", filterDestinations);
+    })();
+</script>

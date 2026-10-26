@@ -1,0 +1,354 @@
+﻿
+@model KarnelTravel.Models.Destination
+
+@{
+    ViewData["Title"] = Model.Name + " | Karnel Travel Guide";
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@ViewData["Title"]</title>
+    <meta name="description" content="@Model.ShortDescription" />
+
+    <style>
+        :root {
+            --forest: #183c32;
+            --forest-dark: #102820;
+            --cream: #f7f5ef;
+            --gold: #c6a66b;
+            --ink: #24312c;
+            --muted: #727b74;
+            --white: #ffffff;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            margin: 0;
+            background: var(--cream);
+            color: var(--ink);
+            font-family: Arial, Helvetica, sans-serif;
+            line-height: 1.7;
+        }
+
+        a {
+            color: inherit;
+            text-decoration: none;
+        }
+
+        .nav {
+            min-height: 76px;
+            padding: 18px 7%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+            background: var(--white);
+        }
+
+        .brand {
+            color: var(--forest);
+            font-family: Georgia, serif;
+            font-size: 23px;
+            font-weight: bold;
+        }
+
+        .back-link {
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .hero {
+            position: relative;
+            min-height: 510px;
+            display: flex;
+            align-items: flex-end;
+            color: var(--white);
+            background-color: var(--forest-dark);
+            background-image:
+                linear-gradient(0deg, rgba(10, 25, 19, .88), rgba(10, 25, 19, .05)),
+                url('@(string.IsNullOrWhiteSpace(Model.ImageUrl) ? "" : Model.ImageUrl)');
+            background-size: cover;
+            background-position: center;
+        }
+
+        .hero-content {
+            width: 100%;
+            max-width: 1250px;
+            padding: 70px 7%;
+            margin: 0 auto;
+        }
+
+        .eyebrow {
+            color: #e3c895;
+            text-transform: uppercase;
+            font-size: 12px;
+            font-weight: bold;
+            letter-spacing: 3px;
+        }
+
+        h1, h2, h3 {
+            font-family: Georgia, "Times New Roman", serif;
+            font-weight: normal;
+            line-height: 1.2;
+        }
+
+        h1 {
+            margin: 15px 0;
+            font-size: clamp(42px, 7vw, 76px);
+        }
+
+        .hero-description {
+            max-width: 690px;
+            font-size: 17px;
+            color: rgba(255, 255, 255, .88);
+        }
+
+        .button {
+            display: inline-block;
+            margin-top: 22px;
+            padding: 13px 23px;
+            border: 1px solid var(--gold);
+            background: var(--gold);
+            color: #17271f;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        .button-outline {
+            background: transparent;
+            color: white;
+        }
+
+        .container {
+            max-width: 1120px;
+            margin: auto;
+            padding: 70px 24px;
+        }
+
+        .intro-grid {
+            display: grid;
+            grid-template-columns: 1.4fr .8fr;
+            gap: 55px;
+        }
+
+        .section-label {
+            color: #8b7043;
+            font-size: 11px;
+            font-weight: bold;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        h2 {
+            margin: 12px 0 20px;
+            color: var(--forest);
+            font-size: clamp(30px, 4vw, 43px);
+        }
+
+        .description {
+            white-space: pre-line;
+        }
+
+        .info-card {
+            padding: 28px;
+            background: var(--white);
+            border: 1px solid #e8e4d9;
+        }
+
+        .info-row {
+            padding: 15px 0;
+            border-bottom: 1px solid #e8e4d9;
+        }
+
+        .info-row:last-child {
+            border-bottom: 0;
+        }
+
+        .info-label {
+            display: block;
+            color: var(--muted);
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .info-value {
+            display: block;
+            margin-top: 4px;
+            font-weight: 600;
+        }
+
+        .planning {
+            background: var(--forest);
+            color: var(--white);
+        }
+
+        .planning h2 {
+            color: var(--white);
+        }
+
+        .planning p {
+            max-width: 650px;
+            color: rgba(255, 255, 255, .8);
+        }
+
+        .planning .section-label {
+            color: #e3c895;
+        }
+
+        .notice {
+            margin-top: 24px;
+            padding: 15px;
+            border-left: 3px solid var(--gold);
+            background: rgba(255, 255, 255, .07);
+            font-size: 13px;
+        }
+
+        footer {
+            padding: 25px;
+            text-align: center;
+            background: var(--forest-dark);
+            color: rgba(255, 255, 255, .75);
+            font-size: 13px;
+        }
+
+        @@media (max-width: 700px) {
+            .nav {
+                padding: 16px 5%;
+            }
+
+            .brand {
+                font-size: 19px;
+            }
+
+            .hero {
+                min-height: 430px;
+            }
+
+            .hero-content {
+                padding: 45px 6%;
+            }
+
+            .intro-grid {
+                grid-template-columns: 1fr;
+                gap: 30px;
+            }
+
+            .container {
+                padding: 48px 20px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <header class="nav">
+        <a class="brand" href="/">Karnel Travel Guide</a>
+        <a class="back-link" href="/Destinations">← All destinations</a>
+    </header>
+
+    <main>
+        <section class="hero">
+            <div class="hero-content">
+                <div class="eyebrow">
+                    @(Model.Region ?? "Explore Pakistan") · Pakistan
+                </div>
+
+                <h1>@Model.Name</h1>
+
+                @if (!string.IsNullOrWhiteSpace(Model.ShortDescription))
+                {
+                    <p class="hero-description">@Model.ShortDescription</p>
+                }
+
+                <a class="button" href="#travel-information">
+                    Discover this destination ↓
+                </a>
+
+                <a class="button button-outline" href="#plan-trip">
+                    Plan your trip
+                </a>
+            </div>
+        </section>
+
+        <section class="container">
+            <div class="intro-grid">
+                <div>
+                    <div class="section-label">Discover the destination</div>
+                    <h2>Experience @Model.Name</h2>
+
+                    @if (!string.IsNullOrWhiteSpace(Model.Description))
+                    {
+                        <div class="description">@Model.Description</div>
+                    }
+                    else
+                    {
+                        <p>More destination information will be added soon.</p>
+                    }
+                </div>
+
+                <aside class="info-card" id="travel-information">
+                    <div class="section-label">Travel essentials</div>
+
+                    <div class="info-row">
+                        <span class="info-label">Destination</span>
+                        <span class="info-value">@Model.Name</span>
+                    </div>
+
+                    <div class="info-row">
+                        <span class="info-label">Region</span>
+                        <span class="info-value">
+                            @(Model.Region ?? "Information coming soon")
+                        </span>
+                    </div>
+
+                    <div class="info-row">
+                        <span class="info-label">Best time to visit</span>
+                        <span class="info-value">
+                            @(Model.BestTimeToVisit ?? "Information coming soon")
+                        </span>
+                    </div>
+                </aside>
+            </div>
+        </section>
+
+        <section class="planning" id="plan-trip">
+            <div class="container">
+                <div class="section-label">Your next journey</div>
+                <h2>Ready to explore @Model.Name?</h2>
+                <p>
+                    Start planning your visit. Contact Karnel Travel Guide
+                    for assistance with your travel arrangements.
+                </p>
+
+                <a class="button"
+                   href="/Contact"
+                   aria-label="Contact Karnel Travel Guide about @Model.Name">
+                    Make an inquiry →
+                </a>
+
+                <div class="notice">
+                    Hotel availability, tour prices and transport bookings
+                    will be displayed here once their respective booking
+                    systems are connected.
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        © @DateTime.Now.Year Karnel Travel Guide. Explore more. Travel better.
+    </footer>
+</body>
+</html>
