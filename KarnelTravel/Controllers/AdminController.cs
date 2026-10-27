@@ -1,3 +1,4 @@
+
 using KarnelTravel.Data;
 using KarnelTravel.Models;
 using KarnelTravel.ViewModels;
@@ -9,6 +10,7 @@ using Microsoft.EntityFrameworkCore;
 using System;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace KarnelTravel.Controllers;
@@ -234,7 +236,6 @@ public class AdminController : Controller
             return View("DestinationEditor", model);
         }
 
-        // Keep the existing image unless a new image is uploaded.
         if (imageFile != null && imageFile.Length > 0)
         {
             try
@@ -305,15 +306,24 @@ public class AdminController : Controller
         if (destination == null)
         {
             TempData["ErrorMessage"] = "Destination not found.";
-
             return RedirectToAction(nameof(Destinations));
         }
 
         _context.Destinations.Remove(destination);
-        await _context.SaveChangesAsync();
 
-        TempData["SuccessMessage"] =
-            "Destination deleted successfully.";
+        try
+        {
+            await _context.SaveChangesAsync();
+
+            TempData["SuccessMessage"] =
+                "Destination deleted successfully.";
+        }
+        catch (DbUpdateException)
+        {
+            TempData["ErrorMessage"] =
+                "This destination could not be deleted. " +
+                "It may be linked to existing properties.";
+        }
 
         return RedirectToAction(nameof(Destinations));
     }
@@ -424,7 +434,7 @@ public class AdminController : Controller
     }
 
     // =========================================================
-    // PROPERTIES - DATABASE-BACKED LIST
+    // PROPERTIES - LIST
     // =========================================================
 
     [HttpGet("Properties")]
@@ -504,6 +514,506 @@ public class AdminController : Controller
         };
 
         return View(model);
+    }
+
+    // =========================================================
+    // PROPERTIES - CREATE FORM
+    // =========================================================
+
+    [HttpGet("Properties/Create")]
+    public IActionResult CreateProperty()
+    {
+        ViewData["Title"] = "Add Property";
+        ViewData["Section"] = "Stays";
+
+        return View("PropertyForm", new AdminPropertyFormViewModel());
+    }
+
+    // =========================================================
+    // PROPERTIES - CREATE
+    // =========================================================
+
+    [HttpPost("Properties/Create")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> CreateProperty(
+        AdminPropertyFormViewModel model)
+    {
+        ViewData["Title"] = "Add Property";
+        ViewData["Section"] = "Stays";
+
+        if (!ValidatePropertyForm(model))
+        {
+            return View("PropertyForm", model);
+        }
+
+        var slug = CreatePropertySlug(model.Name);
+
+        if (await PropertySlugExistsAsync(model.Category, slug))
+        {
+            ModelState.AddModelError(
+                nameof(model.Name),
+                "A property with this name already exists in this category.");
+
+            return View("PropertyForm", model);
+        }
+
+        var now = DateTime.UtcNow;
+
+        switch (model.Category)
+        {
+            case "Hotel":
+                _context.Hotels.Add(new Hotel
+                {
+                    Name = model.Name.Trim(),
+                    Slug = slug,
+                    City = model.Location.Trim(),
+                    Address = model.Address.Trim(),
+                    ShortDescription = model.ShortDescription.Trim(),
+                    Description = model.Description.Trim(),
+                    ImageUrl = model.ImageUrl.Trim(),
+                    StartingPricePerNight = model.Price,
+                    StarRating = model.StarRating,
+                    ContactPhone = model.ContactPhone.Trim(),
+                    IsPublished = model.IsPublished,
+                    IsFeatured = model.IsFeatured,
+                    DisplayOrder = model.DisplayOrder,
+                    DestinationId = model.DestinationId,
+                    CreatedAt = now
+                });
+                break;
+
+            case "Restaurant":
+                _context.Restaurants.Add(new Restaurant
+                {
+                    Name = model.Name.Trim(),
+                    Slug = slug,
+                    City = model.Location.Trim(),
+                    Address = model.Address.Trim(),
+                    ShortDescription = model.ShortDescription.Trim(),
+                    Description = model.Description.Trim(),
+                    ImageUrl = model.ImageUrl.Trim(),
+                    AverageMealPrice = model.Price,
+                    CuisineType = model.CuisineType!.Trim(),
+                    ContactPhone = model.ContactPhone.Trim(),
+                    IsPublished = model.IsPublished,
+                    IsFeatured = model.IsFeatured,
+                    DisplayOrder = model.DisplayOrder,
+                    DestinationId = model.DestinationId,
+                    CreatedAt = now
+                });
+                break;
+
+            case "Resort":
+                _context.Resorts.Add(new Resort
+                {
+                    Name = model.Name.Trim(),
+                    Slug = slug,
+                    CityOrRegion = model.Location.Trim(),
+                    Address = model.Address.Trim(),
+                    ShortDescription = model.ShortDescription.Trim(),
+                    Description = model.Description.Trim(),
+                    ImageUrl = model.ImageUrl.Trim(),
+                    StartingPricePerNight = model.Price,
+                    ContactPhone = model.ContactPhone.Trim(),
+                    IsPublished = model.IsPublished,
+                    IsFeatured = model.IsFeatured,
+                    DisplayOrder = model.DisplayOrder,
+                    DestinationId = model.DestinationId,
+                    CreatedAt = now
+                });
+                break;
+        }
+
+        await _context.SaveChangesAsync();
+
+        TempData["SuccessMessage"] =
+            $"{model.Category} added successfully.";
+
+        return RedirectToAction(nameof(Properties));
+    }
+
+    // =========================================================
+    // PROPERTIES - EDIT FORM
+    // =========================================================
+
+    [HttpGet("Properties/Edit/{id:int}")]
+    public async Task<IActionResult> EditProperty(
+        int id,
+        string category)
+    {
+        category = (category ?? string.Empty).Trim();
+
+        AdminPropertyFormViewModel model;
+
+        switch (category)
+        {
+            case "Hotel":
+                {
+                    var item = await _context.Hotels
+                        .AsNoTracking()
+                        .FirstOrDefaultAsync(x => x.Id == id);
+
+                    if (item == null)
+                        return NotFound();
+
+                    model = new AdminPropertyFormViewModel
+                    {
+                        Category = "Hotel",
+                        Name = item.Name,
+                        Location = item.City ?? "",
+                        Address = item.Address,
+                        ShortDescription = item.ShortDescription,
+                        Description = item.Description,
+                        ImageUrl = item.ImageUrl,
+                        Price = item.StartingPricePerNight,
+                        StarRating = item.StarRating,
+                        ContactPhone = item.ContactPhone,
+                        IsPublished = item.IsPublished,
+                        IsFeatured = item.IsFeatured,
+                        DisplayOrder = item.DisplayOrder,
+                        DestinationId = item.DestinationId
+                    };
+                    break;
+                }
+
+            case "Restaurant":
+                {
+                    var item = await _context.Restaurants
+                        .AsNoTracking()
+                        .FirstOrDefaultAsync(x => x.Id == id);
+
+                    if (item == null)
+                        return NotFound();
+
+                    model = new AdminPropertyFormViewModel
+                    {
+                        Category = "Restaurant",
+                        Name = item.Name,
+                        Location = item.City ?? "",
+                        Address = item.Address,
+                        ShortDescription = item.ShortDescription,
+                        Description = item.Description,
+                        ImageUrl = item.ImageUrl,
+                        Price = item.AverageMealPrice,
+                        CuisineType = item.CuisineType,
+                        ContactPhone = item.ContactPhone,
+                        IsPublished = item.IsPublished,
+                        IsFeatured = item.IsFeatured,
+                        DisplayOrder = item.DisplayOrder,
+                        DestinationId = item.DestinationId
+                    };
+                    break;
+                }
+
+            case "Resort":
+                {
+                    var item = await _context.Resorts
+                        .AsNoTracking()
+                        .FirstOrDefaultAsync(x => x.Id == id);
+
+                    if (item == null)
+                        return NotFound();
+
+                    model = new AdminPropertyFormViewModel
+                    {
+                        Category = "Resort",
+                        Name = item.Name,
+                        Location = item.CityOrRegion ?? "",
+                        Address = item.Address,
+                        ShortDescription = item.ShortDescription,
+                        Description = item.Description,
+                        ImageUrl = item.ImageUrl,
+                        Price = item.StartingPricePerNight,
+                        ContactPhone = item.ContactPhone,
+                        IsPublished = item.IsPublished,
+                        IsFeatured = item.IsFeatured,
+                        DisplayOrder = item.DisplayOrder,
+                        DestinationId = item.DestinationId
+                    };
+                    break;
+                }
+
+            default:
+                return BadRequest("Invalid property category.");
+        }
+
+        ViewData["Title"] = $"Edit {model.Category}";
+        ViewData["Section"] = "Stays";
+        ViewData["PropertyId"] = id;
+
+        return View("PropertyForm", model);
+    }
+
+    // =========================================================
+    // PROPERTIES - UPDATE
+    // =========================================================
+
+    [HttpPost("Properties/Edit/{id:int}")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> EditProperty(
+        int id,
+        AdminPropertyFormViewModel model)
+    {
+        ViewData["Title"] = "Edit Property";
+        ViewData["Section"] = "Stays";
+        ViewData["PropertyId"] = id;
+
+        if (!ValidatePropertyForm(model))
+        {
+            return View("PropertyForm", model);
+        }
+
+        var slug = CreatePropertySlug(model.Name);
+
+        if (await PropertySlugExistsAsync(model.Category, slug, id))
+        {
+            ModelState.AddModelError(
+                nameof(model.Name),
+                "Another property in this category already uses this name.");
+
+            return View("PropertyForm", model);
+        }
+
+        switch (model.Category)
+        {
+            case "Hotel":
+                {
+                    var item = await _context.Hotels.FindAsync(id);
+                    if (item == null)
+                        return NotFound();
+
+                    item.Name = model.Name.Trim();
+                    item.Slug = slug;
+                    item.City = model.Location.Trim();
+                    item.Address = model.Address.Trim();
+                    item.ShortDescription = model.ShortDescription.Trim();
+                    item.Description = model.Description.Trim();
+                    item.ImageUrl = model.ImageUrl.Trim();
+                    item.StartingPricePerNight = model.Price;
+                    item.StarRating = model.StarRating;
+                    item.ContactPhone = model.ContactPhone.Trim();
+                    item.IsPublished = model.IsPublished;
+                    item.IsFeatured = model.IsFeatured;
+                    item.DisplayOrder = model.DisplayOrder;
+                    item.DestinationId = model.DestinationId;
+                    break;
+                }
+
+            case "Restaurant":
+                {
+                    var item = await _context.Restaurants.FindAsync(id);
+                    if (item == null)
+                        return NotFound();
+
+                    item.Name = model.Name.Trim();
+                    item.Slug = slug;
+                    item.City = model.Location.Trim();
+                    item.Address = model.Address.Trim();
+                    item.ShortDescription = model.ShortDescription.Trim();
+                    item.Description = model.Description.Trim();
+                    item.ImageUrl = model.ImageUrl.Trim();
+                    item.AverageMealPrice = model.Price;
+                    item.CuisineType = model.CuisineType!.Trim();
+                    item.ContactPhone = model.ContactPhone.Trim();
+                    item.IsPublished = model.IsPublished;
+                    item.IsFeatured = model.IsFeatured;
+                    item.DisplayOrder = model.DisplayOrder;
+                    item.DestinationId = model.DestinationId;
+                    break;
+                }
+
+            case "Resort":
+                {
+                    var item = await _context.Resorts.FindAsync(id);
+                    if (item == null)
+                        return NotFound();
+
+                    item.Name = model.Name.Trim();
+                    item.Slug = slug;
+                    item.CityOrRegion = model.Location.Trim();
+                    item.Address = model.Address.Trim();
+                    item.ShortDescription = model.ShortDescription.Trim();
+                    item.Description = model.Description.Trim();
+                    item.ImageUrl = model.ImageUrl.Trim();
+                    item.StartingPricePerNight = model.Price;
+                    item.ContactPhone = model.ContactPhone.Trim();
+                    item.IsPublished = model.IsPublished;
+                    item.IsFeatured = model.IsFeatured;
+                    item.DisplayOrder = model.DisplayOrder;
+                    item.DestinationId = model.DestinationId;
+                    break;
+                }
+
+            default:
+                return BadRequest("Invalid property category.");
+        }
+
+        await _context.SaveChangesAsync();
+
+        TempData["SuccessMessage"] =
+            $"{model.Category} updated successfully.";
+
+        return RedirectToAction(nameof(Properties));
+    }
+
+    // =========================================================
+    // PROPERTIES - DELETE
+    // =========================================================
+
+    [HttpPost("Properties/Delete/{id:int}")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> DeleteProperty(
+        int id,
+        string category)
+    {
+        category = (category ?? string.Empty).Trim();
+
+        switch (category)
+        {
+            case "Hotel":
+                {
+                    var item = await _context.Hotels.FindAsync(id);
+
+                    if (item == null)
+                    {
+                        TempData["ErrorMessage"] = "Hotel not found.";
+                        return RedirectToAction(nameof(Properties));
+                    }
+
+                    _context.Hotels.Remove(item);
+                    break;
+                }
+
+            case "Restaurant":
+                {
+                    var item = await _context.Restaurants.FindAsync(id);
+
+                    if (item == null)
+                    {
+                        TempData["ErrorMessage"] = "Restaurant not found.";
+                        return RedirectToAction(nameof(Properties));
+                    }
+
+                    _context.Restaurants.Remove(item);
+                    break;
+                }
+
+            case "Resort":
+                {
+                    var item = await _context.Resorts.FindAsync(id);
+
+                    if (item == null)
+                    {
+                        TempData["ErrorMessage"] = "Resort not found.";
+                        return RedirectToAction(nameof(Properties));
+                    }
+
+                    _context.Resorts.Remove(item);
+                    break;
+                }
+
+            default:
+                return BadRequest("Invalid property category.");
+        }
+
+        try
+        {
+            await _context.SaveChangesAsync();
+
+            TempData["SuccessMessage"] =
+                $"{category} deleted successfully.";
+        }
+        catch (DbUpdateException)
+        {
+            TempData["ErrorMessage"] =
+                "This property could not be deleted because it may be " +
+                "referenced by existing bookings or other records.";
+        }
+
+        return RedirectToAction(nameof(Properties));
+    }
+
+    // =========================================================
+    // PROPERTY FORM VALIDATION
+    // =========================================================
+
+    private bool ValidatePropertyForm(
+        AdminPropertyFormViewModel model)
+    {
+        var allowedCategories = new[]
+        {
+            "Hotel", "Restaurant", "Resort"
+        };
+
+        if (!allowedCategories.Contains(model.Category))
+        {
+            ModelState.AddModelError(
+                nameof(model.Category),
+                "Select a valid property type.");
+
+            return false;
+        }
+
+        if (model.Price is null or < 0)
+        {
+            ModelState.AddModelError(
+                nameof(model.Price),
+                "Enter a valid price.");
+        }
+
+        if (model.Category == "Hotel" &&
+            model.StarRating is null or < 1 or > 5)
+        {
+            ModelState.AddModelError(
+                nameof(model.StarRating),
+                "Select a star rating from 1 to 5.");
+        }
+
+        if (model.Category == "Restaurant" &&
+            string.IsNullOrWhiteSpace(model.CuisineType))
+        {
+            ModelState.AddModelError(
+                nameof(model.CuisineType),
+                "Enter the cuisine type.");
+        }
+
+        return ModelState.IsValid;
+    }
+
+    // =========================================================
+    // PROPERTY SLUG VALIDATION
+    // =========================================================
+
+    private async Task<bool> PropertySlugExistsAsync(
+        string category,
+        string slug,
+        int? excludeId = null)
+    {
+        return category switch
+        {
+            "Hotel" => await _context.Hotels.AnyAsync(
+                x => x.Slug == slug &&
+                     (!excludeId.HasValue || x.Id != excludeId.Value)),
+
+            "Restaurant" => await _context.Restaurants.AnyAsync(
+                x => x.Slug == slug &&
+                     (!excludeId.HasValue || x.Id != excludeId.Value)),
+
+            "Resort" => await _context.Resorts.AnyAsync(
+                x => x.Slug == slug &&
+                     (!excludeId.HasValue || x.Id != excludeId.Value)),
+
+            _ => true
+        };
+    }
+
+    private static string CreatePropertySlug(string name)
+    {
+        var slug = (name ?? string.Empty).Trim().ToLowerInvariant();
+        slug = Regex.Replace(slug, @"[^a-z0-9\s-]", "");
+        slug = Regex.Replace(slug, @"[\s-]+", "-");
+
+        return slug.Trim('-');
     }
 
     // =========================================================

@@ -1,3 +1,4 @@
+
 @model KarnelTravel.ViewModels.AdminPropertiesViewModel
 
 @{
@@ -17,8 +18,10 @@
             </p>
         </div>
 
-        <a href="#property-list" class="admin-button admin-button-primary">
-            View properties
+        <a asp-controller="Admin"
+           asp-action="CreateProperty"
+           class="admin-button admin-button-primary">
+            + Add property
         </a>
     </div>
 
@@ -37,7 +40,6 @@
     }
 
     <div class="property-stat-grid">
-
         <article class="property-stat-card">
             <div class="property-stat-icon">▦</div>
             <p>Total properties</p>
@@ -65,11 +67,9 @@
             <h2>@Model.ResortCount</h2>
             <span>Resort listings</span>
         </article>
-
     </div>
 
     <div class="property-status-grid">
-
         <div class="property-status-card">
             <span class="status-dot status-dot-published"></span>
             <div>
@@ -85,7 +85,6 @@
                 <strong>@Model.DraftCount</strong>
             </div>
         </div>
-
     </div>
 
     <section class="property-panel" id="property-list">
@@ -93,7 +92,7 @@
         <div class="property-panel-header">
             <div>
                 <h2>All properties</h2>
-                <p>Review the property records currently stored in your database.</p>
+                <p>Review, edit, publish, or remove property records.</p>
             </div>
 
             <span class="property-total-badge">
@@ -131,8 +130,14 @@
                 <h3>No properties found</h3>
                 <p>
                     Your database currently has no hotel, restaurant, or resort records.
-                    Properties will appear here when records are added.
+                    Add a property to get started.
                 </p>
+
+                <a asp-controller="Admin"
+                   asp-action="CreateProperty"
+                   class="admin-button admin-button-primary">
+                    Add your first property
+                </a>
             </div>
         }
         else
@@ -147,14 +152,19 @@
                             <th>Destination</th>
                             <th>Starting price</th>
                             <th>Status</th>
+                            <th class="actions-heading">Actions</th>
                         </tr>
                     </thead>
 
                     <tbody id="propertyTableBody">
                         @foreach (var property in Model.Properties)
                         {
-                            var normalizedType = property.Category?.ToLowerInvariant() ?? "";
-                            var normalizedStatus = property.IsPublished ? "published" : "draft";
+                            var normalizedType =
+                                property.Category?.ToLowerInvariant() ?? "";
+
+                            var normalizedStatus =
+                                property.IsPublished ? "published" : "draft";
+
                             var price = Convert.ToDecimal(property.Price);
 
                             <tr class="property-row"
@@ -232,6 +242,41 @@
                                         @(property.IsPublished ? "Published" : "Draft")
                                     </span>
                                 </td>
+
+                                <td>
+                                    <div class="property-actions">
+
+                                        <a asp-controller="Admin"
+                                           asp-action="EditProperty"
+                                           asp-route-id="@property.Id"
+                                           asp-route-category="@property.Category"
+                                           class="property-action-button property-edit-button"
+                                           aria-label="Edit @property.Name">
+                                            Edit
+                                        </a>
+
+                                        <form asp-controller="Admin"
+                                              asp-action="DeleteProperty"
+                                              asp-route-id="@property.Id"
+                                              method="post"
+                                              class="property-delete-form"
+                                              onsubmit="return confirm('Delete @property.Name? This action cannot be undone.');">
+
+                                            @Html.AntiForgeryToken()
+
+                                            <input type="hidden"
+                                                   name="category"
+                                                   value="@property.Category" />
+
+                                            <button type="submit"
+                                                    class="property-action-button property-delete-button"
+                                                    aria-label="Delete @property.Name">
+                                                Delete
+                                            </button>
+                                        </form>
+
+                                    </div>
+                                </td>
                             </tr>
                         }
                     </tbody>
@@ -251,7 +296,6 @@
         }
 
     </section>
-
 </section>
 
 <style>
@@ -302,10 +346,10 @@
         transition: transform .2s ease, opacity .2s ease;
     }
 
-        .admin-button:hover {
-            transform: translateY(-2px);
-            opacity: .9;
-        }
+    .admin-button:hover {
+        transform: translateY(-2px);
+        opacity: .9;
+    }
 
     .admin-button-primary {
         background: #2878f0;
@@ -394,20 +438,20 @@
         border-radius: 12px;
     }
 
-        .property-status-card > div {
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-        }
+    .property-status-card > div {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
 
-            .property-status-card > div span {
-                color: var(--admin-muted, #9ca7b8);
-                font-size: 12px;
-            }
+    .property-status-card > div span {
+        color: var(--admin-muted, #9ca7b8);
+        font-size: 12px;
+    }
 
-        .property-status-card strong {
-            font-size: 20px;
-        }
+    .property-status-card strong {
+        font-size: 20px;
+    }
 
     .status-dot {
         display: inline-block;
@@ -441,17 +485,17 @@
         border-bottom: 1px solid var(--admin-border, #293244);
     }
 
-        .property-panel-header h2 {
-            margin: 0;
-            font-size: 18px;
-        }
+    .property-panel-header h2 {
+        margin: 0;
+        font-size: 18px;
+    }
 
-        .property-panel-header p {
-            margin: 7px 0 0;
-            color: var(--admin-muted, #9ca7b8);
-            font-size: 12px;
-            line-height: 1.6;
-        }
+    .property-panel-header p {
+        margin: 7px 0 0;
+        color: var(--admin-muted, #9ca7b8);
+        font-size: 12px;
+        line-height: 1.6;
+    }
 
     .property-total-badge {
         padding: 7px 10px;
@@ -481,29 +525,29 @@
         color: var(--admin-muted, #9ca7b8);
     }
 
-        .property-search > span {
-            font-size: 23px;
-        }
+    .property-search > span {
+        font-size: 23px;
+    }
 
-        .property-search input,
-        .property-toolbar select {
-            min-height: 42px;
-            color: var(--admin-text, #e9edf5);
-            background: transparent;
-            font: inherit;
-            font-size: 12px;
-            outline: none;
-        }
+    .property-search input,
+    .property-toolbar select {
+        min-height: 42px;
+        color: var(--admin-text, #e9edf5);
+        background: transparent;
+        font: inherit;
+        font-size: 12px;
+        outline: none;
+    }
 
-        .property-search input {
-            width: 100%;
-            min-width: 0;
-            border: 0;
-        }
+    .property-search input {
+        width: 100%;
+        min-width: 0;
+        border: 0;
+    }
 
-            .property-search input::placeholder {
-                color: var(--admin-muted, #8c97a8);
-            }
+    .property-search input::placeholder {
+        color: var(--admin-muted, #8c97a8);
+    }
 
     .property-toolbar select {
         max-width: 160px;
@@ -512,10 +556,10 @@
         border-radius: 8px;
     }
 
-        .property-toolbar select option {
-            background: #151b26;
-            color: #e9edf5;
-        }
+    .property-toolbar select option {
+        background: #151b26;
+        color: #e9edf5;
+    }
 
     .property-table-wrapper {
         width: 100%;
@@ -529,30 +573,30 @@
         white-space: nowrap;
     }
 
-        .property-table th {
-            padding: 14px 19px;
-            background: rgba(255, 255, 255, .018);
-            color: var(--admin-muted, #9ca7b8);
-            font-size: 10px;
-            font-weight: 750;
-            text-transform: uppercase;
-            letter-spacing: .8px;
-        }
+    .property-table th {
+        padding: 14px 19px;
+        background: rgba(255, 255, 255, .018);
+        color: var(--admin-muted, #9ca7b8);
+        font-size: 10px;
+        font-weight: 750;
+        text-transform: uppercase;
+        letter-spacing: .8px;
+    }
 
-        .property-table td {
-            padding: 17px 19px;
-            border-top: 1px solid var(--admin-border, #293244);
-            font-size: 12px;
-            color: var(--admin-text, #dce3ee);
-        }
+    .property-table td {
+        padding: 17px 19px;
+        border-top: 1px solid var(--admin-border, #293244);
+        font-size: 12px;
+        color: var(--admin-text, #dce3ee);
+    }
 
-        .property-table tbody tr {
-            transition: background .18s ease;
-        }
+    .property-table tbody tr {
+        transition: background .18s ease;
+    }
 
-            .property-table tbody tr:hover {
-                background: rgba(255, 255, 255, .025);
-            }
+    .property-table tbody tr:hover {
+        background: rgba(255, 255, 255, .025);
+    }
 
     .property-name-cell {
         display: flex;
@@ -587,11 +631,11 @@
         white-space: normal;
     }
 
-        .property-name-details strong {
-            max-width: 220px;
-            line-height: 1.5;
-            font-size: 12px;
-        }
+    .property-name-details strong {
+        max-width: 220px;
+        line-height: 1.5;
+        font-size: 12px;
+    }
 
     .featured-label {
         padding: 3px 6px;
@@ -649,20 +693,72 @@
         white-space: normal;
     }
 
-        .property-price strong,
-        .property-price span {
-            display: block;
-        }
+    .property-price strong,
+    .property-price span {
+        display: block;
+    }
 
-        .property-price strong {
-            font-size: 12px;
-        }
+    .property-price strong {
+        font-size: 12px;
+    }
 
-        .property-price span {
-            margin-top: 5px;
-            color: var(--admin-muted, #9ca7b8);
-            font-size: 10px;
-        }
+    .property-price span {
+        margin-top: 5px;
+        color: var(--admin-muted, #9ca7b8);
+        font-size: 10px;
+    }
+
+    .actions-heading {
+        text-align: center;
+    }
+
+    .property-actions {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+    }
+
+    .property-action-button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 32px;
+        padding: 7px 11px;
+        border: 1px solid transparent;
+        border-radius: 7px;
+        font-family: inherit;
+        font-size: 11px;
+        font-weight: 700;
+        text-decoration: none;
+        cursor: pointer;
+        transition: background .2s ease, border-color .2s ease;
+    }
+
+    .property-edit-button {
+        color: #8cbdff;
+        background: rgba(40, 120, 240, .12);
+        border-color: rgba(40, 120, 240, .22);
+    }
+
+    .property-edit-button:hover {
+        background: rgba(40, 120, 240, .24);
+    }
+
+    .property-delete-form {
+        display: inline-flex;
+        margin: 0;
+    }
+
+    .property-delete-button {
+        color: #ff9b9b;
+        background: rgba(235, 80, 80, .09);
+        border-color: rgba(235, 80, 80, .2);
+    }
+
+    .property-delete-button:hover {
+        background: rgba(235, 80, 80, .2);
+    }
 
     .property-empty-state,
     .property-no-results {
@@ -685,7 +781,7 @@
     .property-empty-state p,
     .property-no-results p {
         max-width: 430px;
-        margin: 0 auto;
+        margin: 0 auto 18px;
         color: var(--admin-muted, #9ca7b8);
         font-size: 12px;
         line-height: 1.8;
@@ -718,10 +814,10 @@
             flex-direction: column;
         }
 
-            .property-toolbar select {
-                width: 100%;
-                max-width: none;
-            }
+        .property-toolbar select {
+            width: 100%;
+            max-width: none;
+        }
 
         .property-stat-grid {
             gap: 10px;
@@ -756,7 +852,9 @@
             return;
         }
 
-        const rows = Array.from(tableBody.querySelectorAll(".property-row"));
+        const rows = Array.from(
+            tableBody.querySelectorAll(".property-row")
+        );
 
         function filterProperties() {
             const search = searchInput.value.trim().toLowerCase();
