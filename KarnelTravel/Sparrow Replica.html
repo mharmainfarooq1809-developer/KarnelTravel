@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Sparrow | Look like an expert right from the start</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🐦</text></svg>">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;800&display=swap">
+<style>
+:root{--bg:#0d0f14;--fg:#fff;--muted:#9aa3b2;--sec:#fff;--sec-fg:#14171f;--sec-muted:#6b7280;--card:#f3f5f9;--line:#e5e7eb;--accent:#ffcc00;--accent-fg:#14171f;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--sec:#12151c;--sec-fg:#f3f4f6;--sec-muted:#9aa3b2;--card:#1b1f29;--line:#272c38}}
+:root[data-theme="dark"]{--sec:#12151c;--sec-fg:#f3f4f6;--sec-muted:#9aa3b2;--card:#1b1f29;--line:#272c38}
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:calc(70px + env(safe-area-inset-top,0px))}
+body{margin:0;background:var(--sec);color:var(--sec-fg);font:400 16px/1.6 Montserrat,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+a{color:inherit;text-decoration:none}
+.wrap{max-width:1140px;margin:0 auto;padding:0 20px}
+/* nav */
+header{position:fixed;inset:0 0 auto;z-index:50;background:rgba(13,15,20,.85);backdrop-filter:blur(10px);color:#fff;padding-top:env(safe-area-inset-top,0px)}
+nav{display:flex;align-items:center;justify-content:space-between;height:64px}
+.logo{font-weight:800;font-size:22px;letter-spacing:.5px;display:flex;align-items:center;gap:8px}
+.logo i{width:26px;height:26px;border-radius:50%;background:var(--accent);display:inline-block}
+.menu{display:flex;align-items:center;gap:4px;list-style:none;margin:0;padding:0}
+.menu>li{position:relative}
+.menu>li>a,.menu>li>button{background:none;border:0;color:inherit;font:600 12px Montserrat,sans-serif;text-transform:uppercase;letter-spacing:1.5px;padding:22px 14px;cursor:pointer;display:block}
+.menu>li:hover>a,.menu>li:hover>button{color:var(--accent)}
+.drop{position:absolute;top:100%;left:0;min-width:200px;background:#161a23;border-radius:0 0 10px 10px;padding:10px 0;display:none;box-shadow:0 20px 40px rgba(0,0,0,.4)}
+.drop.cols{display:none;grid-template-columns:1fr 1fr;min-width:380px}
+.menu>li:hover .drop{display:block}.menu>li:hover .drop.cols{display:grid}
+.drop a{display:block;padding:6px 20px;font-size:13px;color:#cbd2de}.drop a:hover{color:var(--accent)}
+.lang{border:1px solid #394150;border-radius:20px;padding:4px 12px;font-size:12px;font-weight:600;margin-left:8px}
+.burger{display:none;background:none;border:0;width:40px;height:40px;cursor:pointer;color:#fff}
+.burger span,.burger span::before,.burger span::after{display:block;width:22px;height:2px;background:currentColor;position:relative;margin:auto;content:""}
+.burger span::before{position:absolute;top:-7px}.burger span::after{position:absolute;top:7px}
+@media(max-width:900px){
+ .burger{display:block}
+ .menu{display:none;position:absolute;top:64px;left:0;right:0;background:#0d0f14;flex-direction:column;align-items:stretch;padding:8px 20px 20px;max-height:calc(100vh - 64px);overflow:auto}
+ .menu.open{display:flex}
+ .menu>li>a,.menu>li>button{padding:14px 0;width:100%;text-align:left;border-bottom:1px solid #232834}
+ .drop,.drop.cols{position:static;box-shadow:none;background:transparent;padding:0 0 8px 12px;min-width:0}
+ .menu>li:hover .drop{display:none}.menu>li.open .drop{display:block}.menu>li.open .drop.cols{display:grid}
+ .drop.cols{grid-template-columns:1fr 1fr}
+ .lang{display:inline-block;margin:12px 0 0}
+}
+/* hero */
+.hero{position:relative;min-height:100vh;background:radial-gradient(1200px 600px at 50% 0,#1d2433 0,var(--bg) 70%);color:#fff;display:flex;align-items:center;justify-content:center;text-align:center;overflow:hidden;padding:110px 0 80px}
+.dev{position:absolute;border-radius:12px;border:3px solid #2b3242;background:linear-gradient(135deg,var(--c1),var(--c2));opacity:.55;animation:fl 9s ease-in-out infinite;box-shadow:0 20px 40px rgba(0,0,0,.4)}
+.dev::before{content:"";position:absolute;inset:8% 8% auto;height:10%;border-radius:4px;background:rgba(255,255,255,.35)}
+.dev::after{content:"";position:absolute;inset:26% 8% 10%;border-radius:4px;background:repeating-linear-gradient(90deg,rgba(255,255,255,.18) 0 30%,transparent 30% 36%)}
+@keyframes fl{50%{transform:translateY(-18px) rotate(var(--r,0deg))}}
+.hero .wrap{position:relative;z-index:2;max-width:780px}
+.hero h1{font-size:clamp(34px,7vw,76px);line-height:1.05;font-weight:800;text-transform:uppercase;margin:0 0 20px;letter-spacing:-1px;text-shadow:0 4px 30px rgba(0,0,0,.6)}
+.hero p{color:#c3cad7;font-size:clamp(16px,2.2vw,20px);margin:0 0 32px}
+.btn{display:inline-block;font:600 13px Montserrat,sans-serif;text-transform:uppercase;letter-spacing:1.5px;padding:15px 30px;border-radius:50px;margin:6px;transition:.2s}
+.b1{background:var(--accent);color:var(--accent-fg)}.b1:hover{transform:translateY(-3px);box-shadow:0 10px 24px rgba(255,204,0,.35)}
+.b2{border:2px solid #fff;color:#fff}.b2:hover{background:#fff;color:#000}
+/* sections */
+section{padding:90px 0}
+.intro{text-align:center;max-width:720px;margin:0 auto}
+.intro small{text-transform:uppercase;letter-spacing:3px;color:var(--sec-muted);font-weight:600}
+.intro h2{font-size:clamp(28px,5vw,48px);line-height:1.15;margin:8px 0 18px;font-weight:800}
+.intro p{color:var(--sec-muted);font-size:18px}
+hr{border:0;height:2px;width:60px;background:var(--accent);margin:34px auto}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:22px;margin-top:40px}
+.card{background:var(--card);border-radius:14px;overflow:hidden;border:1px solid var(--line);transition:.25s;display:block}
+.card:hover{transform:translateY(-6px);box-shadow:0 18px 36px rgba(0,0,0,.18)}
+.thumb{aspect-ratio:4/3;background:linear-gradient(135deg,var(--c1),var(--c2));position:relative}
+.thumb::before{content:"";position:absolute;inset:14% 12% auto;height:12%;border-radius:4px;background:rgba(255,255,255,.4)}
+.thumb::after{content:"";position:absolute;inset:34% 12% 14%;border-radius:6px;background:rgba(255,255,255,.22)}
+.card span{display:block;padding:14px 18px;font-weight:600;text-transform:uppercase;letter-spacing:1.5px;font-size:13px}
+.label{text-align:center;margin:60px 0 0;text-transform:uppercase;letter-spacing:3px;font-size:13px;color:var(--sec-muted);font-weight:600}
+.feat{background:var(--card)}
+.feat .row{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:34px}
+.feat .it{text-align:center;padding:10px}
+.feat .ic{width:64px;height:64px;border-radius:50%;background:var(--accent);color:var(--accent-fg);display:grid;place-items:center;margin:0 auto 18px;font-size:26px}
+.feat h3{font-size:19px;line-height:1.3;text-transform:uppercase;margin:0;font-weight:800}
+.cta{background:var(--bg);color:#fff;text-align:center}
+.cta h2{font-size:clamp(24px,4.5vw,40px);max-width:640px;margin:0 auto 28px;line-height:1.2;font-weight:800}
+footer{background:#080a0e;color:#9aa3b2;padding:34px 0 calc(34px + env(safe-area-inset-bottom,0px));font-size:14px}
+footer .wrap{display:flex;flex-wrap:wrap;gap:16px;align-items:center;justify-content:space-between}
+footer ul{list-style:none;display:flex;gap:18px;margin:0;padding:0;flex-wrap:wrap}
+footer a:hover{color:var(--accent)}
+#top{position:fixed;right:18px;bottom:calc(18px + env(safe-area-inset-bottom,0px));width:44px;height:44px;border-radius:50%;background:var(--accent);color:var(--accent-fg);display:grid;place-items:center;font-weight:800;box-shadow:0 8px 20px rgba(0,0,0,.3)}
+@media(prefers-reduced-motion:reduce){.dev{animation:none}html{scroll-behavior:auto}}
+</style>
+</head>
+<body>
+<header>
+ <div class="wrap"><nav>
+  <a class="logo" href="#"><i></i>Sparrow</a>
+  <button class="burger" aria-label="Menu" onclick="document.getElementById('m').classList.toggle('open')"><span></span></button>
+  <ul class="menu" id="m">
+   <li><button>Homes</button><div class="drop cols"><a href="#demoes">Default</a><a href="#demoes">Bicycle</a><a href="#demoes">Bigcartel</a><a href="#demoes">Cafe</a><a href="#demoes">Digital</a><a href="#demoes">Ecommerce</a><a href="#demoes">Event</a><a href="#demoes">Interior</a><a href="#demoes">Landing</a><a href="#demoes">Promotion</a><a href="#demoes">Software</a><a href="#demoes">Studio</a></div></li>
+   <li><button>Pages</button><div class="drop cols"><a href="#demoes">404</a><a href="#demoes">About</a><a href="#demoes">Blog</a><a href="#demoes">Cart</a><a href="#demoes">Casestudy</a><a href="#demoes">Coming soon</a><a href="#demoes">Contact</a><a href="#demoes">Portfolio</a><a href="#demoes">Profile</a><a href="#demoes">Services</a><a href="#demoes">Shop</a><a href="#demoes">Sign in</a></div></li>
+   <li><button>Components</button><div class="drop cols"><a href="#!">Accordion</a><a href="#!">Carousel</a><a href="#!">Countdown</a><a href="#!">Lightbox</a><a href="#!">Masonry</a><a href="#!">Parallax</a><a href="#!">Buttons</a><a href="#!">Cards</a><a href="#!">Forms</a><a href="#!">Modals</a></div></li>
+   <li><button>Documentation</button><div class="drop"><a href="#!">Getting started</a><a href="#!">File structure</a><a href="#!">Customization</a><a href="#!">Plugins</a><a href="#!">Changelog</a></div></li>
+   <li><a href="#!">Portfolio</a></li>
+   <li><a href="#!">Contact</a></li>
+   <li><a class="lang" href="#!">EN</a></li>
+  </ul>
+ </nav></div>
+</header>
+
+<div class="hero">
+ <div class="dev" style="--c1:#3b5bdb;--c2:#7048e8;--r:2deg;width:240px;height:160px;left:4%;top:18%"></div>
+ <div class="dev" style="--c1:#12b886;--c2:#1c7ed6;--r:-2deg;width:130px;height:230px;right:6%;top:16%;animation-delay:-3s"></div>
+ <div class="dev" style="--c1:#f76707;--c2:#e03131;--r:3deg;width:200px;height:140px;left:8%;bottom:10%;animation-delay:-5s"></div>
+ <div class="dev" style="--c1:#7048e8;--c2:#e64980;--r:-3deg;width:260px;height:170px;right:4%;bottom:8%;animation-delay:-1s"></div>
+ <div class="dev" style="--c1:#0b7285;--c2:#5c940d;width:100px;height:190px;left:24%;bottom:4%;animation-delay:-7s"></div>
+ <div class="wrap">
+  <h1>Look like an expert right from the start</h1>
+  <p>Head start your stylish website with a gorgeous template</p>
+  <a class="btn b2" href="#demoes">Explore Demos</a><a class="btn b1" href="https://themewagon.com/themes/sparrow/">Purchase Sparrow ⟶</a>
+ </div>
+</div>
+
+<section>
+ <div class="wrap intro">
+  <small>Turn your project from</small>
+  <h2>mediocre to remarkable</h2>
+  <p>— a design that is simple, seamless and alive! With Sparrow, your outstanding website is just one step away. Create with it what you will.</p>
+  <hr>
+ </div>
+ <div class="wrap" id="demoes">
+  <div class="label">Homes</div>
+  <div class="grid" id="homes"></div>
+  <div class="label">Pages</div>
+  <div class="grid" id="pages"></div>
+ </div>
+</section>
+
+<section class="feat">
+ <div class="wrap row">
+  <div class="it"><div class="ic">⚡</div><h3>GPU enhanced animation for life-like experiences</h3></div>
+  <div class="it"><div class="ic">▣</div><h3>All the power of Bootstrap 4 core &amp; popular plugins</h3></div>
+  <div class="it"><div class="ic">🌐</div><h3>Works from IE 11 to Safari &amp; everything in between</h3></div>
+  <div class="it"><div class="ic">✎</div><h3>More extendable, customizable &amp; hackable</h3></div>
+ </div>
+</section>
+
+<section class="cta">
+ <div class="wrap">
+  <h2>Discover all the possibilities you can create with Sparrow</h2>
+  <a class="btn b1" href="https://themewagon.com/themes/sparrow/">Purchase now</a>
+ </div>
+</section>
+
+<footer>
+ <div class="wrap">
+  <span>Copyright © 2025 Sparrow™ inc.</span>
+  <ul><li><a href="#!">English</a></li><li><a href="#!">Français</a></li><li><a href="#!">عربى</a></li><li><a href="#!">Deutsche</a></li></ul>
+  <span>Made with ♥ by <a href="https://themewagon.com/">Themewagon</a></span>
+ </div>
+</footer>
+<a id="top" href="#" aria-label="Back to top">↑</a>
+
+<script>
+const base="https://prium.github.io/twbs-sparrow/v2.5.0/";
+const pal=[["#3b5bdb","#7048e8"],["#12b886","#1c7ed6"],["#f76707","#e03131"],["#7048e8","#e64980"],["#0b7285","#5c940d"],["#e8590c","#f59f00"]];
+const fill=(id,dir,items)=>{document.getElementById(id).innerHTML=items.map((n,i)=>{const c=pal[i%pal.length];return `<a class="card" href="${base}${dir}/${n}.html" target="_blank" rel="noopener"><div class="thumb" style="--c1:${c[0]};--c2:${c[1]}"></div><span>${n.replace(/-/g," ")}</span></a>`}).join("")};
+fill("homes","homes",["default","bigcartel","cafe","bicycle","digital","ecommerce","event","interior","landing","promotion","software","studio"]);
+fill("pages","pages",["404","about","blog","cart","casestudy","coming-soon","contact","split-static","split-youtube","portfolio","profile","rtl","services","shop","signin","signup","blog-single","product-single"]);
+document.querySelectorAll(".menu>li>button").forEach(b=>b.addEventListener("click",()=>{if(innerWidth<=900)b.parentElement.classList.toggle("open")}));
+document.querySelectorAll(".menu a[href^='#']").forEach(a=>a.addEventListener("click",()=>document.getElementById("m").classList.remove("open")));
+</script>
+</body>
+</html>
