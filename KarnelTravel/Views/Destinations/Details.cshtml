@@ -1,8 +1,9 @@
 ﻿
-@model KarnelTravel.Models.Destination
+@model KarnelTravel.ViewModels.DestinationDetailsViewModel
 
 @{
-    ViewData["Title"] = Model.Name + " | Karnel Travel Guide";
+    var destination = Model.Destination;
+    ViewData["Title"] = destination.Name + " | Karnel Travel Guide";
     Layout = null;
 }
 
@@ -12,7 +13,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>@ViewData["Title"]</title>
-    <meta name="description" content="@Model.ShortDescription" />
+    <meta name="description" content="@destination.ShortDescription" />
 
     <style>
         :root {
@@ -23,15 +24,11 @@
             --ink: #24312c;
             --muted: #727b74;
             --white: #ffffff;
+            --border: #e8e4d9;
         }
 
-        * {
-            box-sizing: border-box;
-        }
-
-        html {
-            scroll-behavior: smooth;
-        }
+        * { box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
 
         body {
             margin: 0;
@@ -41,10 +38,7 @@
             line-height: 1.7;
         }
 
-        a {
-            color: inherit;
-            text-decoration: none;
-        }
+        a { color: inherit; text-decoration: none; }
 
         .nav {
             min-height: 76px;
@@ -63,10 +57,7 @@
             font-weight: bold;
         }
 
-        .back-link {
-            font-size: 14px;
-            font-weight: 600;
-        }
+        .back-link { font-size: 14px; font-weight: 600; }
 
         .hero {
             position: relative;
@@ -76,8 +67,8 @@
             color: var(--white);
             background-color: var(--forest-dark);
             background-image:
-                linear-gradient(0deg, rgba(10, 25, 19, .88), rgba(10, 25, 19, .05)),
-                url('@(string.IsNullOrWhiteSpace(Model.ImageUrl) ? "" : Model.ImageUrl)');
+                linear-gradient(0deg, rgba(10,25,19,.88), rgba(10,25,19,.05)),
+                url('@(string.IsNullOrWhiteSpace(destination.ImageUrl) ? "" : destination.ImageUrl)');
             background-size: cover;
             background-position: center;
         }
@@ -103,32 +94,36 @@
             line-height: 1.2;
         }
 
-        h1 {
-            margin: 15px 0;
-            font-size: clamp(42px, 7vw, 76px);
+        h1 { margin: 15px 0; font-size: clamp(42px, 7vw, 76px); }
+
+        h2 {
+            margin: 12px 0 20px;
+            color: var(--forest);
+            font-size: clamp(30px, 4vw, 43px);
         }
+
+        h3 { margin: 8px 0; font-size: 25px; color: var(--forest); }
 
         .hero-description {
             max-width: 690px;
             font-size: 17px;
-            color: rgba(255, 255, 255, .88);
+            color: rgba(255,255,255,.88);
         }
 
         .button {
             display: inline-block;
-            margin-top: 22px;
+            margin: 22px 8px 0 0;
             padding: 13px 23px;
             border: 1px solid var(--gold);
             background: var(--gold);
             color: #17271f;
             font-size: 14px;
             font-weight: bold;
+            transition: .2s ease;
         }
 
-        .button-outline {
-            background: transparent;
-            color: white;
-        }
+        .button:hover { transform: translateY(-2px); }
+        .button-outline { background: transparent; color: white; }
 
         .container {
             max-width: 1120px;
@@ -150,30 +145,16 @@
             text-transform: uppercase;
         }
 
-        h2 {
-            margin: 12px 0 20px;
-            color: var(--forest);
-            font-size: clamp(30px, 4vw, 43px);
-        }
-
-        .description {
-            white-space: pre-line;
-        }
+        .description { white-space: pre-line; }
 
         .info-card {
             padding: 28px;
             background: var(--white);
-            border: 1px solid #e8e4d9;
+            border: 1px solid var(--border);
         }
 
-        .info-row {
-            padding: 15px 0;
-            border-bottom: 1px solid #e8e4d9;
-        }
-
-        .info-row:last-child {
-            border-bottom: 0;
-        }
+        .info-row { padding: 15px 0; border-bottom: 1px solid var(--border); }
+        .info-row:last-child { border-bottom: 0; }
 
         .info-label {
             display: block;
@@ -183,35 +164,119 @@
             letter-spacing: 1px;
         }
 
-        .info-value {
+        .info-value { display: block; margin-top: 4px; font-weight: 600; }
+
+        .listing-section { border-top: 1px solid var(--border); }
+
+        .section-heading {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            gap: 20px;
+            margin-bottom: 28px;
+        }
+
+        .section-heading h2 { margin-bottom: 0; }
+        .section-description { color: var(--muted); margin: 8px 0 0; }
+
+        .listing-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 24px;
+        }
+
+        .listing-card {
+            overflow: hidden;
+            background: var(--white);
+            border: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+            transition: transform .25s ease, box-shadow .25s ease;
+        }
+
+        .listing-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 14px 30px rgba(24,60,50,.09);
+        }
+
+        .listing-image, .image-placeholder {
+            width: 100%;
+            height: 210px;
             display: block;
-            margin-top: 4px;
-            font-weight: 600;
+            background: #e4e5dc;
         }
 
-        .planning {
-            background: var(--forest);
-            color: var(--white);
+        .listing-image { object-fit: cover; }
+
+        .image-placeholder {
+            display: grid;
+            place-items: center;
+            color: var(--forest);
+            font-family: Georgia, serif;
+            font-size: 20px;
         }
 
-        .planning h2 {
-            color: var(--white);
+        .listing-content {
+            padding: 22px;
+            display: flex;
+            flex-direction: column;
+            flex: 1;
         }
 
-        .planning p {
-            max-width: 650px;
-            color: rgba(255, 255, 255, .8);
+        .listing-type {
+            color: #8b7043;
+            font-size: 10px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1.7px;
         }
 
-        .planning .section-label {
-            color: #e3c895;
+        .listing-content h3 { font-size: 24px; }
+        .listing-location { color: var(--muted); font-size: 13px; margin: 3px 0 12px; }
+        .listing-description { font-size: 14px; margin: 0 0 18px; }
+
+        .listing-meta {
+            padding-top: 14px;
+            margin-top: auto;
+            border-top: 1px solid var(--border);
+            font-size: 13px;
+            overflow-wrap: anywhere;
         }
+
+        .listing-price { color: var(--forest); font-weight: bold; }
+
+        .listing-link {
+            display: inline-block;
+            margin-top: 16px;
+            color: var(--forest);
+            font-weight: bold;
+            font-size: 13px;
+        }
+
+        .empty-state {
+            padding: 30px;
+            background: rgba(255,255,255,.7);
+            border: 1px dashed #c9c9b9;
+            color: var(--muted);
+        }
+
+        .empty-state strong {
+            display: block;
+            color: var(--forest);
+            margin-bottom: 5px;
+        }
+
+        .planning { background: var(--forest); color: var(--white); }
+        .planning h2 { color: var(--white); }
+        .planning p { max-width: 650px; color: rgba(255,255,255,.8); }
+        .planning .section-label { color: #e3c895; }
 
         .notice {
             margin-top: 24px;
             padding: 15px;
             border-left: 3px solid var(--gold);
-            background: rgba(255, 255, 255, .07);
+            background: rgba(255,255,255,.07);
             font-size: 13px;
         }
 
@@ -219,35 +284,24 @@
             padding: 25px;
             text-align: center;
             background: var(--forest-dark);
-            color: rgba(255, 255, 255, .75);
+            color: rgba(255,255,255,.75);
             font-size: 13px;
         }
 
+        @@media (max-width: 850px) {
+            .listing-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .intro-grid { gap: 30px; }
+        }
+
         @@media (max-width: 700px) {
-            .nav {
-                padding: 16px 5%;
-            }
-
-            .brand {
-                font-size: 19px;
-            }
-
-            .hero {
-                min-height: 430px;
-            }
-
-            .hero-content {
-                padding: 45px 6%;
-            }
-
-            .intro-grid {
-                grid-template-columns: 1fr;
-                gap: 30px;
-            }
-
-            .container {
-                padding: 48px 20px;
-            }
+            .nav { padding: 16px 5%; }
+            .brand { font-size: 19px; }
+            .hero { min-height: 430px; }
+            .hero-content { padding: 45px 6%; }
+            .intro-grid { grid-template-columns: 1fr; }
+            .container { padding: 48px 20px; }
+            .listing-grid { grid-template-columns: 1fr; }
+            .section-heading { display: block; }
         }
     </style>
 </head>
@@ -262,23 +316,18 @@
         <section class="hero">
             <div class="hero-content">
                 <div class="eyebrow">
-                    @(Model.Region ?? "Explore Pakistan") · Pakistan
+                    @(destination.Region ?? "Explore Pakistan") · Pakistan
                 </div>
 
-                <h1>@Model.Name</h1>
+                <h1>@destination.Name</h1>
 
-                @if (!string.IsNullOrWhiteSpace(Model.ShortDescription))
+                @if (!string.IsNullOrWhiteSpace(destination.ShortDescription))
                 {
-                    <p class="hero-description">@Model.ShortDescription</p>
+                    <p class="hero-description">@destination.ShortDescription</p>
                 }
 
-                <a class="button" href="#travel-information">
-                    Discover this destination ↓
-                </a>
-
-                <a class="button button-outline" href="#plan-trip">
-                    Plan your trip
-                </a>
+                <a class="button" href="#travel-information">Discover this destination ↓</a>
+                <a class="button button-outline" href="#plan-trip">Plan your trip</a>
             </div>
         </section>
 
@@ -286,11 +335,11 @@
             <div class="intro-grid">
                 <div>
                     <div class="section-label">Discover the destination</div>
-                    <h2>Experience @Model.Name</h2>
+                    <h2>Experience @destination.Name</h2>
 
-                    @if (!string.IsNullOrWhiteSpace(Model.Description))
+                    @if (!string.IsNullOrWhiteSpace(destination.Description))
                     {
-                        <div class="description">@Model.Description</div>
+                        <div class="description">@destination.Description</div>
                     }
                     else
                     {
@@ -303,45 +352,276 @@
 
                     <div class="info-row">
                         <span class="info-label">Destination</span>
-                        <span class="info-value">@Model.Name</span>
+                        <span class="info-value">@destination.Name</span>
                     </div>
 
                     <div class="info-row">
                         <span class="info-label">Region</span>
-                        <span class="info-value">
-                            @(Model.Region ?? "Information coming soon")
-                        </span>
+                        <span class="info-value">@(destination.Region ?? "Information coming soon")</span>
                     </div>
 
                     <div class="info-row">
                         <span class="info-label">Best time to visit</span>
-                        <span class="info-value">
-                            @(Model.BestTimeToVisit ?? "Information coming soon")
-                        </span>
+                        <span class="info-value">@(destination.BestTimeToVisit ?? "Information coming soon")</span>
                     </div>
                 </aside>
             </div>
         </section>
 
+        <!-- HOTELS -->
+        <section class="container listing-section" id="hotels">
+            <div class="section-heading">
+                <div>
+                    <div class="section-label">Stay comfortably</div>
+                    <h2>Hotels in @destination.Name</h2>
+                    <p class="section-description">Explore accommodation options for your visit.</p>
+                </div>
+            </div>
+
+            @if (Model.Hotels.Any())
+            {
+                <div class="listing-grid">
+                    @foreach (var hotel in Model.Hotels)
+                    {
+                        <article class="listing-card">
+                            @if (!string.IsNullOrWhiteSpace(hotel.ImageUrl))
+                            {
+                                <img class="listing-image" src="@hotel.ImageUrl" alt="@hotel.Name" loading="lazy" />
+                            }
+                            else
+                            {
+                                <div class="image-placeholder">Hotel</div>
+                            }
+
+                            <div class="listing-content">
+                                <div class="listing-type">Accommodation</div>
+                                <h3>@hotel.Name</h3>
+
+                                @if (!string.IsNullOrWhiteSpace(hotel.City) || !string.IsNullOrWhiteSpace(hotel.Address))
+                                {
+                                    <div class="listing-location">
+                                        @hotel.City
+                                        @if (!string.IsNullOrWhiteSpace(hotel.City) && !string.IsNullOrWhiteSpace(hotel.Address))
+                                        {
+                                            <span> · </span>
+                                        }
+                                        @hotel.Address
+                                    </div>
+                                }
+
+                                @if (!string.IsNullOrWhiteSpace(hotel.ShortDescription))
+                                {
+                                    <p class="listing-description">@hotel.ShortDescription</p>
+                                }
+
+                                <div class="listing-meta">
+                                    @if (hotel.StartingPricePerNight.HasValue && hotel.StartingPricePerNight.Value > 0)
+                                    {
+                                        <div class="listing-price">
+                                            From PKR @string.Format("{0:N0}", hotel.StartingPricePerNight.Value) / night
+                                        </div>
+                                    }
+
+                                    @if (hotel.StarRating > 0)
+                                    {
+                                        <div>Rating: @hotel.StarRating stars</div>
+                                    }
+
+                                    @if (!string.IsNullOrWhiteSpace(hotel.ContactPhone))
+                                    {
+                                        <div>Contact: @hotel.ContactPhone</div>
+                                    }
+
+                                    <a class="listing-link" href="/Contact">Ask about this hotel →</a>
+                                </div>
+                            </div>
+                        </article>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="empty-state">
+                    <strong>No hotels listed yet</strong>
+                    Hotels will appear here when they are published and linked to this destination.
+                </div>
+            }
+        </section>
+
+        <!-- RESORTS -->
+        <section class="container listing-section" id="resorts">
+            <div class="section-heading">
+                <div>
+                    <div class="section-label">Relax and recharge</div>
+                    <h2>Resorts in @destination.Name</h2>
+                    <p class="section-description">Find resorts and places to unwind during your journey.</p>
+                </div>
+            </div>
+
+            @if (Model.Resorts.Any())
+            {
+                <div class="listing-grid">
+                    @foreach (var resort in Model.Resorts)
+                    {
+                        <article class="listing-card">
+                            @if (!string.IsNullOrWhiteSpace(resort.ImageUrl))
+                            {
+                                <img class="listing-image" src="@resort.ImageUrl" alt="@resort.Name" loading="lazy" />
+                            }
+                            else
+                            {
+                                <div class="image-placeholder">Resort</div>
+                            }
+
+                            <div class="listing-content">
+                                <div class="listing-type">Resort</div>
+                                <h3>@resort.Name</h3>
+
+                                @if (!string.IsNullOrWhiteSpace(resort.CityOrRegion) || !string.IsNullOrWhiteSpace(resort.Address))
+                                {
+                                    <div class="listing-location">
+                                        @resort.CityOrRegion
+                                        @if (!string.IsNullOrWhiteSpace(resort.CityOrRegion) && !string.IsNullOrWhiteSpace(resort.Address))
+                                        {
+                                            <span> · </span>
+                                        }
+                                        @resort.Address
+                                    </div>
+                                }
+
+                                @if (!string.IsNullOrWhiteSpace(resort.ShortDescription))
+                                {
+                                    <p class="listing-description">@resort.ShortDescription</p>
+                                }
+
+                                <div class="listing-meta">
+                                    @if (resort.StartingPricePerNight.HasValue && resort.StartingPricePerNight.Value > 0)
+                                    {
+                                        <div class="listing-price">
+                                            From PKR @string.Format("{0:N0}", resort.StartingPricePerNight.Value) / night
+                                        </div>
+                                    }
+
+                                    @if (!string.IsNullOrWhiteSpace(resort.ContactPhone))
+                                    {
+                                        <div>Contact: @resort.ContactPhone</div>
+                                    }
+
+                                    <a class="listing-link" href="/Contact">Ask about this resort →</a>
+                                </div>
+                            </div>
+                        </article>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="empty-state">
+                    <strong>No resorts listed yet</strong>
+                    Resorts will appear here when they are published and linked to this destination.
+                </div>
+            }
+        </section>
+
+        <!-- RESTAURANTS -->
+        <section class="container listing-section" id="restaurants">
+            <div class="section-heading">
+                <div>
+                    <div class="section-label">Discover local flavours</div>
+                    <h2>Restaurants in @destination.Name</h2>
+                    <p class="section-description">Explore places to eat while visiting this destination.</p>
+                </div>
+            </div>
+
+            @if (Model.Restaurants.Any())
+            {
+                <div class="listing-grid">
+                    @foreach (var restaurant in Model.Restaurants)
+                    {
+                        <article class="listing-card">
+                            @if (!string.IsNullOrWhiteSpace(restaurant.ImageUrl))
+                            {
+                                <img class="listing-image" src="@restaurant.ImageUrl" alt="@restaurant.Name" loading="lazy" />
+                            }
+                            else
+                            {
+                                <div class="image-placeholder">Restaurant</div>
+                            }
+
+                            <div class="listing-content">
+                                <div class="listing-type">Dining</div>
+                                <h3>@restaurant.Name</h3>
+
+                                @if (!string.IsNullOrWhiteSpace(restaurant.City) || !string.IsNullOrWhiteSpace(restaurant.Address))
+                                {
+                                    <div class="listing-location">
+                                        @restaurant.City
+                                        @if (!string.IsNullOrWhiteSpace(restaurant.City) && !string.IsNullOrWhiteSpace(restaurant.Address))
+                                        {
+                                            <span> · </span>
+                                        }
+                                        @restaurant.Address
+                                    </div>
+                                }
+
+                                @if (!string.IsNullOrWhiteSpace(restaurant.ShortDescription))
+                                {
+                                    <p class="listing-description">@restaurant.ShortDescription</p>
+                                }
+
+                                <div class="listing-meta">
+                                    @if (!string.IsNullOrWhiteSpace(restaurant.CuisineType))
+                                    {
+                                        <div>Cuisine: @restaurant.CuisineType</div>
+                                    }
+
+                                    @if (restaurant.AverageMealPrice.HasValue && restaurant.AverageMealPrice.Value > 0)
+                                    {
+                                        <div class="listing-price">
+                                            Average meal: PKR @string.Format("{0:N0}", restaurant.AverageMealPrice.Value)
+                                        </div>
+                                    }
+
+                                    @if (!string.IsNullOrWhiteSpace(restaurant.ContactPhone))
+                                    {
+                                        <div>Contact: @restaurant.ContactPhone</div>
+                                    }
+
+                                    <a class="listing-link" href="/Contact">Ask about this restaurant →</a>
+                                </div>
+                            </div>
+                        </article>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="empty-state">
+                    <strong>No restaurants listed yet</strong>
+                    Restaurants will appear here when they are published and linked to this destination.
+                </div>
+            }
+        </section>
+
         <section class="planning" id="plan-trip">
             <div class="container">
                 <div class="section-label">Your next journey</div>
-                <h2>Ready to explore @Model.Name?</h2>
+                <h2>Ready to explore @destination.Name?</h2>
                 <p>
-                    Start planning your visit. Contact Karnel Travel Guide
+                    Need help planning your visit? Contact Karnel Travel Guide
                     for assistance with your travel arrangements.
                 </p>
 
                 <a class="button"
                    href="/Contact"
-                   aria-label="Contact Karnel Travel Guide about @Model.Name">
+                   aria-label="Contact Karnel Travel Guide about @destination.Name">
                     Make an inquiry →
                 </a>
 
                 <div class="notice">
-                    Hotel availability, tour prices and transport bookings
-                    will be displayed here once their respective booking
-                    systems are connected.
+                    These listings show published properties associated with this destination.
+                    Contacting us is an inquiry, not a confirmed reservation. Booking and availability
+                    features can be connected as a separate step.
                 </div>
             </div>
         </section>

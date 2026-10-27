@@ -3,697 +3,776 @@
 
 @{
     Layout = "~/Views/Shared/_AdminLayout.cshtml";
-    ViewData["Title"] = "Add Property";
+
+    var isEdit = ViewData["PropertyId"] != null;
+    var propertyId = ViewData["PropertyId"]?.ToString() ?? "";
+
+    ViewData["Title"] = isEdit ? "Edit Property" : "Add Property";
     ViewData["Section"] = "Stays";
-    var isEdit = ViewContext.RouteData.Values["action"]?.ToString() == "EditProperty";
+
+    var formAction = isEdit
+        ? $"/Admin/Properties/Edit/{propertyId}"
+        : "/Admin/Properties/Create";
 }
 
-<div class="property-page">
-    <div class="page-top">
-        <div>
-            <a href="/Admin/Properties" class="back-link">
-                <span>←</span> Back to Properties
-            </a>
-            <h1>Add a Property</h1>
-            <p class="page-subtitle">
-                Add a hotel, restaurant, or resort to the Karnel Travel Guide.
-            </p>
-        </div>
-        <div class="page-label">
-            <span class="status-dot"></span>
-            Property Management
-        </div>
-    </div>
-
-    <form method="post" action="/Admin/Properties/Create" id="propertyForm">
-        @Html.AntiForgeryToken()
-
-        <div asp-validation-summary="ModelOnly" class="validation-summary"></div>
-
-        <div class="form-layout">
-            <div class="main-column">
-
-                <section class="form-card">
-                    <div class="card-heading">
-                        <div class="heading-icon">01</div>
-                        <div>
-                            <h2>Basic Information</h2>
-                            <p>Choose the property type and enter its details.</p>
-                        </div>
-                    </div>
-
-                    <div class="field">
-                        <label asp-for="Category">Property Type <span>*</span></label>
-                        <select asp-for="Category" id="Category" class="control">
-                            <option value="Hotel">Hotel</option>
-                            <option value="Restaurant">Restaurant</option>
-                            <option value="Resort">Resort</option>
-                        </select>
-                        <span asp-validation-for="Category" class="field-error"></span>
-                    </div>
-
-                    <div class="field">
-                        <label asp-for="Name">Property Name <span>*</span></label>
-                        <input asp-for="Name" class="control"
-                               placeholder="e.g. Mountain View Hotel" />
-                        <span asp-validation-for="Name" class="field-error"></span>
-                    </div>
-
-                    <div class="two-columns">
-                        <div class="field">
-                            <label asp-for="Location">City / Region <span>*</span></label>
-                            <input asp-for="Location" class="control"
-                                   placeholder="e.g. Hunza, Gilgit" />
-                            <span asp-validation-for="Location" class="field-error"></span>
-                        </div>
-
-                        <div class="field">
-                            <label asp-for="ContactPhone">Contact Phone <span>*</span></label>
-                            <input asp-for="ContactPhone" class="control"
-                                   placeholder="+92..." />
-                            <span asp-validation-for="ContactPhone" class="field-error"></span>
-                        </div>
-                    </div>
-
-                    <div class="field">
-                        <label asp-for="Address">Full Address <span>*</span></label>
-                        <input asp-for="Address" class="control"
-                               placeholder="Street, area, city" />
-                        <span asp-validation-for="Address" class="field-error"></span>
-                    </div>
-
-                    <div class="field">
-                        <label asp-for="DestinationId">Related Destination ID</label>
-                        <input asp-for="DestinationId" class="control"
-                               type="number" min="1"
-                               placeholder="Optional — enter an existing destination ID" />
-                        <span asp-validation-for="DestinationId" class="field-error"></span>
-                        <small>Leave blank if this property is not linked to a destination.</small>
-                    </div>
-                </section>
-
-                <section class="form-card">
-                    <div class="card-heading">
-                        <div class="heading-icon">02</div>
-                        <div>
-                            <h2>Description</h2>
-                            <p>Explain what visitors can expect.</p>
-                        </div>
-                    </div>
-
-                    <div class="field">
-                        <label asp-for="ShortDescription">Short Description <span>*</span></label>
-                        <textarea asp-for="ShortDescription" class="control"
-                                  rows="3" maxlength="1000"
-                                  placeholder="A short introduction displayed in property listings."></textarea>
-                        <span asp-validation-for="ShortDescription" class="field-error"></span>
-                    </div>
-
-                    <div class="field">
-                        <label asp-for="Description">Full Description <span>*</span></label>
-                        <textarea asp-for="Description" class="control"
-                                  rows="6" maxlength="2000"
-                                  placeholder="Describe the facilities, services, atmosphere, and highlights."></textarea>
-                        <span asp-validation-for="Description" class="field-error"></span>
-                    </div>
-                </section>
-
-                <section class="form-card">
-                    <div class="card-heading">
-                        <div class="heading-icon">03</div>
-                        <div>
-                            <h2>Media</h2>
-                            <p>Add an image to represent this property.</p>
-                        </div>
-                    </div>
-
-                    <div class="field">
-                        <label asp-for="ImageUrl">Image URL <span>*</span></label>
-                        <input asp-for="ImageUrl" class="control"
-                               type="url" id="ImageUrl"
-                               placeholder="https://example.com/property-image.jpg" />
-                        <span asp-validation-for="ImageUrl" class="field-error"></span>
-                        <small>Use a publicly accessible image URL.</small>
-                    </div>
-
-                    <div class="image-preview" id="imagePreview">
-                        <div class="preview-placeholder">
-                            <span class="preview-symbol">▧</span>
-                            <strong>Image Preview</strong>
-                            <span>Your image will appear here.</span>
-                        </div>
-                        <img id="previewImage" alt="Property preview" hidden />
-                    </div>
-                    <p id="imageError" class="field-error"></p>
-                </section>
-            </div>
-
-            <aside class="side-column">
-                <section class="form-card">
-                    <div class="card-heading">
-                        <div class="heading-icon">04</div>
-                        <div>
-                            <h2>Pricing & Details</h2>
-                            <p>Set relevant property information.</p>
-                        </div>
-                    </div>
-
-                    <div class="field">
-                        <label asp-for="Price" id="priceLabel">Starting Price (PKR)</label>
-                        <input asp-for="Price" class="control"
-                               type="number" min="0" step="0.01"
-                               placeholder="e.g. 5000" />
-                        <span asp-validation-for="Price" class="field-error"></span>
-                        <small id="priceHelp">Enter the starting price where applicable.</small>
-                    </div>
-
-                    <div class="field" id="ratingField">
-                        <label asp-for="StarRating">Star Rating</label>
-                        <select asp-for="StarRating" class="control">
-                            <option value="">Not specified</option>
-                            <option value="1">1 Star</option>
-                            <option value="2">2 Stars</option>
-                            <option value="3">3 Stars</option>
-                            <option value="4">4 Stars</option>
-                            <option value="5">5 Stars</option>
-                        </select>
-                        <span asp-validation-for="StarRating" class="field-error"></span>
-                    </div>
-
-                    <div class="field" id="cuisineField">
-                        <label asp-for="CuisineType">Cuisine Type</label>
-                        <input asp-for="CuisineType" class="control"
-                               placeholder="e.g. Pakistani, Chinese" />
-                        <span asp-validation-for="CuisineType" class="field-error"></span>
-                    </div>
-
-                    <div class="field">
-                        <label asp-for="DisplayOrder">Display Order</label>
-                        <input asp-for="DisplayOrder" class="control"
-                               type="number" min="0"
-                               placeholder="0" />
-                        <span asp-validation-for="DisplayOrder" class="field-error"></span>
-                        <small>Lower numbers can be used to show items first.</small>
-                    </div>
-                </section>
-
-                <section class="form-card">
-                    <div class="card-heading">
-                        <div class="heading-icon">05</div>
-                        <div>
-                            <h2>Visibility</h2>
-                            <p>Control how this property is presented.</p>
-                        </div>
-                    </div>
-
-                    <label class="toggle-row" for="IsPublished">
-                        <div>
-                            <strong>Publish Property</strong>
-                            <small>Make it available on the public website.</small>
-                        </div>
-                        <input asp-for="IsPublished" type="checkbox" />
-                        <span class="toggle-ui"></span>
-                    </label>
-
-                    <label class="toggle-row" for="IsFeatured">
-                        <div>
-                            <strong>Featured Property</strong>
-                            <small>Mark it for featured sections, if supported.</small>
-                        </div>
-                        <input asp-for="IsFeatured" type="checkbox" />
-                        <span class="toggle-ui"></span>
-                    </label>
-                </section>
-
-                <section class="form-card help-card">
-                    <span class="help-icon">i</span>
-                    <h3>Before you save</h3>
-                    <p>Check the property name, location, contact number, and image URL. Make sure the selected category matches the property.</p>
-                </section>
-            </aside>
-        </div>
-
-        <div class="form-footer">
-            <a href="/Admin/Properties" class="btn-cancel">Cancel</a>
-            <button type="submit" class="btn-save">
-                Save Property <span>→</span>
-            </button>
-        </div>
-    </form>
-</div>
-
 <style>
-    .property-page {
-        max-width: 1440px;
+    .property-form-page {
+        max-width: 1100px;
         margin: 0 auto;
-        padding: 28px;
-        color: #172b43;
-        font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        padding-bottom: 48px;
+        color: #202820;
     }
 
-    .page-top {
+    .property-form-header {
         display: flex;
-        align-items: flex-end;
         justify-content: space-between;
-        gap: 20px;
-        margin-bottom: 28px;
+        align-items: flex-start;
+        gap: 24px;
+        margin-bottom: 30px;
     }
 
-    .back-link {
-        display: inline-flex;
-        gap: 8px;
-        align-items: center;
-        color: #64748b;
-        text-decoration: none;
-        font-size: 13px;
-        font-weight: 600;
-        margin-bottom: 15px;
-    }
-
-    .back-link:hover { color: #1570ef; }
-
-    .page-top h1 {
-        margin: 0;
-        font-size: clamp(26px, 3vw, 34px);
+    .property-form-header h1 {
+        margin: 0 0 10px;
+        font-size: clamp(28px, 4vw, 38px);
         font-weight: 750;
         letter-spacing: -1.2px;
     }
 
-    .page-subtitle {
-        margin: 9px 0 0;
-        color: #718096;
+    .property-form-header p {
+        margin: 0;
+        color: #778078;
         font-size: 14px;
-        line-height: 1.6;
+        line-height: 1.7;
     }
 
-    .page-label {
-        display: flex;
+    .back-link {
+        display: inline-flex;
         align-items: center;
-        gap: 9px;
-        padding: 10px 14px;
-        background: #fff;
-        border: 1px solid #e5eaf1;
+        gap: 8px;
+        padding: 11px 15px;
+        border: 1px solid #dfe5dc;
         border-radius: 10px;
-        color: #52647b;
-        font-size: 12px;
-        font-weight: 700;
+        color: #354336;
+        text-decoration: none;
+        font-size: 13px;
+        font-weight: 650;
         white-space: nowrap;
+        transition: background .2s, border-color .2s;
     }
 
-    .status-dot {
-        width: 8px;
-        height: 8px;
-        border-radius: 50%;
-        background: #16a36a;
+    .back-link:hover {
+        background: #f2f5ef;
+        border-color: #b9c7b6;
     }
 
-    .form-layout {
-        display: grid;
-        grid-template-columns: minmax(0, 1.65fr) minmax(290px, .85fr);
+    .property-form {
+        display: flex;
+        flex-direction: column;
         gap: 22px;
-        align-items: start;
-    }
-
-    .main-column, .side-column {
-        display: grid;
-        gap: 22px;
-        min-width: 0;
     }
 
     .form-card {
+        padding: 28px;
+        border: 1px solid #e5e9e2;
+        border-radius: 16px;
         background: #fff;
-        border: 1px solid #e5eaf1;
-        border-radius: 15px;
-        padding: 24px;
-        box-shadow: 0 3px 12px rgba(20, 39, 65, .025);
-        min-width: 0;
+        box-shadow: 0 5px 22px rgba(30, 45, 30, .035);
     }
 
-    .card-heading {
+    .form-card-heading {
         display: flex;
-        gap: 13px;
         align-items: flex-start;
-        margin-bottom: 24px;
+        gap: 13px;
+        margin-bottom: 25px;
+        padding-bottom: 20px;
+        border-bottom: 1px solid #edf0eb;
     }
 
-    .heading-icon {
-        display: grid;
-        place-items: center;
-        flex: 0 0 38px;
+    .section-number {
+        display: flex;
+        flex-shrink: 0;
+        align-items: center;
+        justify-content: center;
+        width: 38px;
         height: 38px;
-        border-radius: 10px;
-        background: #edf4ff;
-        color: #1769dc;
-        font-size: 12px;
-        font-weight: 800;
-    }
-
-    .card-heading h2 {
-        margin: 1px 0 5px;
-        font-size: 17px;
-        letter-spacing: -.3px;
+        border-radius: 11px;
+        background: #edf3e9;
+        color: #496449;
+        font-size: 13px;
         font-weight: 750;
     }
 
-    .card-heading p {
-        margin: 0;
-        color: #7a8798;
-        font-size: 12px;
-        line-height: 1.5;
+    .form-card-heading h2 {
+        margin: 0 0 5px;
+        color: #263126;
+        font-size: 17px;
+        font-weight: 750;
     }
 
-    .field { margin-bottom: 20px; }
-    .field:last-child { margin-bottom: 0; }
+    .form-card-heading p {
+        margin: 0;
+        color: #879087;
+        font-size: 12px;
+        line-height: 1.6;
+    }
 
-    .field label {
+    .form-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 21px;
+    }
+
+    .form-field {
+        min-width: 0;
+    }
+
+    .form-field.full-width {
+        grid-column: 1 / -1;
+    }
+
+    .form-field label {
         display: block;
-        margin-bottom: 8px;
-        color: #34465d;
+        margin-bottom: 9px;
+        color: #3b473b;
         font-size: 12px;
         font-weight: 700;
     }
 
-    .field label span { color: #e34e5c; }
+    .form-field label span {
+        color: #c45e4c;
+    }
 
     .control {
+        display: block;
         width: 100%;
         min-height: 45px;
         padding: 11px 13px;
-        border: 1px solid #dce3ec;
+        border: 1px solid #dfe5dc;
         border-radius: 9px;
+        outline: none;
         background: #fff;
-        color: #24364c;
+        color: #293329;
         font: inherit;
         font-size: 13px;
-        outline: none;
         box-sizing: border-box;
         transition: border-color .2s, box-shadow .2s;
     }
 
-    textarea.control {
-        resize: vertical;
-        line-height: 1.65;
-        min-height: 95px;
-    }
-
     .control:focus {
-        border-color: #4388f5;
-        box-shadow: 0 0 0 3px rgba(67, 136, 245, .11);
+        border-color: #829b7c;
+        box-shadow: 0 0 0 3px rgba(112, 143, 104, .12);
     }
 
-    .control::placeholder { color: #a1adbc; }
+    .control::placeholder {
+        color: #a0a79f;
+    }
 
-    .field small {
-        display: block;
-        margin-top: 7px;
-        color: #8a97a8;
-        font-size: 11px;
-        line-height: 1.55;
+    textarea.control {
+        min-height: 105px;
+        resize: vertical;
+        line-height: 1.7;
     }
 
     .field-error {
         display: block;
-        color: #c93645;
-        font-size: 11px;
         margin-top: 6px;
+        color: #c34d43;
+        font-size: 11px;
     }
 
-    .validation-summary {
-        color: #c93645;
+    .validation-summary-errors {
+        padding: 14px 17px;
+        border: 1px solid #efc9c4;
+        border-radius: 10px;
+        background: #fff5f3;
+        color: #a53d34;
         font-size: 13px;
-        margin-bottom: 16px;
     }
 
-    .validation-summary:empty { display: none; }
+    .validation-summary-errors ul {
+        margin: 8px 0 0;
+        padding-left: 20px;
+    }
 
-    .two-columns {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 16px;
+    .validation-summary-valid {
+        display: none;
+    }
+
+    .form-help {
+        margin-top: 7px;
+        color: #929a91;
+        font-size: 11px;
+        line-height: 1.6;
     }
 
     .image-preview {
-        position: relative;
-        display: grid;
-        place-items: center;
-        min-height: 190px;
-        margin-top: 14px;
+        display: none;
+        margin-top: 13px;
         overflow: hidden;
-        border: 1px dashed #d5deea;
-        border-radius: 11px;
-        background: #f7f9fc;
-    }
-
-    .preview-placeholder {
-        display: flex;
-        align-items: center;
-        flex-direction: column;
-        gap: 7px;
-        padding: 20px;
-        color: #8795a7;
-        text-align: center;
-        font-size: 12px;
-    }
-
-    .preview-placeholder strong { color: #53657b; }
-
-    .preview-symbol {
-        font-size: 28px;
-        color: #7c9dc9;
-    }
-
-    #previewImage {
         width: 100%;
-        height: 230px;
+        max-width: 350px;
+        border: 1px solid #e4e9e1;
+        border-radius: 12px;
+        background: #f4f6f2;
+    }
+
+    .image-preview img {
+        display: block;
+        width: 100%;
+        max-height: 220px;
         object-fit: cover;
     }
 
-    .toggle-row {
-        position: relative;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 15px;
-        padding: 15px 0;
-        cursor: pointer;
-        border-bottom: 1px solid #edf0f5;
-    }
-
-    .toggle-row:first-of-type { padding-top: 0; }
-    .toggle-row:last-of-type { padding-bottom: 0; border-bottom: 0; }
-
-    .toggle-row strong {
-        display: block;
-        font-size: 12px;
-        color: #34465d;
-        margin-bottom: 5px;
-    }
-
-    .toggle-row small {
-        display: block;
-        color: #8995a5;
+    .image-preview-caption {
+        padding: 9px 12px;
+        color: #758074;
         font-size: 11px;
-        line-height: 1.5;
-        max-width: 220px;
     }
 
-    .toggle-row input {
-        position: absolute;
-        right: 0;
-        width: 39px;
-        height: 22px;
-        opacity: 0;
+    .option-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 14px;
+    }
+
+    .option-card {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        padding: 17px;
+        border: 1px solid #e2e8df;
+        border-radius: 11px;
+        background: #fbfcfa;
         cursor: pointer;
     }
 
-    .toggle-ui {
-        flex: 0 0 39px;
-        width: 39px;
-        height: 22px;
-        border-radius: 20px;
-        background: #d6dee8;
-        transition: background .2s;
-        position: relative;
+    .option-card input {
+        width: 17px;
+        height: 17px;
+        margin: 2px 0 0;
+        accent-color: #557653;
+        cursor: pointer;
     }
 
-    .toggle-ui::after {
-        content: "";
-        position: absolute;
-        left: 3px;
-        top: 3px;
-        width: 16px;
-        height: 16px;
-        background: white;
-        border-radius: 50%;
-        box-shadow: 0 1px 3px #0002;
-        transition: transform .2s;
-    }
-
-    .toggle-row input:checked + .toggle-ui { background: #1769dc; }
-    .toggle-row input:checked + .toggle-ui::after { transform: translateX(17px); }
-    .toggle-row input:focus-visible + .toggle-ui { outline: 3px solid #b8d4ff; }
-
-    .help-card {
-        background: #f3f7fd;
-        border-color: #e0eaf8;
-    }
-
-    .help-icon {
-        display: grid;
-        place-items: center;
-        width: 26px;
-        height: 26px;
-        border-radius: 50%;
-        background: #dceaff;
-        color: #1769dc;
-        font-weight: 800;
-        margin-bottom: 12px;
-    }
-
-    .help-card h3 {
-        font-size: 14px;
-        margin: 0 0 8px;
-    }
-
-    .help-card p {
-        color: #6c7d93;
+    .option-card strong {
+        display: block;
+        margin-bottom: 5px;
+        color: #344134;
         font-size: 12px;
-        line-height: 1.75;
-        margin: 0;
     }
 
-    .form-footer {
+    .option-card small {
+        display: block;
+        color: #879087;
+        font-size: 11px;
+        line-height: 1.6;
+    }
+
+    .form-actions {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 15px;
+        padding: 20px 0 0;
+    }
+
+    .form-actions-note {
+        color: #879087;
+        font-size: 12px;
+        line-height: 1.6;
+    }
+
+    .action-buttons {
         display: flex;
         align-items: center;
-        justify-content: flex-end;
-        gap: 12px;
-        padding: 20px 0 8px;
+        gap: 10px;
     }
 
-    .btn-cancel, .btn-save {
+    .btn-cancel,
+    .btn-save {
         display: inline-flex;
-        justify-content: center;
         align-items: center;
+        justify-content: center;
         gap: 10px;
         min-height: 45px;
         padding: 0 20px;
-        border-radius: 9px;
+        border-radius: 10px;
+        font: inherit;
         font-size: 13px;
         font-weight: 700;
         text-decoration: none;
         cursor: pointer;
+        transition: transform .2s, background .2s;
     }
 
     .btn-cancel {
-        border: 1px solid #dce3ec;
+        border: 1px solid #dfe5dc;
         background: #fff;
-        color: #53657b;
+        color: #526052;
+    }
+
+    .btn-cancel:hover {
+        background: #f3f5f1;
     }
 
     .btn-save {
-        border: 1px solid #1769dc;
-        background: #1769dc;
+        border: 1px solid #354d35;
+        background: #354d35;
         color: #fff;
-        box-shadow: 0 4px 10px rgba(23, 105, 220, .15);
     }
 
-    .btn-save:hover { background: #1058bd; }
-    .btn-cancel:hover { background: #f7f9fc; }
-
-    @@media (max-width: 900px) {
-        .form-layout { grid-template-columns: 1fr; }
-        .side-column { grid-template-columns: 1fr 1fr; }
-        .help-card { grid-column: 1 / -1; }
+    .btn-save:hover {
+        background: #263b27;
+        transform: translateY(-1px);
     }
 
-    @@media (max-width: 600px) {
-        .property-page { padding: 17px; }
-        .page-top { align-items: flex-start; flex-direction: column; }
-        .page-label { display: none; }
-        .form-card { padding: 19px; }
-        .two-columns { grid-template-columns: 1fr; gap: 0; }
-        .side-column { grid-template-columns: 1fr; }
-        .help-card { grid-column: auto; }
-        .form-footer { flex-direction: column-reverse; }
-        .btn-cancel, .btn-save { width: 100%; box-sizing: border-box; }
+    .btn-save:disabled {
+        opacity: .65;
+        cursor: not-allowed;
+        transform: none;
+    }
+
+    .category-note {
+        margin-top: 9px;
+        color: #7c8779;
+        font-size: 11px;
+        line-height: 1.6;
+    }
+
+    @@media (max-width: 700px) {
+        .property-form-page {
+            padding: 0 0 30px;
+        }
+
+        .property-form-header {
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .form-card {
+            padding: 20px;
+        }
+
+        .form-grid,
+        .option-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .form-field.full-width {
+            grid-column: auto;
+        }
+
+        .form-actions {
+            align-items: stretch;
+            flex-direction: column;
+        }
+
+        .action-buttons {
+            width: 100%;
+        }
+
+        .btn-cancel,
+        .btn-save {
+            flex: 1;
+        }
     }
 </style>
 
-<script>
-    (() => {
-        const category = document.getElementById("Category");
-        const priceLabel = document.getElementById("priceLabel");
-        const priceHelp = document.getElementById("priceHelp");
-        const ratingField = document.getElementById("ratingField");
-        const cuisineField = document.getElementById("cuisineField");
-        const imageUrl = document.getElementById("ImageUrl");
-        const previewImage = document.getElementById("previewImage");
-        const imageError = document.getElementById("imageError");
-        const placeholder = document.querySelector(".preview-placeholder");
+<div class="property-form-page">
+    <div class="property-form-header">
+        <div>
+            <h1>@(isEdit ? "Edit Property" : "Add a Property")</h1>
+            <p>
+                @(isEdit
+                    ? "Update the property information and save your changes."
+                    : "Add a hotel, restaurant, or resort to your travel directory.")
+            </p>
+        </div>
 
-        function updateCategoryFields() {
-            const selected = category.value;
+        <a href="/Admin/Properties" class="back-link">
+            <span aria-hidden="true">←</span>
+            Back to Properties
+        </a>
+    </div>
 
-            if (selected === "Restaurant") {
-                priceLabel.textContent = "Average Meal Price (PKR)";
-                priceHelp.textContent = "Enter the typical cost of a meal, if known.";
-                ratingField.style.display = "none";
-                cuisineField.style.display = "block";
-            } else if (selected === "Resort") {
-                priceLabel.textContent = "Starting Price (PKR)";
-                priceHelp.textContent = "Enter the starting accommodation price, if applicable.";
-                ratingField.style.display = "none";
-                cuisineField.style.display = "none";
-            } else {
-                priceLabel.textContent = "Starting Price per Night (PKR)";
-                priceHelp.textContent = "Enter the starting nightly room price, if known.";
-                ratingField.style.display = "block";
-                cuisineField.style.display = "none";
-            }
+    <form method="post" action="@formAction" id="propertyForm" class="property-form">
+        @Html.AntiForgeryToken()
+
+        <div asp-validation-summary="ModelOnly" class="validation-summary-errors"></div>
+
+        @if (isEdit)
+        {
+            <input type="hidden" name="Id" value="@propertyId" />
         }
 
-        function updateImagePreview() {
-            const url = imageUrl.value.trim();
-            imageError.textContent = "";
+        <!-- SECTION 1: BASIC INFORMATION -->
+        <section class="form-card">
+            <div class="form-card-heading">
+                <div class="section-number">01</div>
+                <div>
+                    <h2>Basic Information</h2>
+                    <p>Enter the property's name, type, and location.</p>
+                </div>
+            </div>
 
-            if (!url) {
-                previewImage.hidden = true;
-                previewImage.removeAttribute("src");
-                placeholder.style.display = "flex";
-                return;
-            }
+            <div class="form-grid">
+                <div class="form-field">
+                    <label asp-for="Name">Property Name <span>*</span></label>
+                    <input asp-for="Name"
+                           class="control"
+                           placeholder="e.g. Mountain View Resort" />
+                    <span asp-validation-for="Name" class="field-error"></span>
+                </div>
 
-            try {
-                const parsed = new URL(url);
-                if (parsed.protocol !== "https:" && parsed.protocol !== "http:") {
-                    throw new Error("Invalid protocol");
+                <div class="form-field">
+                    <label asp-for="Category">Property Type <span>*</span></label>
+                    <select asp-for="Category" id="Category" class="control">
+                        <option value="Hotel">Hotel</option>
+                        <option value="Restaurant">Restaurant</option>
+                        <option value="Resort">Resort</option>
+                    </select>
+                    <span asp-validation-for="Category" class="field-error"></span>
+                    <div class="category-note">
+                        Choose the type that matches this listing.
+                    </div>
+                </div>
+
+                <div class="form-field">
+                    <label asp-for="Location">Location <span>*</span></label>
+                    <input asp-for="Location"
+                           class="control"
+                           placeholder="e.g. Hunza, Gilgit-Baltistan" />
+                    <span asp-validation-for="Location" class="field-error"></span>
+                </div>
+
+                <div class="form-field">
+                    <label asp-for="DestinationId">Destination ID</label>
+                    <input asp-for="DestinationId"
+                           type="number"
+                           min="1"
+                           class="control"
+                           placeholder="Optional destination ID" />
+                    <span asp-validation-for="DestinationId" class="field-error"></span>
+                    <div class="form-help">
+                        Enter an existing destination ID if this property belongs to a destination.
+                    </div>
+                </div>
+
+                <div class="form-field">
+                    <label asp-for="ContactPhone">Contact Phone</label>
+                    <input asp-for="ContactPhone"
+                           class="control"
+                           placeholder="e.g. +92 300 1234567" />
+                    <span asp-validation-for="ContactPhone" class="field-error"></span>
+                </div>
+
+                <div class="form-field">
+                    <label asp-for="Price">Price (PKR) <span>*</span></label>
+                    <input asp-for="Price"
+                           type="number"
+                           min="0"
+                           step="0.01"
+                           class="control"
+                           placeholder="e.g. 5000" />
+                    <span asp-validation-for="Price" class="field-error"></span>
+                    <div class="form-help">
+                        Enter the starting price used for this listing.
+                    </div>
+                </div>
+
+                <div class="form-field full-width">
+                    <label asp-for="Address">Full Address</label>
+                    <textarea asp-for="Address"
+                              class="control"
+                              placeholder="Enter the complete property address"></textarea>
+                    <span asp-validation-for="Address" class="field-error"></span>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 2: DESCRIPTION -->
+        <section class="form-card">
+            <div class="form-card-heading">
+                <div class="section-number">02</div>
+                <div>
+                    <h2>About This Property</h2>
+                    <p>Write the short introduction and full description visitors will see.</p>
+                </div>
+            </div>
+
+            <div class="form-grid">
+                <div class="form-field full-width">
+                    <label asp-for="ShortDescription">Short Description</label>
+                    <textarea asp-for="ShortDescription"
+                              class="control"
+                              placeholder="A brief introduction displayed in property listings..."
+                              maxlength="500"></textarea>
+                    <span asp-validation-for="ShortDescription" class="field-error"></span>
+                    <div class="form-help">
+                        Keep this concise so visitors can understand the property at a glance.
+                    </div>
+                </div>
+
+                <div class="form-field full-width">
+                    <label asp-for="Description">Full Description</label>
+                    <textarea asp-for="Description"
+                              class="control"
+                              style="min-height: 160px;"
+                              placeholder="Describe the facilities, services, atmosphere, and other important details..."></textarea>
+                    <span asp-validation-for="Description" class="field-error"></span>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 3: CATEGORY DETAILS -->
+        <section class="form-card">
+            <div class="form-card-heading">
+                <div class="section-number">03</div>
+                <div>
+                    <h2>Property Details</h2>
+                    <p>These fields change depending on the selected property type.</p>
+                </div>
+            </div>
+
+            <div class="form-grid">
+                <div class="form-field" id="starRatingField">
+                    <label asp-for="StarRating">Star Rating</label>
+                    <select asp-for="StarRating" class="control" id="StarRating">
+                        <option value="">Not specified</option>
+                        <option value="1">1 Star</option>
+                        <option value="2">2 Stars</option>
+                        <option value="3">3 Stars</option>
+                        <option value="4">4 Stars</option>
+                        <option value="5">5 Stars</option>
+                    </select>
+                    <span asp-validation-for="StarRating" class="field-error"></span>
+                </div>
+
+                <div class="form-field" id="cuisineTypeField">
+                    <label asp-for="CuisineType">Cuisine Type <span id="cuisineRequired">*</span></label>
+                    <input asp-for="CuisineType"
+                           class="control"
+                           id="CuisineType"
+                           placeholder="e.g. Pakistani, Chinese, BBQ" />
+                    <span asp-validation-for="CuisineType" class="field-error"></span>
+                </div>
+            </div>
+
+            <div class="form-help" id="categoryHelp">
+                Select a property type to see the relevant fields.
+            </div>
+        </section>
+
+        <!-- SECTION 4: IMAGE -->
+        <section class="form-card">
+            <div class="form-card-heading">
+                <div class="section-number">04</div>
+                <div>
+                    <h2>Property Image</h2>
+                    <p>Add a publicly accessible image URL for the listing.</p>
+                </div>
+            </div>
+
+            <div class="form-grid">
+                <div class="form-field full-width">
+                    <label asp-for="ImageUrl">Image URL</label>
+                    <input asp-for="ImageUrl"
+                           id="ImageUrl"
+                           class="control"
+                           type="url"
+                           placeholder="https://example.com/property-image.jpg" />
+                    <span asp-validation-for="ImageUrl" class="field-error"></span>
+
+                    <div class="form-help">
+                        Use a direct image URL that can be accessed by website visitors.
+                    </div>
+
+                    <div class="image-preview" id="imagePreview">
+                        <img id="previewImage" src="" alt="Property image preview" />
+                        <div class="image-preview-caption">Image preview</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 5: DISPLAY SETTINGS -->
+        <section class="form-card">
+            <div class="form-card-heading">
+                <div class="section-number">05</div>
+                <div>
+                    <h2>Publishing & Display</h2>
+                    <p>Control visibility and how this property is presented.</p>
+                </div>
+            </div>
+
+            <div class="form-grid">
+                <div class="form-field">
+                    <label asp-for="DisplayOrder">Display Order</label>
+                    <input asp-for="DisplayOrder"
+                           type="number"
+                           min="0"
+                           class="control"
+                           placeholder="0" />
+                    <span asp-validation-for="DisplayOrder" class="field-error"></span>
+                    <div class="form-help">
+                        Use smaller numbers for properties you want to show earlier.
+                    </div>
+                </div>
+            </div>
+
+            <div class="option-grid" style="margin-top: 22px;">
+                <label class="option-card">
+                    <input asp-for="IsPublished" type="checkbox" />
+                    <span>
+                        <strong>Publish this property</strong>
+                        <small>Allow this property to appear publicly wherever published listings are displayed.</small>
+                    </span>
+                </label>
+
+                <label class="option-card">
+                    <input asp-for="IsFeatured" type="checkbox" />
+                    <span>
+                        <strong>Feature this property</strong>
+                        <small>Mark this property as featured for use in supported featured sections.</small>
+                    </span>
+                </label>
+            </div>
+        </section>
+
+        <!-- FORM ACTIONS -->
+        <div class="form-actions">
+            <div class="form-actions-note">
+                <span>*</span> Required fields must be completed before saving.
+            </div>
+
+            <div class="action-buttons">
+                <a href="/Admin/Properties" class="btn-cancel">Cancel</a>
+
+                <button type="submit" class="btn-save" id="saveButton">
+                    @(isEdit ? "Save Changes" : "Save Property")
+                    <span aria-hidden="true">→</span>
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+
+    <script>
+        (function () {
+            "use strict";
+
+            const categorySelect = document.getElementById("Category");
+            const starRatingField = document.getElementById("starRatingField");
+            const cuisineTypeField = document.getElementById("cuisineTypeField");
+            const cuisineTypeInput = document.getElementById("CuisineType");
+            const cuisineRequired = document.getElementById("cuisineRequired");
+            const categoryHelp = document.getElementById("categoryHelp");
+
+            const imageUrlInput = document.getElementById("ImageUrl");
+            const imagePreview = document.getElementById("imagePreview");
+            const previewImage = document.getElementById("previewImage");
+
+            const propertyForm = document.getElementById("propertyForm");
+            const saveButton = document.getElementById("saveButton");
+
+            function updateCategoryFields() {
+                if (!categorySelect) return;
+
+                const category = categorySelect.value;
+
+                const isHotel = category === "Hotel";
+                const isRestaurant = category === "Restaurant";
+                const isResort = category === "Resort";
+
+                starRatingField.style.display = isHotel ? "" : "none";
+                cuisineTypeField.style.display = isRestaurant ? "" : "none";
+
+                if (cuisineTypeInput) {
+                    cuisineTypeInput.required = isRestaurant;
                 }
-            } catch {
-                previewImage.hidden = true;
-                placeholder.style.display = "flex";
-                imageError.textContent = "Enter a valid HTTP or HTTPS image URL.";
-                return;
+
+                if (cuisineRequired) {
+                    cuisineRequired.style.display = isRestaurant ? "" : "none";
+                }
+
+                if (categoryHelp) {
+                    if (isHotel) {
+                        categoryHelp.textContent =
+                            "For hotels, provide a star rating when available.";
+                    } else if (isRestaurant) {
+                        categoryHelp.textContent =
+                            "For restaurants, enter the cuisine type. This field is required.";
+                    } else if (isResort) {
+                        categoryHelp.textContent =
+                            "For resorts, use the general description and starting price to describe the experience.";
+                    } else {
+                        categoryHelp.textContent =
+                            "Select a property type to see the relevant fields.";
+                    }
+                }
             }
 
-            previewImage.onload = () => {
-                previewImage.hidden = false;
-                placeholder.style.display = "none";
-                imageError.textContent = "";
-            };
+            function updateImagePreview() {
+                if (!imageUrlInput || !imagePreview || !previewImage) return;
 
-            previewImage.onerror = () => {
-                previewImage.hidden = true;
-                placeholder.style.display = "flex";
-                imageError.textContent = "The image could not be loaded. Check the URL.";
-            };
+                const url = imageUrlInput.value.trim();
 
-            previewImage.src = url;
-        }
+                if (!url) {
+                    imagePreview.style.display = "none";
+                    previewImage.removeAttribute("src");
+                    return;
+                }
 
-        category.addEventListener("change", updateCategoryFields);
-        imageUrl.addEventListener("input", updateImagePreview);
+                try {
+                    const parsedUrl = new URL(url);
 
-        updateCategoryFields();
-        updateImagePreview();
-    })();
-</script>
+                    if (parsedUrl.protocol !== "http:" &&
+                        parsedUrl.protocol !== "https:") {
+                        throw new Error("Unsupported image URL protocol.");
+                    }
+
+                    previewImage.onload = function () {
+                        imagePreview.style.display = "block";
+                    };
+
+                    previewImage.onerror = function () {
+                        imagePreview.style.display = "none";
+                    };
+
+                    previewImage.src = parsedUrl.href;
+                } catch {
+                    imagePreview.style.display = "none";
+                }
+            }
+
+            if (categorySelect) {
+                categorySelect.addEventListener("change", updateCategoryFields);
+                updateCategoryFields();
+            }
+
+            if (imageUrlInput) {
+                imageUrlInput.addEventListener("input", updateImagePreview);
+                updateImagePreview();
+            }
+
+            if (propertyForm && saveButton) {
+                propertyForm.addEventListener("submit", function () {
+                    if (propertyForm.checkValidity()) {
+                        saveButton.disabled = true;
+                        saveButton.innerHTML = "Saving...";
+
+                        // Re-enable if the browser prevents navigation.
+                        window.setTimeout(function () {
+                            saveButton.disabled = false;
+                            saveButton.innerHTML =
+                                '@(isEdit ? "Save Changes" : "Save Property") <span aria-hidden="true">→</span>';
+                        }, 10000);
+                    }
+                });
+            }
+        })();
+    </script>
+}

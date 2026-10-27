@@ -58,6 +58,114 @@ namespace KarnelTravel.Migrations
                     b.ToTable("AdminUsers", (string)null);
                 });
 
+            modelBuilder.Entity("KarnelTravel.Models.Booking", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("AdminNotes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<int>("Adults")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("BookingDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("Children")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CustomerName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("CustomerNotes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("Email")
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<decimal?>("EstimatedTotalPKR")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int?>("HotelId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Phone")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<string>("ReferenceNumber")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<int?>("ResortId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("RestaurantId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("ReturnDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("Rooms")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ServiceName")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<string>("ServiceType")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<int?>("TourPackageId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("TransportServiceId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("HotelId");
+
+                    b.HasIndex("ReferenceNumber")
+                        .IsUnique();
+
+                    b.HasIndex("ResortId");
+
+                    b.HasIndex("RestaurantId");
+
+                    b.HasIndex("TourPackageId");
+
+                    b.HasIndex("TransportServiceId");
+
+                    b.ToTable("Bookings", (string)null);
+                });
+
             modelBuilder.Entity("KarnelTravel.Models.Destination", b =>
                 {
                     b.Property<int>("Id")
@@ -614,6 +722,34 @@ namespace KarnelTravel.Migrations
                         .IsUnique();
 
                     b.ToTable("TripInquiries", (string)null);
+                });
+
+            modelBuilder.Entity("KarnelTravel.Models.Booking", b =>
+                {
+                    b.HasOne("KarnelTravel.Models.Hotel", null)
+                        .WithMany()
+                        .HasForeignKey("HotelId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("KarnelTravel.Models.Resort", null)
+                        .WithMany()
+                        .HasForeignKey("ResortId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("KarnelTravel.Models.Restaurant", null)
+                        .WithMany()
+                        .HasForeignKey("RestaurantId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("KarnelTravel.Models.TourPackage", null)
+                        .WithMany()
+                        .HasForeignKey("TourPackageId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("KarnelTravel.Models.TransportService", null)
+                        .WithMany()
+                        .HasForeignKey("TransportServiceId")
+                        .OnDelete(DeleteBehavior.Restrict);
                 });
 
             modelBuilder.Entity("KarnelTravel.Models.Hotel", b =>

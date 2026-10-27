@@ -23,6 +23,7 @@ namespace KarnelTravel.Data
             => Set<TransportService>();
 
         public DbSet<TripInquiry> TripInquiries => Set<TripInquiry>();
+        public DbSet<Booking> Bookings => Set<Booking>();
 
         protected override void OnModelCreating(ModelBuilder model)
         {
@@ -154,6 +155,50 @@ namespace KarnelTravel.Data
                 ConfigureDestinationRelationship<TransportService>(e);
             });
 
+
+            model.Entity<Booking>(e =>
+            {
+                e.ToTable("Bookings");
+                e.HasKey(x => x.Id);
+
+                e.HasIndex(x => x.ReferenceNumber).IsUnique();
+
+                e.Property(x => x.ReferenceNumber).HasMaxLength(30).IsRequired();
+                e.Property(x => x.CustomerName).HasMaxLength(100).IsRequired();
+                e.Property(x => x.Phone).HasMaxLength(30).IsRequired();
+                e.Property(x => x.Email).HasMaxLength(256);
+                e.Property(x => x.ServiceType).HasMaxLength(30).IsRequired();
+                e.Property(x => x.ServiceName).HasMaxLength(150).IsRequired();
+                e.Property(x => x.EstimatedTotalPKR).HasPrecision(18, 2);
+                e.Property(x => x.Status).HasMaxLength(30).IsRequired();
+                e.Property(x => x.CustomerNotes).HasMaxLength(1000);
+                e.Property(x => x.AdminNotes).HasMaxLength(1000);
+
+                e.HasOne<Hotel>()
+                    .WithMany()
+                    .HasForeignKey(x => x.HotelId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                e.HasOne<Restaurant>()
+                    .WithMany()
+                    .HasForeignKey(x => x.RestaurantId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                e.HasOne<Resort>()
+                    .WithMany()
+                    .HasForeignKey(x => x.ResortId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                e.HasOne<TourPackage>()
+                    .WithMany()
+                    .HasForeignKey(x => x.TourPackageId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                e.HasOne<TransportService>()
+                    .WithMany()
+                    .HasForeignKey(x => x.TransportServiceId)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
             model.Entity<TripInquiry>(e =>
             {
                 e.ToTable("TripInquiries");
@@ -181,3 +226,4 @@ namespace KarnelTravel.Data
         }
     }
 }
+
