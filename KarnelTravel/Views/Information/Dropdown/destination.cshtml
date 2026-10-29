@@ -76,6 +76,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            flex-wrap: wrap;
             gap: 12px;
             padding-top: 14px;
             border-top: 1px solid var(--line);
@@ -125,7 +126,6 @@
 <section class="section section--ivory">
     <div class="container">
         <div class="listing-grid" data-reveal-group>
-
             @if (Model != null && Model.Any())
             {
                 @foreach (var destination in Model)
@@ -160,7 +160,7 @@
 
                                 <a class="btn btn--light"
                                    href="@Url.Action("Details", "Destinations", new { slug = destination.Slug })">
-                                    View
+                                    Explore destination
                                 </a>
                             </div>
                         </div>
@@ -174,7 +174,6 @@
                     <p>Please check back soon for destinations to explore.</p>
                 </div>
             }
-
         </div>
     </div>
 </section>
@@ -182,9 +181,12 @@
 <section class="cta-band">
     <div class="container" data-reveal>
         <h2>Want to combine several destinations?</h2>
-        <p>Send an inquiry through Get in Touch and we'll help you arrange a route.</p>
+        <p>
+            Tell us where you want to go, when you plan to travel,
+            and how many people are travelling.
+        </p>
         <a class="btn btn--light" href="@Url.Action("Index", "Contact")">
-            Get in Touch
+            Plan your journey
         </a>
     </div>
 </section>

@@ -3,8 +3,15 @@
 
 @{
     var destination = Model.Destination;
+
     ViewData["Title"] = destination.Name + " | Karnel Travel Guide";
     Layout = null;
+
+    var destinationInquiryUrl =
+        "/Contact?category=" +
+        Uri.EscapeDataString("Tour or destination inquiry") +
+        "&service=" +
+        Uri.EscapeDataString(destination.Name);
 }
 
 <!DOCTYPE html>
@@ -12,6 +19,7 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+
     <title>@ViewData["Title"]</title>
     <meta name="description" content="@destination.ShortDescription" />
 
@@ -120,10 +128,11 @@
             font-size: 14px;
             font-weight: bold;
             transition: .2s ease;
+            cursor: pointer;
         }
 
         .button:hover { transform: translateY(-2px); }
-        .button-outline { background: transparent; color: white; }
+        .button-outline { background: transparent; color: white; border-color: rgba(255,255,255,.65); }
 
         .container {
             max-width: 1120px;
@@ -383,6 +392,11 @@
                 <div class="listing-grid">
                     @foreach (var hotel in Model.Hotels)
                     {
+                        var inquiryUrl = "/Contact?category=" +
+                            Uri.EscapeDataString("Hotel inquiry") +
+                            "&service=" + Uri.EscapeDataString(hotel.Name) +
+                            "&destination=" + Uri.EscapeDataString(destination.Name);
+
                         <article class="listing-card">
                             @if (!string.IsNullOrWhiteSpace(hotel.ImageUrl))
                             {
@@ -432,7 +446,9 @@
                                         <div>Contact: @hotel.ContactPhone</div>
                                     }
 
-                                    <a class="listing-link" href="/Contact">Ask about this hotel →</a>
+                                    <a class="listing-link" href="@inquiryUrl">
+                                        Ask about this hotel →
+                                    </a>
                                 </div>
                             </div>
                         </article>
@@ -463,6 +479,11 @@
                 <div class="listing-grid">
                     @foreach (var resort in Model.Resorts)
                     {
+                        var inquiryUrl = "/Contact?category=" +
+                            Uri.EscapeDataString("Resort inquiry") +
+                            "&service=" + Uri.EscapeDataString(resort.Name) +
+                            "&destination=" + Uri.EscapeDataString(destination.Name);
+
                         <article class="listing-card">
                             @if (!string.IsNullOrWhiteSpace(resort.ImageUrl))
                             {
@@ -507,7 +528,9 @@
                                         <div>Contact: @resort.ContactPhone</div>
                                     }
 
-                                    <a class="listing-link" href="/Contact">Ask about this resort →</a>
+                                    <a class="listing-link" href="@inquiryUrl">
+                                        Ask about this resort →
+                                    </a>
                                 </div>
                             </div>
                         </article>
@@ -538,6 +561,11 @@
                 <div class="listing-grid">
                     @foreach (var restaurant in Model.Restaurants)
                     {
+                        var inquiryUrl = "/Contact?category=" +
+                            Uri.EscapeDataString("Restaurant inquiry") +
+                            "&service=" + Uri.EscapeDataString(restaurant.Name) +
+                            "&destination=" + Uri.EscapeDataString(destination.Name);
+
                         <article class="listing-card">
                             @if (!string.IsNullOrWhiteSpace(restaurant.ImageUrl))
                             {
@@ -587,7 +615,9 @@
                                         <div>Contact: @restaurant.ContactPhone</div>
                                     }
 
-                                    <a class="listing-link" href="/Contact">Ask about this restaurant →</a>
+                                    <a class="listing-link" href="@inquiryUrl">
+                                        Ask about this restaurant →
+                                    </a>
                                 </div>
                             </div>
                         </article>
@@ -603,25 +633,23 @@
             }
         </section>
 
+        <!-- TRIP INQUIRY -->
         <section class="planning" id="plan-trip">
             <div class="container">
                 <div class="section-label">Your next journey</div>
                 <h2>Ready to explore @destination.Name?</h2>
                 <p>
-                    Need help planning your visit? Contact Karnel Travel Guide
-                    for assistance with your travel arrangements.
+                    Tell us your preferred travel dates, number of travellers
+                    and the arrangements you need. Our team can review your request.
                 </p>
 
-                <a class="button"
-                   href="/Contact"
-                   aria-label="Contact Karnel Travel Guide about @destination.Name">
-                    Make an inquiry →
+                <a class="button" href="@destinationInquiryUrl">
+                    Plan a trip to @destination.Name →
                 </a>
 
                 <div class="notice">
-                    These listings show published properties associated with this destination.
-                    Contacting us is an inquiry, not a confirmed reservation. Booking and availability
-                    features can be connected as a separate step.
+                    Submitting an inquiry does not confirm a booking. Availability,
+                    prices and arrangements must be confirmed by Karnel Travel Guide.
                 </div>
             </div>
         </section>

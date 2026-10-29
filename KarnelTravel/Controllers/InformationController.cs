@@ -39,9 +39,16 @@ namespace KarnelTravel.Controllers
         }
 
         [HttpGet("/hotels")]
-        public IActionResult Hotels()
+        public async Task<IActionResult> Hotels()
         {
-            return View("Dropdown/Hotels");
+            var hotels = await _context.Hotels
+                .AsNoTracking()
+                .Where(h => h.IsPublished)
+                .OrderBy(h => h.DisplayOrder)
+                .ThenBy(h => h.Name)
+                .ToListAsync();
+
+            return View("Dropdown/Hotels", hotels);
         }
     }
 }

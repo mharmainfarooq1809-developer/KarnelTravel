@@ -1,0 +1,182 @@
+﻿@model KarnelTravel.ViewModels.BookingRequestViewModel
+
+@{
+    ViewData["Title"] = "Request a Booking";
+    var serviceName = ViewBag.ServiceName as string ?? "Selected service";
+}
+
+<style>
+    .booking-wrap {
+        max-width: 850px;
+        margin: 50px auto;
+        padding: 0 20px;
+        color: #18352c;
+    }
+    .booking-panel {
+        background: #fff;
+        border: 1px solid #e2e9e4;
+        border-radius: 18px;
+        padding: 30px;
+        box-shadow: 0 12px 35px rgba(20,50,35,.07);
+    }
+    .booking-wrap h1 {
+        font-size: clamp(28px, 5vw, 42px);
+        margin-bottom: 10px;
+    }
+    .booking-intro { color: #66766d; line-height: 1.7; }
+    .booking-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 18px;
+        margin-top: 25px;
+    }
+    .booking-field { display: flex; flex-direction: column; gap: 7px; }
+    .booking-field.full { grid-column: 1 / -1; }
+    .booking-field label { font-weight: 600; font-size: 14px; }
+    .booking-field input, .booking-field select,
+    .booking-field textarea {
+        width: 100%;
+        padding: 12px;
+        border: 1px solid #d6e0d9;
+        border-radius: 9px;
+        background: #fff;
+        color: #18352c;
+        font: inherit;
+        box-sizing: border-box;
+    }
+    .booking-field input:focus, .booking-field textarea:focus {
+        outline: 2px solid #9bc4aa;
+        border-color: #4b8562;
+    }
+    .booking-submit {
+        display: inline-block;
+        border: 0;
+        border-radius: 9px;
+        background: #214c39;
+        color: #fff;
+        padding: 14px 22px;
+        font-weight: 700;
+        cursor: pointer;
+        margin-top: 24px;
+    }
+    .booking-submit:hover { background: #163828; }
+    .booking-validation { color: #b42318; }
+    .booking-notice {
+        background: #f1f6f2;
+        border-radius: 10px;
+        padding: 14px;
+        margin-top: 20px;
+        font-size: 14px;
+        line-height: 1.6;
+    }
+    @@media(max-width: 600px) {
+        .booking-grid { grid-template-columns: 1fr; }
+        .booking-panel { padding: 20px; }
+    }
+</style>
+
+<main class="booking-wrap">
+    <p class="booking-intro">KARNEL TRAVEL GUIDE / BOOKING REQUEST</p>
+    <h1>Plan your next journey.</h1>
+    <p class="booking-intro">
+        Complete the form below. Our team can review your request and confirm
+        availability with you.
+    </p>
+
+    <section class="booking-panel">
+        <h2>@serviceName</h2>
+        <p class="booking-intro">
+            This submits a booking request, not an instantly confirmed reservation.
+        </p>
+
+        <form asp-controller="Bookings" asp-action="Create" method="post">
+            @Html.AntiForgeryToken()
+
+            <input asp-for="ServiceType" type="hidden" />
+            <input asp-for="ServiceId" type="hidden" />
+
+            <div asp-validation-summary="ModelOnly"
+                 class="booking-validation"></div>
+
+            <div class="booking-grid">
+                <div class="booking-field">
+                    <label asp-for="CustomerName"></label>
+                    <input asp-for="CustomerName" autocomplete="name" />
+                    <span asp-validation-for="CustomerName"
+                          class="booking-validation"></span>
+                </div>
+
+                <div class="booking-field">
+                    <label asp-for="Phone"></label>
+                    <input asp-for="Phone" autocomplete="tel" />
+                    <span asp-validation-for="Phone"
+                          class="booking-validation"></span>
+                </div>
+
+                <div class="booking-field full">
+                    <label asp-for="Email"></label>
+                    <input asp-for="Email" autocomplete="email" />
+                    <span asp-validation-for="Email"
+                          class="booking-validation"></span>
+                </div>
+
+                <div class="booking-field">
+                    <label asp-for="BookingDate"></label>
+                    <input asp-for="BookingDate" type="date"
+                           min="@DateTime.Today.ToString("yyyy-MM-dd")" />
+                    <span asp-validation-for="BookingDate"
+                          class="booking-validation"></span>
+                </div>
+
+                <div class="booking-field">
+                    <label asp-for="ReturnDate"></label>
+                    <input asp-for="ReturnDate" type="date" />
+                    <span asp-validation-for="ReturnDate"
+                          class="booking-validation"></span>
+                </div>
+
+                <div class="booking-field">
+                    <label asp-for="Adults"></label>
+                    <input asp-for="Adults" type="number" min="1" max="100" />
+                    <span asp-validation-for="Adults"
+                          class="booking-validation"></span>
+                </div>
+
+                <div class="booking-field">
+                    <label asp-for="Children"></label>
+                    <input asp-for="Children" type="number" min="0" max="100" />
+                    <span asp-validation-for="Children"
+                          class="booking-validation"></span>
+                </div>
+
+                <div class="booking-field">
+                    <label asp-for="Rooms"></label>
+                    <input asp-for="Rooms" type="number" min="0" max="100" />
+                    <span asp-validation-for="Rooms"
+                          class="booking-validation"></span>
+                </div>
+
+                <div class="booking-field full">
+                    <label asp-for="CustomerNotes"></label>
+                    <textarea asp-for="CustomerNotes" rows="4"
+                              placeholder="Tell us about your plans or requirements"></textarea>
+                    <span asp-validation-for="CustomerNotes"
+                          class="booking-validation"></span>
+                </div>
+            </div>
+
+            <div class="booking-notice">
+                Your request will be marked Pending until the team reviews it.
+                Submitting this form does not guarantee availability or a final price.
+            </div>
+
+            <button class="booking-submit" type="submit">
+                Submit booking request
+            </button>
+        </form>
+    </section>
+</main>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

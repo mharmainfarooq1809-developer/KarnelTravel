@@ -1049,15 +1049,150 @@ public class AdminController : Controller
 
         return View("TourEditor");
     }
-
     // =========================================================
     // BOOKINGS
     // =========================================================
 
     [HttpGet("Bookings")]
-    public IActionResult Bookings()
+    public async Task<IActionResult> Bookings(
+        string? status,
+        string? search)
     {
-        return View();
+        var query = _context.Bookings
+            .AsNoTracking()
+            .AsQueryable();
+
+        // Filter by booking status
+        if (!string.IsNullOrWhiteSpace(status) &&
+            !status.Equals(
+                "all",
+                StringComparison.OrdinalIgnoreCase))
+        {
+            query = query.Where(b => b.Status == status);
+        }
+
+        // Search bookings
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var term = search.Trim();
+
+            query = query.Where(b =>
+                b.ReferenceNumber.Contains(term) ||
+                b.CustomerName.Contains(term) ||
+                b.Phone.Contains(term) ||
+                b.ServiceName.Contains(term));
+        }
+
+        // Filter values for the view
+        ViewBag.StatusFilter = status ?? "all";
+        ViewBag.SearchTerm = search ?? "";
+
+        // Actual booking statistics
+        ViewBag.TotalBookings =
+            await _context.Bookings.CountAsync();
+
+        ViewBag.PendingBookings =
+            await _context.Bookings
+                .CountAsync(b => b.Status == "Pending");
+
+        ViewBag.ConfirmedBookings =
+            await _context.Bookings
+                .CountAsync(b => b.Status == "Confirmed");
+
+        ViewBag.CompletedBookings =
+            await _context.Bookings
+                .CountAsync(b => b.Status == "Completed");
+
+        ViewBag.CancelledBookings =
+            await _context.Bookings
+                .CountAsync(b => b.Status == "Cancelled");
+
+        // Retrieve real bookings from SQL Server
+        var bookings = await query
+            .OrderByDescending(b => b.CreatedAt)
+            .ToListAsync();
+
+        return View(bookings);
+    }
+
+
+    // =========================================================
+    // BOOKING DETAILS
+    // =========================================================
+
+    [HttpGet("BookingDetails/{id:int}")]
+    public async Task<IActionResult> BookingDetails(int id)
+    {
+        var booking = await _context.Bookings
+            .AsNoTracking()
+            .FirstOrDefaultAsync(b => b.Id == id);
+
+        if (booking == null)
+        {
+            return NotFound();
+        }
+
+        return View(booking);
+    }
+
+    // =========================================================
+    // UPDATE BOOKING STATUS AND ADMIN NOTES
+    // =========================================================
+
+    [HttpPost("BookingDetails/{id:int}/Update")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> UpdateBooking(
+        int id,
+        string status,
+        string? adminNotes)
+    {
+        var allowedStatuses = new[]
+        {
+            "Pending",
+            "Confirmed",
+            "Completed",
+            "Cancelled"
+        };
+
+        if (string.IsNullOrWhiteSpace(status) ||
+            !allowedStatuses.Contains(status))
+        {
+            TempData["BookingError"] = "Invalid booking status.";
+            return RedirectToAction(
+                nameof(BookingDetails),
+                new { id });
+        }
+
+        if (adminNotes?.Length > 1000)
+        {
+            TempData["BookingError"] =
+                "Admin notes cannot exceed 1000 characters.";
+
+            return RedirectToAction(
+                nameof(BookingDetails),
+                new { id });
+        }
+
+        var booking = await _context.Bookings
+            .FirstOrDefaultAsync(b => b.Id == id);
+
+        if (booking == null)
+        {
+            return NotFound();
+        }
+
+        booking.Status = status;
+        booking.AdminNotes = adminNotes?.Trim();
+        booking.UpdatedAt = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync();
+
+        TempData["BookingSuccess"] =
+            "Booking updated successfully.";
+
+        return RedirectToAction(
+            nameof(BookingDetails),
+            new { id });
     }
 
     // =========================================================

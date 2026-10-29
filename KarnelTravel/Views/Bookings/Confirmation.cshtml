@@ -1,0 +1,25 @@
+﻿@model KarnelTravel.Models.Booking
+
+@{
+    ViewData["Title"] = "Booking Request Received";
+}
+
+<div style="max-width:760px;margin:60px auto;padding:30px 20px;">
+    <div style="background:#f1f6f2;border-radius:18px;padding:32px;">
+        <p style="letter-spacing:2px;font-size:12px;">KARNEL TRAVEL GUIDE</p>
+        <h1>Request received.</h1>
+        <p>Your booking request has been saved. It is not yet a confirmed reservation.</p>
+
+        <div style="background:white;border-radius:12px;padding:20px;margin:24px 0;">
+            <p><strong>Reference number:</strong> @Model.ReferenceNumber</p>
+            <p><strong>Service:</strong> @Model.ServiceName</p>
+            <p><strong>Booking date:</strong> @Model.BookingDate.ToString("dd MMM yyyy")</p>
+            <p><strong>Status:</strong> @Model.Status</p>
+        </div>
+
+        <p>Keep your reference number for future enquiries.</p>
+        <a href="/" style="display:inline-block;padding:12px 18px;background:#214c39;color:white;border-radius:8px;text-decoration:none;">
+            Return to homepage
+        </a>
+    </div>
+</div>

@@ -1,6 +1,8 @@
-﻿@{
+﻿@model IEnumerable<KarnelTravel.Models.Hotel>
+
+@{
     ViewData["Title"] = "Stay & Unwind — Hotel Information | Karnel Travel Guide";
-    ViewData["Description"] = "Hotel information across Pakistani cities — sample listings, facilities, and price references.";
+    ViewData["Description"] = "Explore hotels across Pakistan and send a booking request through Karnel Travel Guide.";
 }
 
 @section Styles {
@@ -24,7 +26,13 @@
             transition: transform .4s var(--ease), box-shadow .4s var(--ease);
         }
         .listing-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-md); }
-        .listing-card .media { aspect-ratio: 4 / 3; }
+        .listing-card .media { aspect-ratio: 4 / 3; overflow: hidden; }
+        .listing-card .media img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform .4s var(--ease);
+        }
         .listing-card:hover .media img { transform: scale(1.05); }
         .listing-card__body { padding: 22px; display: flex; flex-direction: column; gap: 10px; flex: 1; }
         .listing-card__meta { font-size: .68rem; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); }
@@ -44,6 +52,15 @@
             display: block; font-family: var(--sans); font-size: .66rem;
             letter-spacing: .12em; text-transform: uppercase; color: var(--muted); font-weight: 400;
         }
+        .listing-empty {
+            grid-column: 1 / -1;
+            padding: 44px 24px;
+            text-align: center;
+            border: 1px solid var(--line);
+            border-radius: var(--radius-lg);
+            background: var(--white);
+        }
+        .listing-empty p { color: var(--muted); }
 
         .cta-band { background: var(--forest-deep); color: var(--ivory); padding: clamp(56px, 8vw, 100px) 0; text-align: center; }
         .cta-band h2 { color: var(--ivory); }
@@ -55,65 +72,85 @@
     <div class="container" data-reveal>
         <p class="eyebrow">Discover More · Hotel Information</p>
         <h1>Stay &amp; Unwind.</h1>
-        <p>Sample accommodation listings. Sample prices are clearly marked and are not live
-           rates. Availability will appear once the database is connected.</p>
+        <p>Explore published accommodation listings. Prices are starting references, not guaranteed live rates. Submitting a request does not confirm a booking.</p>
     </div>
 </header>
 
 <section class="section section--ivory">
     <div class="container">
         <div class="listing-grid" data-reveal-group>
+            @if (Model != null && Model.Any())
+            {
+                foreach (var hotel in Model)
+                {
+                    <article class="listing-card" data-reveal>
+                        <div class="media" data-fallback-label="@hotel.Name">
+                            @if (!string.IsNullOrWhiteSpace(hotel.ImageUrl))
+                            {
+                                <img src="@hotel.ImageUrl"
+                                     alt="@hotel.Name"
+                                     loading="lazy" />
+                            }
+                        </div>
 
-            <article class="listing-card" data-reveal>
-                <div class="media" data-fallback-label="Valley View Lodge">
-                    <img src="https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=900&q=70"
-                         alt="Mountain lodge room with a valley view" loading="lazy" />
-                </div>
-                <div class="listing-card__body">
-                    <span class="listing-card__meta">Hunza · Sample hotel</span>
-                    <h3>Valley View Lodge</h3>
-                    <p class="listing-card__desc">Mountain-facing rooms, walking distance from the bazaar.</p>
-                    <div class="listing-card__tags">
-                        <span>Wi-Fi</span><span>Breakfast</span><span>Parking</span>
-                    </div>
-                    <div class="listing-card__footer">
-                        <div class="listing-card__price"><small>Sample / night</small>PKR 18,500</div>
-                        <a class="link-arrow" href="@Url.Action("Index", "Contact")">Inquire</a>
-                    </div>
-                </div>
-            </article>
+                        <div class="listing-card__body">
+                            <span class="listing-card__meta">
+                                @hotel.City
+                                @if (hotel.StarRating > 0)
+                                {
+                                    <text> · @hotel.StarRating-star hotel</text>
+                                }
+                            </span>
 
-            <article class="listing-card" data-reveal>
-                <div class="media" data-fallback-label="Old City Courtyard">
-                    <img src="https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=900&q=70"
-                         alt="Heritage hotel exterior" loading="lazy" />
-                </div>
-                <div class="listing-card__body">
-                    <span class="listing-card__meta">Lahore · Sample hotel</span>
-                    <h3>Old City Courtyard</h3>
-                    <p class="listing-card__desc">Heritage-style rooms near Walled City landmarks.</p>
-                    <div class="listing-card__tags">
-                        <span>Wi-Fi</span><span>Restaurant</span><span>Laundry</span>
-                    </div>
-                    <div class="listing-card__footer">
-                        <div class="listing-card__price"><small>Sample / night</small>PKR 24,000</div>
-                        <a class="link-arrow" href="@Url.Action("Index", "Contact")">Inquire</a>
-                    </div>
-                </div>
-            </article>
+                            <h3>@hotel.Name</h3>
 
-            <article class="listing-card" data-reveal>
-                <div class="media" data-fallback-label="Seabreeze Suites">
-                    <img src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=900&q=70"
-                         alt="Seaside hotel" loading="lazy" />
+                            <p class="listing-card__desc">
+                                @(string.IsNullOrWhiteSpace(hotel.ShortDescription)
+                                    ? "Contact us to learn more about this property."
+                                    : hotel.ShortDescription)
+                            </p>
+
+                            <div class="listing-card__tags">
+                                @if (hotel.StarRating > 0)
+                                {
+                                    <span>@hotel.StarRating Stars</span>
+                                }
+                                @if (!string.IsNullOrWhiteSpace(hotel.Address))
+                                {
+                                    <span>@hotel.Address</span>
+                                }
+                            </div>
+
+                            <div class="listing-card__footer">
+                                <div class="listing-card__price">
+                                    <small>Starting / night</small>
+                                    @if (hotel.StartingPricePerNight > 0)
+                                    {
+                                        @:PKR @hotel.StartingPricePerNight
+                                    }
+                                    else
+                                    {
+                                        @:Price on request
+                                    }
+                                </div>
+
+                                <a class="link-arrow"
+                                   href="@Url.Action("Create", "Bookings", new { serviceType = "Hotel", serviceId = hotel.Id })">
+                                    Inquire
+                                </a>
+                            </div>
+                        </div>
+                    </article>
+                }
+            }
+            else
+            {
+                <div class="listing-empty">
+                    <h2>No hotels available yet</h2>
+                    <p>Published hotel listings will appear here once they have been added through the admin area.</p>
                 </div>
-                <div class="listing-card__body">
-                    <span class="listing-card__meta">Karachi · Sample hotel</span>
-                    <h3>Seabreeze Suites</h3>
-                    <p class="listing-card__desc">Comfortable rooms close to the coast.</p>
-                    <div class="listing-card__tags">
-                        <span>Wi-Fi</span><span>Sea view</span><span>Parking</span>
-                    </div>
-                    <div class="listing-card__footer">
-                        <div class="listing-card__price"><small>Sample / night</small>PKR 21,000</div>
-                        <a class="link-arrow" href="@Url.Action("Index", "Contact")
+            }
+        </div>
+    </div>
+</section>
+

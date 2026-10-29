@@ -1,0 +1,119 @@
+﻿@{
+    ViewData["Title"] = "Stay & Unwind — Hotel Information | Karnel Travel Guide";
+    ViewData["Description"] = "Hotel information across Pakistani cities — sample listings, facilities, and price references.";
+}
+
+@section Styles {
+    <style>
+        .page-hero { padding: calc(var(--header-h) + 60px) 0 60px; background: var(--sand); }
+        .page-hero h1 { max-width: 14ch; }
+        .page-hero p { color: var(--muted); font-size: 1.05rem; max-width: 62ch; }
+
+        .listing-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 28px;
+        }
+        .listing-card {
+            display: flex;
+            flex-direction: column;
+            background: var(--white);
+            border: 1px solid var(--line);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            transition: transform .4s var(--ease), box-shadow .4s var(--ease);
+        }
+        .listing-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-md); }
+        .listing-card .media { aspect-ratio: 4 / 3; }
+        .listing-card:hover .media img { transform: scale(1.05); }
+        .listing-card__body { padding: 22px; display: flex; flex-direction: column; gap: 10px; flex: 1; }
+        .listing-card__meta { font-size: .68rem; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); }
+        .listing-card h3 { margin: 0; font-size: 1.25rem; }
+        .listing-card__desc { color: var(--muted); font-size: .92rem; margin: 0; flex: 1; }
+        .listing-card__tags { display: flex; flex-wrap: wrap; gap: 6px; }
+        .listing-card__tags span {
+            font-size: .68rem; padding: 3px 10px; background: var(--ivory);
+            border: 1px solid var(--line); border-radius: 999px; color: var(--forest);
+        }
+        .listing-card__footer {
+            display: flex; justify-content: space-between; align-items: center;
+            padding-top: 14px; border-top: 1px solid var(--line); margin-top: auto; gap: 10px;
+        }
+        .listing-card__price { font-family: var(--serif); font-size: 1.1rem; color: var(--forest-deep); }
+        .listing-card__price small {
+            display: block; font-family: var(--sans); font-size: .66rem;
+            letter-spacing: .12em; text-transform: uppercase; color: var(--muted); font-weight: 400;
+        }
+
+        .cta-band { background: var(--forest-deep); color: var(--ivory); padding: clamp(56px, 8vw, 100px) 0; text-align: center; }
+        .cta-band h2 { color: var(--ivory); }
+        .cta-band p { color: rgba(248, 246, 240, .78); max-width: 56ch; margin: 0 auto 28px; }
+    </style>
+}
+
+<header class="page-hero">
+    <div class="container" data-reveal>
+        <p class="eyebrow">Discover More · Hotel Information</p>
+        <h1>Stay &amp; Unwind.</h1>
+        <p>Sample accommodation listings. Sample prices are clearly marked and are not live
+           rates. Availability will appear once the database is connected.</p>
+    </div>
+</header>
+
+<section class="section section--ivory">
+    <div class="container">
+        <div class="listing-grid" data-reveal-group>
+
+            <article class="listing-card" data-reveal>
+                <div class="media" data-fallback-label="Valley View Lodge">
+                    <img src="https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=900&q=70"
+                         alt="Mountain lodge room with a valley view" loading="lazy" />
+                </div>
+                <div class="listing-card__body">
+                    <span class="listing-card__meta">Hunza · Sample hotel</span>
+                    <h3>Valley View Lodge</h3>
+                    <p class="listing-card__desc">Mountain-facing rooms, walking distance from the bazaar.</p>
+                    <div class="listing-card__tags">
+                        <span>Wi-Fi</span><span>Breakfast</span><span>Parking</span>
+                    </div>
+                    <div class="listing-card__footer">
+                        <div class="listing-card__price"><small>Sample / night</small>PKR 18,500</div>
+                        <a class="link-arrow" href="@Url.Action("Index", "Contact")">Inquire</a>
+                    </div>
+                </div>
+            </article>
+
+            <article class="listing-card" data-reveal>
+                <div class="media" data-fallback-label="Old City Courtyard">
+                    <img src="https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=900&q=70"
+                         alt="Heritage hotel exterior" loading="lazy" />
+                </div>
+                <div class="listing-card__body">
+                    <span class="listing-card__meta">Lahore · Sample hotel</span>
+                    <h3>Old City Courtyard</h3>
+                    <p class="listing-card__desc">Heritage-style rooms near Walled City landmarks.</p>
+                    <div class="listing-card__tags">
+                        <span>Wi-Fi</span><span>Restaurant</span><span>Laundry</span>
+                    </div>
+                    <div class="listing-card__footer">
+                        <div class="listing-card__price"><small>Sample / night</small>PKR 24,000</div>
+                        <a class="link-arrow" href="@Url.Action("Index", "Contact")">Inquire</a>
+                    </div>
+                </div>
+            </article>
+
+            <article class="listing-card" data-reveal>
+                <div class="media" data-fallback-label="Seabreeze Suites">
+                    <img src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=900&q=70"
+                         alt="Seaside hotel" loading="lazy" />
+                </div>
+                <div class="listing-card__body">
+                    <span class="listing-card__meta">Karachi · Sample hotel</span>
+                    <h3>Seabreeze Suites</h3>
+                    <p class="listing-card__desc">Comfortable rooms close to the coast.</p>
+                    <div class="listing-card__tags">
+                        <span>Wi-Fi</span><span>Sea view</span><span>Parking</span>
+                    </div>
+                    <div class="listing-card__footer">
+                        <div class="listing-card__price"><small>Sample / night</small>PKR 21,000</div>
+                        <a class="link-arrow" href="@Url.Action("Index", "Contact")
