@@ -1,3 +1,4 @@
+
 @model List<KarnelTravel.Models.Booking>
 
 @{
@@ -12,7 +13,7 @@
     <div>
         <div class="eyebrow">BOOKING MANAGEMENT</div>
         <h1>Reservations</h1>
-        <p>Manage customer booking requests from your database.</p>
+        <p>Review and manage customer reservations.</p>
     </div>
 </div>
 
@@ -64,7 +65,7 @@
             <tr>
                 <th>Reference / Customer</th>
                 <th>Service</th>
-                <th>Booking date</th>
+                <th>Travel / Booking date</th>
                 <th>Guests / Rooms</th>
                 <th>Estimated total</th>
                 <th>Status</th>
@@ -98,6 +99,24 @@
 
                         <td>
                             @booking.BookingDate.ToString("dd MMM yyyy")
+
+                            @if (booking.ServiceType == "Transport")
+                            {
+                                <div class="transport-route">
+                                    <small>
+                                        @(booking.PickupLocation ?? "Pickup not specified")
+                                        →
+                                        @(booking.DropoffLocation ?? "Drop-off not specified")
+                                    </small>
+                                </div>
+                                <small>@(booking.TripType ?? "Trip type not specified")</small>
+                            }
+                            else if (booking.ReturnDate.HasValue)
+                            {
+                                <small>
+                                    Return: @booking.ReturnDate.Value.ToString("dd MMM yyyy")
+                                </small>
+                            }
                         </td>
 
                         <td>
@@ -146,3 +165,15 @@
         </tbody>
     </table>
 </div>
+
+<style>
+    .transport-route {
+        margin-top: 5px;
+        max-width: 230px;
+        overflow-wrap: anywhere;
+    }
+
+    .transport-route small {
+        font-weight: 600;
+    }
+</style>

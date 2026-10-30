@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿
+using System.ComponentModel.DataAnnotations;
 
 namespace KarnelTravel.ViewModels;
 
@@ -22,14 +23,15 @@ public class BookingRequestViewModel
 
     [Required]
     [DataType(DataType.Date)]
-    [Display(Name = "Arrival / booking date")]
+    [Display(Name = "Travel date")]
     public DateTime BookingDate { get; set; } = DateTime.Today.AddDays(1);
 
     [DataType(DataType.Date)]
-    [Display(Name = "Return / departure date")]
+    [Display(Name = "Return date")]
     public DateTime? ReturnDate { get; set; }
 
     [Range(1, 100)]
+    [Display(Name = "Adults / passengers")]
     public int Adults { get; set; } = 1;
 
     [Range(0, 100)]
@@ -37,6 +39,18 @@ public class BookingRequestViewModel
 
     [Range(0, 100)]
     public int Rooms { get; set; }
+
+    [StringLength(200)]
+    [Display(Name = "Pickup location")]
+    public string? PickupLocation { get; set; }
+
+    [StringLength(200)]
+    [Display(Name = "Drop-off location")]
+    public string? DropoffLocation { get; set; }
+
+    [StringLength(20)]
+    [Display(Name = "Journey type")]
+    public string? TripType { get; set; }
 
     [StringLength(1000)]
     [Display(Name = "Additional requests")]

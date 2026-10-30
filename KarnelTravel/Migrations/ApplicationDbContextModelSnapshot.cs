@@ -91,6 +91,10 @@ namespace KarnelTravel.Migrations
                         .HasMaxLength(1000)
                         .HasColumnType("nvarchar(1000)");
 
+                    b.Property<string>("DropoffLocation")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
                     b.Property<string>("Email")
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");
@@ -106,6 +110,10 @@ namespace KarnelTravel.Migrations
                         .IsRequired()
                         .HasMaxLength(30)
                         .HasColumnType("nvarchar(30)");
+
+                    b.Property<string>("PickupLocation")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
 
                     b.Property<string>("ReferenceNumber")
                         .IsRequired()
@@ -142,8 +150,24 @@ namespace KarnelTravel.Migrations
                     b.Property<int?>("TourPackageId")
                         .HasColumnType("int");
 
+                    b.Property<decimal?>("TransportDiscountPKR")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal?>("TransportOneWayFarePKR")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal?>("TransportReturnFarePKR")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
                     b.Property<int?>("TransportServiceId")
                         .HasColumnType("int");
+
+                    b.Property<string>("TripType")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
@@ -567,6 +591,51 @@ namespace KarnelTravel.Migrations
                     b.ToTable("TourPackages", (string)null);
                 });
 
+            modelBuilder.Entity("KarnelTravel.Models.TransportRoutePricing", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("DropoffCity")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<decimal>("OneWayFarePKR")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("PickupCity")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<decimal?>("ReturnFarePKR")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("TransportServiceId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TransportServiceId", "PickupCity", "DropoffCity")
+                        .IsUnique();
+
+                    b.ToTable("TransportRoutePricings", (string)null);
+                });
+
             modelBuilder.Entity("KarnelTravel.Models.TransportService", b =>
                 {
                     b.Property<int>("Id")
@@ -786,6 +855,17 @@ namespace KarnelTravel.Migrations
                         .HasForeignKey("DestinationId");
 
                     b.Navigation("Destination");
+                });
+
+            modelBuilder.Entity("KarnelTravel.Models.TransportRoutePricing", b =>
+                {
+                    b.HasOne("KarnelTravel.Models.TransportService", "TransportService")
+                        .WithMany()
+                        .HasForeignKey("TransportServiceId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("TransportService");
                 });
 
             modelBuilder.Entity("KarnelTravel.Models.TransportService", b =>

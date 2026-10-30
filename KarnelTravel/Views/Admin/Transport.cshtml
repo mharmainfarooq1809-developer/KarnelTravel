@@ -1,2 +1,457 @@
-@{ Layout = "_AdminLayout"; ViewData["Title"] = "Transport"; }
-<div class="page-heading"><div><div class="eyebrow">Routes & movement</div><h1>Make the miles easy.</h1><p>Coordinate routes, vehicles and the rhythm between destinations.</p></div><button class="btn btn-primary" data-toast="Route creation is visual only.">＋ Add route</button></div><div class="toolbar"><div class="filters"><input class="input search-input" placeholder="Search route or vehicle…" data-filter-target="route-list" /><select class="select"><option>All vehicle types</option><option>Coaster</option><option>4×4</option></select><input class="input" type="date" /></div></div><div class="table-wrap"><table class="data-table" id="route-list"><thead><tr><th>Route</th><th>Vehicle</th><th>Capacity</th><th>Fare</th><th>Schedule</th><th>Availability</th></tr></thead><tbody><tr class="filterable"><td><span class="record-name">Islamabad → Hunza</span><span class="record-sub">Northern Arc · R-018</span></td><td>Coaster</td><td>18 seats</td><td>$85</td><td>Daily · 06:30</td><td><span class="status status-confirmed"><i></i>Open</span></td></tr><tr class="filterable"><td><span class="record-name">Skardu → Deosai</span><span class="record-sub">High plateau · R-024</span></td><td>4×4 Land Cruiser</td><td>6 seats</td><td>$120</td><td>Fri · 07:00</td><td><span class="status status-pending"><i></i>Limited</span></td></tr></tbody></table></div>
+
+@model IEnumerable<KarnelTravel.Models.TransportRoutePricing>
+
+@using KarnelTravel.Models
+
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Transport";
+
+    var services = ViewBag.TransportServices as IEnumerable<TransportService>
+                   ?? Enumerable.Empty<TransportService>();
+
+    var editRoute = ViewBag.EditRoute as TransportRoutePricing;
+    var routes = Model?.ToList() ?? new List<TransportRoutePricing>();
+
+    var activeCount = routes.Count(x => x.IsActive);
+    var inactiveCount = routes.Count(x => !x.IsActive);
+}
+
+<div class="page-heading">
+    <div>
+        <div class="eyebrow">Routes & movement</div>
+        <h1>Make the miles easy.</h1>
+        <p>Manage vehicles, routes and transport fares.</p>
+    </div>
+
+    <a href="@Url.Action("Transport", "Admin")#route-form"
+       class="btn btn-primary">
+        ＋ Add route
+    </a>
+</div>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success" style="margin-bottom:20px;">
+        @TempData["SuccessMessage"]
+    </div>
+}
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger" style="margin-bottom:20px;">
+        @TempData["ErrorMessage"]
+    </div>
+}
+
+<!-- ROUTE STATISTICS -->
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:15px;margin-bottom:25px;">
+
+    <div class="table-wrap" style="padding:18px;">
+        <div class="eyebrow">Total routes</div>
+        <h2>@routes.Count</h2>
+    </div>
+
+    <div class="table-wrap" style="padding:18px;">
+        <div class="eyebrow">Active routes</div>
+        <h2>@activeCount</h2>
+    </div>
+
+    <div class="table-wrap" style="padding:18px;">
+        <div class="eyebrow">Inactive routes</div>
+        <h2>@inactiveCount</h2>
+    </div>
+
+</div>
+
+<!-- FILTERS -->
+<div class="toolbar">
+    <div class="filters">
+
+        <input class="input search-input"
+               id="routeSearch"
+               placeholder="Search route or vehicle..." />
+
+        <select class="select" id="vehicleFilter">
+            <option value="">All vehicle types</option>
+
+            @foreach (var type in services
+                .Where(x => !string.IsNullOrWhiteSpace(x.VehicleType))
+                .Select(x => x.VehicleType)
+                .Distinct()
+                .OrderBy(x => x))
+            {
+                <option value="@type">@type</option>
+            }
+        </select>
+
+        <select class="select" id="statusFilter">
+            <option value="">All statuses</option>
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
+        </select>
+
+    </div>
+</div>
+
+<!-- ROUTES TABLE -->
+<div class="table-wrap">
+    <table class="data-table" id="route-list">
+
+        <thead>
+            <tr>
+                <th>Route</th>
+                <th>Vehicle</th>
+                <th>Capacity</th>
+                <th>One-way fare</th>
+                <th>Return fare</th>
+                <th>Availability</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+
+        <tbody>
+
+            @if (routes.Any())
+            {
+                foreach (var route in routes)
+                {
+                    var vehicle = route.TransportService;
+                    var vehicleType = vehicle?.VehicleType ?? "Unknown";
+                    var vehicleName = vehicle?.Name ?? "Unknown vehicle";
+                    var capacity = vehicle?.PassengerCapacity ?? 0;
+
+                    <tr class="filterable"
+                        data-search="@($"{route.PickupCity} {route.DropoffCity} {vehicleName} {vehicleType}")"
+                        data-vehicle="@vehicleType"
+                        data-status="@(route.IsActive ? "active" : "inactive")">
+
+                        <td>
+                            <span class="record-name">
+                                @route.PickupCity → @route.DropoffCity
+                            </span>
+
+                            <span class="record-sub">
+                                Route #@route.Id
+                            </span>
+                        </td>
+
+                        <td>
+                            @vehicleName
+                            <span class="record-sub">@vehicleType</span>
+                        </td>
+
+                        <td>@capacity seats</td>
+
+                        <td>
+                            <strong>
+                                PKR @route.OneWayFarePKR.ToString("N0")
+                            </strong>
+                        </td>
+
+                        <td>
+                            @if (route.ReturnFarePKR.HasValue)
+                            {
+                                <strong>
+                                    PKR @route.ReturnFarePKR.Value.ToString("N0")
+                                </strong>
+                            }
+                            else
+                            {
+                                <span class="record-sub">
+                                    Same as outbound
+                                </span>
+                            }
+                        </td>
+
+                        <td>
+                            @if (route.IsActive)
+                            {
+                                <span class="status status-confirmed">
+                                    <i></i> Active
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="status status-pending">
+                                    <i></i> Inactive
+                                </span>
+                            }
+                        </td>
+
+                        <td>
+                            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+
+                                <a class="btn btn-secondary"
+                                   href="@Url.Action("Transport", "Admin", new { editId = route.Id })#route-form">
+                                    Edit
+                                </a>
+
+                                <form asp-controller="Admin"
+                                      asp-action="ToggleTransportRoute"
+                                      asp-route-id="@route.Id"
+                                      method="post"
+                                      style="display:inline;">
+
+                                    @Html.AntiForgeryToken()
+
+                                    <button type="submit"
+                                            class="btn btn-secondary"
+                                            onclick="return confirm('Are you sure you want to @(route.IsActive ? "deactivate" : "activate") this route?');">
+
+                                        @(route.IsActive ? "Deactivate" : "Activate")
+
+                                    </button>
+
+                                </form>
+
+                            </div>
+                        </td>
+
+                    </tr>
+                }
+            }
+            else
+            {
+                <tr>
+                    <td colspan="7" style="text-align:center;padding:35px;">
+                        <strong>No transport routes configured.</strong>
+
+                        <div class="record-sub">
+                            Add your first route using the form below.
+                        </div>
+                    </td>
+                </tr>
+            }
+
+        </tbody>
+    </table>
+</div>
+
+<!-- ADD / EDIT ROUTE FORM -->
+<div id="route-form"
+     style="margin-top:35px;padding:25px;border:1px solid var(--border, #e5e7eb);border-radius:14px;">
+
+    <div class="eyebrow">
+        @(editRoute == null ? "Create route" : "Update route")
+    </div>
+
+    <h2 style="margin-top:8px;">
+        @(editRoute == null ? "Add transport route" : "Edit transport route")
+    </h2>
+
+    <p>
+        Configure the vehicle, journey cities and one-way and optional return fares.
+    </p>
+
+    @if (!services.Any())
+    {
+        <div class="alert alert-danger">
+            No transport vehicles were found. Add a transport vehicle first.
+        </div>
+    }
+    else
+    {
+        <form asp-controller="Admin"
+              asp-action="SaveTransportRoute"
+              method="post">
+
+            @Html.AntiForgeryToken()
+
+            <input type="hidden"
+                   name="Id"
+                   value="@(editRoute?.Id ?? 0)" />
+
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:18px;">
+
+                <!-- VEHICLE -->
+                <div>
+                    <label class="form-label" for="TransportServiceId">
+                        Transport vehicle
+                    </label>
+
+                    <select class="select"
+                            id="TransportServiceId"
+                            name="TransportServiceId"
+                            required
+                            style="width:100%;">
+
+                        <option value="">Select vehicle</option>
+
+                        @foreach (var service in services)
+                        {
+                            <option value="@service.Id"
+                                    selected="@(editRoute?.TransportServiceId == service.Id)">
+                                @service.Name — @service.VehicleType
+                                (@service.PassengerCapacity seats)
+                            </option>
+                        }
+
+                    </select>
+                </div>
+
+                <!-- PICKUP -->
+                <div>
+                    <label class="form-label" for="PickupCity">
+                        Pickup city
+                    </label>
+
+                    <input class="input"
+                           id="PickupCity"
+                           name="PickupCity"
+                           value="@editRoute?.PickupCity"
+                           maxlength="150"
+                           placeholder="e.g. Islamabad"
+                           required
+                           style="width:100%;" />
+                </div>
+
+                <!-- DROPOFF -->
+                <div>
+                    <label class="form-label" for="DropoffCity">
+                        Drop-off city
+                    </label>
+
+                    <input class="input"
+                           id="DropoffCity"
+                           name="DropoffCity"
+                           value="@editRoute?.DropoffCity"
+                           maxlength="150"
+                           placeholder="e.g. Murree"
+                           required
+                           style="width:100%;" />
+                </div>
+
+                <!-- ONE WAY FARE -->
+                <div>
+                    <label class="form-label" for="OneWayFarePKR">
+                        One-way fare (PKR)
+                    </label>
+
+                    <input class="input"
+                           type="number"
+                           id="OneWayFarePKR"
+                           name="OneWayFarePKR"
+                           value="@(editRoute?.OneWayFarePKR.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture))"
+                           min="0.01"
+                           step="0.01"
+                           placeholder="5000"
+                           required
+                           style="width:100%;" />
+                </div>
+
+                <!-- OPTIONAL RETURN FARE -->
+                <div>
+                    <label class="form-label" for="ReturnFarePKR">
+                        Return fare (PKR)
+                        <span class="record-sub">Optional</span>
+                    </label>
+
+                    <input class="input"
+                           type="number"
+                           id="ReturnFarePKR"
+                           name="ReturnFarePKR"
+                           value="@(editRoute?.ReturnFarePKR?.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture))"
+                           min="0.01"
+                           step="0.01"
+                           placeholder="Leave empty to use one-way fare"
+                           style="width:100%;" />
+
+                    <span class="record-sub">
+                        Empty means the return fare equals the one-way fare.
+                    </span>
+                </div>
+
+            </div>
+
+            <!-- ACTIVE STATUS -->
+            <div style="margin-top:20px;">
+
+                <label style="display:flex;align-items:center;gap:10px;">
+
+                    <input type="checkbox"
+                           name="IsActive"
+                           value="true"
+                           checked="@(editRoute == null || editRoute.IsActive)" />
+
+                    <span>
+                        Route is active and available for customer bookings
+                    </span>
+
+                </label>
+
+            </div>
+
+            <!-- FORM BUTTONS -->
+            <div style="display:flex;gap:10px;margin-top:24px;flex-wrap:wrap;">
+
+                <button type="submit" class="btn btn-primary">
+                    @(editRoute == null ? "Save route" : "Update route")
+                </button>
+
+                @if (editRoute != null)
+                {
+                    <a href="@Url.Action("Transport", "Admin")"
+                       class="btn btn-secondary">
+                        Cancel
+                    </a>
+                }
+
+            </div>
+
+        </form>
+    }
+
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+
+        const search = document.getElementById("routeSearch");
+        const vehicleFilter = document.getElementById("vehicleFilter");
+        const statusFilter = document.getElementById("statusFilter");
+
+        const rows = document.querySelectorAll(
+            "#route-list tbody tr.filterable"
+        );
+
+        function filterRoutes() {
+
+            const searchValue = search.value.toLowerCase().trim();
+            const vehicleValue = vehicleFilter.value.toLowerCase();
+            const statusValue = statusFilter.value.toLowerCase();
+
+            rows.forEach(row => {
+
+                const searchText =
+                    (row.dataset.search || "").toLowerCase();
+
+                const vehicle =
+                    (row.dataset.vehicle || "").toLowerCase();
+
+                const status =
+                    (row.dataset.status || "").toLowerCase();
+
+                const matchesSearch =
+                    searchText.includes(searchValue);
+
+                const matchesVehicle =
+                    !vehicleValue || vehicle === vehicleValue;
+
+                const matchesStatus =
+                    !statusValue || status === statusValue;
+
+                row.style.display =
+                    matchesSearch && matchesVehicle && matchesStatus
+                        ? ""
+                        : "none";
+
+            });
+        }
+
+        search.addEventListener("input", filterRoutes);
+        vehicleFilter.addEventListener("change", filterRoutes);
+        statusFilter.addEventListener("change", filterRoutes);
+
+    });
+</script>

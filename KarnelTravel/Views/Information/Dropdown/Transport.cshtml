@@ -1,14 +1,32 @@
-﻿@{
-    ViewData["Title"] = "Ways to Wander — Travel Information | Karnel Travel Guide";
-    ViewData["Description"] = "Illustrative transport options between destinations in Pakistan — coach, private car, shared transport and air travel.";
+﻿@model IEnumerable<KarnelTravel.Models.TransportService>
+
+@{
+    ViewData["Title"] = "Transport Services | Karnel Travel Guide";
+    ViewData["Description"] = "Explore transport services and vehicle options for travelling across Pakistan.";
 }
 
 @section Styles {
     <style>
-        .page-hero { padding: calc(var(--header-h) + 60px) 0 60px; background: var(--forest-deep); color: var(--ivory); }
-        .page-hero h1 { color: var(--ivory); max-width: 14ch; }
-        .page-hero p { color: rgba(248, 246, 240, .82); font-size: 1.05rem; max-width: 62ch; }
-        .page-hero .eyebrow { color: var(--sage); }
+        .page-hero {
+            padding: calc(var(--header-h) + 60px) 0 60px;
+            background: var(--forest-deep);
+            color: var(--ivory);
+        }
+
+            .page-hero h1 {
+                color: var(--ivory);
+                max-width: 14ch;
+            }
+
+            .page-hero p {
+                color: rgba(248, 246, 240, .82);
+                font-size: 1.05rem;
+                max-width: 62ch;
+            }
+
+            .page-hero .eyebrow {
+                color: var(--sage);
+            }
 
         .transport-card {
             display: grid;
@@ -21,12 +39,49 @@
             margin-bottom: 24px;
             transition: box-shadow .4s var(--ease);
         }
-        .transport-card:hover { box-shadow: var(--shadow-md); }
-        .transport-card .media { aspect-ratio: auto; min-height: 220px; border-radius: 0; }
-        .transport-card__body { padding: 26px 28px; display: flex; flex-direction: column; gap: 12px; }
-        .transport-card__meta { font-size: .68rem; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); }
-        .transport-card h3 { margin: 0; font-size: 1.35rem; }
-        .transport-card p { color: var(--muted); font-size: .92rem; margin: 0; }
+
+            .transport-card:hover {
+                box-shadow: var(--shadow-md);
+            }
+
+            .transport-card .media {
+                aspect-ratio: auto;
+                min-height: 220px;
+                border-radius: 0;
+                overflow: hidden;
+            }
+
+                .transport-card .media img {
+                    width: 100%;
+                    height: 100%;
+                    object-fit: cover;
+                }
+
+        .transport-card__body {
+            padding: 26px 28px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .transport-card__meta {
+            font-size: .68rem;
+            letter-spacing: .16em;
+            text-transform: uppercase;
+            color: var(--muted);
+        }
+
+        .transport-card h3 {
+            margin: 0;
+            font-size: 1.35rem;
+        }
+
+        .transport-card p {
+            color: var(--muted);
+            font-size: .92rem;
+            margin: 0;
+        }
+
         .transport-card__info {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
@@ -34,29 +89,77 @@
             padding-top: 14px;
             border-top: 1px solid var(--line);
         }
-        .transport-card__info div span {
-            display: block;
-            font-size: .66rem;
-            letter-spacing: .14em;
-            text-transform: uppercase;
-            color: var(--muted);
-            margin-bottom: 3px;
+
+            .transport-card__info div span {
+                display: block;
+                font-size: .66rem;
+                letter-spacing: .14em;
+                text-transform: uppercase;
+                color: var(--muted);
+                margin-bottom: 3px;
+            }
+
+            .transport-card__info div strong {
+                font-family: var(--serif);
+                font-size: 1rem;
+                font-weight: 400;
+                color: var(--forest-deep);
+            }
+
+        .transport-card__actions {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            flex-wrap: wrap;
+            margin-top: auto;
+            padding-top: 10px;
         }
-        .transport-card__info div strong {
-            font-family: var(--serif);
-            font-size: 1rem;
-            font-weight: 400;
-            color: var(--forest-deep);
+
+            .transport-card__actions .btn {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+        .empty-state {
+            text-align: center;
+            padding: 70px 24px;
+            border: 1px solid var(--line);
+            border-radius: var(--radius-lg);
+            background: var(--white);
         }
+
+            .empty-state h2 {
+                margin-bottom: 12px;
+            }
+
+            .empty-state p {
+                color: var(--muted);
+                max-width: 52ch;
+                margin: 0 auto;
+            }
 
         .cta-band {
-            background: var(--sand); padding: clamp(56px, 8vw, 100px) 0; text-align: center;
+            background: var(--sand);
+            padding: clamp(56px, 8vw, 100px) 0;
+            text-align: center;
         }
-        .cta-band p { color: var(--muted); max-width: 56ch; margin: 0 auto 28px; }
+
+            .cta-band p {
+                color: var(--muted);
+                max-width: 56ch;
+                margin: 0 auto 28px;
+            }
 
         @@media (max-width: 780px) {
-            .transport-card { grid-template-columns: 1fr; }
-            .transport-card .media { aspect-ratio: 16 / 10; min-height: 0; }
+            .transport-card {
+                grid-template-columns: 1fr;
+            }
+
+                .transport-card .media {
+                    aspect-ratio: 16 / 10;
+                    min-height: 0;
+                }
         }
     </style>
 }
@@ -65,85 +168,117 @@
     <div class="container" data-reveal>
         <p class="eyebrow">Discover More · Travel Information</p>
         <h1>Ways to Wander.</h1>
-        <p>Routes, fares and facilities are sample data shown in the structure the real
-           inventory will use. Availability is not live yet.</p>
+        <p>
+            Discover transport options for your journey across Pakistan.
+            Explore available vehicles, routes and starting prices,
+            then send us a request to plan your travel.
+        </p>
     </div>
 </header>
 
 <section class="section section--ivory">
     <div class="container">
 
-        <article class="transport-card" data-reveal>
-            <div class="media" data-fallback-label="Intercity coach">
-                <img src="https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&w=900&q=70"
-                     alt="Coach travelling on the highway" loading="lazy" />
-            </div>
-            <div class="transport-card__body">
-                <span class="transport-card__meta">Bus &amp; Coach · Sample route</span>
-                <h3>Islamabad → Gilgit</h3>
-                <p>Long-distance coach service along the Karakoram Highway. Sample listing.</p>
-                <div class="transport-card__info">
-                    <div><span>Departure</span><strong>Islamabad</strong></div>
-                    <div><span>Arrival</span><strong>Gilgit</strong></div>
-                    <div><span>Sample fare</span><strong>PKR 6,500</strong></div>
-                    <div><span>Duration</span><strong>~14 hours</strong></div>
-                </div>
-            </div>
-        </article>
+        @if (Model != null && Model.Any())
+        {
+            foreach (var transport in Model)
+            {
+                var route = !string.IsNullOrWhiteSpace(transport.StartingCity)
+                    ? transport.StartingCity
+                    : "Location to be confirmed";
 
-        <article class="transport-card" data-reveal>
-            <div class="media" data-fallback-label="Private car">
-                <img src="https://images.unsplash.com/photo-1494976388531-d1058494cdd8?auto=format&fit=crop&w=900&q=70"
-                     alt="Car on a scenic road" loading="lazy" />
-            </div>
-            <div class="transport-card__body">
-                <span class="transport-card__meta">Private Car · Sample service</span>
-                <h3>Chauffeur-driven day hire</h3>
-                <p>Flexible itineraries with a driver, ideal for multi-stop days.</p>
-                <div class="transport-card__info">
-                    <div><span>Base</span><strong>Lahore</strong></div>
-                    <div><span>Sample rate / day</span><strong>PKR 18,000</strong></div>
-                    <div><span>Seats</span><strong>Up to 4</strong></div>
-                    <div><span>Fuel</span><strong>Included</strong></div>
-                </div>
-            </div>
-        </article>
+                var destination = !string.IsNullOrWhiteSpace(transport.DestinationCity)
+                    ? transport.DestinationCity
+                    : "Destination to be confirmed";
 
-        <article class="transport-card" data-reveal>
-            <div class="media" data-fallback-label="Shared transport">
-                <img src="https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&w=900&q=70"
-                     alt="Shared van on a mountain road" loading="lazy" />
-            </div>
-            <div class="transport-card__body">
-                <span class="transport-card__meta">Shared Transport · Sample route</span>
-                <h3>Gilgit → Hunza (shared van)</h3>
-                <p>Shared vans serving common northern routes — details to be confirmed.</p>
-                <div class="transport-card__info">
-                    <div><span>Departure</span><strong>Gilgit</strong></div>
-                    <div><span>Arrival</span><strong>Hunza</strong></div>
-                    <div><span>Sample fare</span><strong>PKR 1,500</strong></div>
-                    <div><span>Duration</span><strong>~2 hours</strong></div>
-                </div>
-            </div>
-        </article>
+                <article class="transport-card" data-reveal>
 
-        <article class="transport-card" data-reveal>
-            <div class="media" data-fallback-label="Air travel">
-                <img src="https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&w=900&q=70"
-                     alt="Aircraft on the tarmac" loading="lazy" />
+                    <div class="media"
+                         data-fallback-label="@transport.Name">
+
+                        @if (!string.IsNullOrWhiteSpace(transport.ImageUrl))
+                        {
+                            <img src="@transport.ImageUrl"
+                                 alt="@transport.Name"
+                                 loading="lazy"
+                                 onerror="this.style.display='none';" />
+                        }
+                    </div>
+
+                    <div class="transport-card__body">
+
+                        <span class="transport-card__meta">
+                            @(string.IsNullOrWhiteSpace(transport.VehicleType)
+                                ? "Transport Service"
+                                : transport.VehicleType)
+                            · @(transport.IsFeatured ? "Featured Service" : "Travel Service")
+                        </span>
+
+                        <h3>@transport.Name</h3>
+
+                        <p>
+                            @(string.IsNullOrWhiteSpace(transport.Description)
+                                ? "Contact us for more information about this transport service."
+                                : transport.Description)
+                        </p>
+
+                        <div class="transport-card__info">
+
+                            <div>
+                                <span>Departure</span>
+                                <strong>@route</strong>
+                            </div>
+
+                            <div>
+                                <span>Destination</span>
+                                <strong>@destination</strong>
+                            </div>
+
+                            <div>
+                                <span>Passenger Capacity</span>
+                                <strong>
+                                    @(transport.PassengerCapacity.HasValue
+                                        ? transport.PassengerCapacity.Value + " passengers"
+                                        : "To be confirmed")
+                                </strong>
+                            </div>
+
+                            <div>
+                                <span>Starting Price</span>
+                                <strong>
+                                    @(transport.StartingPrice.HasValue
+                                        ? "PKR " + transport.StartingPrice.Value.ToString("N0")
+                                        : "On request")
+                                </strong>
+                            </div>
+
+                        </div>
+
+                        <div class="transport-card__actions">
+                            <a class="btn"
+                               href="@Url.Action("Create", "Bookings", new
+                               {
+                                   serviceType = "Transport",
+                                   serviceId = transport.Id
+                               })">
+                                Inquire About Transport
+                            </a>
+                        </div>
+
+                    </div>
+                </article>
+            }
+        }
+        else
+        {
+            <div class="empty-state" data-reveal>
+                <h2>Every journey begins somewhere.</h2>
+                <p>
+                    Our transport listings are being prepared.
+                    Please contact our team for help arranging your journey.
+                </p>
             </div>
-            <div class="transport-card__body">
-                <span class="transport-card__meta">Air Travel · Sample route</span>
-                <h3>Islamabad → Skardu</h3>
-                <p>Domestic flight to a northern hub. Fares are dynamic and not shown here.</p>
-                <div class="transport-card__info">
-                    <div><span>Departure</span><strong>Islamabad</strong></div>
-                    <div><span>Arrival</span><strong>Skardu</strong></div>
-                    <div><span>Sample fare</span><strong>On request</strong></div>
-                    <div><span>Duration</span><strong>~1 hour</strong></div>
-                </div>
-            </div>
-        </article>
+        }
 
     </div>
 </section>
@@ -151,7 +286,13 @@
 <section class="cta-band">
     <div class="container" data-reveal>
         <h2>Need help choosing a route?</h2>
-        <p>Send us a message and we'll suggest an option that fits your itinerary.</p>
-        <a class="btn" href="@Url.Action("Index", "Contact")">Get in Touch</a>
+        <p>
+            Tell us where you want to go, when you plan to travel
+            and how many people are travelling. Our team can help
+            you explore suitable transport options.
+        </p>
+        <a class="btn" href="@Url.Action("Index", "Contact")">
+            Get in Touch
+        </a>
     </div>
 </section>

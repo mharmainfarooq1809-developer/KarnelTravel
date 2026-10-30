@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿
+using System.ComponentModel.DataAnnotations;
 
 namespace KarnelTravel.Models;
 
@@ -47,6 +48,16 @@ public class Booking
     [Range(0, 100000000)]
     public decimal? EstimatedTotalPKR { get; set; }
 
+    // Transport fare snapshot
+    [Range(0, 100000000)]
+    public decimal? TransportOneWayFarePKR { get; set; }
+
+    [Range(0, 100000000)]
+    public decimal? TransportReturnFarePKR { get; set; }
+
+    [Range(0, 100000000)]
+    public decimal? TransportDiscountPKR { get; set; }
+
     [Required, StringLength(30)]
     public string Status { get; set; } = "Pending";
 
@@ -59,4 +70,13 @@ public class Booking
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     public DateTime? UpdatedAt { get; set; }
+
+    [StringLength(200)]
+    public string? PickupLocation { get; set; }
+
+    [StringLength(200)]
+    public string? DropoffLocation { get; set; }
+
+    [StringLength(20)]
+    public string? TripType { get; set; }
 }

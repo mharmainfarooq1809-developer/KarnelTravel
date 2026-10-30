@@ -1,0 +1,111 @@
+﻿
+@model IEnumerable<KarnelTravel.Models.TransportService>
+
+@{
+    ViewData["Title"] = "Vehicle Management";
+    Layout = "_AdminLayout";
+}
+
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2>Vehicle Management</h2>
+            <p class="text-muted">Manage transport vehicles and passenger capacity.</p>
+        </div>
+
+        <a asp-controller="Admin"
+           asp-action="CreateVehicle"
+           class="btn btn-primary">
+            + Add Vehicle
+        </a>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success">@TempData["SuccessMessage"]</div>
+    }
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
+    }
+
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead>
+                <tr>
+                    <th>Vehicle</th>
+                    <th>Type</th>
+                    <th>Route</th>
+                    <th>Capacity</th>
+                    <th>Starting Price</th>
+                    <th>Visibility</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var vehicle in Model)
+                {
+                    <tr>
+                        <td>
+                            <strong>@vehicle.Name</strong>
+                        </td>
+                        <td>@vehicle.VehicleType</td>
+                        <td>
+                            @vehicle.StartingCity
+                            →
+                            @vehicle.DestinationCity
+                        </td>
+                        <td>@(vehicle.PassengerCapacity?.ToString() ?? "Not set")</td>
+                        <td>
+                            @(vehicle.StartingPrice.HasValue
+                                ? "PKR " + vehicle.StartingPrice.Value.ToString("N0")
+                                : "Not set")
+                        </td>
+                        <td>
+                            @if (vehicle.IsPublished)
+                            {
+                                <span class="badge bg-success">Published</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-secondary">Unpublished</span>
+                            }
+                        </td>
+                        <td>
+                            <div class="d-flex gap-2">
+                                <a asp-controller="Admin"
+                                   asp-action="EditVehicle"
+                                   asp-route-id="@vehicle.Id"
+                                   class="btn btn-sm btn-outline-primary">
+                                    Edit
+                                </a>
+
+                                <form asp-controller="Admin"
+                                      asp-action="ToggleVehicle"
+                                      asp-route-id="@vehicle.Id"
+                                      method="post">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn btn-sm btn-outline-secondary">
+                                        @(vehicle.IsPublished ? "Unpublish" : "Publish")
+                                    </button>
+                                </form>
+
+                                <form asp-controller="Admin"
+                                      asp-action="DeleteVehicle"
+                                      asp-route-id="@vehicle.Id"
+                                      method="post"
+                                      onsubmit="return confirm('Delete this vehicle?');">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">
+                                        Delete
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

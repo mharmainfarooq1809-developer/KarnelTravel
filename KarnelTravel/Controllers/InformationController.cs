@@ -33,9 +33,19 @@ namespace KarnelTravel.Controllers
         }
 
         [HttpGet("/transport")]
-        public IActionResult Transport()
+        public async Task<IActionResult> Transport()
         {
-            return View("Dropdown/transport");
+            var transportServices = await _context.TransportServices
+                .AsNoTracking()
+                .Where(t => t.IsPublished)
+                .OrderBy(t => t.DisplayOrder)
+                .ThenBy(t => t.Name)
+                .ToListAsync();
+
+            return View(
+                "~/Views/Information/Dropdown/transport.cshtml",
+                transportServices
+            );
         }
 
         [HttpGet("/hotels")]

@@ -1,0 +1,334 @@
+﻿
+@model KarnelTravel.Models.TransportService
+
+@{
+    ViewData["Title"] = Model.Id == 0 ? "Add Vehicle" : "Edit Vehicle";
+    Layout = "_AdminLayout";
+    var isEdit = Model.Id > 0;
+}
+
+<div class="vehicle-form-page">
+    <div class="page-heading">
+        <div>
+            <a href="/Admin/Transport/Vehicles" class="back-link">← Back to Vehicles</a>
+            <h1>@(isEdit ? "Edit Vehicle" : "Add Vehicle")</h1>
+            <p>Enter the vehicle information below.</p>
+        </div>
+    </div>
+
+    <form asp-controller="Admin"
+          asp-action="@(isEdit ? "EditVehicle" : "CreateVehicle")"
+          method="post"
+          enctype="multipart/form-data"
+          class="vehicle-form">
+
+        @Html.AntiForgeryToken()
+
+        <input type="hidden" asp-for="Id" />
+
+        <div asp-validation-summary="ModelOnly" class="validation-summary"></div>
+
+        <div class="form-grid">
+
+            <div class="form-group">
+                <label asp-for="Name">Vehicle name</label>
+                <input asp-for="Name" placeholder="e.g. Toyota Corolla" required />
+                <span asp-validation-for="Name" class="field-error"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="Slug">URL slug</label>
+                <input asp-for="Slug" placeholder="e.g. toyota-corolla" required />
+                <span asp-validation-for="Slug" class="field-error"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="VehicleType">Vehicle type</label>
+                <input asp-for="VehicleType" placeholder="e.g. Private Car" />
+            </div>
+
+            <div class="form-group">
+                <label asp-for="PassengerCapacity">Passenger capacity</label>
+                <input asp-for="PassengerCapacity" type="number" min="1" placeholder="4" />
+            </div>
+
+            <div class="form-group">
+                <label asp-for="StartingCity">Starting city</label>
+                <input asp-for="StartingCity" placeholder="Islamabad" />
+            </div>
+
+            <div class="form-group">
+                <label asp-for="DestinationCity">Destination city</label>
+                <input asp-for="DestinationCity" placeholder="Murree" />
+            </div>
+
+            <div class="form-group">
+                <label asp-for="StartingPrice">Starting price (PKR)</label>
+                <input asp-for="StartingPrice" type="number" min="0" step="0.01" placeholder="12000" />
+            </div>
+
+            <div class="form-group">
+                <label asp-for="ContactPhone">Contact phone</label>
+                <input asp-for="ContactPhone" placeholder="03XXXXXXXXX" />
+            </div>
+
+            <div class="form-group full-width">
+                <label>Vehicle image</label>
+
+                <div class="upload-box">
+                    <input type="file"
+                           id="VehicleImage"
+                           name="VehicleImage"
+                           accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" />
+
+                    <p>Choose an image from your computer</p>
+                    <small>JPG, JPEG, PNG or WebP. Maximum size: 5 MB.</small>
+                </div>
+
+                <div class="image-preview-container" id="previewContainer"
+                     style="@(string.IsNullOrWhiteSpace(Model.ImageUrl) ? "display:none" : "display:block")">
+
+                    <img id="imagePreview"
+                         src="@Model.ImageUrl"
+                         alt="Vehicle image preview" />
+
+                    <span>Image preview</span>
+                </div>
+
+                @if (isEdit && !string.IsNullOrWhiteSpace(Model.ImageUrl))
+                {
+                    <p class="current-image-note">
+                        Leave the upload empty to keep the current image.
+                    </p>
+                }
+            </div>
+
+            <div class="form-group full-width">
+                <label asp-for="Description">Description</label>
+                <textarea asp-for="Description" rows="4"
+                          placeholder="Describe this vehicle..."></textarea>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="DisplayOrder">Display order</label>
+                <input asp-for="DisplayOrder" type="number" min="0" />
+            </div>
+
+            <div class="form-group checkbox-group">
+                <label>
+                    <input asp-for="IsPublished" />
+                    Published
+                </label>
+
+                <label>
+                    <input asp-for="IsFeatured" />
+                    Featured
+                </label>
+            </div>
+
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="save-button">
+                @(isEdit ? "Save Changes" : "Add Vehicle")
+            </button>
+
+            <a href="/Admin/Transport/Vehicles" class="cancel-button">Cancel</a>
+        </div>
+    </form>
+</div>
+
+<style>
+    .vehicle-form-page {
+        max-width: 1050px;
+        margin: 0 auto;
+        padding: 30px;
+        color: #26352d;
+    }
+
+    .page-heading { margin-bottom: 28px; }
+
+    .back-link {
+        display: inline-block;
+        color: #55745f;
+        text-decoration: none;
+        margin-bottom: 15px;
+        font-size: 14px;
+    }
+
+    .page-heading h1 {
+        margin: 0 0 8px;
+        font-size: 30px;
+        font-weight: 700;
+    }
+
+    .page-heading p { color: #78847c; margin: 0; }
+
+    .vehicle-form {
+        background: #fff;
+        border: 1px solid #e4e9e4;
+        border-radius: 14px;
+        padding: 28px;
+    }
+
+    .form-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 22px;
+    }
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .full-width { grid-column: 1 / -1; }
+
+    .form-group > label {
+        font-size: 14px;
+        font-weight: 600;
+        color: #34483b;
+    }
+
+    .form-group input:not([type="checkbox"]):not([type="file"]),
+    .form-group textarea {
+        width: 100%;
+        box-sizing: border-box;
+        border: 1px solid #dce4dc;
+        border-radius: 8px;
+        padding: 12px 13px;
+        font: inherit;
+        background: #fff;
+        color: #26352d;
+        outline: none;
+    }
+
+    .form-group input:focus,
+    .form-group textarea:focus {
+        border-color: #64866c;
+        box-shadow: 0 0 0 3px rgba(100,134,108,.12);
+    }
+
+    .upload-box {
+        border: 1px dashed #aab9ac;
+        border-radius: 10px;
+        padding: 22px;
+        background: #f8faf8;
+    }
+
+    .upload-box input { width: 100%; }
+
+    .upload-box p {
+        margin: 12px 0 4px;
+        font-weight: 600;
+    }
+
+    .upload-box small,
+    .current-image-note {
+        color: #78847c;
+    }
+
+    .image-preview-container {
+        margin-top: 15px;
+    }
+
+    .image-preview-container img {
+        display: block;
+        width: 220px;
+        height: 145px;
+        object-fit: cover;
+        border-radius: 10px;
+        border: 1px solid #e1e7e1;
+        margin-bottom: 8px;
+    }
+
+    .image-preview-container span {
+        font-size: 12px;
+        color: #78847c;
+    }
+
+    .checkbox-group {
+        flex-direction: row;
+        align-items: center;
+        gap: 25px;
+        padding-top: 25px;
+    }
+
+    .checkbox-group label {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-weight: 500;
+    }
+
+    .form-actions {
+        display: flex;
+        gap: 12px;
+        margin-top: 30px;
+        padding-top: 22px;
+        border-top: 1px solid #edf0ed;
+    }
+
+    .save-button, .cancel-button {
+        border: 0;
+        border-radius: 8px;
+        padding: 12px 22px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        text-decoration: none;
+    }
+
+    .save-button {
+        background: #315c40;
+        color: white;
+    }
+
+    .cancel-button {
+        background: #edf1ed;
+        color: #35463a;
+    }
+
+    .validation-summary, .field-error {
+        color: #b42318;
+        font-size: 13px;
+    }
+
+    @@media (max-width: 650px) {
+        .vehicle-form-page { padding: 16px; }
+        .vehicle-form { padding: 18px; }
+        .form-grid { grid-template-columns: 1fr; }
+        .full-width { grid-column: auto; }
+        .checkbox-group { flex-wrap: wrap; }
+    }
+</style>
+
+<script>
+    const imageInput = document.getElementById("VehicleImage");
+    const preview = document.getElementById("imagePreview");
+    const previewContainer = document.getElementById("previewContainer");
+
+    imageInput.addEventListener("change", function () {
+        const file = this.files && this.files[0];
+
+        if (!file) return;
+
+        const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
+
+        if (!allowedTypes.includes(file.type)) {
+            alert("Please select a JPG, PNG or WebP image.");
+            this.value = "";
+            return;
+        }
+
+        if (file.size > 5 * 1024 * 1024) {
+            alert("Image size must not exceed 5 MB.");
+            this.value = "";
+            return;
+        }
+
+        preview.src = URL.createObjectURL(file);
+        previewContainer.style.display = "block";
+    });
+</script>

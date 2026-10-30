@@ -19,8 +19,12 @@ namespace KarnelTravel.Data
         public DbSet<Restaurant> Restaurants => Set<Restaurant>();
         public DbSet<Resort> Resorts => Set<Resort>();
         public DbSet<TourPackage> TourPackages => Set<TourPackage>();
+
         public DbSet<TransportService> TransportServices
             => Set<TransportService>();
+
+        public DbSet<TransportRoutePricing> TransportRoutePricings
+            => Set<TransportRoutePricing>();
 
         public DbSet<TripInquiry> TripInquiries => Set<TripInquiry>();
         public DbSet<Booking> Bookings => Set<Booking>();
@@ -29,6 +33,7 @@ namespace KarnelTravel.Data
         {
             base.OnModelCreating(model);
 
+            // ADMIN USERS
             model.Entity<AdminUser>(e =>
             {
                 e.ToTable("AdminUsers");
@@ -43,6 +48,7 @@ namespace KarnelTravel.Data
                 e.HasIndex(x => x.Email).IsUnique();
             });
 
+            // DESTINATIONS
             model.Entity<Destination>(e =>
             {
                 e.ToTable("Destinations");
@@ -59,6 +65,7 @@ namespace KarnelTravel.Data
                 e.Property(x => x.BestTimeToVisit).HasMaxLength(100).IsRequired();
             });
 
+            // HOTELS
             model.Entity<Hotel>(e =>
             {
                 e.ToTable("Hotels");
@@ -78,6 +85,7 @@ namespace KarnelTravel.Data
                 ConfigureDestinationRelationship<Hotel>(e);
             });
 
+            // RESTAURANTS
             model.Entity<Restaurant>(e =>
             {
                 e.ToTable("Restaurants");
@@ -98,6 +106,7 @@ namespace KarnelTravel.Data
                 ConfigureDestinationRelationship<Restaurant>(e);
             });
 
+            // RESORTS
             model.Entity<Resort>(e =>
             {
                 e.ToTable("Resorts");
@@ -117,6 +126,7 @@ namespace KarnelTravel.Data
                 ConfigureDestinationRelationship<Resort>(e);
             });
 
+            // TOUR PACKAGES
             model.Entity<TourPackage>(e =>
             {
                 e.ToTable("TourPackages");
@@ -137,6 +147,7 @@ namespace KarnelTravel.Data
                 ConfigureDestinationRelationship<TourPackage>(e);
             });
 
+            // TRANSPORT SERVICES
             model.Entity<TransportService>(e =>
             {
                 e.ToTable("TransportServices");
@@ -155,7 +166,37 @@ namespace KarnelTravel.Data
                 ConfigureDestinationRelationship<TransportService>(e);
             });
 
+            // TRANSPORT ROUTE PRICING
+            model.Entity<TransportRoutePricing>(e =>
+            {
+                e.ToTable("TransportRoutePricings");
+                e.HasKey(x => x.Id);
 
+                e.Property(x => x.PickupCity)
+                    .HasMaxLength(150)
+                    .IsRequired();
+
+                e.Property(x => x.DropoffCity)
+                    .HasMaxLength(150)
+                    .IsRequired();
+
+                e.Property(x => x.OneWayFarePKR)
+                    .HasPrecision(18, 2);
+
+                e.HasIndex(x => new
+                {
+                    x.TransportServiceId,
+                    x.PickupCity,
+                    x.DropoffCity
+                }).IsUnique();
+
+                e.HasOne(x => x.TransportService)
+                    .WithMany()
+                    .HasForeignKey(x => x.TransportServiceId)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            // BOOKINGS
             model.Entity<Booking>(e =>
             {
                 e.ToTable("Bookings");
@@ -169,7 +210,20 @@ namespace KarnelTravel.Data
                 e.Property(x => x.Email).HasMaxLength(256);
                 e.Property(x => x.ServiceType).HasMaxLength(30).IsRequired();
                 e.Property(x => x.ServiceName).HasMaxLength(150).IsRequired();
-                e.Property(x => x.EstimatedTotalPKR).HasPrecision(18, 2);
+
+                e.Property(x => x.EstimatedTotalPKR)
+                    .HasPrecision(18, 2);
+
+                // Transport fare snapshot precision
+                e.Property(x => x.TransportOneWayFarePKR)
+                    .HasPrecision(18, 2);
+
+                e.Property(x => x.TransportReturnFarePKR)
+                    .HasPrecision(18, 2);
+
+                e.Property(x => x.TransportDiscountPKR)
+                    .HasPrecision(18, 2);
+
                 e.Property(x => x.Status).HasMaxLength(30).IsRequired();
                 e.Property(x => x.CustomerNotes).HasMaxLength(1000);
                 e.Property(x => x.AdminNotes).HasMaxLength(1000);
@@ -199,6 +253,8 @@ namespace KarnelTravel.Data
                     .HasForeignKey(x => x.TransportServiceId)
                     .OnDelete(DeleteBehavior.Restrict);
             });
+
+            // TRIP INQUIRIES
             model.Entity<TripInquiry>(e =>
             {
                 e.ToTable("TripInquiries");
@@ -226,4 +282,3 @@ namespace KarnelTravel.Data
         }
     }
 }
-

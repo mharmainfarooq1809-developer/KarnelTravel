@@ -1,8 +1,26 @@
-﻿@model KarnelTravel.ViewModels.BookingRequestViewModel
+﻿
+@model KarnelTravel.ViewModels.BookingRequestViewModel
 
 @{
     ViewData["Title"] = "Request a Booking";
+
     var serviceName = ViewBag.ServiceName as string ?? "Selected service";
+
+    var isTransport = string.Equals(
+        Model.ServiceType,
+        "Transport",
+        StringComparison.OrdinalIgnoreCase
+    );
+
+    var transportRoutes =
+        ViewBag.TransportRoutes as IEnumerable<KarnelTravel.Models.TransportRoutePricing>
+        ?? Enumerable.Empty<KarnelTravel.Models.TransportRoutePricing>();
+
+    var pickupCities = transportRoutes
+        .Select(x => x.PickupCity)
+        .Distinct()
+        .OrderBy(x => x)
+        .ToList();
 }
 
 <style>
@@ -12,6 +30,7 @@
         padding: 0 20px;
         color: #18352c;
     }
+
     .booking-panel {
         background: #fff;
         border: 1px solid #e2e9e4;
@@ -19,21 +38,41 @@
         padding: 30px;
         box-shadow: 0 12px 35px rgba(20,50,35,.07);
     }
+
     .booking-wrap h1 {
         font-size: clamp(28px, 5vw, 42px);
         margin-bottom: 10px;
     }
-    .booking-intro { color: #66766d; line-height: 1.7; }
+
+    .booking-intro {
+        color: #66766d;
+        line-height: 1.7;
+    }
+
     .booking-grid {
         display: grid;
         grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: 18px;
         margin-top: 25px;
     }
-    .booking-field { display: flex; flex-direction: column; gap: 7px; }
-    .booking-field.full { grid-column: 1 / -1; }
-    .booking-field label { font-weight: 600; font-size: 14px; }
-    .booking-field input, .booking-field select,
+
+    .booking-field {
+        display: flex;
+        flex-direction: column;
+        gap: 7px;
+    }
+
+    .booking-field.full {
+        grid-column: 1 / -1;
+    }
+
+    .booking-field label {
+        font-weight: 600;
+        font-size: 14px;
+    }
+
+    .booking-field input,
+    .booking-field select,
     .booking-field textarea {
         width: 100%;
         padding: 12px;
@@ -44,10 +83,14 @@
         font: inherit;
         box-sizing: border-box;
     }
-    .booking-field input:focus, .booking-field textarea:focus {
+
+    .booking-field input:focus,
+    .booking-field select:focus,
+    .booking-field textarea:focus {
         outline: 2px solid #9bc4aa;
         border-color: #4b8562;
     }
+
     .booking-submit {
         display: inline-block;
         border: 0;
@@ -59,8 +102,15 @@
         cursor: pointer;
         margin-top: 24px;
     }
-    .booking-submit:hover { background: #163828; }
-    .booking-validation { color: #b42318; }
+
+    .booking-submit:hover {
+        background: #163828;
+    }
+
+    .booking-validation {
+        color: #b42318;
+    }
+
     .booking-notice {
         background: #f1f6f2;
         border-radius: 10px;
@@ -69,15 +119,71 @@
         font-size: 14px;
         line-height: 1.6;
     }
+
+    .fare-panel {
+        grid-column: 1 / -1;
+        background: #f5f8f5;
+        border: 1px solid #dce8de;
+        border-radius: 12px;
+        padding: 18px;
+        margin-top: 5px;
+    }
+
+    .fare-panel h3 {
+        margin: 0 0 12px;
+        font-size: 17px;
+    }
+
+    .fare-row {
+        display: flex;
+        justify-content: space-between;
+        gap: 15px;
+        padding: 7px 0;
+        color: #52645a;
+        font-size: 14px;
+    }
+
+    .fare-total {
+        border-top: 1px solid #d6e0d9;
+        margin-top: 8px;
+        padding-top: 12px;
+        color: #18352c;
+        font-weight: 700;
+        font-size: 17px;
+    }
+
+    .fare-message {
+        color: #66766d;
+        font-size: 13px;
+        line-height: 1.6;
+        margin: 10px 0 0;
+    }
+
+    .route-warning {
+        color: #b42318;
+        font-size: 13px;
+    }
+
+    [hidden] {
+        display: none !important;
+    }
+
     @@media(max-width: 600px) {
-        .booking-grid { grid-template-columns: 1fr; }
-        .booking-panel { padding: 20px; }
+        .booking-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .booking-panel {
+            padding: 20px;
+        }
     }
 </style>
 
 <main class="booking-wrap">
     <p class="booking-intro">KARNEL TRAVEL GUIDE / BOOKING REQUEST</p>
+
     <h1>Plan your next journey.</h1>
+
     <p class="booking-intro">
         Complete the form below. Our team can review your request and confirm
         availability with you.
@@ -85,6 +191,7 @@
 
     <section class="booking-panel">
         <h2>@serviceName</h2>
+
         <p class="booking-intro">
             This submits a booking request, not an instantly confirmed reservation.
         </p>
@@ -99,6 +206,7 @@
                  class="booking-validation"></div>
 
             <div class="booking-grid">
+
                 <div class="booking-field">
                     <label asp-for="CustomerName"></label>
                     <input asp-for="CustomerName" autocomplete="name" />
@@ -120,6 +228,78 @@
                           class="booking-validation"></span>
                 </div>
 
+                @if (isTransport)
+                {
+                    <div class="booking-field">
+                        <label asp-for="PickupLocation">Pickup city</label>
+
+                        <select asp-for="PickupLocation" id="pickupCity">
+                            <option value="">Select pickup city</option>
+
+                            @foreach (var city in pickupCities)
+                            {
+                                <option value="@city">@city</option>
+                            }
+                        </select>
+
+                        <span asp-validation-for="PickupLocation"
+                              class="booking-validation"></span>
+                    </div>
+
+                    <div class="booking-field">
+                        <label asp-for="DropoffLocation">Drop-off city</label>
+
+                        <select asp-for="DropoffLocation"
+                                id="dropoffCity"
+                                disabled>
+                            <option value="">Select drop-off city</option>
+                        </select>
+
+                        <span asp-validation-for="DropoffLocation"
+                              class="booking-validation"></span>
+                    </div>
+
+                    <div class="booking-field full">
+                        <label asp-for="TripType">Trip type</label>
+
+                        <select asp-for="TripType" id="tripType">
+                            <option value="OneWay">One Way</option>
+                            <option value="RoundTrip">Round Trip</option>
+                        </select>
+
+                        <span asp-validation-for="TripType"
+                              class="booking-validation"></span>
+                    </div>
+
+                    <div class="fare-panel">
+                        <h3>Estimated journey fare</h3>
+
+                        <div class="fare-row">
+                            <span>One-way fare</span>
+                            <strong id="oneWayFare">PKR 0</strong>
+                        </div>
+
+                        <div class="fare-row" id="returnFareRow" hidden>
+                            <span>Return journey</span>
+                            <strong id="returnFare">PKR 0</strong>
+                        </div>
+
+                        <div class="fare-row fare-total">
+                            <span>Estimated total</span>
+                            <strong id="totalFare">PKR 0</strong>
+                        </div>
+
+                        <p class="fare-message" id="fareMessage">
+                            Select your pickup and drop-off cities to view the
+                            configured route fare.
+                        </p>
+                    </div>
+
+                    <div class="booking-field full">
+                        <span class="route-warning" id="routeWarning"></span>
+                    </div>
+                }
+
                 <div class="booking-field">
                     <label asp-for="BookingDate"></label>
                     <input asp-for="BookingDate" type="date"
@@ -128,9 +308,10 @@
                           class="booking-validation"></span>
                 </div>
 
-                <div class="booking-field">
+                <div class="booking-field" id="returnDateField"
+                     hidden="@(isTransport && Model.TripType != "RoundTrip")">
                     <label asp-for="ReturnDate"></label>
-                    <input asp-for="ReturnDate" type="date" />
+                    <input asp-for="ReturnDate" id="returnDate" type="date" />
                     <span asp-validation-for="ReturnDate"
                           class="booking-validation"></span>
                 </div>
@@ -149,12 +330,15 @@
                           class="booking-validation"></span>
                 </div>
 
-                <div class="booking-field">
-                    <label asp-for="Rooms"></label>
-                    <input asp-for="Rooms" type="number" min="0" max="100" />
-                    <span asp-validation-for="Rooms"
-                          class="booking-validation"></span>
-                </div>
+                @if (!isTransport)
+                {
+                    <div class="booking-field">
+                        <label asp-for="Rooms"></label>
+                        <input asp-for="Rooms" type="number" min="0" max="100" />
+                        <span asp-validation-for="Rooms"
+                              class="booking-validation"></span>
+                    </div>
+                }
 
                 <div class="booking-field full">
                     <label asp-for="CustomerNotes"></label>
@@ -168,6 +352,7 @@
             <div class="booking-notice">
                 Your request will be marked Pending until the team reviews it.
                 Submitting this form does not guarantee availability or a final price.
+                The final fare is calculated and validated by our server.
             </div>
 
             <button class="booking-submit" type="submit">
@@ -176,6 +361,158 @@
         </form>
     </section>
 </main>
+
+@if (isTransport)
+{
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+
+            // Both fares are loaded from the database.
+            const routes = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
+                transportRoutes.Select(x => new {
+                    pickup = x.PickupCity,
+                    dropoff = x.DropoffCity,
+                    fare = x.OneWayFarePKR,
+                    returnFare = x.ReturnFarePKR ?? x.OneWayFarePKR
+                })
+            ));
+
+            const pickupSelect = document.getElementById("pickupCity");
+            const dropoffSelect = document.getElementById("dropoffCity");
+            const tripType = document.getElementById("tripType");
+
+            const returnField = document.getElementById("returnDateField");
+            const returnDate = document.getElementById("returnDate");
+
+            const oneWayFareElement = document.getElementById("oneWayFare");
+            const returnFareElement = document.getElementById("returnFare");
+            const totalFareElement = document.getElementById("totalFare");
+            const returnFareRow = document.getElementById("returnFareRow");
+
+            const fareMessage = document.getElementById("fareMessage");
+            const routeWarning = document.getElementById("routeWarning");
+
+            const savedPickup = pickupSelect.value;
+            const savedDropoff = @Html.Raw(
+                System.Text.Json.JsonSerializer.Serialize(Model.DropoffLocation ?? "")
+            );
+
+            function formatPKR(amount) {
+                return "PKR " + Number(amount).toLocaleString("en-PK", {
+                    maximumFractionDigits: 2
+                });
+            }
+
+            function updateDropoffOptions() {
+                const selectedPickup = pickupSelect.value;
+                const previousDropoff = dropoffSelect.value || savedDropoff;
+
+                dropoffSelect.innerHTML =
+                    '<option value="">Select drop-off city</option>';
+
+                const destinations = [...new Set(
+                    routes
+                        .filter(route => route.pickup === selectedPickup)
+                        .map(route => route.dropoff)
+                )].sort();
+
+                destinations.forEach(city => {
+                    const option = document.createElement("option");
+                    option.value = city;
+                    option.textContent = city;
+                    dropoffSelect.appendChild(option);
+                });
+
+                dropoffSelect.disabled = destinations.length === 0;
+
+                if (destinations.includes(previousDropoff)) {
+                    dropoffSelect.value = previousDropoff;
+                }
+
+                updateFare();
+            }
+
+            function updateReturnDate() {
+                const isRoundTrip = tripType.value === "RoundTrip";
+
+                returnField.hidden = !isRoundTrip;
+                returnFareRow.hidden = !isRoundTrip;
+
+                returnDate.required = isRoundTrip;
+
+                if (!isRoundTrip) {
+                    returnDate.value = "";
+                }
+            }
+
+            function updateFare() {
+                const pickup = pickupSelect.value;
+                const dropoff = dropoffSelect.value;
+
+                const selectedRoute = routes.find(route =>
+                    route.pickup === pickup &&
+                    route.dropoff === dropoff
+                );
+
+                const isRoundTrip = tripType.value === "RoundTrip";
+
+                routeWarning.textContent = "";
+
+                if (!selectedRoute) {
+                    oneWayFareElement.textContent = formatPKR(0);
+                    returnFareElement.textContent = formatPKR(0);
+                    totalFareElement.textContent = formatPKR(0);
+
+                    fareMessage.textContent =
+                        "Select a valid pickup and drop-off route to view its fare.";
+
+                    if (pickup && dropoff) {
+                        routeWarning.textContent =
+                            "This route is not currently available.";
+                    }
+
+                    return;
+                }
+
+                const outbound = Number(selectedRoute.fare);
+
+                // Use the configured return fare, not the outbound fare.
+                const returning = isRoundTrip
+                    ? Number(selectedRoute.returnFare)
+                    : 0;
+
+                const total = outbound + returning;
+
+                oneWayFareElement.textContent = formatPKR(outbound);
+                returnFareElement.textContent = formatPKR(returning);
+                totalFareElement.textContent = formatPKR(total);
+
+                fareMessage.textContent = isRoundTrip
+                    ? "The return journey uses the separately configured return fare."
+                    : "This is the configured one-way route fare.";
+            }
+
+            pickupSelect.addEventListener("change", function () {
+                updateDropoffOptions();
+            });
+
+            dropoffSelect.addEventListener("change", updateFare);
+
+            tripType.addEventListener("change", function () {
+                updateReturnDate();
+                updateFare();
+            });
+
+            if (savedPickup) {
+                pickupSelect.value = savedPickup;
+            }
+
+            updateDropoffOptions();
+            updateReturnDate();
+            updateFare();
+        });
+    </script>
+}
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />

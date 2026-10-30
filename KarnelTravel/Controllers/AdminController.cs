@@ -1049,6 +1049,7 @@ public class AdminController : Controller
 
         return View("TourEditor");
     }
+
     // =========================================================
     // BOOKINGS
     // =========================================================
@@ -1062,7 +1063,6 @@ public class AdminController : Controller
             .AsNoTracking()
             .AsQueryable();
 
-        // Filter by booking status
         if (!string.IsNullOrWhiteSpace(status) &&
             !status.Equals(
                 "all",
@@ -1071,7 +1071,6 @@ public class AdminController : Controller
             query = query.Where(b => b.Status == status);
         }
 
-        // Search bookings
         if (!string.IsNullOrWhiteSpace(search))
         {
             var term = search.Trim();
@@ -1083,11 +1082,9 @@ public class AdminController : Controller
                 b.ServiceName.Contains(term));
         }
 
-        // Filter values for the view
         ViewBag.StatusFilter = status ?? "all";
         ViewBag.SearchTerm = search ?? "";
 
-        // Actual booking statistics
         ViewBag.TotalBookings =
             await _context.Bookings.CountAsync();
 
@@ -1107,14 +1104,12 @@ public class AdminController : Controller
             await _context.Bookings
                 .CountAsync(b => b.Status == "Cancelled");
 
-        // Retrieve real bookings from SQL Server
         var bookings = await query
             .OrderByDescending(b => b.CreatedAt)
             .ToListAsync();
 
         return View(bookings);
     }
-
 
     // =========================================================
     // BOOKING DETAILS
@@ -1195,17 +1190,529 @@ public class AdminController : Controller
             new { id });
     }
 
+
+  
+
     // =========================================================
-    // TRANSPORT - PLACEHOLDER
+    // TRANSPORT - VEHICLE MANAGEMENT
+    // =========================================================
+
+    [HttpGet("Transport/Vehicles")]
+    public async Task<IActionResult> Vehicles()
+    {
+        ViewData["Title"] = "Vehicle Management";
+        ViewData["Section"] = "Transport";
+
+        var vehicles = await _context.TransportServices
+            .AsNoTracking()
+            .OrderBy(x => x.DisplayOrder)
+            .ThenBy(x => x.Name)
+            .ToListAsync();
+
+        return View(vehicles);
+    }
+
+    // CREATE VEHICLE FORM
+    [HttpGet("Transport/Vehicles/Create")]
+    public IActionResult CreateVehicle()
+    {
+        ViewData["Title"] = "Add Vehicle";
+        ViewData["Section"] = "Transport";
+
+        return View("VehicleForm", new TransportService
+        {
+            IsPublished = false,
+            IsFeatured = false,
+            CreatedAt = DateTime.UtcNow
+        });
+    }
+
+    // CREATE VEHICLE
+    [HttpPost("Transport/Vehicles/Create")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> CreateVehicle(
+        TransportService model,
+        IFormFile? VehicleImage)
+    {
+        ViewData["Title"] = "Add Vehicle";
+        ViewData["Section"] = "Transport";
+
+        model.Name = (model.Name ?? "").Trim();
+        model.Slug = (model.Slug ?? "").Trim().ToLowerInvariant();
+
+        if (string.IsNullOrWhiteSpace(model.Name))
+            ModelState.AddModelError(nameof(model.Name), "Vehicle name is required.");
+
+        if (string.IsNullOrWhiteSpace(model.Slug))
+            ModelState.AddModelError(nameof(model.Slug), "URL slug is required.");
+
+        if (model.PassengerCapacity.HasValue && model.PassengerCapacity <= 0)
+            ModelState.AddModelError(nameof(model.PassengerCapacity), "Passenger capacity must be greater than zero.");
+
+        if (model.StartingPrice.HasValue && model.StartingPrice < 0)
+            ModelState.AddModelError(nameof(model.StartingPrice), "Starting price cannot be negative.");
+
+        if (!string.IsNullOrWhiteSpace(model.Slug) &&
+            await _context.TransportServices.AnyAsync(x => x.Slug == model.Slug))
+        {
+            ModelState.AddModelError(nameof(model.Slug), "This URL slug is already in use.");
+        }
+
+        if (!ModelState.IsValid)
+            return View("VehicleForm", model);
+
+        if (VehicleImage != null && VehicleImage.Length > 0)
+        {
+            try
+            {
+                model.ImageUrl = await SaveTransportImageAsync(VehicleImage);
+            }
+            catch (InvalidOperationException ex)
+            {
+                ModelState.AddModelError(nameof(VehicleImage), ex.Message);
+                return View("VehicleForm", model);
+            }
+            catch (IOException)
+            {
+                ModelState.AddModelError(nameof(VehicleImage), "The image could not be saved.");
+                return View("VehicleForm", model);
+            }
+        }
+
+        model.CreatedAt = DateTime.UtcNow;
+        model.UpdatedAt = null;
+
+        _context.TransportServices.Add(model);
+        await _context.SaveChangesAsync();
+
+        TempData["SuccessMessage"] = "Vehicle added successfully.";
+
+        return RedirectToAction(nameof(Vehicles));
+    }
+
+    // EDIT VEHICLE FORM
+    [HttpGet("Transport/Vehicles/Edit/{id:int}")]
+    public async Task<IActionResult> EditVehicle(int id)
+    {
+        var vehicle = await _context.TransportServices.FindAsync(id);
+
+        if (vehicle == null)
+            return NotFound();
+
+        ViewData["Title"] = "Edit Vehicle";
+        ViewData["Section"] = "Transport";
+
+        return View("VehicleForm", vehicle);
+    }
+
+    // UPDATE VEHICLE
+    [HttpPost("Transport/Vehicles/Edit/{id:int}")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> EditVehicle(
+        int id,
+        TransportService model,
+        IFormFile? VehicleImage)
+    {
+        var vehicle = await _context.TransportServices.FindAsync(id);
+
+        if (vehicle == null)
+            return NotFound();
+
+        ViewData["Title"] = "Edit Vehicle";
+        ViewData["Section"] = "Transport";
+
+        model.Name = (model.Name ?? "").Trim();
+        model.Slug = (model.Slug ?? "").Trim().ToLowerInvariant();
+
+        if (string.IsNullOrWhiteSpace(model.Name))
+            ModelState.AddModelError(nameof(model.Name), "Vehicle name is required.");
+
+        if (string.IsNullOrWhiteSpace(model.Slug))
+            ModelState.AddModelError(nameof(model.Slug), "URL slug is required.");
+
+        if (model.PassengerCapacity.HasValue && model.PassengerCapacity <= 0)
+            ModelState.AddModelError(nameof(model.PassengerCapacity), "Passenger capacity must be greater than zero.");
+
+        if (model.StartingPrice.HasValue && model.StartingPrice < 0)
+            ModelState.AddModelError(nameof(model.StartingPrice), "Starting price cannot be negative.");
+
+        if (!string.IsNullOrWhiteSpace(model.Slug) &&
+            await _context.TransportServices.AnyAsync(
+                x => x.Slug == model.Slug && x.Id != id))
+        {
+            ModelState.AddModelError(nameof(model.Slug), "This URL slug is already in use.");
+        }
+
+        if (!ModelState.IsValid)
+        {
+            model.Id = id;
+            model.ImageUrl = vehicle.ImageUrl;
+            return View("VehicleForm", model);
+        }
+
+        string? newImagePath = null;
+
+        if (VehicleImage != null && VehicleImage.Length > 0)
+        {
+            try
+            {
+                newImagePath = await SaveTransportImageAsync(VehicleImage);
+            }
+            catch (InvalidOperationException ex)
+            {
+                ModelState.AddModelError(nameof(VehicleImage), ex.Message);
+                model.Id = id;
+                model.ImageUrl = vehicle.ImageUrl;
+                return View("VehicleForm", model);
+            }
+            catch (IOException)
+            {
+                ModelState.AddModelError(nameof(VehicleImage), "The image could not be saved.");
+                model.Id = id;
+                model.ImageUrl = vehicle.ImageUrl;
+                return View("VehicleForm", model);
+            }
+        }
+
+        // Update vehicle information.
+        // DestinationId is preserved because it is not included in this form.
+        vehicle.Name = model.Name;
+        vehicle.Slug = model.Slug;
+        vehicle.VehicleType = model.VehicleType;
+        vehicle.StartingCity = model.StartingCity;
+        vehicle.DestinationCity = model.DestinationCity;
+        vehicle.Description = model.Description;
+        vehicle.PassengerCapacity = model.PassengerCapacity;
+        vehicle.StartingPrice = model.StartingPrice;
+        vehicle.ContactPhone = model.ContactPhone;
+        vehicle.IsPublished = model.IsPublished;
+        vehicle.IsFeatured = model.IsFeatured;
+        vehicle.DisplayOrder = model.DisplayOrder;
+        vehicle.UpdatedAt = DateTime.UtcNow;
+
+        if (newImagePath != null)
+        {
+            var oldImagePath = vehicle.ImageUrl;
+            vehicle.ImageUrl = newImagePath;
+
+            DeleteTransportImage(oldImagePath);
+        }
+
+        await _context.SaveChangesAsync();
+
+        TempData["SuccessMessage"] = "Vehicle updated successfully.";
+
+        return RedirectToAction(nameof(Vehicles));
+    }
+
+    // =========================================================
+    // TRANSPORT - IMAGE UPLOAD
+    // =========================================================
+
+    private async Task<string?> SaveTransportImageAsync(IFormFile imageFile)
+    {
+        const long maxFileSize = 5 * 1024 * 1024;
+
+        if (imageFile.Length <= 0 || imageFile.Length > maxFileSize)
+            throw new InvalidOperationException("Image size must not exceed 5 MB.");
+
+        if (string.IsNullOrWhiteSpace(_environment.WebRootPath))
+            throw new IOException("The wwwroot folder could not be located.");
+
+        var header = new byte[12];
+        int bytesRead;
+
+        await using (var input = imageFile.OpenReadStream())
+        {
+            bytesRead = await input.ReadAsync(header, 0, header.Length);
+        }
+
+        var isJpeg =
+            bytesRead >= 3 &&
+            header[0] == 0xFF &&
+            header[1] == 0xD8 &&
+            header[2] == 0xFF;
+
+        var isPng =
+            bytesRead >= 8 &&
+            header[0] == 0x89 &&
+            header[1] == 0x50 &&
+            header[2] == 0x4E &&
+            header[3] == 0x47 &&
+            header[4] == 0x0D &&
+            header[5] == 0x0A &&
+            header[6] == 0x1A &&
+            header[7] == 0x0A;
+
+        var isWebp =
+            bytesRead >= 12 &&
+            header[0] == (byte)'R' &&
+            header[1] == (byte)'I' &&
+            header[2] == (byte)'F' &&
+            header[3] == (byte)'F' &&
+            header[8] == (byte)'W' &&
+            header[9] == (byte)'E' &&
+            header[10] == (byte)'B' &&
+            header[11] == (byte)'P';
+
+        string extension;
+
+        if (isJpeg)
+            extension = ".jpg";
+        else if (isPng)
+            extension = ".png";
+        else if (isWebp)
+            extension = ".webp";
+        else
+            throw new InvalidOperationException("Choose a valid JPG, PNG or WebP image.");
+
+        var uploadsFolder = Path.Combine(
+            _environment.WebRootPath,
+            "images",
+            "transport");
+
+        Directory.CreateDirectory(uploadsFolder);
+
+        var fileName = $"{Guid.NewGuid():N}{extension}";
+        var filePath = Path.Combine(uploadsFolder, fileName);
+
+        await using (var output = new FileStream(
+            filePath,
+            FileMode.CreateNew,
+            FileAccess.Write,
+            FileShare.None))
+        {
+            await imageFile.CopyToAsync(output);
+        }
+
+        return $"/images/transport/{fileName}";
+    }
+
+    // Delete only images managed by this transport upload system.
+    private void DeleteTransportImage(string? imagePath)
+    {
+        const string prefix = "/images/transport/";
+
+        if (string.IsNullOrWhiteSpace(imagePath) ||
+            !imagePath.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+            return;
+
+        var fileName = Path.GetFileName(imagePath);
+
+        if (string.IsNullOrWhiteSpace(fileName))
+            return;
+
+        var fullPath = Path.Combine(
+            _environment.WebRootPath,
+            "images",
+            "transport",
+            fileName);
+
+        if (System.IO.File.Exists(fullPath))
+            System.IO.File.Delete(fullPath);
+    }
+
+
+    // =========================================================
+    // TRANSPORT - ROUTE PRICING MANAGEMENT
     // =========================================================
 
     [HttpGet("Transport")]
-    public IActionResult Transport()
+    public async Task<IActionResult> Transport(int? editId)
     {
-        ViewData["Title"] = "Transport & scheduling";
+        ViewData["Title"] = "Transport & Route Pricing";
         ViewData["Section"] = "Transport";
 
-        return View("ComingSoon");
+        ViewBag.TransportServices = await _context.TransportServices
+            .AsNoTracking()
+            .OrderBy(x => x.Name)
+            .ToListAsync();
+
+        if (editId.HasValue)
+        {
+            var editRoute = await _context.TransportRoutePricings
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x => x.Id == editId.Value);
+
+            if (editRoute == null)
+            {
+                return NotFound();
+            }
+
+            ViewBag.EditRoute = editRoute;
+        }
+
+        var routes = await _context.TransportRoutePricings
+            .AsNoTracking()
+            .Include(x => x.TransportService)
+            .OrderBy(x => x.TransportService!.Name)
+            .ThenBy(x => x.PickupCity)
+            .ToListAsync();
+
+        return View(routes);
+    }
+
+    // =========================================================
+    // TRANSPORT - CREATE / UPDATE ROUTE
+    // =========================================================
+
+    [HttpPost("Transport/SaveRoute")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> SaveTransportRoute(
+        TransportRoutePricing model)
+    {
+        model.PickupCity = (model.PickupCity ?? "").Trim();
+        model.DropoffCity = (model.DropoffCity ?? "").Trim();
+
+        if (string.IsNullOrWhiteSpace(model.PickupCity))
+        {
+            ModelState.AddModelError(
+                nameof(model.PickupCity),
+                "Pickup city is required.");
+        }
+
+        if (string.IsNullOrWhiteSpace(model.DropoffCity))
+        {
+            ModelState.AddModelError(
+                nameof(model.DropoffCity),
+                "Drop-off city is required.");
+        }
+
+        if (model.PickupCity.Equals(
+            model.DropoffCity,
+            StringComparison.OrdinalIgnoreCase))
+        {
+            ModelState.AddModelError(
+                nameof(model.DropoffCity),
+                "Pickup and drop-off cities must be different.");
+        }
+
+        if (model.OneWayFarePKR <= 0)
+        {
+            ModelState.AddModelError(
+                nameof(model.OneWayFarePKR),
+                "Enter a one-way fare greater than zero.");
+        }
+
+        // Return fare is optional.
+        // If empty, the booking system uses the one-way fare.
+        if (model.ReturnFarePKR.HasValue &&
+            model.ReturnFarePKR.Value <= 0)
+        {
+            ModelState.AddModelError(
+                nameof(model.ReturnFarePKR),
+                "Return fare must be greater than zero, or leave it empty.");
+        }
+
+        var vehicleExists = await _context.TransportServices
+            .AnyAsync(x => x.Id == model.TransportServiceId);
+
+        if (!vehicleExists)
+        {
+            ModelState.AddModelError(
+                nameof(model.TransportServiceId),
+                "Select a valid vehicle.");
+        }
+
+        var duplicate = await _context.TransportRoutePricings
+            .AnyAsync(x =>
+                x.TransportServiceId == model.TransportServiceId &&
+                x.PickupCity == model.PickupCity &&
+                x.DropoffCity == model.DropoffCity &&
+                x.Id != model.Id);
+
+        if (duplicate)
+        {
+            ModelState.AddModelError(
+                nameof(model.DropoffCity),
+                "This route already exists for the selected vehicle.");
+        }
+
+        if (!ModelState.IsValid)
+        {
+            TempData["ErrorMessage"] =
+                string.Join(" ", ModelState.Values
+                    .SelectMany(v => v.Errors)
+                    .Select(e => e.ErrorMessage));
+
+            return RedirectToAction(nameof(Transport));
+        }
+
+        // Remember whether this is a new record before EF assigns its ID.
+        bool isNewRoute = model.Id == 0;
+
+        if (isNewRoute)
+        {
+            model.CreatedAt = DateTime.UtcNow;
+            model.UpdatedAt = null;
+
+            _context.TransportRoutePricings.Add(model);
+        }
+        else
+        {
+            var existing = await _context.TransportRoutePricings
+                .FirstOrDefaultAsync(x => x.Id == model.Id);
+
+            if (existing == null)
+            {
+                return NotFound();
+            }
+
+            existing.TransportServiceId = model.TransportServiceId;
+            existing.PickupCity = model.PickupCity;
+            existing.DropoffCity = model.DropoffCity;
+
+            // Save both fares.
+            existing.OneWayFarePKR = model.OneWayFarePKR;
+            existing.ReturnFarePKR = model.ReturnFarePKR;
+
+            existing.IsActive = model.IsActive;
+            existing.UpdatedAt = DateTime.UtcNow;
+        }
+
+        try
+        {
+            await _context.SaveChangesAsync();
+
+            TempData["SuccessMessage"] = isNewRoute
+                ? "Transport route added successfully."
+                : "Transport route updated successfully.";
+        }
+        catch (DbUpdateException)
+        {
+            TempData["ErrorMessage"] =
+                "The route could not be saved. Check whether this vehicle and route already exist, and verify that the database has the ReturnFarePKR column.";
+        }
+
+        return RedirectToAction(nameof(Transport));
+    }
+
+    // =========================================================
+    // TRANSPORT - ACTIVATE / DEACTIVATE ROUTE
+    // =========================================================
+
+    [HttpPost("Transport/Toggle/{id:int}")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ToggleTransportRoute(int id)
+    {
+        var route = await _context.TransportRoutePricings
+            .FirstOrDefaultAsync(x => x.Id == id);
+
+        if (route == null)
+        {
+            return NotFound();
+        }
+
+        route.IsActive = !route.IsActive;
+        route.UpdatedAt = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync();
+
+        TempData["SuccessMessage"] = route.IsActive
+            ? "Route activated successfully."
+            : "Route deactivated successfully.";
+
+        return RedirectToAction(nameof(Transport));
     }
 
     // =========================================================
