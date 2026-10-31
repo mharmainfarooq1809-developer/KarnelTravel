@@ -1,5 +1,4 @@
-﻿
-using KarnelTravel.Data;
+﻿using KarnelTravel.Data;
 using KarnelTravel.Models;
 using KarnelTravel.ViewModels;
 using Microsoft.AspNetCore.Mvc;
@@ -16,7 +15,10 @@ public class BookingsController : Controller
         _context = context;
     }
 
+    // =========================================================
     // GET: /Bookings/Create
+    // =========================================================
+
     [HttpGet("/Bookings/Create")]
     public async Task<IActionResult> Create(string serviceType, int serviceId)
     {
@@ -49,7 +51,10 @@ public class BookingsController : Controller
         return View("~/Views/Bookings/Create.cshtml", model);
     }
 
+    // =========================================================
     // POST: /Bookings/Create
+    // =========================================================
+
     [HttpPost("/Bookings/Create")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create(BookingRequestViewModel model)
@@ -72,7 +77,10 @@ public class BookingsController : Controller
         decimal? discount = null;
         decimal? totalFare = null;
 
-        // Validate booking date.
+        // =====================================================
+        // GENERAL BOOKING DATE VALIDATION
+        // =====================================================
+
         if (model.BookingDate.Date < DateTime.Today)
         {
             ModelState.AddModelError(
@@ -80,7 +88,6 @@ public class BookingsController : Controller
                 "The booking date cannot be in the past.");
         }
 
-        // Validate return date.
         if (model.ReturnDate.HasValue)
         {
             if (model.ReturnDate.Value.Date < DateTime.Today)
@@ -98,7 +105,10 @@ public class BookingsController : Controller
             }
         }
 
-        // TRANSPORT VALIDATION AND SERVER-SIDE FARE CALCULATION
+        // =====================================================
+        // TRANSPORT VALIDATION
+        // =====================================================
+
         if (service.Type == "Transport")
         {
             var pickupCity = model.PickupLocation?.Trim();
@@ -139,16 +149,25 @@ public class BookingsController : Controller
                 model.ReturnDate = null;
             }
 
-            // Check vehicle and passenger capacity.
+            // =================================================
+            // CHECK VEHICLE
+            // =================================================
+
             var transportService = await _context.TransportServices
                 .AsNoTracking()
                 .FirstOrDefaultAsync(x =>
-                    x.Id == service.Id && x.IsPublished);
+                    x.Id == service.Id &&
+                    x.IsPublished);
 
             if (transportService == null)
             {
-                return NotFound("The selected vehicle is unavailable.");
+                return NotFound(
+                    "The selected vehicle is unavailable.");
             }
+
+            // =================================================
+            // PASSENGER CAPACITY
+            // =================================================
 
             int totalPassengers = model.Adults + model.Children;
 
@@ -175,7 +194,74 @@ public class BookingsController : Controller
                     $"{transportService.PassengerCapacity.Value} passengers.");
             }
 
-            // Find active route and calculate fare from database.
+            // =================================================
+            // VEHICLE AVAILABILITY CHECK
+            // =================================================
+
+            bool validTravelDates =
+                model.BookingDate != default &&
+                model.BookingDate.Date >= DateTime.Today &&
+                (
+                    model.TripType == "OneWay" ||
+                    (
+                        model.TripType == "RoundTrip" &&
+                        model.ReturnDate.HasValue &&
+                        model.ReturnDate.Value.Date >= model.BookingDate.Date
+                    )
+                );
+
+            if (validTravelDates)
+            {
+                DateTime requestedStartDate =
+                    model.BookingDate.Date;
+
+                DateTime requestedEndDate =
+                    model.TripType == "RoundTrip"
+                        ? model.ReturnDate!.Value.Date
+                        : requestedStartDate;
+
+                // Add one day to make the end-date comparison
+                // inclusive while using a strict SQL comparison.
+                DateTime dayAfterRequestedEnd =
+                    requestedEndDate.AddDays(1);
+
+                bool vehicleAlreadyBooked =
+                    await _context.Bookings
+                        .AsNoTracking()
+                        .AnyAsync(b =>
+                            b.TransportServiceId == service.Id &&
+                            b.ServiceType == "Transport" &&
+
+                            // Only these statuses block availability.
+                            (
+                                b.Status == "Pending" ||
+                                b.Status == "Confirmed"
+                            ) &&
+
+                            // Existing booking starts before or on
+                            // the requested booking's final date.
+                            b.BookingDate < dayAfterRequestedEnd &&
+
+                            // Existing booking ends on or after
+                            // the requested booking's start date.
+                            (b.ReturnDate ?? b.BookingDate)
+                                >= requestedStartDate
+                        );
+
+                if (vehicleAlreadyBooked)
+                {
+                    ModelState.AddModelError(
+                        nameof(model.BookingDate),
+                        "This vehicle is already booked for some or all " +
+                        "of the selected dates. Please choose different " +
+                        "dates or another vehicle.");
+                }
+            }
+
+            // =================================================
+            // ROUTE VALIDATION AND FARE CALCULATION
+            // =================================================
+
             if (!string.IsNullOrWhiteSpace(pickupCity) &&
                 !string.IsNullOrWhiteSpace(dropoffCity))
             {
@@ -190,28 +276,28 @@ public class BookingsController : Controller
                 }
                 else
                 {
-                    var routePricing = await _context.TransportRoutePricings
-                        .AsNoTracking()
-                        .FirstOrDefaultAsync(x =>
-                            x.TransportServiceId == service.Id &&
-                            x.PickupCity == pickupCity &&
-                            x.DropoffCity == dropoffCity &&
-                            x.IsActive);
+                    var routePricing =
+                        await _context.TransportRoutePricings
+                            .AsNoTracking()
+                            .FirstOrDefaultAsync(x =>
+                                x.TransportServiceId == service.Id &&
+                                x.PickupCity == pickupCity &&
+                                x.DropoffCity == dropoffCity &&
+                                x.IsActive);
 
                     if (routePricing == null)
                     {
                         ModelState.AddModelError(
                             nameof(model.DropoffLocation),
-                            "This route is not currently available for the selected vehicle.");
+                            "This route is not currently available " +
+                            "for the selected vehicle.");
                     }
                     else
                     {
                         // Outbound fare.
                         oneWayFare = routePricing.OneWayFarePKR;
 
-                        // Return fare:
-                        // Use configured return fare when available.
-                        // Otherwise, use the outbound fare.
+                        // Return fare.
                         if (model.TripType == "RoundTrip")
                         {
                             returnFare =
@@ -226,7 +312,7 @@ public class BookingsController : Controller
                         // No discount configured.
                         discount = 0m;
 
-                        // Server-side total.
+                        // Calculate total on the server.
                         totalFare =
                             oneWayFare.Value +
                             returnFare.Value -
@@ -236,7 +322,10 @@ public class BookingsController : Controller
             }
         }
 
-        // Return form if validation fails.
+        // =====================================================
+        // RETURN FORM IF VALIDATION FAILS
+        // =====================================================
+
         if (!ModelState.IsValid)
         {
             if (service.Type == "Transport")
@@ -247,7 +336,10 @@ public class BookingsController : Controller
             return View("~/Views/Bookings/Create.cshtml", model);
         }
 
+        // =====================================================
         // CREATE BOOKING
+        // =====================================================
+
         var booking = new Booking
         {
             ReferenceNumber =
@@ -307,7 +399,10 @@ public class BookingsController : Controller
             CreatedAt = DateTime.UtcNow
         };
 
-        // Link booking to selected service.
+        // =====================================================
+        // LINK BOOKING TO SELECTED SERVICE
+        // =====================================================
+
         switch (service.Type)
         {
             case "Hotel":
@@ -331,6 +426,10 @@ public class BookingsController : Controller
                 break;
         }
 
+        // =====================================================
+        // SAVE BOOKING
+        // =====================================================
+
         _context.Bookings.Add(booking);
 
         await _context.SaveChangesAsync();
@@ -344,7 +443,10 @@ public class BookingsController : Controller
         );
     }
 
+    // =========================================================
     // GET: /Bookings/Confirmation
+    // =========================================================
+
     [HttpGet("/Bookings/Confirmation")]
     public async Task<IActionResult> Confirmation(string reference)
     {
@@ -367,20 +469,27 @@ public class BookingsController : Controller
         return View(booking);
     }
 
-    // Load active routes for selected vehicle.
+    // =========================================================
+    // LOAD ACTIVE TRANSPORT ROUTES
+    // =========================================================
+
     private async Task LoadTransportRoutes(int transportServiceId)
     {
-        ViewBag.TransportRoutes = await _context.TransportRoutePricings
-            .AsNoTracking()
-            .Where(x =>
-                x.TransportServiceId == transportServiceId &&
-                x.IsActive)
-            .OrderBy(x => x.PickupCity)
-            .ThenBy(x => x.DropoffCity)
-            .ToListAsync();
+        ViewBag.TransportRoutes =
+            await _context.TransportRoutePricings
+                .AsNoTracking()
+                .Where(x =>
+                    x.TransportServiceId == transportServiceId &&
+                    x.IsActive)
+                .OrderBy(x => x.PickupCity)
+                .ThenBy(x => x.DropoffCity)
+                .ToListAsync();
     }
 
-    // Find selected service from database.
+    // =========================================================
+    // FIND SELECTED SERVICE
+    // =========================================================
+
     private async Task<ServiceInfo?> FindService(
         string? serviceType,
         int serviceId)
@@ -398,11 +507,15 @@ public class BookingsController : Controller
                     var item = await _context.Destinations
                         .AsNoTracking()
                         .FirstOrDefaultAsync(x =>
-                            x.Id == serviceId && x.IsPublished);
+                            x.Id == serviceId &&
+                            x.IsPublished);
 
                     return item == null
                         ? null
-                        : new ServiceInfo("Destination", item.Id, item.Name);
+                        : new ServiceInfo(
+                            "Destination",
+                            item.Id,
+                            item.Name);
                 }
 
             case "hotel":
@@ -410,11 +523,15 @@ public class BookingsController : Controller
                     var item = await _context.Hotels
                         .AsNoTracking()
                         .FirstOrDefaultAsync(x =>
-                            x.Id == serviceId && x.IsPublished);
+                            x.Id == serviceId &&
+                            x.IsPublished);
 
                     return item == null
                         ? null
-                        : new ServiceInfo("Hotel", item.Id, item.Name);
+                        : new ServiceInfo(
+                            "Hotel",
+                            item.Id,
+                            item.Name);
                 }
 
             case "resort":
@@ -422,11 +539,15 @@ public class BookingsController : Controller
                     var item = await _context.Resorts
                         .AsNoTracking()
                         .FirstOrDefaultAsync(x =>
-                            x.Id == serviceId && x.IsPublished);
+                            x.Id == serviceId &&
+                            x.IsPublished);
 
                     return item == null
                         ? null
-                        : new ServiceInfo("Resort", item.Id, item.Name);
+                        : new ServiceInfo(
+                            "Resort",
+                            item.Id,
+                            item.Name);
                 }
 
             case "restaurant":
@@ -434,11 +555,15 @@ public class BookingsController : Controller
                     var item = await _context.Restaurants
                         .AsNoTracking()
                         .FirstOrDefaultAsync(x =>
-                            x.Id == serviceId && x.IsPublished);
+                            x.Id == serviceId &&
+                            x.IsPublished);
 
                     return item == null
                         ? null
-                        : new ServiceInfo("Restaurant", item.Id, item.Name);
+                        : new ServiceInfo(
+                            "Restaurant",
+                            item.Id,
+                            item.Name);
                 }
 
             case "tour":
@@ -446,11 +571,15 @@ public class BookingsController : Controller
                     var item = await _context.TourPackages
                         .AsNoTracking()
                         .FirstOrDefaultAsync(x =>
-                            x.Id == serviceId && x.IsPublished);
+                            x.Id == serviceId &&
+                            x.IsPublished);
 
                     return item == null
                         ? null
-                        : new ServiceInfo("Tour", item.Id, item.Name);
+                        : new ServiceInfo(
+                            "Tour",
+                            item.Id,
+                            item.Name);
                 }
 
             case "transport":
@@ -458,11 +587,15 @@ public class BookingsController : Controller
                     var item = await _context.TransportServices
                         .AsNoTracking()
                         .FirstOrDefaultAsync(x =>
-                            x.Id == serviceId && x.IsPublished);
+                            x.Id == serviceId &&
+                            x.IsPublished);
 
                     return item == null
                         ? null
-                        : new ServiceInfo("Transport", item.Id, item.Name);
+                        : new ServiceInfo(
+                            "Transport",
+                            item.Id,
+                            item.Name);
                 }
 
             default:

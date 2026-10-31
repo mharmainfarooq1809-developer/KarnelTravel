@@ -1,0 +1,347 @@
+﻿
+@model KarnelTravel.Models.Restaurant
+
+@{
+    ViewData["Title"] = Model.Name + " | Karnel Travel Guide";
+    ViewData["Description"] = Model.ShortDescription ?? Model.Description ?? "Restaurant information.";
+
+    var imageUrl = !string.IsNullOrWhiteSpace(Model.ImageUrl)
+        ? Model.ImageUrl
+        : "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=1400&q=85";
+
+    var bookingUrl = Url.Action("Create", "Bookings", new
+    {
+        serviceType = "Restaurant",
+        serviceId = Model.Id
+    });
+}
+
+@section Styles {
+    <style>
+        .restaurant-detail {
+            background: var(--ivory);
+            padding-bottom: 90px;
+        }
+
+        .restaurant-hero {
+            padding: calc(var(--header-h) + 45px) 0 45px;
+            background: var(--sand);
+        }
+
+        .restaurant-breadcrumb {
+            font-size: .78rem;
+            color: var(--muted);
+            margin-bottom: 25px;
+        }
+
+        .restaurant-breadcrumb a {
+            color: var(--forest);
+            text-decoration: none;
+        }
+
+        .restaurant-heading {
+            max-width: 850px;
+        }
+
+        .restaurant-heading h1 {
+            margin: 12px 0;
+        }
+
+        .restaurant-heading p {
+            max-width: 65ch;
+            color: var(--muted);
+            font-size: 1.05rem;
+        }
+
+        .restaurant-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 22px;
+        }
+
+        .restaurant-meta span {
+            padding: 8px 14px;
+            border: 1px solid var(--line);
+            border-radius: 50px;
+            font-size: .78rem;
+            color: var(--forest);
+            background: rgba(255,255,255,.45);
+        }
+
+        .restaurant-layout {
+            display: grid;
+            grid-template-columns: minmax(0, 1.6fr) minmax(280px, .8fr);
+            gap: 35px;
+            align-items: start;
+        }
+
+        .restaurant-main-image {
+            width: 100%;
+            height: 460px;
+            object-fit: cover;
+            display: block;
+            border-radius: var(--radius-lg);
+            background: var(--sand);
+        }
+
+        .restaurant-section {
+            margin-top: 38px;
+        }
+
+        .restaurant-section h2 {
+            margin-bottom: 16px;
+        }
+
+        .restaurant-description {
+            color: var(--muted);
+            line-height: 1.9;
+            white-space: pre-line;
+        }
+
+        .restaurant-sidebar {
+            background: var(--white);
+            border: 1px solid var(--line);
+            border-radius: var(--radius-lg);
+            padding: 28px;
+            position: sticky;
+            top: calc(var(--header-h) + 25px);
+        }
+
+        .restaurant-sidebar h2 {
+            font-size: 1.5rem;
+            margin-bottom: 22px;
+        }
+
+        .restaurant-info-item {
+            padding: 17px 0;
+            border-bottom: 1px solid var(--line);
+        }
+
+        .restaurant-info-item:last-of-type {
+            border-bottom: none;
+        }
+
+        .restaurant-info-item small {
+            display: block;
+            text-transform: uppercase;
+            letter-spacing: .12em;
+            font-size: .65rem;
+            color: var(--muted);
+            margin-bottom: 7px;
+        }
+
+        .restaurant-info-item strong {
+            color: var(--forest-deep);
+            font-weight: 500;
+            overflow-wrap: anywhere;
+        }
+
+        .restaurant-price {
+            font-family: var(--serif);
+            font-size: 1.65rem;
+            color: var(--forest-deep);
+        }
+
+        .restaurant-sidebar .btn {
+            width: 100%;
+            margin-top: 24px;
+            text-align: center;
+        }
+
+        .restaurant-note {
+            color: var(--muted);
+            font-size: .78rem;
+            line-height: 1.7;
+            margin-top: 15px;
+        }
+
+        .restaurant-back {
+            display: inline-block;
+            margin-top: 30px;
+            color: var(--forest);
+            text-decoration: none;
+            font-size: .9rem;
+        }
+
+        @@media (max-width: 850px) {
+            .restaurant-layout {
+                grid-template-columns: 1fr;
+            }
+
+            .restaurant-sidebar {
+                position: static;
+            }
+
+            .restaurant-main-image {
+                height: 350px;
+            }
+        }
+
+        @@media (max-width: 550px) {
+            .restaurant-main-image {
+                height: 260px;
+            }
+
+            .restaurant-sidebar {
+                padding: 22px;
+            }
+        }
+    </style>
+}
+
+<main class="restaurant-detail">
+
+    <header class="restaurant-hero">
+        <div class="container">
+
+            <div class="restaurant-breadcrumb">
+                <a href="@Url.Action("Index", "Home")">Home</a>
+                /
+                <a href="@Url.Action("Index", "Restaurants")">Restaurants</a>
+                /
+                @Model.Name
+            </div>
+
+            <div class="restaurant-heading" data-reveal>
+                <span class="eyebrow">Restaurant Information</span>
+
+                <h1>@Model.Name</h1>
+
+                <p>
+                    @(Model.ShortDescription ?? "Discover this restaurant during your journey.")
+                </p>
+
+                <div class="restaurant-meta">
+                    @if (!string.IsNullOrWhiteSpace(Model.City))
+                    {
+                        <span>@Model.City</span>
+                    }
+
+                    @if (!string.IsNullOrWhiteSpace(Model.CuisineType))
+                    {
+                        <span>@Model.CuisineType</span>
+                    }
+
+                    @if (Model.IsFeatured)
+                    {
+                        <span>Featured Restaurant</span>
+                    }
+                </div>
+            </div>
+
+        </div>
+    </header>
+
+    <section class="section">
+        <div class="container">
+
+            <div class="restaurant-layout">
+
+                <div class="restaurant-content" data-reveal>
+
+                    <img class="restaurant-main-image"
+                         src="@imageUrl"
+                         alt="@Model.Name"
+                         onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=1400&q=85';" />
+
+                    <div class="restaurant-section">
+                        <span class="eyebrow">About the Restaurant</span>
+                        <h2>Discover the Experience.</h2>
+
+                        <div class="restaurant-description">
+                            @if (!string.IsNullOrWhiteSpace(Model.Description))
+                            {
+                                @Model.Description
+                            }
+                            else if (!string.IsNullOrWhiteSpace(Model.ShortDescription))
+                            {
+                                @Model.ShortDescription
+                            }
+                            else
+                            {
+                                <p>Further information about this restaurant will be added soon.</p>
+                            }
+                        </div>
+                    </div>
+
+                    @if (!string.IsNullOrWhiteSpace(Model.Address))
+                    {
+                        <div class="restaurant-section">
+                            <span class="eyebrow">Location</span>
+                            <h2>Find the Restaurant.</h2>
+                            <p class="restaurant-description">@Model.Address</p>
+                        </div>
+                    }
+
+                    <a class="restaurant-back"
+                       href="@Url.Action("Index", "Restaurants")">
+                        ← Back to Restaurants
+                    </a>
+
+                </div>
+
+                <aside class="restaurant-sidebar" data-reveal>
+
+                    <span class="eyebrow">Restaurant Overview</span>
+                    <h2>Plan Your Visit.</h2>
+
+                    @if (Model.AverageMealPrice.HasValue && Model.AverageMealPrice.Value > 0)
+                    {
+                        <div class="restaurant-info-item">
+                            <small>Average Meal Price</small>
+                            <strong class="restaurant-price">
+                                PKR @Model.AverageMealPrice.Value.ToString("N0")
+                            </strong>
+                        </div>
+                    }
+
+                    @if (!string.IsNullOrWhiteSpace(Model.CuisineType))
+                    {
+                        <div class="restaurant-info-item">
+                            <small>Cuisine Type</small>
+                            <strong>@Model.CuisineType</strong>
+                        </div>
+                    }
+
+                    @if (!string.IsNullOrWhiteSpace(Model.City))
+                    {
+                        <div class="restaurant-info-item">
+                            <small>City</small>
+                            <strong>@Model.City</strong>
+                        </div>
+                    }
+
+                    @if (!string.IsNullOrWhiteSpace(Model.Address))
+                    {
+                        <div class="restaurant-info-item">
+                            <small>Address</small>
+                            <strong>@Model.Address</strong>
+                        </div>
+                    }
+
+                    @if (!string.IsNullOrWhiteSpace(Model.ContactPhone))
+                    {
+                        <div class="restaurant-info-item">
+                            <small>Contact Number</small>
+                            <strong>@Model.ContactPhone</strong>
+                        </div>
+                    }
+
+                    <a href="@bookingUrl" class="btn btn--primary">
+                        Book / Make an Inquiry
+                    </a>
+
+                    <p class="restaurant-note">
+                        Contact and booking details are subject to confirmation.
+                        Please verify arrangements before your visit.
+                    </p>
+
+                </aside>
+
+            </div>
+
+        </div>
+    </section>
+
+</main>

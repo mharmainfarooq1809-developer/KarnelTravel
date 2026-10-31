@@ -2,20 +2,30 @@
 
 @{
     ViewData["Title"] = "Stay & Unwind — Hotel Information | Karnel Travel Guide";
-    ViewData["Description"] = "Explore hotels across Pakistan and send a booking request through Karnel Travel Guide.";
+    ViewData["Description"] = "Explore hotels across Pakistan and view accommodation details through Karnel Travel Guide.";
 }
 
 @section Styles {
     <style>
-        .page-hero { padding: calc(var(--header-h) + 60px) 0 60px; background: var(--sand); }
+        .page-hero {
+            padding: calc(var(--header-h) + 60px) 0 60px;
+            background: var(--sand);
+        }
+
         .page-hero h1 { max-width: 14ch; }
-        .page-hero p { color: var(--muted); font-size: 1.05rem; max-width: 62ch; }
+
+        .page-hero p {
+            color: var(--muted);
+            font-size: 1.05rem;
+            max-width: 62ch;
+        }
 
         .listing-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
             gap: 28px;
         }
+
         .listing-card {
             display: flex;
             flex-direction: column;
@@ -25,33 +35,97 @@
             overflow: hidden;
             transition: transform .4s var(--ease), box-shadow .4s var(--ease);
         }
-        .listing-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-md); }
-        .listing-card .media { aspect-ratio: 4 / 3; overflow: hidden; }
+
+        .listing-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .listing-card .media {
+            aspect-ratio: 4 / 3;
+            overflow: hidden;
+            background: var(--sand);
+        }
+
         .listing-card .media img {
             width: 100%;
             height: 100%;
             object-fit: cover;
             transition: transform .4s var(--ease);
         }
-        .listing-card:hover .media img { transform: scale(1.05); }
-        .listing-card__body { padding: 22px; display: flex; flex-direction: column; gap: 10px; flex: 1; }
-        .listing-card__meta { font-size: .68rem; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); }
-        .listing-card h3 { margin: 0; font-size: 1.25rem; }
-        .listing-card__desc { color: var(--muted); font-size: .92rem; margin: 0; flex: 1; }
-        .listing-card__tags { display: flex; flex-wrap: wrap; gap: 6px; }
+
+        .listing-card:hover .media img {
+            transform: scale(1.05);
+        }
+
+        .listing-card__body {
+            padding: 22px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            flex: 1;
+        }
+
+        .listing-card__meta {
+            font-size: .68rem;
+            letter-spacing: .16em;
+            text-transform: uppercase;
+            color: var(--muted);
+        }
+
+        .listing-card h3 {
+            margin: 0;
+            font-size: 1.25rem;
+        }
+
+        .listing-card__desc {
+            color: var(--muted);
+            font-size: .92rem;
+            margin: 0;
+            flex: 1;
+        }
+
+        .listing-card__tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
         .listing-card__tags span {
-            font-size: .68rem; padding: 3px 10px; background: var(--ivory);
-            border: 1px solid var(--line); border-radius: 999px; color: var(--forest);
+            font-size: .68rem;
+            padding: 3px 10px;
+            background: var(--ivory);
+            border: 1px solid var(--line);
+            border-radius: 999px;
+            color: var(--forest);
         }
+
         .listing-card__footer {
-            display: flex; justify-content: space-between; align-items: center;
-            padding-top: 14px; border-top: 1px solid var(--line); margin-top: auto; gap: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 14px;
+            border-top: 1px solid var(--line);
+            margin-top: auto;
+            gap: 10px;
         }
-        .listing-card__price { font-family: var(--serif); font-size: 1.1rem; color: var(--forest-deep); }
+
+        .listing-card__price {
+            font-family: var(--serif);
+            font-size: 1.1rem;
+            color: var(--forest-deep);
+        }
+
         .listing-card__price small {
-            display: block; font-family: var(--sans); font-size: .66rem;
-            letter-spacing: .12em; text-transform: uppercase; color: var(--muted); font-weight: 400;
+            display: block;
+            font-family: var(--sans);
+            font-size: .66rem;
+            letter-spacing: .12em;
+            text-transform: uppercase;
+            color: var(--muted);
+            font-weight: 400;
         }
+
         .listing-empty {
             grid-column: 1 / -1;
             padding: 44px 24px;
@@ -60,70 +134,122 @@
             border-radius: var(--radius-lg);
             background: var(--white);
         }
-        .listing-empty p { color: var(--muted); }
 
-        .cta-band { background: var(--forest-deep); color: var(--ivory); padding: clamp(56px, 8vw, 100px) 0; text-align: center; }
-        .cta-band h2 { color: var(--ivory); }
-        .cta-band p { color: rgba(248, 246, 240, .78); max-width: 56ch; margin: 0 auto 28px; }
+        .listing-empty p {
+            color: var(--muted);
+        }
+
+        .cta-band {
+            background: var(--forest-deep);
+            color: var(--ivory);
+            padding: clamp(56px, 8vw, 100px) 0;
+            text-align: center;
+        }
+
+        .cta-band h2 {
+            color: var(--ivory);
+        }
+
+        .cta-band p {
+            color: rgba(248, 246, 240, .78);
+            max-width: 56ch;
+            margin: 0 auto 28px;
+        }
+
+        .listing-card__footer .link-arrow {
+            white-space: nowrap;
+        }
+
+        @@media (max-width: 600px) {
+            .listing-grid {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+
+            .listing-card__body {
+                padding: 18px;
+            }
+        }
     </style>
 }
 
 <header class="page-hero">
     <div class="container" data-reveal>
         <p class="eyebrow">Discover More · Hotel Information</p>
+
         <h1>Stay &amp; Unwind.</h1>
-        <p>Explore published accommodation listings. Prices are starting references, not guaranteed live rates. Submitting a request does not confirm a booking.</p>
+
+        <p>
+            Explore published accommodation listings across Pakistan.
+            Discover each property's facilities, location and accommodation
+            information before sending a booking request.
+        </p>
     </div>
 </header>
 
 <section class="section section--ivory">
     <div class="container">
+
         <div class="listing-grid" data-reveal-group>
+
             @if (Model != null && Model.Any())
             {
                 foreach (var hotel in Model)
                 {
                     <article class="listing-card" data-reveal>
+
                         <div class="media" data-fallback-label="@hotel.Name">
+
                             @if (!string.IsNullOrWhiteSpace(hotel.ImageUrl))
                             {
                                 <img src="@hotel.ImageUrl"
                                      alt="@hotel.Name"
                                      loading="lazy" />
                             }
+
                         </div>
 
                         <div class="listing-card__body">
+
                             <span class="listing-card__meta">
+
                                 @hotel.City
+
                                 @if (hotel.StarRating > 0)
                                 {
                                     <text> · @hotel.StarRating-star hotel</text>
                                 }
+
                             </span>
 
                             <h3>@hotel.Name</h3>
 
                             <p class="listing-card__desc">
                                 @(string.IsNullOrWhiteSpace(hotel.ShortDescription)
-                                    ? "Contact us to learn more about this property."
+                                    ? "Explore this property and discover its accommodation information."
                                     : hotel.ShortDescription)
                             </p>
 
                             <div class="listing-card__tags">
+
                                 @if (hotel.StarRating > 0)
                                 {
                                     <span>@hotel.StarRating Stars</span>
                                 }
+
                                 @if (!string.IsNullOrWhiteSpace(hotel.Address))
                                 {
                                     <span>@hotel.Address</span>
                                 }
+
                             </div>
 
                             <div class="listing-card__footer">
+
                                 <div class="listing-card__price">
+
                                     <small>Starting / night</small>
+
                                     @if (hotel.StartingPricePerNight > 0)
                                     {
                                         @:PKR @hotel.StartingPricePerNight
@@ -132,25 +258,36 @@
                                     {
                                         @:Price on request
                                     }
+
                                 </div>
 
                                 <a class="link-arrow"
-                                   href="@Url.Action("Create", "Bookings", new { serviceType = "Hotel", serviceId = hotel.Id })">
-                                    Inquire
+                                   href="@Url.Action("Details", "Hotels", new { id = hotel.Id })">
+                                    View Details
                                 </a>
+
                             </div>
+
                         </div>
+
                     </article>
                 }
             }
             else
             {
                 <div class="listing-empty">
+
                     <h2>No hotels available yet</h2>
-                    <p>Published hotel listings will appear here once they have been added through the admin area.</p>
+
+                    <p>
+                        Published hotel listings will appear here once
+                        they have been added through the admin area.
+                    </p>
+
                 </div>
             }
+
         </div>
+
     </div>
 </section>
-

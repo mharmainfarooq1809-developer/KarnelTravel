@@ -1,5 +1,4 @@
-﻿
-@model KarnelTravel.Models.Booking
+﻿@model KarnelTravel.Models.Booking
 
 @{
     Layout = "_AdminLayout";
@@ -172,6 +171,7 @@
             </div>
 
             <div class="summary-list">
+
                 <div class="summary-row">
                     <span>Booking date</span>
                     <strong>@Model.BookingDate.ToString("dd MMM yyyy")</strong>
@@ -200,6 +200,43 @@
                     <div class="summary-row">
                         <span>Rooms</span>
                         <strong>@Model.Rooms</strong>
+                    </div>
+                }
+
+                @if (isTransport)
+                {
+                    <div class="fare-breakdown-heading">
+                        Transport fare breakdown
+                    </div>
+
+                    <div class="summary-row">
+                        <span>One-way fare</span>
+                        <strong>
+                            @(Model.TransportOneWayFarePKR.HasValue
+                                ? "PKR " + Model.TransportOneWayFarePKR.Value.ToString("N0")
+                                : "Not recorded")
+                        </strong>
+                    </div>
+
+                    @if (Model.TripType == "RoundTrip")
+                    {
+                        <div class="summary-row">
+                            <span>Return fare</span>
+                            <strong>
+                                @(Model.TransportReturnFarePKR.HasValue
+                                    ? "PKR " + Model.TransportReturnFarePKR.Value.ToString("N0")
+                                    : "Not recorded")
+                            </strong>
+                        </div>
+                    }
+
+                    <div class="summary-row">
+                        <span>Discount</span>
+                        <strong>
+                            @(Model.TransportDiscountPKR.HasValue
+                                ? "PKR " + Model.TransportDiscountPKR.Value.ToString("N0")
+                                : "Not recorded")
+                        </strong>
                     </div>
                 }
 
@@ -307,11 +344,11 @@
         margin-bottom: 25px;
     }
 
-    .panel-heading h2 {
-        margin: 5px 0 0;
-        font-size: 19px;
-        font-weight: 650;
-    }
+        .panel-heading h2 {
+            margin: 5px 0 0;
+            font-size: 19px;
+            font-weight: 650;
+        }
 
     .panel-kicker {
         display: block;
@@ -347,16 +384,16 @@
         min-width: 0;
     }
 
-    .info-item > span {
-        font-size: 12px;
-        opacity: .62;
-    }
+        .info-item > span {
+            font-size: 12px;
+            opacity: .62;
+        }
 
-    .info-item strong {
-        font-size: 14px;
-        font-weight: 600;
-        line-height: 1.5;
-    }
+        .info-item strong {
+            font-size: 14px;
+            font-weight: 600;
+            line-height: 1.5;
+        }
 
     .full-width {
         grid-column: 1 / -1;
@@ -386,20 +423,20 @@
         gap: 13px;
     }
 
-    .journey-point > div {
-        display: flex;
-        flex-direction: column;
-        gap: 5px;
-    }
+        .journey-point > div {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
 
-    .journey-point span:not(.journey-dot) {
-        font-size: 11px;
-        opacity: .6;
-    }
+        .journey-point span:not(.journey-dot) {
+            font-size: 11px;
+            opacity: .6;
+        }
 
-    .journey-point strong {
-        font-size: 15px;
-    }
+        .journey-point strong {
+            font-size: 15px;
+        }
 
     .journey-dot {
         width: 11px;
@@ -431,9 +468,9 @@
         margin-top: 23px;
     }
 
-    .journey-meta .info-item strong {
-        font-size: 13px;
-    }
+        .journey-meta .info-item strong {
+            font-size: 13px;
+        }
 
     .notes-box {
         min-height: 55px;
@@ -461,14 +498,23 @@
         font-size: 13px;
     }
 
-    .summary-row span {
-        opacity: .65;
-    }
+        .summary-row span {
+            opacity: .65;
+        }
 
-    .summary-row strong {
-        text-align: right;
-        font-weight: 600;
-        overflow-wrap: anywhere;
+        .summary-row strong {
+            text-align: right;
+            font-weight: 600;
+            overflow-wrap: anywhere;
+        }
+
+    .fare-breakdown-heading {
+        padding: 16px 0 5px;
+        font-size: 12px;
+        font-weight: 750;
+        letter-spacing: .6px;
+        text-transform: uppercase;
+        opacity: .75;
     }
 
     .total-row {
@@ -485,53 +531,53 @@
         border-top: 1px solid var(--border, #e5e7eb);
     }
 
-    .timestamp-list div {
-        display: flex;
-        flex-direction: column;
-        gap: 6px;
-    }
+        .timestamp-list div {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
 
-    .timestamp-list span {
-        font-size: 11px;
-        opacity: .6;
-    }
+        .timestamp-list span {
+            font-size: 11px;
+            opacity: .6;
+        }
 
-    .timestamp-list strong {
-        font-size: 12px;
-        font-weight: 550;
-    }
+        .timestamp-list strong {
+            font-size: 12px;
+            font-weight: 550;
+        }
 
     .form-field {
         margin-bottom: 22px;
     }
 
-    .form-field label {
-        display: block;
-        margin-bottom: 9px;
-        font-size: 13px;
-        font-weight: 600;
-    }
+        .form-field label {
+            display: block;
+            margin-bottom: 9px;
+            font-size: 13px;
+            font-weight: 600;
+        }
 
-    .form-field select,
-    .form-field textarea {
-        display: block;
-        width: 100%;
-        box-sizing: border-box;
-    }
+        .form-field select,
+        .form-field textarea {
+            display: block;
+            width: 100%;
+            box-sizing: border-box;
+        }
 
-    .form-field textarea {
-        min-height: 145px;
-        padding: 13px;
-        resize: vertical;
-        line-height: 1.6;
-    }
+        .form-field textarea {
+            min-height: 145px;
+            padding: 13px;
+            resize: vertical;
+            line-height: 1.6;
+        }
 
-    .form-field small {
-        display: block;
-        margin-top: 8px;
-        font-size: 11px;
-        opacity: .55;
-    }
+        .form-field small {
+            display: block;
+            margin-top: 8px;
+            font-size: 11px;
+            opacity: .55;
+        }
 
     .save-booking-btn {
         width: 100%;
@@ -545,15 +591,15 @@
         margin: 18px 0;
     }
 
-    .booking-message.success {
-        background: #e8f6ed;
-        color: #176536;
-    }
+        .booking-message.success {
+            background: #e8f6ed;
+            color: #176536;
+        }
 
-    .booking-message.error {
-        background: #fff0ee;
-        color: #a12c20;
-    }
+        .booking-message.error {
+            background: #fff0ee;
+            color: #a12c20;
+        }
 
     @@media (max-width: 1050px) {
         .booking-details-grid {
@@ -591,67 +637,63 @@
             align-items: flex-start;
             gap: 15px;
         }
-
-        
-/* Final booking form usability improvements */
-
-.manage-panel {
-    padding: 28px;
-}
-
-.manage-panel .panel-heading {
-    margin-bottom: 28px;
-}
-
-.manage-panel .form-field {
-    margin-bottom: 25px;
-}
-
-.manage-panel .form-field label {
-    display: block;
-    margin-bottom: 11px;
-    font-size: 13px;
-    font-weight: 650;
-}
-
-.manage-panel select {
-    min-height: 48px;
-    padding: 0 14px;
-    border: 1px solid var(--border, #d9dedb);
-    border-radius: 9px;
-    background: var(--surface, #fff);
-    font-size: 14px;
-    cursor: pointer;
-}
-
-.manage-panel textarea {
-    min-height: 160px;
-    padding: 15px;
-    border: 1px solid var(--border, #d9dedb);
-    border-radius: 9px;
-    font-family: inherit;
-    font-size: 14px;
-    line-height: 1.7;
-}
-
-.manage-panel select:focus,
-.manage-panel textarea:focus {
-    outline: none;
-    border-color: #668b76;
-    box-shadow: 0 0 0 3px rgba(102, 139, 118, .12);
-}
-
-.manage-panel .form-field small {
-    margin-top: 10px;
-    line-height: 1.5;
-}
-
-.manage-panel .save-booking-btn {
-    min-height: 49px;
-    border-radius: 9px;
-    font-size: 14px;
-    font-weight: 650;
-}
-
     }
+
+    .manage-panel {
+        padding: 28px;
+    }
+
+        .manage-panel .panel-heading {
+            margin-bottom: 28px;
+        }
+
+        .manage-panel .form-field {
+            margin-bottom: 25px;
+        }
+
+            .manage-panel .form-field label {
+                display: block;
+                margin-bottom: 11px;
+                font-size: 13px;
+                font-weight: 650;
+            }
+
+        .manage-panel select {
+            min-height: 48px;
+            padding: 0 14px;
+            border: 1px solid var(--border, #d9dedb);
+            border-radius: 9px;
+            background: var(--surface, #fff);
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .manage-panel textarea {
+            min-height: 160px;
+            padding: 15px;
+            border: 1px solid var(--border, #d9dedb);
+            border-radius: 9px;
+            font-family: inherit;
+            font-size: 14px;
+            line-height: 1.7;
+        }
+
+            .manage-panel select:focus,
+            .manage-panel textarea:focus {
+                outline: none;
+                border-color: #668b76;
+                box-shadow: 0 0 0 3px rgba(102, 139, 118, .12);
+            }
+
+        .manage-panel .form-field small {
+            margin-top: 10px;
+            line-height: 1.5;
+        }
+
+        .manage-panel .save-booking-btn {
+            min-height: 49px;
+            border-radius: 9px;
+            font-size: 14px;
+            font-weight: 650;
+        }
 </style>

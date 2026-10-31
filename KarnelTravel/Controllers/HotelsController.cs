@@ -13,6 +13,7 @@ namespace KarnelTravel.Controllers
             _context = context;
         }
 
+        // HOTEL LISTING
         public async Task<IActionResult> Index()
         {
             var hotels = await _context.Hotels
@@ -23,6 +24,26 @@ namespace KarnelTravel.Controllers
                 .ToListAsync();
 
             return View("~/Views/Information/Dropdown/Hotels.cshtml", hotels);
+        }
+
+        // HOTEL DETAILS
+        public async Task<IActionResult> Details(int id)
+        {
+            if (id <= 0)
+            {
+                return NotFound();
+            }
+
+            var hotel = await _context.Hotels
+                .AsNoTracking()
+                .FirstOrDefaultAsync(h => h.Id == id && h.IsPublished);
+
+            if (hotel == null)
+            {
+                return NotFound();
+            }
+
+            return View("~/Views/Hotels/Details.cshtml", hotel);
         }
     }
 }

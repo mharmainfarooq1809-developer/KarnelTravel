@@ -1,13 +1,51 @@
+
+using KarnelTravel.Data;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace KarnelTravel.Controllers
 {
     public class RestaurantsController : Controller
     {
-        public IActionResult Index()
+        private readonly ApplicationDbContext _context;
+
+        public RestaurantsController(ApplicationDbContext context)
         {
-            // Note: the view file has a typo 'Resturants.cshtml' in the project.
-            return View("~/Views/Information/Dropdown/Resturants.cshtml");
+            _context = context;
+        }
+
+        public async Task<IActionResult> Index()
+        {
+            var restaurants = await _context.Restaurants
+                .AsNoTracking()
+                .Where(r => r.IsPublished)
+                .OrderBy(r => r.DisplayOrder)
+                .ThenBy(r => r.Name)
+                .ToListAsync();
+
+            return View(
+                "~/Views/Information/Dropdown/Resturants.cshtml",
+                restaurants
+            );
+        }
+
+        public async Task<IActionResult> Details(int id)
+        {
+            if (id <= 0)
+            {
+                return NotFound();
+            }
+
+            var restaurant = await _context.Restaurants
+                .AsNoTracking()
+                .FirstOrDefaultAsync(r => r.Id == id && r.IsPublished);
+
+            if (restaurant == null)
+            {
+                return NotFound();
+            }
+
+            return View("~/Views/Restaurants/Details.cshtml", restaurant);
         }
     }
 }

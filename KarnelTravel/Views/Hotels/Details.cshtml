@@ -1,0 +1,475 @@
+﻿@model KarnelTravel.Models.Hotel
+
+@{
+    ViewData["Title"] = Model.Name + " — Hotel Details | Karnel Travel Guide";
+    ViewData["Description"] = Model.ShortDescription;
+
+    var bookingUrl = Url.Action(
+        "Create",
+        "Bookings",
+        new { serviceType = "Hotel", serviceId = Model.Id }
+    );
+}
+
+@section Styles {
+    <style>
+        .hotel-details {
+            background: var(--ivory);
+            color: var(--forest-deep);
+        }
+
+        .hotel-hero {
+            position: relative;
+            padding: calc(var(--header-h) + 35px) 0 55px;
+            background: var(--sand);
+        }
+
+        .hotel-breadcrumb {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 9px;
+            align-items: center;
+            color: var(--muted);
+            font-size: .78rem;
+            margin-bottom: 28px;
+        }
+
+        .hotel-breadcrumb a {
+            color: var(--forest);
+            text-decoration: none;
+        }
+
+        .hotel-breadcrumb a:hover {
+            text-decoration: underline;
+        }
+
+        .hotel-heading {
+            max-width: 850px;
+        }
+
+        .hotel-eyebrow {
+            text-transform: uppercase;
+            letter-spacing: .17em;
+            font-size: .7rem;
+            color: var(--forest);
+            margin-bottom: 12px;
+        }
+
+        .hotel-heading h1 {
+            font-size: clamp(2.5rem, 6vw, 5rem);
+            line-height: 1.05;
+            margin: 0 0 18px;
+        }
+
+        .hotel-location {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 12px;
+            color: var(--muted);
+            font-size: .95rem;
+        }
+
+        .hotel-rating {
+            color: var(--forest-deep);
+            font-weight: 600;
+        }
+
+        .hotel-gallery-section {
+            padding: 45px 0 20px;
+        }
+
+        .hotel-gallery {
+            display: grid;
+            grid-template-columns: 1.7fr 1fr;
+            gap: 14px;
+            height: 440px;
+        }
+
+        .hotel-gallery__main,
+        .hotel-gallery__secondary {
+            overflow: hidden;
+            border-radius: var(--radius-lg);
+            background: var(--sand);
+        }
+
+        .hotel-gallery img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        .hotel-gallery__secondary {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--muted);
+            padding: 15px;
+            text-align: center;
+        }
+
+        .hotel-gallery__secondary img {
+            min-height: 100%;
+        }
+
+        .hotel-content {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 350px;
+            gap: 55px;
+            padding: 55px 0 90px;
+            align-items: start;
+        }
+
+        .hotel-main h2 {
+            font-size: clamp(1.7rem, 3vw, 2.3rem);
+            margin: 0 0 20px;
+        }
+
+        .hotel-description {
+            color: var(--muted);
+            line-height: 1.9;
+            font-size: 1rem;
+            white-space: pre-line;
+        }
+
+        .hotel-information {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 14px;
+            margin-top: 35px;
+        }
+
+        .hotel-info-card {
+            padding: 20px;
+            border: 1px solid var(--line);
+            border-radius: var(--radius-lg);
+            background: var(--white);
+        }
+
+        .hotel-info-card small {
+            display: block;
+            text-transform: uppercase;
+            letter-spacing: .12em;
+            color: var(--muted);
+            font-size: .65rem;
+            margin-bottom: 9px;
+        }
+
+        .hotel-info-card strong {
+            font-size: .95rem;
+            overflow-wrap: anywhere;
+        }
+
+        .hotel-booking-card {
+            position: sticky;
+            top: calc(var(--header-h) + 25px);
+            padding: 28px;
+            border: 1px solid var(--line);
+            border-radius: var(--radius-lg);
+            background: var(--white);
+            box-shadow: var(--shadow-md);
+        }
+
+        .hotel-booking-card__label {
+            text-transform: uppercase;
+            letter-spacing: .15em;
+            font-size: .67rem;
+            color: var(--muted);
+            margin-bottom: 12px;
+        }
+
+        .hotel-booking-card__price {
+            font-family: var(--serif);
+            font-size: 2rem;
+            color: var(--forest-deep);
+            margin-bottom: 4px;
+            overflow-wrap: anywhere;
+        }
+
+        .hotel-booking-card__period {
+            font-size: .8rem;
+            color: var(--muted);
+            margin-bottom: 24px;
+        }
+
+        .hotel-booking-card__note {
+            padding: 15px;
+            background: var(--ivory);
+            border-radius: 10px;
+            font-size: .82rem;
+            line-height: 1.7;
+            color: var(--muted);
+            margin-bottom: 22px;
+        }
+
+        .hotel-booking-button {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            padding: 16px 20px;
+            background: var(--forest-deep);
+            color: var(--ivory);
+            text-decoration: none;
+            border-radius: 999px;
+            font-size: .85rem;
+            font-weight: 600;
+            transition: background .3s ease, transform .3s ease;
+        }
+
+        .hotel-booking-button:hover {
+            background: var(--forest);
+            color: var(--ivory);
+            transform: translateY(-2px);
+        }
+
+        .hotel-back-link {
+            display: inline-block;
+            margin-top: 20px;
+            color: var(--forest);
+            font-size: .85rem;
+            text-decoration: none;
+        }
+
+        .hotel-back-link:hover {
+            text-decoration: underline;
+        }
+
+        .hotel-disclaimer {
+            margin-top: 20px;
+            font-size: .72rem;
+            color: var(--muted);
+            line-height: 1.7;
+        }
+
+        @@media (max-width: 900px) {
+            .hotel-content {
+                grid-template-columns: 1fr;
+                gap: 35px;
+            }
+
+            .hotel-booking-card {
+                position: static;
+                max-width: 550px;
+            }
+        }
+
+        @@media (max-width: 600px) {
+            .hotel-gallery {
+                grid-template-columns: 1fr;
+                height: auto;
+            }
+
+            .hotel-gallery__main {
+                height: 280px;
+            }
+
+            .hotel-gallery__secondary {
+                display: none;
+            }
+
+            .hotel-information {
+                grid-template-columns: 1fr;
+            }
+
+            .hotel-hero {
+                padding-bottom: 35px;
+            }
+        }
+    </style>
+}
+
+<div class="hotel-details">
+
+    <header class="hotel-hero">
+        <div class="container" data-reveal>
+
+            <nav class="hotel-breadcrumb" aria-label="Breadcrumb">
+                <a asp-controller="Home" asp-action="Index">Journey Home</a>
+                <span>/</span>
+                <a asp-controller="Hotels" asp-action="Index">Hotels</a>
+                <span>/</span>
+                <span>@Model.Name</span>
+            </nav>
+
+            <div class="hotel-heading">
+
+                <p class="hotel-eyebrow">Karnel Travel Guide · Accommodation</p>
+
+                <h1>@Model.Name</h1>
+
+                <div class="hotel-location">
+
+                    @if (!string.IsNullOrWhiteSpace(Model.City))
+                    {
+                        <span>@Model.City</span>
+                    }
+
+                    @if (Model.StarRating > 0)
+                    {
+                        <span class="hotel-rating">
+                            · @Model.StarRating Star Property
+                        </span>
+                    }
+
+                </div>
+
+            </div>
+
+        </div>
+    </header>
+
+    <section class="hotel-gallery-section">
+        <div class="container">
+
+            <div class="hotel-gallery" data-reveal>
+
+                <div class="hotel-gallery__main">
+
+                    @if (!string.IsNullOrWhiteSpace(Model.ImageUrl))
+                    {
+                        <img src="@Model.ImageUrl"
+                             alt="@Model.Name"
+                             loading="eager" />
+                    }
+                    else
+                    {
+                        <div class="hotel-gallery__secondary">
+                            <p>Hotel photograph coming soon</p>
+                        </div>
+                    }
+
+                </div>
+
+                <div class="hotel-gallery__secondary">
+                    <div>
+                        <strong>@Model.Name</strong>
+                        <p>Discover your next stay with Karnel Travel Guide.</p>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+    </section>
+
+    <section>
+        <div class="container">
+
+            <div class="hotel-content">
+
+                <main class="hotel-main" data-reveal>
+
+                    <p class="eyebrow">About this property</p>
+
+                    <h2>Your stay, your experience.</h2>
+
+                    <div class="hotel-description">
+                        @if (!string.IsNullOrWhiteSpace(Model.ShortDescription))
+                        {
+                            @Model.ShortDescription
+                        }
+                        else
+                        {
+                            <p>
+                                Detailed information about this property
+                                will be available soon. Contact our team
+                                for further information.
+                            </p>
+                        }
+                    </div>
+
+                    <div class="hotel-information">
+
+                        <div class="hotel-info-card">
+                            <small>Property</small>
+                            <strong>@Model.Name</strong>
+                        </div>
+
+                        <div class="hotel-info-card">
+                            <small>Location</small>
+                            <strong>
+                                @(string.IsNullOrWhiteSpace(Model.City)
+                                    ? "Not specified"
+                                    : Model.City)
+                            </strong>
+                        </div>
+
+                        <div class="hotel-info-card">
+                            <small>Star Rating</small>
+                            <strong>
+                                @(Model.StarRating > 0
+                                    ? Model.StarRating + " Stars"
+                                    : "Not specified")
+                            </strong>
+                        </div>
+
+                        <div class="hotel-info-card">
+                            <small>Address</small>
+                            <strong>
+                                @(string.IsNullOrWhiteSpace(Model.Address)
+                                    ? "Contact for address"
+                                    : Model.Address)
+                            </strong>
+                        </div>
+
+                    </div>
+
+                    <a asp-controller="Hotels"
+                       asp-action="Index"
+                       class="hotel-back-link">
+                        ← Back to all hotels
+                    </a>
+
+                </main>
+
+                <aside class="hotel-booking-card" data-reveal>
+
+                    <p class="hotel-booking-card__label">
+                        Accommodation pricing
+                    </p>
+
+                    <div class="hotel-booking-card__price">
+
+                        @if (Model.StartingPricePerNight > 0)
+                        {
+                           @:PKR @Model.StartingPricePerNight.Value.ToString("N0")
+                        }
+                        else
+                        {
+                            @:Price on request
+                        }
+
+                    </div>
+
+                    <p class="hotel-booking-card__period">
+                        Starting reference · Per night
+                    </p>
+
+                    <div class="hotel-booking-card__note">
+                        This is an indicative starting price.
+                        Final room availability and pricing will be
+                        reviewed by the Karnel Travel Guide team.
+                        Submitting a request does not guarantee a reservation.
+                    </div>
+
+                    <a href="@bookingUrl"
+                       class="hotel-booking-button">
+                        Send Booking Request →
+                    </a>
+
+                    <p class="hotel-disclaimer">
+                        Your request will be submitted for review.
+                        The booking remains pending until the team
+                        reviews and confirms it.
+                    </p>
+
+                </aside>
+
+            </div>
+
+        </div>
+    </section>
+
+</div>

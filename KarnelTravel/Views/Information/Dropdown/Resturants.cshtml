@@ -1,6 +1,9 @@
-﻿@{
+﻿
+@model IEnumerable<KarnelTravel.Models.Restaurant>
+
+@{
     ViewData["Title"] = "Taste Trails — Restaurant Information | Karnel Travel Guide";
-    ViewData["Description"] = "Restaurant information across Pakistani cities — regional cuisine, price ranges and sample listings for Taste Trails.";
+    ViewData["Description"] = "Discover restaurants across Pakistan, explore regional cuisine and plan your dining experience.";
 }
 
 @section Styles {
@@ -9,7 +12,9 @@
             padding: calc(var(--header-h) + 60px) 0 60px;
             background: var(--sand);
         }
+
         .page-hero h1 { max-width: 14ch; }
+
         .page-hero p {
             color: var(--muted);
             font-size: 1.05rem;
@@ -21,6 +26,7 @@
             grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
             gap: 28px;
         }
+
         .listing-card {
             display: flex;
             flex-direction: column;
@@ -30,9 +36,23 @@
             overflow: hidden;
             transition: transform .4s var(--ease), box-shadow .4s var(--ease);
         }
-        .listing-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-md); }
+
+        .listing-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-md);
+        }
+
         .listing-card .media { aspect-ratio: 4 / 3; }
+
+        .listing-card .media img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform .4s var(--ease);
+        }
+
         .listing-card:hover .media img { transform: scale(1.05); }
+
         .listing-card__body {
             padding: 22px;
             display: flex;
@@ -40,24 +60,32 @@
             gap: 10px;
             flex: 1;
         }
+
         .listing-card__meta {
             font-size: .68rem;
             letter-spacing: .16em;
             text-transform: uppercase;
             color: var(--muted);
         }
-        .listing-card h3 { margin: 0; font-size: 1.25rem; }
+
+        .listing-card h3 {
+            margin: 0;
+            font-size: 1.25rem;
+        }
+
         .listing-card__desc {
             color: var(--muted);
             font-size: .92rem;
             margin: 0;
             flex: 1;
         }
+
         .listing-card__tags {
             display: flex;
             flex-wrap: wrap;
             gap: 6px;
         }
+
         .listing-card__tags span {
             font-size: .68rem;
             padding: 3px 10px;
@@ -66,6 +94,7 @@
             border-radius: 999px;
             color: var(--forest);
         }
+
         .listing-card__footer {
             display: flex;
             justify-content: space-between;
@@ -75,11 +104,13 @@
             margin-top: auto;
             gap: 10px;
         }
+
         .listing-card__price {
             font-family: var(--serif);
             font-size: 1.1rem;
             color: var(--forest-deep);
         }
+
         .listing-card__price small {
             display: block;
             font-family: var(--sans);
@@ -96,11 +127,29 @@
             padding: clamp(56px, 8vw, 100px) 0;
             text-align: center;
         }
+
         .cta-band h2 { color: var(--ivory); }
+
         .cta-band p {
             color: rgba(248, 246, 240, .78);
             max-width: 56ch;
             margin: 0 auto 28px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 75px 20px;
+            background: var(--white);
+            border: 1px solid var(--line);
+            border-radius: var(--radius-lg);
+        }
+
+        .empty-state h2 { margin-bottom: 12px; }
+
+        .empty-state p {
+            color: var(--muted);
+            max-width: 50ch;
+            margin: 0 auto;
         }
     </style>
 }
@@ -109,157 +158,115 @@
     <div class="container" data-reveal>
         <p class="eyebrow">Discover More · Restaurant Information</p>
         <h1>Taste Trails.</h1>
-        <p>Regional dishes, street food and quieter dining rooms, organised by city. All
-           entries below are sample content — real restaurant details will be added when
-           the database is connected.</p>
+        <p>
+            Explore restaurants, regional dishes and dining experiences
+            across Pakistan, organised by destination.
+        </p>
     </div>
 </header>
 
 <section class="section section--ivory">
     <div class="container">
-        <div class="listing-grid" data-reveal-group>
 
-            <article class="listing-card" data-reveal>
-                <div class="media" data-fallback-label="The Apricot Table">
-                    <img src="https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=900&q=70"
-                         alt="Restaurant interior with warm lighting" loading="lazy" />
-                </div>
-                <div class="listing-card__body">
-                    <span class="listing-card__meta">Hunza · Sample restaurant</span>
-                    <h3>The Apricot Table</h3>
-                    <p class="listing-card__desc">
-                        Northern dishes built around apricot, walnut and local breads.
-                    </p>
-                    <div class="listing-card__tags">
-                        <span>Regional cuisine</span>
-                        <span>Family friendly</span>
-                    </div>
-                    <div class="listing-card__footer">
-                        <div class="listing-card__price"><small>Sample / person</small>PKR 3,500</div>
-                        <a class="link-arrow" href="@Url.Action("Index", "Contact")">Inquire</a>
-                    </div>
-                </div>
-            </article>
+        @if (Model != null && Model.Any())
+        {
+            <div class="listing-grid" data-reveal-group>
 
-            <article class="listing-card" data-reveal>
-                <div class="media" data-fallback-label="Old Lahore Kitchen">
-                    <img src="https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=900&q=70"
-                         alt="Regional dish being served at a table" loading="lazy" />
-                </div>
-                <div class="listing-card__body">
-                    <span class="listing-card__meta">Lahore · Sample restaurant</span>
-                    <h3>Old Lahore Kitchen</h3>
-                    <p class="listing-card__desc">
-                        Classic Lahori fare near the Walled City, best visited in the evening.
-                    </p>
-                    <div class="listing-card__tags">
-                        <span>Traditional</span>
-                        <span>Street food</span>
-                    </div>
-                    <div class="listing-card__footer">
-                        <div class="listing-card__price"><small>Sample / person</small>PKR 2,200</div>
-                        <a class="link-arrow" href="@Url.Action("Index", "Contact")">Inquire</a>
-                    </div>
-                </div>
-            </article>
+                @foreach (var restaurant in Model)
+                {
+                    var imageUrl = !string.IsNullOrWhiteSpace(restaurant.ImageUrl)
+                        ? restaurant.ImageUrl
+                        : "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=900&q=70";
 
-            <article class="listing-card" data-reveal>
-                <div class="media" data-fallback-label="Seabreeze Grill">
-                    <img src="https://images.unsplash.com/photo-1552566626-52f8b828add9?auto=format&fit=crop&w=900&q=70"
-                         alt="Seafood restaurant with coastal styling" loading="lazy" />
-                </div>
-                <div class="listing-card__body">
-                    <span class="listing-card__meta">Karachi · Sample restaurant</span>
-                    <h3>Seabreeze Grill</h3>
-                    <p class="listing-card__desc">
-                        Coastal dining with a focus on grilled seafood and simple sides.
-                    </p>
-                    <div class="listing-card__tags">
-                        <span>Seafood</span>
-                        <span>Sea view</span>
-                    </div>
-                    <div class="listing-card__footer">
-                        <div class="listing-card__price"><small>Sample / person</small>PKR 4,800</div>
-                        <a class="link-arrow" href="@Url.Action("Index", "Contact")">Inquire</a>
-                    </div>
-                </div>
-            </article>
+                    <article class="listing-card" data-reveal>
 
-            <article class="listing-card" data-reveal>
-                <div class="media" data-fallback-label="Garden Tea House">
-                    <img src="https://images.unsplash.com/photo-1414235077428-338989a2e8c0?auto=format&fit=crop&w=900&q=70"
-                         alt="Tea house with garden seating" loading="lazy" />
-                </div>
-                <div class="listing-card__body">
-                    <span class="listing-card__meta">Islamabad · Sample restaurant</span>
-                    <h3>Garden Tea House</h3>
-                    <p class="listing-card__desc">
-                        A quieter tearoom with a garden terrace, ideal for afternoons.
-                    </p>
-                    <div class="listing-card__tags">
-                        <span>Tea &amp; snacks</span>
-                        <span>Garden seating</span>
-                    </div>
-                    <div class="listing-card__footer">
-                        <div class="listing-card__price"><small>Sample / person</small>PKR 1,500</div>
-                        <a class="link-arrow" href="@Url.Action("Index", "Contact")">Inquire</a>
-                    </div>
-                </div>
-            </article>
+                        <div class="media" data-fallback-label="@restaurant.Name">
+                            <img src="@imageUrl"
+                                 alt="@restaurant.Name"
+                                 loading="lazy"
+                                 onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=900&q=70';" />
+                        </div>
 
-            <article class="listing-card" data-reveal>
-                <div class="media" data-fallback-label="Mountain Kitchenette">
-                    <img src="https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=900&q=70"
-                         alt="Cosy restaurant with wooden interior" loading="lazy" />
-                </div>
-                <div class="listing-card__body">
-                    <span class="listing-card__meta">Skardu · Sample restaurant</span>
-                    <h3>Mountain Kitchenette</h3>
-                    <p class="listing-card__desc">
-                        Hearty meals for cold days, close to the main bazaar.
-                    </p>
-                    <div class="listing-card__tags">
-                        <span>Comfort food</span>
-                        <span>Family friendly</span>
-                    </div>
-                    <div class="listing-card__footer">
-                        <div class="listing-card__price"><small>Sample / person</small>PKR 2,800</div>
-                        <a class="link-arrow" href="@Url.Action("Index", "Contact")">Inquire</a>
-                    </div>
-                </div>
-            </article>
+                        <div class="listing-card__body">
 
-            <article class="listing-card" data-reveal>
-                <div class="media" data-fallback-label="Riverside Cafe">
-                    <img src="https://images.unsplash.com/photo-1466978913421-dad2ebd01d17?auto=format&fit=crop&w=900&q=70"
-                         alt="Cafe with riverside seating" loading="lazy" />
-                </div>
-                <div class="listing-card__body">
-                    <span class="listing-card__meta">Swat · Sample restaurant</span>
-                    <h3>Riverside Cafe</h3>
-                    <p class="listing-card__desc">
-                        Casual cafe seating beside the river, serving breakfast and light meals.
-                    </p>
-                    <div class="listing-card__tags">
-                        <span>Cafe</span>
-                        <span>Outdoor seating</span>
-                    </div>
-                    <div class="listing-card__footer">
-                        <div class="listing-card__price"><small>Sample / person</small>PKR 1,800</div>
-                        <a class="link-arrow" href="@Url.Action("Index", "Contact")">Inquire</a>
-                    </div>
-                </div>
-            </article>
+                            <span class="listing-card__meta">
+                                @(string.IsNullOrWhiteSpace(restaurant.City)
+                                    ? "Pakistan"
+                                    : restaurant.City)
+                                · Restaurant
+                            </span>
 
-        </div>
+                            <h3>@restaurant.Name</h3>
+
+                            <p class="listing-card__desc">
+                                @(string.IsNullOrWhiteSpace(restaurant.ShortDescription)
+                                    ? "Discover this restaurant and its dining experience."
+                                    : restaurant.ShortDescription)
+                            </p>
+
+                            <div class="listing-card__tags">
+                                @if (!string.IsNullOrWhiteSpace(restaurant.CuisineType))
+                                {
+                                    <span>@restaurant.CuisineType</span>
+                                }
+
+                                @if (restaurant.IsFeatured)
+                                {
+                                    <span>Featured</span>
+                                }
+                            </div>
+
+                            <div class="listing-card__footer">
+
+                                <div class="listing-card__price">
+                                    @if (restaurant.AverageMealPrice.HasValue &&
+                                         restaurant.AverageMealPrice.Value > 0)
+                                    {
+                                        <small>Average / person</small>
+                                        @:PKR @restaurant.AverageMealPrice.Value.ToString("N0")
+                                    }
+                                    else
+                                    {
+                                        <small>Pricing</small>
+                                        @:Contact for details
+                                    }
+                                </div>
+
+                                <a class="link-arrow"
+                                   href="@Url.Action("Details", "Restaurants", new { id = restaurant.Id })">
+                                    View Details
+                                </a>
+
+                            </div>
+                        </div>
+                    </article>
+                }
+
+            </div>
+        }
+        else
+        {
+            <div class="empty-state">
+                <h2>No Restaurants Available Yet.</h2>
+                <p>
+                    Restaurant information is currently being updated.
+                    Please check back soon for new dining destinations.
+                </p>
+            </div>
+        }
+
     </div>
 </section>
 
 <section class="cta-band">
     <div class="container" data-reveal>
-        <h2>Looking for something specific?</h2>
-        <p>Tell us your city, cuisine preference and travel dates — we'll help you find
-           places to eat during your journey.</p>
-        <a class="btn btn--light" href="@Url.Action("Index", "Contact")">Get in Touch</a>
+        <h2>Looking for Something Specific?</h2>
+        <p>
+            Tell us your destination and cuisine preference.
+            We'll help you explore dining options during your journey.
+        </p>
+        <a class="btn btn--light" href="@Url.Action("Index", "Contact")">
+            Get in Touch
+        </a>
     </div>
-</section>.
+</section>
