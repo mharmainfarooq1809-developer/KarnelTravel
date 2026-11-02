@@ -12,6 +12,12 @@
         StringComparison.OrdinalIgnoreCase
     );
 
+    var isRestaurant = string.Equals(
+        Model.ServiceType,
+        "Restaurant",
+        StringComparison.OrdinalIgnoreCase
+    );
+
     var transportRoutes =
         ViewBag.TransportRoutes as IEnumerable<KarnelTravel.Models.TransportRoutePricing>
         ?? Enumerable.Empty<KarnelTravel.Models.TransportRoutePricing>();
@@ -182,7 +188,14 @@
 <main class="booking-wrap">
     <p class="booking-intro">KARNEL TRAVEL GUIDE / BOOKING REQUEST</p>
 
-    <h1>Plan your next journey.</h1>
+    @if (isRestaurant)
+    {
+        <h1>Plan your dining experience.</h1>
+    }
+    else
+    {
+        <h1>Plan your next journey.</h1>
+    }
 
     <p class="booking-intro">
         Complete the form below. Our team can review your request and confirm
@@ -301,12 +314,35 @@
                 }
 
                 <div class="booking-field">
-                    <label asp-for="BookingDate"></label>
-                    <input asp-for="BookingDate" type="date"
+                    <label asp-for="BookingDate">
+                        @(isRestaurant ? "Preferred visit date" : "Booking date")
+                    </label>
+
+                    <input asp-for="BookingDate"
+                           type="date"
                            min="@DateTime.Today.ToString("yyyy-MM-dd")" />
+
                     <span asp-validation-for="BookingDate"
                           class="booking-validation"></span>
                 </div>
+
+                @if (isRestaurant)
+                {
+                    <div class="booking-field">
+                        <label asp-for="PreferredVisitTime"></label>
+
+                        <select asp-for="PreferredVisitTime">
+                            <option value="">Select preferred time</option>
+                            <option value="Breakfast">Breakfast</option>
+                            <option value="Lunch">Lunch</option>
+                            <option value="Afternoon">Afternoon</option>
+                            <option value="Dinner">Dinner</option>
+                        </select>
+
+                        <span asp-validation-for="PreferredVisitTime"
+                              class="booking-validation"></span>
+                    </div>
+                }
 
                 <div class="booking-field" id="returnDateField"
                      hidden="@(isTransport && Model.TripType != "RoundTrip")">
@@ -317,8 +353,12 @@
                 </div>
 
                 <div class="booking-field">
-                    <label asp-for="Adults"></label>
+                    <label asp-for="Adults">
+                        @(isRestaurant ? "Adults / guests" : "Adults / passengers")
+                    </label>
+
                     <input asp-for="Adults" type="number" min="1" max="100" />
+
                     <span asp-validation-for="Adults"
                           class="booking-validation"></span>
                 </div>
@@ -330,7 +370,7 @@
                           class="booking-validation"></span>
                 </div>
 
-                @if (!isTransport)
+                @if (!isTransport && !isRestaurant)
                 {
                     <div class="booking-field">
                         <label asp-for="Rooms"></label>
@@ -367,7 +407,6 @@
     <script>
         document.addEventListener("DOMContentLoaded", function () {
 
-            // Both fares are loaded from the database.
             const routes = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
                 transportRoutes.Select(x => new {
                     pickup = x.PickupCity,
@@ -476,7 +515,6 @@
 
                 const outbound = Number(selectedRoute.fare);
 
-                // Use the configured return fare, not the outbound fare.
                 const returning = isRoundTrip
                     ? Number(selectedRoute.returnFare)
                     : 0;

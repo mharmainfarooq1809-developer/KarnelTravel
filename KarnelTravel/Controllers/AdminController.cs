@@ -1737,14 +1737,129 @@ public class AdminController : Controller
         return View("ComingSoon");
     }
 
+
+    // =========================================================
+    // REVIEWS - MODERATION DASHBOARD
+    // =========================================================
+
     [HttpGet("Reviews")]
-    public IActionResult Reviews()
+    public async Task<IActionResult> Reviews(
+        string? status,
+        string? search)
     {
-        ViewData["Title"] = "Reviews";
+        var query = _context.Reviews
+            .AsNoTracking()
+            .Include(r => r.Destination)
+            .Include(r => r.Hotel)
+            .Include(r => r.Restaurant)
+            .Include(r => r.Resort)
+            .Include(r => r.TransportService)
+            .Include(r => r.TourPackage)
+            .AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(status) &&
+            Enum.TryParse<ReviewStatus>(
+                status, true, out var selectedStatus))
+        {
+            query = query.Where(r => r.Status == selectedStatus);
+        }
+        else
+        {
+            status = "All";
+        }
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var term = search.Trim();
+
+            query = query.Where(r =>
+                r.ReviewerName.Contains(term) ||
+                r.Title.Contains(term) ||
+                r.Comment.Contains(term));
+        }
+
+        ViewData["Title"] = "Review Moderation";
         ViewData["Section"] = "Reviews";
 
-        return View("ComingSoon");
+        ViewBag.StatusFilter = status ?? "All";
+        ViewBag.SearchTerm = search ?? "";
+
+        ViewBag.TotalReviews = await _context.Reviews.CountAsync();
+
+        ViewBag.PendingReviews = await _context.Reviews
+            .CountAsync(r => r.Status == ReviewStatus.Pending);
+
+        ViewBag.ApprovedReviews = await _context.Reviews
+            .CountAsync(r => r.Status == ReviewStatus.Approved);
+
+        ViewBag.RejectedReviews = await _context.Reviews
+            .CountAsync(r => r.Status == ReviewStatus.Rejected);
+
+        var reviews = await query
+            .OrderByDescending(r => r.CreatedAt)
+            .ToListAsync();
+
+        return View(reviews);
     }
+
+    // =========================================================
+    // REVIEWS - CHANGE MODERATION STATUS
+    // =========================================================
+
+    [HttpPost("Reviews/{id:int}/SetStatus")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> SetReviewStatus(
+        int id,
+        string status,
+        string? returnStatus,
+        string? search)
+    {
+        if (!Enum.TryParse<ReviewStatus>(
+                status, true, out var newStatus) ||
+            !Enum.IsDefined(typeof(ReviewStatus), newStatus))
+        {
+            TempData["ErrorMessage"] = "Invalid review status.";
+
+            return RedirectToAction(
+                nameof(Reviews),
+                new { status = returnStatus, search });
+        }
+
+        var review = await _context.Reviews
+            .FirstOrDefaultAsync(r => r.Id == id);
+
+        if (review == null)
+        {
+            TempData["ErrorMessage"] = "Review not found.";
+
+            return RedirectToAction(
+                nameof(Reviews),
+                new { status = returnStatus, search });
+        }
+
+        review.Status = newStatus;
+
+        await _context.SaveChangesAsync();
+
+        TempData["SuccessMessage"] = newStatus switch
+        {
+            ReviewStatus.Approved =>
+                "Review approved. It can now appear publicly.",
+
+            ReviewStatus.Rejected =>
+                "Review rejected. It will not appear publicly.",
+
+            ReviewStatus.Pending =>
+                "Review returned to pending moderation.",
+
+            _ => "Review status updated."
+        };
+
+        return RedirectToAction(
+            nameof(Reviews),
+            new { status = returnStatus, search });
+    }
+
 
     [HttpGet("WebsiteContent")]
     public IActionResult WebsiteContent()

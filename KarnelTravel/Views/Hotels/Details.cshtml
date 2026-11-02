@@ -1,4 +1,6 @@
-﻿@model KarnelTravel.Models.Hotel
+﻿
+@model KarnelTravel.Models.Hotel
+@using KarnelTravel.Models
 
 @{
     ViewData["Title"] = Model.Name + " — Hotel Details | Karnel Travel Guide";
@@ -8,6 +10,16 @@
         "Create",
         "Bookings",
         new { serviceType = "Hotel", serviceId = Model.Id }
+    );
+
+    var reviews = ViewBag.Reviews as List<Review> ?? new List<Review>();
+    double averageRating = ViewBag.AverageRating ?? 0;
+    int totalReviews = ViewBag.TotalReviews ?? 0;
+
+    var reviewUrl = Url.Action(
+        "Create",
+        "Reviews",
+        new { type = "Hotel", id = Model.Id }
     );
 }
 
@@ -117,7 +129,7 @@
             display: grid;
             grid-template-columns: minmax(0, 1fr) 350px;
             gap: 55px;
-            padding: 55px 0 90px;
+            padding: 55px 0 60px;
             align-items: start;
         }
 
@@ -243,6 +255,157 @@
             line-height: 1.7;
         }
 
+        /* HOTEL REVIEWS */
+
+        .hotel-reviews {
+            padding: 65px 0 90px;
+            border-top: 1px solid var(--line);
+        }
+
+        .hotel-reviews__heading {
+            margin-bottom: 35px;
+        }
+
+        .hotel-reviews__eyebrow {
+            text-transform: uppercase;
+            letter-spacing: .17em;
+            font-size: .7rem;
+            color: var(--forest);
+            margin-bottom: 12px;
+        }
+
+        .hotel-reviews__heading h2 {
+            font-size: clamp(2rem, 4vw, 3rem);
+            margin: 0 0 12px;
+        }
+
+        .hotel-reviews__heading p {
+            color: var(--muted);
+            line-height: 1.7;
+            margin: 0;
+        }
+
+        .hotel-reviews__summary {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 24px;
+            padding: 25px 28px;
+            margin-bottom: 30px;
+            background: var(--white);
+            border: 1px solid var(--line);
+            border-radius: var(--radius-lg);
+        }
+
+        .hotel-reviews__average {
+            font-family: var(--serif);
+            font-size: 3rem;
+            line-height: 1;
+        }
+
+        .hotel-reviews__stars {
+            color: #b28a43;
+            letter-spacing: 3px;
+            font-size: 1.05rem;
+        }
+
+        .hotel-reviews__count {
+            color: var(--muted);
+            font-size: .82rem;
+            margin-top: 6px;
+        }
+
+        .hotel-reviews__grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 18px;
+        }
+
+        .hotel-review-card {
+            padding: 25px;
+            background: var(--white);
+            border: 1px solid var(--line);
+            border-radius: var(--radius-lg);
+        }
+
+        .hotel-review-card__top {
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 17px;
+        }
+
+        .hotel-review-card__name {
+            font-weight: 650;
+            font-size: .95rem;
+        }
+
+        .hotel-review-card__date {
+            color: var(--muted);
+            font-size: .75rem;
+            margin-top: 5px;
+        }
+
+        .hotel-review-card h3 {
+            font-size: 1.15rem;
+            margin: 12px 0 9px;
+        }
+
+        .hotel-review-card__comment {
+            color: var(--muted);
+            font-size: .9rem;
+            line-height: 1.8;
+            white-space: pre-line;
+            overflow-wrap: anywhere;
+        }
+
+        .hotel-reviews__empty {
+            padding: 35px;
+            text-align: center;
+            background: var(--white);
+            border: 1px dashed var(--line);
+            border-radius: var(--radius-lg);
+        }
+
+        .hotel-reviews__empty h3 {
+            margin: 0 0 9px;
+        }
+
+        .hotel-reviews__empty p {
+            color: var(--muted);
+            font-size: .9rem;
+            line-height: 1.7;
+        }
+
+        .hotel-review-button {
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 25px;
+            padding: 14px 25px;
+            background: var(--forest-deep);
+            color: var(--ivory);
+            border-radius: 999px;
+            text-decoration: none;
+            font-size: .85rem;
+            font-weight: 600;
+            transition: background .3s ease, transform .3s ease;
+        }
+
+        .hotel-review-button:hover {
+            background: var(--forest);
+            color: var(--ivory);
+            transform: translateY(-2px);
+        }
+
+        .hotel-reviews__note {
+            margin-top: 22px;
+            color: var(--muted);
+            font-size: .76rem;
+            line-height: 1.7;
+        }
+
         @@media (max-width: 900px) {
             .hotel-content {
                 grid-template-columns: 1fr;
@@ -273,8 +436,16 @@
                 grid-template-columns: 1fr;
             }
 
+            .hotel-reviews__grid {
+                grid-template-columns: 1fr;
+            }
+
             .hotel-hero {
                 padding-bottom: 35px;
+            }
+
+            .hotel-reviews__summary {
+                padding: 20px;
             }
         }
     </style>
@@ -284,7 +455,6 @@
 
     <header class="hotel-hero">
         <div class="container" data-reveal>
-
             <nav class="hotel-breadcrumb" aria-label="Breadcrumb">
                 <a asp-controller="Home" asp-action="Index">Journey Home</a>
                 <span>/</span>
@@ -294,13 +464,10 @@
             </nav>
 
             <div class="hotel-heading">
-
                 <p class="hotel-eyebrow">Karnel Travel Guide · Accommodation</p>
-
                 <h1>@Model.Name</h1>
 
                 <div class="hotel-location">
-
                     @if (!string.IsNullOrWhiteSpace(Model.City))
                     {
                         <span>@Model.City</span>
@@ -312,21 +479,15 @@
                             · @Model.StarRating Star Property
                         </span>
                     }
-
                 </div>
-
             </div>
-
         </div>
     </header>
 
     <section class="hotel-gallery-section">
         <div class="container">
-
             <div class="hotel-gallery" data-reveal>
-
                 <div class="hotel-gallery__main">
-
                     @if (!string.IsNullOrWhiteSpace(Model.ImageUrl))
                     {
                         <img src="@Model.ImageUrl"
@@ -339,7 +500,6 @@
                             <p>Hotel photograph coming soon</p>
                         </div>
                     }
-
                 </div>
 
                 <div class="hotel-gallery__secondary">
@@ -348,21 +508,16 @@
                         <p>Discover your next stay with Karnel Travel Guide.</p>
                     </div>
                 </div>
-
             </div>
-
         </div>
     </section>
 
     <section>
         <div class="container">
-
             <div class="hotel-content">
 
                 <main class="hotel-main" data-reveal>
-
                     <p class="eyebrow">About this property</p>
-
                     <h2>Your stay, your experience.</h2>
 
                     <div class="hotel-description">
@@ -381,7 +536,6 @@
                     </div>
 
                     <div class="hotel-information">
-
                         <div class="hotel-info-card">
                             <small>Property</small>
                             <strong>@Model.Name</strong>
@@ -413,7 +567,6 @@
                                     : Model.Address)
                             </strong>
                         </div>
-
                     </div>
 
                     <a asp-controller="Hotels"
@@ -421,26 +574,22 @@
                        class="hotel-back-link">
                         ← Back to all hotels
                     </a>
-
                 </main>
 
                 <aside class="hotel-booking-card" data-reveal>
-
                     <p class="hotel-booking-card__label">
                         Accommodation pricing
                     </p>
 
                     <div class="hotel-booking-card__price">
-
                         @if (Model.StartingPricePerNight > 0)
                         {
-                           @:PKR @Model.StartingPricePerNight.Value.ToString("N0")
+                            @:PKR @Model.StartingPricePerNight.Value.ToString("N0")
                         }
                         else
                         {
                             @:Price on request
                         }
-
                     </div>
 
                     <p class="hotel-booking-card__period">
@@ -464,10 +613,94 @@
                         The booking remains pending until the team
                         reviews and confirms it.
                     </p>
-
                 </aside>
 
             </div>
+        </div>
+    </section>
+
+    <!-- HOTEL REVIEWS -->
+    <section class="hotel-reviews">
+        <div class="container">
+
+            <div class="hotel-reviews__heading" data-reveal>
+                <p class="hotel-reviews__eyebrow">Traveller experiences</p>
+                <h2>Reviews of @Model.Name</h2>
+                <p>Read feedback shared by visitors about this property.</p>
+            </div>
+
+            @if (totalReviews > 0)
+            {
+                <div class="hotel-reviews__summary" data-reveal>
+                    <div class="hotel-reviews__average">
+                        @averageRating.ToString("0.0")
+                    </div>
+
+                    <div>
+                        <div class="hotel-reviews__stars">
+                            @for (int i = 1; i <= 5; i++)
+                            {
+                                @(i <= Math.Round(averageRating, MidpointRounding.AwayFromZero) ? "★" : "☆")
+                            }
+                        </div>
+
+                        <div class="hotel-reviews__count">
+                            @totalReviews approved review(s)
+                        </div>
+                    </div>
+                </div>
+
+                <div class="hotel-reviews__grid">
+                    @foreach (var review in reviews)
+                    {
+                        <article class="hotel-review-card" data-reveal>
+                            <div class="hotel-review-card__top">
+                                <div>
+                                    <div class="hotel-review-card__name">
+                                        @review.ReviewerName
+                                    </div>
+
+                                    <div class="hotel-review-card__date">
+                                        @review.CreatedAt.ToString("dd MMM yyyy")
+                                    </div>
+                                </div>
+
+                                <div class="hotel-reviews__stars"
+                                     aria-label="@review.Rating out of 5 stars">
+                                    @for (int i = 1; i <= 5; i++)
+                                    {
+                                        @(i <= review.Rating ? "★" : "☆")
+                                    }
+                                </div>
+                            </div>
+
+                            <h3>@review.Title</h3>
+
+                            <p class="hotel-review-card__comment">
+                                @review.Comment
+                            </p>
+                        </article>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="hotel-reviews__empty" data-reveal>
+                    <h3>No reviews yet</h3>
+                    <p>
+                        Be the first to share your experience
+                        at @Model.Name.
+                    </p>
+                </div>
+            }
+
+            <a href="@reviewUrl" class="hotel-review-button">
+                Write a review →
+            </a>
+
+            <p class="hotel-reviews__note">
+                Reviews are submitted for moderation before they appear publicly.
+            </p>
 
         </div>
     </section>

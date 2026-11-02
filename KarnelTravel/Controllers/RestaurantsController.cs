@@ -1,5 +1,6 @@
 
 using KarnelTravel.Data;
+using KarnelTravel.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -14,6 +15,7 @@ namespace KarnelTravel.Controllers
             _context = context;
         }
 
+        // RESTAURANT LISTING
         public async Task<IActionResult> Index()
         {
             var restaurants = await _context.Restaurants
@@ -29,6 +31,7 @@ namespace KarnelTravel.Controllers
             );
         }
 
+        // RESTAURANT DETAILS
         public async Task<IActionResult> Details(int id)
         {
             if (id <= 0)
@@ -38,14 +41,33 @@ namespace KarnelTravel.Controllers
 
             var restaurant = await _context.Restaurants
                 .AsNoTracking()
-                .FirstOrDefaultAsync(r => r.Id == id && r.IsPublished);
+                .FirstOrDefaultAsync(r =>
+                    r.Id == id && r.IsPublished);
 
             if (restaurant == null)
             {
                 return NotFound();
             }
 
-            return View("~/Views/Restaurants/Details.cshtml", restaurant);
+            var reviews = await _context.Reviews
+                .AsNoTracking()
+                .Where(r =>
+                    r.RestaurantId == restaurant.Id &&
+                    r.Status == ReviewStatus.Approved)
+                .OrderByDescending(r => r.CreatedAt)
+                .ToListAsync();
+
+            ViewBag.Reviews = reviews;
+            ViewBag.TotalReviews = reviews.Count;
+
+            ViewBag.AverageRating = reviews.Count > 0
+                ? Math.Round(reviews.Average(r => r.Rating), 1)
+                : 0;
+
+            return View(
+                "~/Views/Restaurants/Details.cshtml",
+                restaurant
+            );
         }
     }
 }

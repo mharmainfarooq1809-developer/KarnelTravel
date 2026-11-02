@@ -1,7 +1,7 @@
 ﻿@* ============================================================
    Views/Shared/_Layout.cshtml — Karnel Travel Guide
-   Shared shell: design tokens, header, navigation, dropdown,
-   footer, back-to-top, scroll progress, reveal engine.
+   Shared shell: design tokens, header, full-screen overlay
+   navigation, footer, back-to-top, scroll progress, reveal.
    NOTE: every CSS at-rule is written as @@rule so Razor does
          not try to parse it as C#.
    ============================================================ *@
@@ -10,32 +10,30 @@
         (ViewContext.RouteData.Values["controller"] as string ?? "Home");
 
     private static readonly string[] DiscoverMoreControllers =
-        { "Information", "Destinations", "Transport", "Hotels", "Restaurants", "Resorts" };
+        { "Information", "Destinations", "Transport", "Hotels", "Restaurants", "Resorts", "Experiences" };
 
     private bool IsDiscoverMore =>
         Array.IndexOf(DiscoverMoreControllers, CurrentController) >= 0;
 
-    private string NavClass(string controllerName) =>
+    private string MenuLinkClass(string controllerName) =>
         string.Equals(controllerName, CurrentController, StringComparison.OrdinalIgnoreCase)
-            ? "nav-link is-active"
-            : "nav-link";
+            ? "menu__link is-active"
+            : "menu__link";
 
-    private string NavCurrent(string controllerName) =>
+    private string SubMenuLinkClass(string controllerName) =>
         string.Equals(controllerName, CurrentController, StringComparison.OrdinalIgnoreCase)
-            ? "page"
-            : null;
+            ? "menu__sub-link is-active"
+            : "menu__sub-link";
 
-    private string DropdownClass =>
-        IsDiscoverMore ? "nav-link is-active" : "nav-link";
-
-    private string DropdownCurrent => IsDiscoverMore ? "page" : null;
+    private string DiscoverToggleClass =>
+        IsDiscoverMore ? "menu__link menu__link--toggle is-active" : "menu__link menu__link--toggle";
 
     private string BodyClass => ViewData["BodyClass"] as string ?? string.Empty;
 }
 @{
     var pageTitle = ViewData["Title"] as string ?? "Karnel Travel Guide";
     var pageDescription = ViewData["Description"] as string
-        ?? "Karnel Travel Guide — discover destinations, transport, hotels, restaurants, resorts and travel packages across Pakistan.";
+        ?? "Karnel Travel Guide — discover destinations, experiences, transport, hotels, restaurants, resorts and travel packages across Pakistan.";
 }
 <!DOCTYPE html>
 <html lang="en">
@@ -46,7 +44,6 @@
     <meta name="description" content="@pageDescription" />
     <meta name="theme-color" content="#20382D" />
 
-    @* Editorial serif for headings, clean sans for interface, Inter for the footer. *@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="stylesheet"
@@ -54,11 +51,12 @@
 
     <style>
             /* ==========================================================
-                           1. DESIGN TOKENS
-                           ========================================================== */
+                                       1. DESIGN TOKENS
+                                       ========================================================== */
             :root {
                 --forest: #20382D;
                 --forest-deep: #14271F;
+                --forest-ink: #0E1A15;
                 --moss: #536B50;
                 --sage: #A8B59A;
                 --sand: #E9DFC9;
@@ -80,8 +78,8 @@
             }
 
             /* ==========================================================
-                           2. RESET / BASE
-                           ========================================================== */
+                                       2. RESET / BASE
+                                       ========================================================== */
             *, *::before, *::after {
                 box-sizing: border-box;
             }
@@ -104,7 +102,7 @@
                 overflow-x: hidden;
             }
 
-                body.nav-open {
+                body.menu-open {
                     overflow: hidden;
                 }
 
@@ -165,8 +163,8 @@
             }
 
             /* ==========================================================
-                           3. LAYOUT HELPERS
-                           ========================================================== */
+                                       3. LAYOUT HELPERS
+                                       ========================================================== */
             .container {
                 width: 100%;
                 max-width: var(--container);
@@ -229,7 +227,7 @@
                 position: absolute;
                 left: 16px;
                 top: -100px;
-                z-index: 300;
+                z-index: 500;
                 background: var(--forest);
                 color: var(--ivory);
                 padding: 12px 20px;
@@ -242,8 +240,8 @@
                 }
 
             /* ==========================================================
-                           4. BUTTONS
-                           ========================================================== */
+                                       4. BUTTONS
+                                       ========================================================== */
             .btn {
                 --btn-bg: var(--forest);
                 --btn-fg: var(--ivory);
@@ -332,8 +330,8 @@
                     }
 
             /* ==========================================================
-                           5. MEDIA FRAMES  (with graceful image fallback)
-                           ========================================================== */
+                                       5. MEDIA FRAMES
+                                       ========================================================== */
             .media {
                 position: relative;
                 overflow: hidden;
@@ -392,8 +390,8 @@
             }
 
             /* ==========================================================
-                           6. FORM FIELDS  (shared by every page's filters)
-                           ========================================================== */
+                                       6. FORM FIELDS
+                                       ========================================================== */
             .field {
                 display: flex;
                 flex-direction: column;
@@ -443,8 +441,8 @@
                     }
 
             /* ==========================================================
-                           7. SCROLL PROGRESS + HEADER
-                           ========================================================== */
+                                       7. SCROLL PROGRESS + HEADER
+                                       ========================================================== */
             .scroll-progress {
                 position: fixed;
                 inset: 0 auto auto 0;
@@ -473,55 +471,29 @@
                 }
 
             /* Transparent over the hero — only on pages with body.has-hero. */
-            .has-hero .site-header:not(.is-scrolled):not(.is-locked) {
+            .has-hero .site-header:not(.is-scrolled) {
                 background: transparent;
                 border-bottom-color: rgba(248, 246, 240, .18);
             }
 
-                .has-hero .site-header:not(.is-scrolled):not(.is-locked) .brand__name,
-                .has-hero .site-header:not(.is-scrolled):not(.is-locked) .brand__mark,
-                .has-hero .site-header:not(.is-scrolled):not(.is-locked) .nav-link,
-                .has-hero .site-header:not(.is-scrolled):not(.is-locked) .nav-caret {
+                .has-hero .site-header:not(.is-scrolled) .brand__name,
+                .has-hero .site-header:not(.is-scrolled) .brand__mark,
+                .has-hero .site-header:not(.is-scrolled) .header-link,
+                .has-hero .site-header:not(.is-scrolled) .menu-btn {
                     color: var(--ivory);
                 }
 
-                .has-hero .site-header:not(.is-scrolled):not(.is-locked) .brand__tag {
+                .has-hero .site-header:not(.is-scrolled) .brand__tag {
                     color: rgba(248, 246, 240, .7);
                 }
 
-                .has-hero .site-header:not(.is-scrolled):not(.is-locked) .nav-link::after {
+                .has-hero .site-header:not(.is-scrolled) .menu-btn {
+                    border-color: rgba(248, 246, 240, .38);
+                }
+
+                .has-hero .site-header:not(.is-scrolled) .menu-btn__icon {
                     background: var(--ivory);
-                }
-
-                .has-hero .site-header:not(.is-scrolled):not(.is-locked) .nav-toggle__bar {
-                    background: var(--ivory);
-                }
-
-            /* While the mobile drawer is open the header stays solid. */
-            .site-header.is-locked,
-            body.nav-open .site-header {
-                background: var(--forest-deep);
-                border-bottom-color: rgba(248, 246, 240, .14);
-                box-shadow: none;
-                backdrop-filter: none;
-                -webkit-backdrop-filter: none;
-            }
-
-                .site-header.is-locked .brand__name,
-                .site-header.is-locked .brand__mark,
-                body.nav-open .site-header .brand__name,
-                body.nav-open .site-header .brand__mark {
-                    color: var(--ivory);
-                }
-
-                .site-header.is-locked .brand__tag,
-                body.nav-open .site-header .brand__tag {
-                    color: rgba(248, 246, 240, .6);
-                }
-
-                .site-header.is-locked .nav-toggle__bar,
-                body.nav-open .site-header .nav-toggle__bar {
-                    background: var(--ivory);
+                    color: var(--forest-deep);
                 }
 
             .header-inner {
@@ -571,205 +543,574 @@
                 transition: color .4s var(--ease);
             }
 
-            /* ==========================================================
-                           8. NAVIGATION
-                           ========================================================== */
-            .site-nav {
-                display: flex;
-                align-items: center;
-                gap: 34px;
-            }
-
-            .nav-list {
+            .header-actions {
                 display: flex;
                 align-items: center;
                 gap: 30px;
-                list-style: none;
-                margin: 0;
-                padding: 0;
             }
 
-            .nav-item {
+            .header-link {
                 position: relative;
-            }
-
-            .nav-link {
-                position: relative;
-                display: inline-block;
-                padding: 10px 0;
-                font-size: .8rem;
+                padding: 6px 0;
+                font-size: .78rem;
                 font-weight: 500;
-                letter-spacing: .13em;
+                letter-spacing: .14em;
                 text-transform: uppercase;
                 color: var(--forest-deep);
                 transition: color .3s var(--ease);
             }
 
-                .nav-link::after {
+                .header-link::after {
                     content: "";
                     position: absolute;
                     left: 0;
-                    bottom: 2px;
-                    height: 1px;
+                    bottom: 0;
                     width: 100%;
-                    background: var(--forest);
+                    height: 1px;
+                    background: currentColor;
                     transform: scaleX(0);
                     transform-origin: left;
                     transition: transform .4s var(--ease);
                 }
 
-                .nav-link:hover::after,
-                .nav-link.is-active::after {
+                .header-link:hover::after {
                     transform: scaleX(1);
                 }
 
-                .nav-link.is-active {
-                    color: var(--moss);
-                }
-
-            /* Discover More */
-            .nav-dropdown {
+            /* Pill menu button */
+            .menu-btn {
                 display: inline-flex;
                 align-items: center;
-                gap: 2px;
-            }
-
-            .nav-caret {
-                display: inline-grid;
-                place-items: center;
-                width: 28px;
-                height: 28px;
-                padding: 0;
-                border: 0;
-                background: none;
-                color: var(--forest-deep);
-                transition: color .3s var(--ease), transform .35s var(--ease);
-            }
-
-                .nav-caret svg {
-                    width: 11px;
-                    height: 11px;
-                }
-
-            .nav-item.is-open .nav-caret {
-                transform: rotate(180deg);
-            }
-
-            .dropdown {
-                position: absolute;
-                top: calc(100% + 14px);
-                left: 50%;
-                width: 340px;
-                margin: 0;
-                padding: 12px;
-                list-style: none;
-                background: var(--white);
-                border: 1px solid var(--line);
-                border-radius: var(--radius-lg);
-                box-shadow: var(--shadow-lg);
-                opacity: 0;
-                visibility: hidden;
-                transform: translate(-50%, -10px);
-                transition: opacity .3s var(--ease), transform .35s var(--ease), visibility .3s var(--ease);
-            }
-
-            .nav-item.is-open > .dropdown {
-                opacity: 1;
-                visibility: visible;
-                transform: translate(-50%, 0);
-            }
-
-            /* Hover opening on real pointer devices only. */
-            @@media (hover: hover) and (min-width: 900px) {
-                .nav-item.has-dropdown:hover > .dropdown {
-                    opacity: 1;
-                    visibility: visible;
-                    transform: translate(-50%, 0);
-                }
-            }
-
-            .dropdown__link {
-                display: block;
-                padding: 11px 14px;
-                border-radius: var(--radius);
-                transition: background .25s var(--ease), padding-left .25s var(--ease);
-            }
-
-                .dropdown__link:hover,
-                .dropdown__link:focus-visible {
-                    background: var(--ivory);
-                    padding-left: 18px;
-                }
-
-            .dropdown__title {
-                display: block;
-                font-family: var(--serif);
-                font-size: 1rem;
-                color: var(--forest-deep);
-            }
-
-            .dropdown__sub {
-                display: block;
-                font-size: .68rem;
-                letter-spacing: .14em;
-                text-transform: uppercase;
-                color: var(--muted);
-                margin-top: 2px;
-            }
-
-            /* Hamburger */
-            .nav-toggle {
-                display: none;
-                width: 46px;
+                gap: 14px;
                 height: 46px;
-                align-items: center;
-                justify-content: center;
-                flex-direction: column;
-                gap: 5px;
-                padding: 0;
-                border: 0;
-                background: none;
+                padding: 0 7px 0 22px;
+                border: 1px solid var(--line);
+                border-radius: 999px;
+                background: transparent;
+                color: var(--forest-deep);
+                font-size: .72rem;
+                font-weight: 500;
+                letter-spacing: .18em;
+                text-transform: uppercase;
+                transition: background .35s var(--ease), border-color .35s var(--ease), color .35s var(--ease), transform .35s var(--ease);
+            }
+
+                .menu-btn:hover {
+                    background: var(--forest);
+                    color: var(--ivory);
+                    border-color: var(--forest);
+                    transform: translateY(-1px);
+                }
+
+            .menu-btn__icon {
+                position: relative;
+                display: grid;
+                place-items: center;
+                width: 32px;
+                height: 32px;
                 border-radius: 50%;
+                background: var(--forest);
+                color: var(--ivory);
+                transition: background .35s var(--ease), color .35s var(--ease), transform .35s var(--ease);
             }
 
-            .nav-toggle__bar {
-                display: block;
-                width: 22px;
-                height: 1.5px;
-                background: var(--forest-deep);
-                transition: transform .4s var(--ease), opacity .3s var(--ease), background .4s var(--ease);
+            .menu-btn:hover .menu-btn__icon {
+                background: var(--ivory);
+                color: var(--forest);
             }
 
-            body.nav-open .nav-toggle__bar:nth-child(1) {
-                transform: translateY(6.5px) rotate(45deg);
+            .menu-btn__icon span {
+                position: absolute;
+                width: 12px;
+                height: 1.4px;
+                background: currentColor;
+                border-radius: 2px;
+                transition: transform .35s var(--ease);
             }
 
-            body.nav-open .nav-toggle__bar:nth-child(2) {
-                opacity: 0;
+                .menu-btn__icon span:nth-child(1) {
+                    transform: translateY(-3px);
+                }
+
+                .menu-btn__icon span:nth-child(2) {
+                    transform: translateY(3px);
+                }
+
+            .menu-btn:hover .menu-btn__icon span:nth-child(1) {
+                transform: translateY(-3px) scaleX(1.35);
             }
 
-            body.nav-open .nav-toggle__bar:nth-child(3) {
-                transform: translateY(-6.5px) rotate(-45deg);
-            }
-
-            .nav-backdrop {
-                position: fixed;
-                inset: 0;
-                z-index: 150;
-                background: rgba(20, 39, 31, .5);
-                opacity: 0;
-                visibility: hidden;
-                transition: opacity .4s var(--ease), visibility .4s var(--ease);
-            }
-
-            body.nav-open .nav-backdrop {
-                opacity: 1;
-                visibility: visible;
+            .menu-btn:hover .menu-btn__icon span:nth-child(2) {
+                transform: translateY(3px) scaleX(1.35);
             }
 
             /* ==========================================================
-                           9. MEADOW FOOTER
-                           ========================================================== */
+                                       8. FULL-SCREEN MENU OVERLAY
+                                       ========================================================== */
+            .menu {
+                position: fixed;
+                inset: 0;
+                z-index: 400;
+                display: grid;
+                background: var(--forest-ink);
+                visibility: hidden;
+                opacity: 0;
+                transition: opacity .5s var(--ease), visibility .5s var(--ease);
+                overflow: hidden;
+                isolation: isolate;
+            }
+
+                .menu.is-open {
+                    visibility: visible;
+                    opacity: 1;
+                }
+
+            .menu__shell {
+                display: grid;
+                grid-template-columns: minmax(0, 38%) minmax(0, 62%);
+                height: 100%;
+                min-height: 0;
+            }
+
+            /* --- Left preview -------------------------------------- */
+            .menu__preview {
+                position: relative;
+                background: radial-gradient(120% 80% at 30% 20%, rgba(83, 107, 80, .35), transparent 60%), linear-gradient(160deg, #14271F, #0E1A15);
+                overflow: hidden;
+                opacity: 0;
+                transition: opacity .7s ease .05s;
+            }
+
+            .menu.is-open .menu__preview {
+                opacity: 1;
+            }
+
+            .menu__preview-item {
+                position: absolute;
+                inset: 0;
+                margin: 0;
+                opacity: 0;
+                transform: scale(1.06);
+                transition: opacity .8s ease, transform 1.4s var(--ease);
+                pointer-events: none;
+            }
+
+                .menu__preview-item.is-active {
+                    opacity: 1;
+                    transform: scale(1);
+                }
+
+                .menu__preview-item img {
+                    width: 100%;
+                    height: 100%;
+                    object-fit: cover;
+                    opacity: .82;
+                }
+
+                .menu__preview-item::after {
+                    content: "";
+                    position: absolute;
+                    inset: 0;
+                    background: linear-gradient(to bottom, rgba(14, 26, 21, .15), rgba(14, 26, 21, .85) 88%), linear-gradient(to right, rgba(14, 26, 21, .55), transparent 45%);
+                }
+
+            .menu__preview-caption {
+                position: absolute;
+                left: clamp(24px, 4vw, 52px);
+                right: clamp(24px, 4vw, 52px);
+                bottom: clamp(28px, 5vw, 56px);
+                z-index: 2;
+                color: var(--ivory);
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .menu__preview-kicker {
+                font-size: .64rem;
+                font-weight: 500;
+                letter-spacing: .28em;
+                text-transform: uppercase;
+                color: var(--sage);
+            }
+
+            .menu__preview-title {
+                font-family: var(--serif);
+                font-size: clamp(1.5rem, 2.2vw, 2.1rem);
+                line-height: 1.1;
+                color: var(--ivory);
+            }
+
+            .menu__preview-text {
+                font-size: .85rem;
+                color: rgba(248, 246, 240, .7);
+                max-width: 32ch;
+            }
+
+            .menu__preview-brand {
+                position: absolute;
+                top: clamp(24px, 4vw, 40px);
+                left: clamp(24px, 4vw, 52px);
+                z-index: 2;
+                display: inline-flex;
+                align-items: center;
+                gap: 10px;
+                color: var(--ivory);
+                font-family: var(--serif);
+                font-size: 1.05rem;
+                letter-spacing: .01em;
+            }
+
+            .menu__preview-brand-mark {
+                display: grid;
+                place-items: center;
+                width: 30px;
+                height: 30px;
+                border-radius: 8px;
+                border: 1px solid rgba(248, 246, 240, .28);
+            }
+
+                .menu__preview-brand-mark svg {
+                    width: 16px;
+                    height: 16px;
+                    display: block;
+                }
+
+            /* --- Right panel --------------------------------------- */
+            .menu__panel {
+                position: relative;
+                display: flex;
+                flex-direction: column;
+                padding: 96px clamp(28px, 6vw, 96px) 48px;
+                background: radial-gradient(140% 90% at 100% 0%, rgba(83, 107, 80, .22), transparent 55%), radial-gradient(80% 60% at 0% 100%, rgba(168, 181, 154, .06), transparent 60%), var(--forest-ink);
+                color: var(--ivory);
+                overflow-y: auto;
+                transform: translateX(60px);
+                opacity: 0;
+                transition: transform .8s var(--ease), opacity .5s ease;
+            }
+
+            .menu.is-open .menu__panel {
+                transform: none;
+                opacity: 1;
+            }
+
+            .menu__close {
+                position: absolute;
+                top: 26px;
+                right: clamp(22px, 4vw, 46px);
+                z-index: 5;
+                width: 48px;
+                height: 48px;
+                border-radius: 50%;
+                border: 1px solid rgba(248, 246, 240, .22);
+                background: transparent;
+                color: var(--ivory);
+                transition: background .35s var(--ease), color .35s var(--ease), border-color .35s var(--ease), transform .45s var(--ease);
+            }
+
+                .menu__close:hover {
+                    background: var(--ivory);
+                    color: var(--forest-deep);
+                    border-color: var(--ivory);
+                    transform: rotate(90deg);
+                }
+
+                .menu__close span {
+                    position: absolute;
+                    top: 50%;
+                    left: 50%;
+                    width: 16px;
+                    height: 1.5px;
+                    background: currentColor;
+                    border-radius: 2px;
+                }
+
+                    .menu__close span:nth-child(1) {
+                        transform: translate(-50%, -50%) rotate(45deg);
+                    }
+
+                    .menu__close span:nth-child(2) {
+                        transform: translate(-50%, -50%) rotate(-45deg);
+                    }
+
+            .menu__content {
+                width: 100%;
+                max-width: 720px;
+                margin-block: auto;
+            }
+
+            .menu__eyebrow {
+                display: inline-flex;
+                align-items: center;
+                gap: 10px;
+                font-size: .66rem;
+                font-weight: 500;
+                letter-spacing: .3em;
+                text-transform: uppercase;
+                color: var(--sage);
+                margin-bottom: 12px;
+            }
+
+                .menu__eyebrow::before {
+                    content: "";
+                    width: 28px;
+                    height: 1px;
+                    background: currentColor;
+                    opacity: .6;
+                }
+
+            .menu__list {
+                list-style: none;
+                margin: 0;
+                padding: 0;
+                border-bottom: 1px solid rgba(248, 246, 240, .1);
+            }
+
+            .menu__item {
+                border-top: 1px solid rgba(248, 246, 240, .1);
+                opacity: 0;
+                transform: translateY(18px);
+                transition: opacity .5s ease, transform .6s var(--ease);
+            }
+
+            .menu.is-open .menu__item {
+                opacity: 1;
+                transform: none;
+            }
+
+                .menu.is-open .menu__item:nth-child(1) {
+                    transition-delay: .18s;
+                }
+
+                .menu.is-open .menu__item:nth-child(2) {
+                    transition-delay: .26s;
+                }
+
+                .menu.is-open .menu__item:nth-child(3) {
+                    transition-delay: .34s;
+                }
+
+                .menu.is-open .menu__item:nth-child(4) {
+                    transition-delay: .42s;
+                }
+
+                .menu.is-open .menu__item:nth-child(5) {
+                    transition-delay: .50s;
+                }
+
+                .menu.is-open .menu__item:nth-child(6) {
+                    transition-delay: .58s;
+                }
+
+            .menu__link {
+                display: grid;
+                grid-template-columns: 46px minmax(0, 1fr) auto;
+                align-items: center;
+                gap: 18px;
+                width: 100%;
+                padding: 22px 0;
+                border: 0;
+                background: none;
+                color: var(--ivory);
+                text-align: left;
+                font-family: var(--serif);
+                font-size: clamp(1.9rem, 4vw, 3.35rem);
+                line-height: 1;
+                letter-spacing: -.018em;
+                transition: color .4s var(--ease);
+            }
+
+                .menu__link:hover,
+                .menu__link:focus-visible {
+                    color: var(--sand);
+                }
+
+                .menu__link.is-active {
+                    color: var(--sand);
+                }
+
+            .menu__index {
+                font-family: var(--sans);
+                font-size: .68rem;
+                font-weight: 500;
+                letter-spacing: .24em;
+                color: rgba(248, 246, 240, .38);
+                transition: color .4s var(--ease);
+                padding-top: .2em;
+            }
+
+            .menu__link:hover .menu__index,
+            .menu__link.is-active .menu__index {
+                color: var(--sage);
+            }
+
+            .menu__text {
+                display: block;
+                transition: transform .5s var(--ease);
+            }
+
+            .menu__link:hover .menu__text {
+                transform: translateX(6px);
+            }
+
+            .menu__arrow {
+                display: grid;
+                place-items: center;
+                width: 46px;
+                height: 46px;
+                border-radius: 50%;
+                border: 1px solid rgba(248, 246, 240, .18);
+                color: rgba(248, 246, 240, .65);
+                flex: 0 0 auto;
+                transition: background .4s var(--ease), border-color .4s var(--ease), color .4s var(--ease), transform .4s var(--ease);
+            }
+
+                .menu__arrow svg {
+                    width: 13px;
+                    height: 13px;
+                    transition: transform .4s var(--ease);
+                }
+
+            .menu__link:hover .menu__arrow,
+            .menu__link:focus-visible .menu__arrow {
+                background: var(--sand);
+                border-color: var(--sand);
+                color: var(--forest-deep);
+                transform: translateX(4px);
+            }
+
+            .menu__link.is-active .menu__arrow {
+                border-color: rgba(168, 181, 154, .55);
+                color: var(--sage);
+            }
+
+            /* Discover More toggle */
+            .menu__item.is-open .menu__link--toggle .menu__arrow {
+                background: var(--sand);
+                border-color: var(--sand);
+                color: var(--forest-deep);
+                transform: none;
+            }
+
+                .menu__item.is-open .menu__link--toggle .menu__arrow svg {
+                    transform: rotate(180deg);
+                }
+
+            /* Submenu */
+            .menu__submenu {
+                list-style: none;
+                margin: 0;
+                padding: 0 0 0 64px;
+                display: grid;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                column-gap: 32px;
+                max-height: 0;
+                overflow: hidden;
+                opacity: 0;
+                transition: max-height .55s var(--ease), opacity .4s ease, padding .4s var(--ease);
+            }
+
+            .menu__item.is-open .menu__submenu {
+                max-height: 560px;
+                padding-bottom: 20px;
+                opacity: 1;
+            }
+
+            .menu__sub-link {
+                display: flex;
+                flex-direction: column;
+                gap: 3px;
+                padding: 12px 0;
+                color: rgba(248, 246, 240, .74);
+                transition: color .3s var(--ease), padding-left .35s var(--ease);
+            }
+
+                .menu__sub-link:hover,
+                .menu__sub-link:focus-visible {
+                    color: var(--sand);
+                    padding-left: 8px;
+                }
+
+                .menu__sub-link.is-active {
+                    color: var(--sand);
+                }
+
+            .menu__sub-title {
+                font-family: var(--serif);
+                font-size: 1.02rem;
+                line-height: 1.2;
+            }
+
+            .menu__sub-note {
+                font-size: .62rem;
+                letter-spacing: .18em;
+                text-transform: uppercase;
+                color: rgba(248, 246, 240, .36);
+            }
+
+            .menu__sub-link:hover .menu__sub-note,
+            .menu__sub-link.is-active .menu__sub-note {
+                color: var(--sage);
+            }
+
+            /* Panel footer */
+            .menu__foot {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 28px 64px;
+                margin-top: clamp(28px, 4vw, 48px);
+                padding-top: 24px;
+                border-top: 1px solid rgba(248, 246, 240, .12);
+            }
+
+            .menu__foot-col {
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+            }
+
+            .menu__foot-label {
+                font-size: .62rem;
+                font-weight: 500;
+                letter-spacing: .24em;
+                text-transform: uppercase;
+                color: rgba(248, 246, 240, .4);
+            }
+
+            .menu__foot-link {
+                font-family: var(--serif);
+                font-size: 1.05rem;
+                color: var(--ivory);
+                transition: color .3s var(--ease);
+            }
+
+                .menu__foot-link:hover {
+                    color: var(--sand);
+                }
+
+            .menu__socials {
+                list-style: none;
+                margin: 0;
+                padding: 0;
+                display: flex;
+                gap: 20px;
+            }
+
+                .menu__socials a {
+                    font-size: .76rem;
+                    letter-spacing: .1em;
+                    color: rgba(248, 246, 240, .72);
+                    transition: color .3s var(--ease);
+                }
+
+                    .menu__socials a:hover {
+                        color: var(--sand);
+                    }
+
+            /* ==========================================================
+                                       9. MEADOW FOOTER  (unchanged)
+                                       ========================================================== */
             .mf {
                 --mf-paper: #f1f1ee;
                 --mf-ink: #0c0c0c;
@@ -1075,8 +1416,8 @@
             }
 
             /* ==========================================================
-                           10. BACK TO TOP
-                           ========================================================== */
+                                       10. BACK TO TOP
+                                       ========================================================== */
             .to-top {
                 position: fixed;
                 right: 22px;
@@ -1115,8 +1456,8 @@
                 }
 
             /* ==========================================================
-                           11. SCROLL REVEAL
-                           ========================================================== */
+                                       11. SCROLL REVEAL
+                                       ========================================================== */
             [data-reveal] {
                 opacity: 0;
                 transform: translateY(26px);
@@ -1130,8 +1471,8 @@
                 }
 
             /* ==========================================================
-                           12. REDUCED MOTION
-                           ========================================================== */
+                                       12. REDUCED MOTION
+                                       ========================================================== */
             @@media (prefers-reduced-motion: reduce) {
                 html {
                     scroll-behavior: auto;
@@ -1155,110 +1496,65 @@
             }
 
             /* ==========================================================
-                           13. RESPONSIVE
-                           ========================================================== */
-            @@media (max-width: 1080px) {
-                .nav-list {
+                                       13. RESPONSIVE
+                                       ========================================================== */
+            @@media (max-width: 1100px) {
+                .header-actions {
                     gap: 22px;
                 }
             }
 
-            @@media (max-width: 899px) {
-                .nav-toggle {
-                    display: flex;
+            @@media (max-width: 960px) {
+                .header-link {
+                    display: none;
                 }
 
-                .site-nav {
-                    position: fixed;
-                    inset: 0 0 0 auto;
-                    z-index: 160;
-                    width: min(90vw, 400px);
-                    display: block;
-                    padding: calc(var(--header-h) + 28px) 30px 44px;
-                    background: var(--forest-deep);
-                    overflow-y: auto;
-                    transform: translateX(100%);
-                    transition: transform .5s var(--ease);
+                .menu__shell {
+                    grid-template-columns: 1fr;
                 }
 
-                    .site-nav.is-open {
-                        transform: none;
-                    }
-
-                .nav-list {
-                    flex-direction: column;
-                    align-items: stretch;
-                    gap: 0;
+                .menu__preview {
+                    display: none;
                 }
 
-                .nav-item {
-                    border-bottom: 1px solid rgba(248, 246, 240, .12);
+                .menu__panel {
+                    padding: 92px 24px 32px;
+                    transform: translateY(30px);
                 }
 
-                .nav-link,
-                .has-hero .site-header:not(.is-scrolled):not(.is-locked) .nav-link {
-                    display: block;
-                    padding: 18px 0;
-                    font-size: .95rem;
-                    letter-spacing: .12em;
-                    color: var(--ivory);
-                }
-
-                    .nav-link::after {
-                        display: none;
-                    }
-
-                    .nav-link.is-active {
-                        color: var(--sage);
-                    }
-
-                .nav-dropdown {
-                    justify-content: space-between;
-                    width: 100%;
-                }
-
-                .nav-caret,
-                .has-hero .site-header:not(.is-scrolled):not(.is-locked) .nav-caret {
-                    color: var(--ivory);
-                }
-
-                .dropdown {
-                    position: static;
-                    width: 100%;
-                    max-height: 0;
-                    padding: 0;
-                    border: 0;
-                    border-radius: 0;
-                    background: transparent;
-                    box-shadow: none;
-                    overflow: hidden;
-                    opacity: 1;
-                    visibility: visible;
+                .menu.is-open .menu__panel {
                     transform: none;
-                    transition: max-height .45s var(--ease), padding .45s var(--ease);
                 }
 
-                .nav-item.is-open > .dropdown {
-                    max-height: 480px;
-                    padding: 4px 0 16px;
+                .menu__link {
+                    grid-template-columns: 34px minmax(0, 1fr) auto;
+                    gap: 12px;
+                    padding: 18px 0;
+                    font-size: clamp(1.65rem, 6.5vw, 2.4rem);
                 }
 
-                .dropdown__link {
-                    padding: 12px 10px;
+                .menu__index {
+                    font-size: .6rem;
+                    letter-spacing: .2em;
                 }
 
-                    .dropdown__link:hover,
-                    .dropdown__link:focus-visible {
-                        background: rgba(248, 246, 240, .07);
+                .menu__arrow {
+                    width: 38px;
+                    height: 38px;
+                }
+
+                    .menu__arrow svg {
+                        width: 12px;
+                        height: 12px;
                     }
 
-                .dropdown__title {
-                    color: var(--ivory);
-                    font-size: .98rem;
+                .menu__submenu {
+                    grid-template-columns: 1fr;
+                    padding-left: 34px;
                 }
 
-                .dropdown__sub {
-                    color: rgba(248, 246, 240, .5);
+                .menu__sub-title {
+                    font-size: .98rem;
                 }
             }
 
@@ -1404,10 +1700,25 @@
                     right: 16px;
                     bottom: 16px;
                 }
+
+                .menu-btn {
+                    padding: 0 7px 0 18px;
+                    height: 42px;
+                    letter-spacing: .16em;
+                }
+            }
+
+            @@media (max-width: 460px) {
+                .menu-btn__label {
+                    display: none;
+                }
+
+                .menu-btn {
+                    padding: 0 6px;
+                }
             }
     </style>
 
-    @* Without JavaScript the reveal animation never fires — show everything. *@
     <noscript>
         <style>
                     [data-reveal] {
@@ -1416,7 +1727,6 @@
             }</style>
         </noscript>
 
-        @* Every page supplies its own page-level styles through this section. *@
         @await RenderSectionAsync("Styles", required: false)
     </head>
 
@@ -1425,6 +1735,9 @@
 
         <div class="scroll-progress" data-scroll-progress aria-hidden="true"></div>
 
+        <!-- ============================================================
+         HEADER
+         ============================================================ -->
         <header class="site-header" data-header>
             <div class="container header-inner">
                 <a class="brand" href="@Url.Action("Index", "Home")" aria-label="Karnel Travel Guide — home">
@@ -1440,94 +1753,248 @@
                     </span>
                 </a>
 
-                <button class="nav-toggle" type="button" data-nav-toggle
-                        aria-expanded="false" aria-controls="primary-navigation"
-                        aria-label="Open navigation menu">
-                    <span class="nav-toggle__bar"></span>
-                    <span class="nav-toggle__bar"></span>
-                    <span class="nav-toggle__bar"></span>
-                </button>
-
-                <nav class="site-nav" id="primary-navigation" data-nav aria-label="Primary">
-                    <ul class="nav-list">
-                        <li class="nav-item">
-                            <a class="@NavClass("Home")" href="@Url.Action("Index", "Home")"
-                               aria-current="@NavCurrent("Home")">Journey Home</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="@NavClass("About")" href="@Url.Action("Index", "About")"
-                               aria-current="@NavCurrent("About")">Our Story</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="@NavClass("Search")" href="@Url.Action("Index", "Search")"
-                               aria-current="@NavCurrent("Search")">Explore</a>
-                        </li>
-                        <li class="nav-item has-dropdown" data-dropdown>
-                            <div class="nav-dropdown">
-                                <a class="@DropdownClass" href="@Url.Action("Index", "Information")"
-                                   aria-current="@DropdownCurrent">Discover More</a>
-                                <button class="nav-caret" type="button" data-dropdown-toggle
-                                        aria-expanded="false" aria-controls="discover-menu"
-                                        aria-label="Show Discover More categories">
-                                    <svg viewBox="0 0 12 12" fill="none" stroke="currentColor"
-                                         stroke-width="1.6" aria-hidden="true">
-                                        <path d="M2 4.5 6 8.5 10 4.5" />
-                                    </svg>
-                                </button>
-                            </div>
-                            <ul class="dropdown" id="discover-menu">
-                                <li>
-                                    <a class="dropdown__link" href="@Url.Action("Index", "Destinations")">
-                                        <span class="dropdown__title">Discover Pakistan</span>
-                                        <span class="dropdown__sub">Tourist Spots</span>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a class="dropdown__link" href="@Url.Action("Index", "Transport")">
-                                        <span class="dropdown__title">Ways to Wander</span>
-                                        <span class="dropdown__sub">Travel Information</span>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a class="dropdown__link" href="@Url.Action("Index", "Hotels")">
-                                        <span class="dropdown__title">Stay &amp; Unwind</span>
-                                        <span class="dropdown__sub">Hotel Information</span>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a class="dropdown__link" href="@Url.Action("Index", "Restaurants")">
-                                        <span class="dropdown__title">Taste Trails</span>
-                                        <span class="dropdown__sub">Restaurant Information</span>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a class="dropdown__link" href="@Url.Action("Index", "Resorts")">
-                                        <span class="dropdown__title">Resort Escapes</span>
-                                        <span class="dropdown__sub">Resorts Information</span>
-                                    </a>
-                                </li>
-                            </ul>
-                        </li>
-                        <li class="nav-item">
-                            <a class="@NavClass("Contact")" href="@Url.Action("Index", "Contact")"
-                               aria-current="@NavCurrent("Contact")">Get in Touch</a>
-                        </li>
-                    </ul>
-                </nav>
+                <div class="header-actions">
+                    <a class="header-link" href="@Url.Action("Index", "Search")">Explore</a>
+                    <button class="menu-btn" type="button" data-menu-open
+                            aria-controls="site-menu" aria-expanded="false">
+                        <span class="menu-btn__label">Menu</span>
+                        <span class="menu-btn__icon" aria-hidden="true">
+                            <span></span>
+                            <span></span>
+                        </span>
+                    </button>
+                </div>
             </div>
         </header>
 
-        <div class="nav-backdrop" data-nav-backdrop hidden></div>
+        <!-- ============================================================
+         FULL-SCREEN OVERLAY MENU
+         ============================================================ -->
+        <div class="menu" id="site-menu" data-menu aria-hidden="true">
+            <div class="menu__shell">
+
+                <!-- Left preview -->
+                <aside class="menu__preview" aria-hidden="true">
+
+                    <figure class="menu__preview-item is-active" data-preview-item="home">
+                        <img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=1400&q=80"
+                             alt="" loading="lazy" />
+                        <figcaption class="menu__preview-caption">
+                            <span class="menu__preview-kicker">01 — Begin</span>
+                            <span class="menu__preview-title">Journey Home</span>
+                            <span class="menu__preview-text">Where the map meets the morning light.</span>
+                        </figcaption>
+                    </figure>
+
+                    <figure class="menu__preview-item" data-preview-item="about">
+                        <img src="https://images.unsplash.com/photo-1488646953014-85cb44e25828?auto=format&fit=crop&w=1400&q=80"
+                             alt="" loading="lazy" />
+                        <figcaption class="menu__preview-caption">
+                            <span class="menu__preview-kicker">02 — Meet us</span>
+                            <span class="menu__preview-title">Our Story</span>
+                            <span class="menu__preview-text">The people, the places, the point of view.</span>
+                        </figcaption>
+                    </figure>
+
+                    <figure class="menu__preview-item" data-preview-item="explore">
+                        <img src="https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?auto=format&fit=crop&w=1400&q=80"
+                             alt="" loading="lazy" />
+                        <figcaption class="menu__preview-caption">
+                            <span class="menu__preview-kicker">03 — Wander</span>
+                            <span class="menu__preview-title">Explore</span>
+                            <span class="menu__preview-text">Filter the country by mood, season and pace.</span>
+                        </figcaption>
+                    </figure>
+
+                    <figure class="menu__preview-item" data-preview-item="discover">
+                        <img src="https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&w=1400&q=80"
+                             alt="" loading="lazy" />
+                        <figcaption class="menu__preview-caption">
+                            <span class="menu__preview-kicker">04 — Collections</span>
+                            <span class="menu__preview-title">Discover More</span>
+                            <span class="menu__preview-text">Destinations, stays, tables, and quiet escapes.</span>
+                        </figcaption>
+                    </figure>
+
+                    <figure class="menu__preview-item" data-preview-item="contact">
+                        <img src="https://images.unsplash.com/photo-1423666639041-f56000c27a9a?auto=format&fit=crop&w=1400&q=80"
+                             alt="" loading="lazy" />
+                        <figcaption class="menu__preview-caption">
+                            <span class="menu__preview-kicker">05 — Write</span>
+                            <span class="menu__preview-title">Get in Touch</span>
+                            <span class="menu__preview-text">Say hello, plan a trip, or send a note.</span>
+                        </figcaption>
+                    </figure>
+
+                    <a class="menu__preview-brand" href="@Url.Action("Index", "Home")" aria-hidden="true">
+                        <span class="menu__preview-brand-mark">
+                            <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.6">
+                                <circle cx="16" cy="16" r="13" />
+                                <path d="M21 11 18.4 18.4 11 21l2.6-7.4z" stroke-linejoin="round" />
+                            </svg>
+                        </span>
+                        Karnel
+                    </a>
+                </aside>
+
+                <!-- Right panel -->
+                <div class="menu__panel">
+
+                    <button class="menu__close" type="button" data-menu-close aria-label="Close menu">
+                        <span></span>
+                        <span></span>
+                    </button>
+
+                    <div class="menu__content">
+
+                        <span class="menu__eyebrow">Karnel · Menu</span>
+
+                        <nav class="menu__nav" aria-label="Site menu">
+                            <ol class="menu__list">
+
+                                <li class="menu__item" data-preview="home">
+                                    <a class="@MenuLinkClass("Home")" href="@Url.Action("Index", "Home")">
+                                        <span class="menu__index">01</span>
+                                        <span class="menu__text">Journey Home</span>
+                                        <span class="menu__arrow" aria-hidden="true">
+                                            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor"
+                                                 stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="M3 8h10M9 4l4 4-4 4" />
+                                            </svg>
+                                        </span>
+                                    </a>
+                                </li>
+
+                                <li class="menu__item" data-preview="about">
+                                    <a class="@MenuLinkClass("About")" href="@Url.Action("Index", "About")">
+                                        <span class="menu__index">02</span>
+                                        <span class="menu__text">Our Story</span>
+                                        <span class="menu__arrow" aria-hidden="true">
+                                            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor"
+                                                 stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="M3 8h10M9 4l4 4-4 4" />
+                                            </svg>
+                                        </span>
+                                    </a>
+                                </li>
+
+                                <li class="menu__item" data-preview="explore">
+                                    <a class="@MenuLinkClass("Search")" href="@Url.Action("Index", "Search")">
+                                        <span class="menu__index">03</span>
+                                        <span class="menu__text">Explore</span>
+                                        <span class="menu__arrow" aria-hidden="true">
+                                            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor"
+                                                 stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="M3 8h10M9 4l4 4-4 4" />
+                                            </svg>
+                                        </span>
+                                    </a>
+                                </li>
+
+                                <li class="menu__item menu__item--has-sub" data-preview="discover">
+                                    <button type="button" class="@DiscoverToggleClass"
+                                            data-submenu-toggle aria-expanded="@(IsDiscoverMore ? "true" : "false")">
+                                        <span class="menu__index">04</span>
+                                        <span class="menu__text">Discover More</span>
+                                        <span class="menu__arrow" aria-hidden="true">
+                                            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor"
+                                                 stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="M4 6l4 4 4-4" />
+                                            </svg>
+                                        </span>
+                                    </button>
+
+                                    <ul class="menu__submenu">
+                                        <li>
+                                            <a class="@SubMenuLinkClass("Destinations")" href="@Url.Action("Index", "Destinations")">
+                                                <span class="menu__sub-title">Discover Pakistan</span>
+                                                <span class="menu__sub-note">Tourist spots</span>
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="@SubMenuLinkClass("Transport")" href="@Url.Action("Index", "Transport")">
+                                                <span class="menu__sub-title">Ways to Wander</span>
+                                                <span class="menu__sub-note">Travel information</span>
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="@SubMenuLinkClass("Hotels")" href="@Url.Action("Index", "Hotels")">
+                                                <span class="menu__sub-title">Stay &amp; Unwind</span>
+                                                <span class="menu__sub-note">Hotel information</span>
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="@SubMenuLinkClass("Restaurants")" href="@Url.Action("Index", "Restaurants")">
+                                                <span class="menu__sub-title">Taste Trails</span>
+                                                <span class="menu__sub-note">Restaurant information</span>
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="@SubMenuLinkClass("Resorts")" href="@Url.Action("Index", "Resorts")">
+                                                <span class="menu__sub-title">Resort Escapes</span>
+                                                <span class="menu__sub-note">Resorts information</span>
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="@SubMenuLinkClass("Experiences")" href="@Url.Action("Index", "Experiences")">
+                                                <span class="menu__sub-title">Experiences</span>
+                                                <span class="menu__sub-note">Activities &amp; adventures</span>
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="@SubMenuLinkClass("Information")" href="@Url.Action("Index", "Information")">
+                                                <span class="menu__sub-title">Overview</span>
+                                                <span class="menu__sub-note">Everything in one place</span>
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </li>
+
+                                <li class="menu__item" data-preview="contact">
+                                    <a class="@MenuLinkClass("Contact")" href="@Url.Action("Index", "Contact")">
+                                        <span class="menu__index">05</span>
+                                        <span class="menu__text">Get in Touch</span>
+                                        <span class="menu__arrow" aria-hidden="true">
+                                            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor"
+                                                 stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="M3 8h10M9 4l4 4-4 4" />
+                                            </svg>
+                                        </span>
+                                    </a>
+                                </li>
+
+                            </ol>
+                        </nav>
+
+                        <footer class="menu__foot">
+                            <div class="menu__foot-col">
+                                <span class="menu__foot-label">Say hello</span>
+                                <a class="menu__foot-link" href="mailto:hello@karnelguide.pk">hello@karnelguide.pk</a>
+                            </div>
+                            <div class="menu__foot-col">
+                                <span class="menu__foot-label">Follow</span>
+                                <ul class="menu__socials">
+                                    <li><a href="#" rel="noopener">Instagram</a></li>
+                                    <li><a href="#" rel="noopener">Pinterest</a></li>
+                                    <li><a href="#" rel="noopener">Journal</a></li>
+                                </ul>
+                            </div>
+                        </footer>
+
+                    </div>
+                </div>
+
+            </div>
+        </div>
 
         <main id="main-content">
             @RenderBody()
         </main>
 
         <!-- ============================================================
-         MEADOW FOOTER
+         MEADOW FOOTER  (unchanged)
          ============================================================ -->
         <footer class="mf" aria-label="Site footer">
-            <!-- Video Stage -->
             <div class="mf__stage" aria-hidden="true">
                 <video class="mf__video"
                        src="https://d2ol7oe51mr4n9.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/4d01c727-d9c5-47c8-a778-35a451ffd39f.mp4"
@@ -1535,16 +2002,10 @@
                        autoplay muted loop playsinline preload="auto"></video>
             </div>
 
-            <!-- Frosted Glass Wordmark -->
             <p class="mf__wordmark" aria-hidden="true">Karnel</p>
-
-            <!-- Lavender Fog -->
             <div class="mf__fog" aria-hidden="true"></div>
 
-            <!-- Content Grid -->
             <div class="mf__content">
-
-                <!-- Brand Block -->
                 <div class="mf__brand">
                     <a class="mf-brand__logo" href="@Url.Action("Index", "Home")" aria-label="Karnel Travel Guide — home">
                         <span class="mf-brand__mark" aria-hidden="true">
@@ -1559,57 +2020,23 @@
                     <h2 class="mf-brand__title">Your guide to somewhere wonderful</h2>
 
                     <p class="mf-brand__text">
-                        Karnel Travel Guide gathers destinations, transport, hotels,
+                        Karnel Travel Guide gathers destinations, experiences, transport, hotels,
                         restaurants, resorts and travel packages into one calm place
                         to plan your next journey across Pakistan.
                     </p>
-
-                    <a class="mf-brand__cta" href="@Url.Action("Index", "Search")">
-                        <svg class="mf-brand__cta-icon" viewBox="0 0 24 24" fill="none"
-                             stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true">
-                            <circle cx="12" cy="12" r="9" />
-                            <path d="M16 8 14 14 8 16l2-6z" />
-                        </svg>
-                        Explore destinations
-                    </a>
 
                     <p class="mf-brand__copy">
                         &copy; @DateTime.Now.Year Karnel Travel Guide — Made in Pakistan.
                     </p>
 
                     <p class="mf-brand__by">
-                        Built with <span class="mf-brand__heart" aria-label="love">💙</span> by
+                        Built with by
                         <span class="mf-brand__author">
-                            <span class="mf-brand__avatar" aria-hidden="true">
-                                <svg viewBox="0 0 24 24">
-                                    <rect width="24" height="24" fill="#e6e6e3" />
-                                    <circle cx="12" cy="9.2" r="4.4" fill="#14271F" />
-                                    <path d="M3 25c0-6 4-9.4 9-9.4S21 19 21 25Z" fill="#14271F" />
-                                </svg>
-                            </span>
                             Karnel Studio
                         </span>
                     </p>
-
-                    <ul class="mf-brand__status" aria-label="Site status">
-                        <li class="mf-chip"><span class="mf-chip__dot" aria-hidden="true"></span>Guide online</li>
-                        <li class="mf-chip">
-                            <svg viewBox="0 0 24 24" aria-hidden="true">
-                                <path d="M20 11a8 8 0 1 0-2.3 5.7" />
-                                <path d="M20 4v7h-7" />
-                            </svg>
-                            v1.0 · Frontend
-                        </li>
-                        <li class="mf-chip">
-                            <svg viewBox="0 0 24 24" aria-hidden="true">
-                                <path d="m12 3 2.7 5.6 6.1.8-4.5 4.2 1.1 6-5.4-2.9-5.4 2.9 1.1-6L3.2 9.4l6.1-.8Z" />
-                            </svg>
-                            Sample data
-                        </li>
-                    </ul>
                 </div>
 
-                <!-- Column 1 -->
                 <nav class="mf__col mf__col--menu" aria-label="Journey">
                     <h3 class="mf-col__title">Journey</h3>
                     <ul class="mf-col__list">
@@ -1621,7 +2048,6 @@
                     </ul>
                 </nav>
 
-                <!-- Column 2 -->
                 <nav class="mf__col" aria-label="Essentials">
                     <h3 class="mf-col__title">Essentials</h3>
                     <ul class="mf-col__list">
@@ -1630,10 +2056,10 @@
                         <li><a href="@Url.Action("Index", "Hotels")">Hotels</a></li>
                         <li><a href="@Url.Action("Index", "Restaurants")">Restaurants</a></li>
                         <li><a href="@Url.Action("Index", "Resorts")">Resorts</a></li>
+                        <li><a href="@Url.Action("Index", "Experiences")">Experiences</a></li>
                     </ul>
                 </nav>
 
-                <!-- Column 3 -->
                 <nav class="mf__col" aria-label="More from Karnel">
                     <h3 class="mf-col__title">More from Karnel</h3>
                     <ul class="mf-col__list">
@@ -1644,7 +2070,6 @@
                         <li><span class="mf-col__soon">Coming soon</span></li>
                     </ul>
                 </nav>
-
             </div>
         </footer>
 
@@ -1663,10 +2088,8 @@
                     'use strict';
 
                     var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-                    var desktopQuery = window.matchMedia('(min-width: 900px)');
 
                     /* ---------- 1. Graceful image fallback ---------- */
-                    // `error` does not bubble, so it is captured at document level.
                     document.addEventListener('error', function (event) {
                         var el = event.target;
                         if (!el || el.tagName !== 'IMG') { return; }
@@ -1701,107 +2124,105 @@
                         });
                     }
 
-                    /* ---------- 3. Mobile navigation ---------- */
-                    var navToggle = document.querySelector('[data-nav-toggle]');
-                    var nav = document.querySelector('[data-nav]');
-                    var backdrop = document.querySelector('[data-nav-backdrop]');
+                    /* ---------- 3. Full-screen overlay menu ---------- */
+                    var menu = document.querySelector('[data-menu]');
+                    var menuOpenBtn = document.querySelector('[data-menu-open]');
+                    var menuCloseBtn = document.querySelector('[data-menu-close]');
+                    var lastFocused = null;
 
-                    function setNav(open) {
-                        if (!navToggle || !nav) { return; }
-                        document.body.classList.toggle('nav-open', open);
-                        nav.classList.toggle('is-open', open);
-                        if (header) { header.classList.toggle('is-locked', open); }
-                        navToggle.setAttribute('aria-expanded', String(open));
-                        navToggle.setAttribute('aria-label',
-                            open ? 'Close navigation menu' : 'Open navigation menu');
-                        if (backdrop) { backdrop.hidden = !open; }
-                        if (!open) { closeAllDropdowns(); }
-                    }
-
-                    if (navToggle) {
-                        navToggle.addEventListener('click', function () {
-                            setNav(!document.body.classList.contains('nav-open'));
+                    function openMenu() {
+                        if (!menu) { return; }
+                        lastFocused = document.activeElement;
+                        menu.classList.add('is-open');
+                        menu.setAttribute('aria-hidden', 'false');
+                        document.body.classList.add('menu-open');
+                        if (menuOpenBtn) { menuOpenBtn.setAttribute('aria-expanded', 'true'); }
+                        // Give the browser a frame so the menu is visible before we focus.
+                        window.requestAnimationFrame(function () {
+                            var first = menu.querySelector('.menu__link, .menu__close');
+                            if (first) { first.focus({ preventScroll: true }); }
                         });
                     }
-                    if (backdrop) {
-                        backdrop.addEventListener('click', function () { setNav(false); });
+
+                    function closeMenu(restoreFocus) {
+                        if (!menu) { return; }
+                        menu.classList.remove('is-open');
+                        menu.setAttribute('aria-hidden', 'true');
+                        document.body.classList.remove('menu-open');
+                        if (menuOpenBtn) { menuOpenBtn.setAttribute('aria-expanded', 'false'); }
+                        if (restoreFocus !== false) {
+                            var target = (lastFocused && document.body.contains(lastFocused))
+                                ? lastFocused
+                                : menuOpenBtn;
+                            if (target) { target.focus({ preventScroll: true }); }
+                        }
                     }
 
-                    /* ---------- 4. Discover More dropdown ---------- */
-                    var dropdownItems = Array.prototype.slice.call(
-                        document.querySelectorAll('[data-dropdown]')
+                    if (menuOpenBtn) {
+                        menuOpenBtn.addEventListener('click', openMenu);
+                    }
+                    if (menuCloseBtn) {
+                        menuCloseBtn.addEventListener('click', function () { closeMenu(true); });
+                    }
+
+                    /* Close when a link inside the overlay is chosen. */
+                    if (menu) {
+                        menu.addEventListener('click', function (event) {
+                            var link = event.target.closest('a');
+                            if (link) { closeMenu(false); }
+                        });
+                    }
+
+                    /* Escape closes the overlay. */
+                    document.addEventListener('keydown', function (event) {
+                        if (event.key !== 'Escape') { return; }
+                        if (menu && menu.classList.contains('is-open')) {
+                            closeMenu(true);
+                        }
+                    });
+
+                    /* ---------- 4. Hovering / focusing a row updates the preview ---------- */
+                    var previewFigures = Array.prototype.slice.call(
+                        document.querySelectorAll('[data-preview-item]')
+                    );
+                    var previewRows = Array.prototype.slice.call(
+                        document.querySelectorAll('.menu__item[data-preview]')
                     );
 
-                    function closeAllDropdowns(except) {
-                        dropdownItems.forEach(function (item) {
-                            if (item === except) { return; }
-                            item.classList.remove('is-open');
-                            var btn = item.querySelector('[data-dropdown-toggle]');
-                            if (btn) { btn.setAttribute('aria-expanded', 'false'); }
+                    function activatePreview(key) {
+                        previewFigures.forEach(function (figure) {
+                            figure.classList.toggle(
+                                'is-active',
+                                figure.getAttribute('data-preview-item') === key
+                            );
                         });
                     }
 
-                    dropdownItems.forEach(function (item) {
-                        var btn = item.querySelector('[data-dropdown-toggle]');
-                        if (!btn) { return; }
+                    previewRows.forEach(function (row) {
+                        var key = row.getAttribute('data-preview');
+                        row.addEventListener('mouseenter', function () { activatePreview(key); });
+                        row.addEventListener('focusin', function () { activatePreview(key); });
+                    });
 
-                        btn.addEventListener('click', function (event) {
-                            event.stopPropagation();
-                            var open = !item.classList.contains('is-open');
-                            closeAllDropdowns(item);
-                            item.classList.toggle('is-open', open);
+                    /* ---------- 5. Discover More submenu toggle ---------- */
+                    var subToggles = Array.prototype.slice.call(
+                        document.querySelectorAll('[data-submenu-toggle]')
+                    );
+
+                    subToggles.forEach(function (btn) {
+                        btn.addEventListener('click', function () {
+                            var item = btn.closest('.menu__item');
+                            if (!item) { return; }
+                            var open = item.classList.toggle('is-open');
                             btn.setAttribute('aria-expanded', String(open));
                         });
                     });
-
-                    document.addEventListener('click', function (event) {
-                        if (!event.target.closest('[data-dropdown]')) { closeAllDropdowns(); }
-                    });
-
-                    /* ---------- 5. Escape closes overlays ---------- */
-                    document.addEventListener('keydown', function (event) {
-                        if (event.key !== 'Escape') { return; }
-
-                        if (document.body.classList.contains('nav-open')) {
-                            setNav(false);
-                            if (navToggle) { navToggle.focus(); }
-                            return;
-                        }
-                        var openItem = document.querySelector('[data-dropdown].is-open');
-                        if (openItem) {
-                            closeAllDropdowns();
-                            var btn = openItem.querySelector('[data-dropdown-toggle]');
-                            if (btn) { btn.focus(); }
-                        }
-                    });
-
-                    /* Close the mobile drawer when a link inside it is chosen. */
-                    if (nav) {
-                        nav.addEventListener('click', function (event) {
-                            var link = event.target.closest('a');
-                            if (link && !desktopQuery.matches) { setNav(false); }
-                        });
-                    }
-
-                    /* Reset menu state when returning to desktop widths. */
-                    function onBreakpointChange() {
-                        if (desktopQuery.matches) {
-                            setNav(false);
-                            closeAllDropdowns();
-                        }
-                    }
-                    if (desktopQuery.addEventListener) {
-                        desktopQuery.addEventListener('change', onBreakpointChange);
-                    } else if (desktopQuery.addListener) {
-                        desktopQuery.addListener(onBreakpointChange); // older Safari
-                    }
 
                     /* ---------- 6. Scroll reveal ---------- */
                     var revealTargets = Array.prototype.slice.call(
                         document.querySelectorAll('[data-reveal]')
                     );
 
-                    // Stagger the children of any [data-reveal-group] container.
                     document.querySelectorAll('[data-reveal-group]').forEach(function (group) {
                         group.querySelectorAll('[data-reveal]').forEach(function (el, index) {
                             el.style.setProperty('--reveal-delay', (index * 80) + 'ms');
@@ -1841,9 +2262,7 @@
                     /* ---------- 8. Meadow Footer Video Controls ---------- */
                     var video = document.querySelector('.mf__video');
                     if (video) {
-                        if (reduceMotion) {
-                            video.pause();
-                        }
+                        if (reduceMotion) { video.pause(); }
                         video.addEventListener('error', function () {
                             var stage = video.closest('.mf__stage');
                             if (stage) { stage.classList.add('is-fallback'); }

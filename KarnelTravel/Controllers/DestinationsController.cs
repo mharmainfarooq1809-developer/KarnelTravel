@@ -1,5 +1,6 @@
 
 using KarnelTravel.Data;
+using KarnelTravel.Models;
 using KarnelTravel.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -33,6 +34,14 @@ namespace KarnelTravel.Controllers
                 return NotFound();
             }
 
+            var reviews = await _context.Reviews
+                .AsNoTracking()
+                .Where(r =>
+                    r.DestinationId == destination.Id &&
+                    r.Status == ReviewStatus.Approved)
+                .OrderByDescending(r => r.CreatedAt)
+                .ToListAsync();
+
             var model = new DestinationDetailsViewModel
             {
                 Destination = destination,
@@ -62,7 +71,15 @@ namespace KarnelTravel.Controllers
                         r.IsPublished)
                     .OrderBy(r => r.DisplayOrder)
                     .ThenBy(r => r.Name)
-                    .ToListAsync()
+                    .ToListAsync(),
+
+                Reviews = reviews,
+
+                TotalReviews = reviews.Count,
+
+                AverageRating = reviews.Count > 0
+                    ? Math.Round(reviews.Average(r => r.Rating), 1)
+                    : 0
             };
 
             return View(

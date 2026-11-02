@@ -3,296 +3,1331 @@
 @{
     ViewData["Title"] = "Transport Services | Karnel Travel Guide";
     ViewData["Description"] = "Explore transport services and vehicle options for travelling across Pakistan.";
+
+    var hasServices = Model != null && Model.Any();
+    var totalServices = hasServices ? Model.Count() : 0;
+    var featuredCount = hasServices ? Model.Count(t => t.IsFeatured) : 0;
+    var regularCount = totalServices - featuredCount;
 }
 
 @section Styles {
     <style>
-        .page-hero {
-            padding: calc(var(--header-h) + 60px) 0 60px;
-            background: var(--forest-deep);
-            color: var(--ivory);
+        /* ==========================================================================
+           KARNEL TRAVEL GUIDE — TRANSPORT
+           Editorial travel-mobility showcase. Scoped with .kd- prefix.
+           ========================================================================== */
+
+        .kd-page {
+            --kd-forest: var(--forest-deep, #14271F);
+            --kd-ivory: var(--ivory, #F8F6F0);
+            --kd-sage: var(--sage, #8FA888);
+            --kd-sand: var(--sand, #E8DFC9);
+            --kd-white: #FFFFFF;
+            --kd-muted: var(--muted, #5A6B60);
+            --kd-serif: var(--serif, "Playfair Display", Georgia, "Times New Roman", serif);
+            --kd-sans: var(--sans, "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif);
+            --kd-ease: var(--ease, cubic-bezier(.22, .61, .36, 1));
+
+            background: var(--kd-ivory);
+            color: var(--kd-forest);
+            font-family: var(--kd-sans);
+            -webkit-font-smoothing: antialiased;
         }
 
-            .page-hero h1 {
-                color: var(--ivory);
-                max-width: 14ch;
-            }
+        /* -------------------------------------------------- shared atoms ---- */
+        .kd-eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 14px;
+            margin: 0 0 18px;
+            font-size: .7rem;
+            font-weight: 600;
+            letter-spacing: .32em;
+            text-transform: uppercase;
+            color: var(--kd-sage);
+        }
 
-            .page-hero p {
-                color: rgba(248, 246, 240, .82);
-                font-size: 1.05rem;
-                max-width: 62ch;
-            }
+        .kd-eyebrow::before {
+            content: "";
+            width: 34px;
+            height: 1px;
+            background: currentColor;
+            opacity: .7;
+        }
 
-            .page-hero .eyebrow {
-                color: var(--sage);
-            }
+        .kd-eyebrow--light { color: var(--kd-sand); }
 
-        .transport-card {
-            display: grid;
-            grid-template-columns: 1fr 2fr;
-            gap: 0;
-            border: 1px solid var(--line);
-            border-radius: var(--radius-lg);
+        .kd-reveal {
+            opacity: 0;
+            transform: translateY(26px);
+            transition:
+                opacity .9s var(--kd-ease),
+                transform .9s var(--kd-ease);
+            transition-delay: var(--kd-delay, 0ms);
+        }
+
+        .kd-reveal.is-in {
+            opacity: 1;
+            transform: none;
+        }
+
+        /* ------------------------------------------------------ 01 — HERO ---- */
+        .kd-hero {
+            position: relative;
+            padding: calc(var(--header-h, 80px) + 64px) 0 clamp(52px, 7vw, 88px);
+            background: var(--kd-forest);
+            color: var(--kd-ivory);
             overflow: hidden;
-            background: var(--white);
-            margin-bottom: 24px;
-            transition: box-shadow .4s var(--ease);
+            isolation: isolate;
         }
 
-            .transport-card:hover {
-                box-shadow: var(--shadow-md);
-            }
+        .kd-hero::before {
+            content: "";
+            position: absolute;
+            top: -30%;
+            right: -8%;
+            width: 55%;
+            height: 160%;
+            background: radial-gradient(circle at center, rgba(143, 168, 136, .18), transparent 62%);
+            pointer-events: none;
+            z-index: 0;
+        }
 
-            .transport-card .media {
-                aspect-ratio: auto;
-                min-height: 220px;
-                border-radius: 0;
-                overflow: hidden;
-            }
+        .kd-hero__grid {
+            position: relative;
+            z-index: 1;
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr);
+            align-items: center;
+            gap: clamp(32px, 6vw, 84px);
+        }
 
-                .transport-card .media img {
-                    width: 100%;
-                    height: 100%;
-                    object-fit: cover;
-                }
+        .kd-hero h1 {
+            margin: 0 0 24px;
+            max-width: 13ch;
+            font-family: var(--kd-serif);
+            font-weight: 500;
+            font-size: clamp(2.4rem, 5vw, 4.2rem);
+            line-height: 1.03;
+            letter-spacing: -.02em;
+            color: var(--kd-ivory);
+        }
 
-        .transport-card__body {
-            padding: 26px 28px;
+        .kd-hero h1 em {
+            font-style: italic;
+            color: inherit;
+        }
+
+        .kd-hero__lede {
+            margin: 0;
+            max-width: 46ch;
+            font-size: clamp(1rem, 1.1vw, 1.08rem);
+            line-height: 1.75;
+            color: rgba(248, 246, 240, .8);
+        }
+
+        .kd-hero__media {
+            position: relative;
+        }
+
+        .kd-hero__frame {
+            margin: 0;
+            height: clamp(320px, 44vw, 520px);
+            overflow: hidden;
+            border-radius: 3px;
+            background: var(--kd-ivory);
+            opacity: .95;
+        }
+
+        .kd-hero__frame img {
+            display: block;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transform: scale(1.06);
+            transition: transform 1.6s var(--kd-ease);
+        }
+
+        .kd-hero__media.is-in .kd-hero__frame img {
+            transform: scale(1);
+        }
+
+        /* ------------------------------------------------ 02 — INTRODUCTION ---- */
+        .kd-intro {
+            padding: clamp(48px, 6vw, 80px) 0 clamp(32px, 4vw, 52px);
+            background: var(--kd-ivory);
+            text-align: center;
+        }
+
+        .kd-intro__inner {
+            max-width: 720px;
+            margin: 0 auto;
+        }
+
+        .kd-intro__inner .kd-eyebrow {
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        .kd-intro h2 {
+            margin: 0 0 20px;
+            font-family: var(--kd-serif);
+            font-weight: 500;
+            font-size: clamp(2rem, 3.8vw, 3.1rem);
+            line-height: 1.1;
+            letter-spacing: -.015em;
+            color: var(--kd-forest);
+        }
+
+        .kd-intro__desc {
+            margin: 0 auto;
+            max-width: 52ch;
+            font-size: clamp(.98rem, 1.1vw, 1.05rem);
+            line-height: 1.75;
+            color: var(--kd-muted);
+        }
+
+        .kd-intro__count {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            margin: 24px auto 0;
+            padding: 8px 18px;
+            border: 1px solid rgba(20, 39, 31, .14);
+            border-radius: 999px;
+            font-size: .68rem;
+            font-weight: 600;
+            letter-spacing: .22em;
+            text-transform: uppercase;
+            color: var(--kd-sage);
+            background: var(--kd-white);
+        }
+
+        .kd-intro__count strong {
+            font-family: var(--kd-serif);
+            font-size: 1rem;
+            font-weight: 500;
+            letter-spacing: 0;
+            color: var(--kd-forest);
+        }
+
+        /* ---------------------------------------------------- 03 — ROUTE ---- */
+        .kd-route {
+            display: grid;
+            grid-template-columns: minmax(0, auto) minmax(32px, 1fr) minmax(0, auto);
+            align-items: end;
+            gap: 16px;
+            padding: 20px 0;
+            border-top: 1px solid rgba(20, 39, 31, .14);
+            border-bottom: 1px solid rgba(20, 39, 31, .14);
+            margin: 18px 0;
+        }
+
+        .kd-route__end {
             display: flex;
             flex-direction: column;
-            gap: 12px;
+            gap: 4px;
+            min-width: 0;
         }
 
-        .transport-card__meta {
-            font-size: .68rem;
-            letter-spacing: .16em;
+        .kd-route__end--to {
+            align-items: flex-end;
+            text-align: right;
+        }
+
+        .kd-route__label {
+            font-size: .6rem;
+            font-weight: 600;
+            letter-spacing: .24em;
             text-transform: uppercase;
-            color: var(--muted);
+            color: var(--kd-sage);
         }
 
-        .transport-card h3 {
-            margin: 0;
-            font-size: 1.35rem;
+        .kd-route__city {
+            font-family: var(--kd-serif);
+            font-weight: 500;
+            font-size: clamp(1.1rem, 1.5vw, 1.35rem);
+            line-height: 1.2;
+            color: var(--kd-forest);
+            letter-spacing: -.005em;
+            overflow-wrap: break-word;
+            word-break: break-word;
         }
 
-        .transport-card p {
-            color: var(--muted);
-            font-size: .92rem;
-            margin: 0;
+        .kd-route__middle {
+            position: relative;
+            height: 22px;
+            min-width: 32px;
         }
 
-        .transport-card__info {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-            gap: 12px;
-            padding-top: 14px;
-            border-top: 1px solid var(--line);
+        .kd-route__middle::before {
+            content: "";
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 14px;
+            height: 1px;
+            background: rgba(20, 39, 31, .22);
         }
 
-            .transport-card__info div span {
-                display: block;
-                font-size: .66rem;
-                letter-spacing: .14em;
-                text-transform: uppercase;
-                color: var(--muted);
-                margin-bottom: 3px;
-            }
+        .kd-route__middle::after {
+            content: "";
+            position: absolute;
+            top: 50%;
+            right: 0;
+            width: 9px;
+            height: 9px;
+            border-top: 1px solid var(--kd-forest);
+            border-right: 1px solid var(--kd-forest);
+            transform: translateY(-50%) rotate(45deg);
+            opacity: .8;
+        }
 
-            .transport-card__info div strong {
-                font-family: var(--serif);
-                font-size: 1rem;
-                font-weight: 400;
-                color: var(--forest-deep);
-            }
+        /* --------------------------------------------------- 04 — SERVICE ---- */
+        .kd-service {
+            display: block;
+            position: relative;
+            text-decoration: none;
+            color: inherit;
+            border-radius: 3px;
+            overflow: hidden;
+            transition: transform .45s var(--kd-ease);
+        }
 
-        .transport-card__actions {
-            display: flex;
+        .kd-service:focus-visible {
+            outline: 2px solid var(--kd-sand);
+            outline-offset: 3px;
+        }
+
+        .kd-service__media {
+            position: relative;
+            overflow: hidden;
+            background: var(--kd-sand);
+            border-radius: 2px;
+        }
+
+        .kd-service__media img {
+            display: block;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 1.15s var(--kd-ease);
+        }
+
+        .kd-service:hover .kd-service__media img {
+            transform: scale(1.05);
+        }
+
+        .kd-service__badge {
+            position: absolute;
+            top: 18px;
+            left: 18px;
+            z-index: 2;
+            display: inline-flex;
             align-items: center;
-            gap: 16px;
+            gap: 8px;
+            padding: 7px 14px;
+            background: rgba(20, 39, 31, .82);
+            color: var(--kd-sand);
+            font-size: .62rem;
+            font-weight: 600;
+            letter-spacing: .22em;
+            text-transform: uppercase;
+            border-radius: 2px;
+            backdrop-filter: blur(4px);
+        }
+
+        .kd-service__badge::before {
+            content: "";
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            background: var(--kd-sand);
+            display: inline-block;
+        }
+
+        /* --- FEATURED split panel --- */
+        .kd-service--feature {
+            display: grid;
+            grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+            min-height: clamp(420px, 46vw, 560px);
+            background: var(--kd-white);
+            border: 1px solid rgba(20, 39, 31, .1);
+            margin-bottom: clamp(20px, 2.4vw, 32px);
+        }
+
+        .kd-service--feature:hover {
+            transform: none;
+        }
+
+        .kd-service--feature .kd-service__media {
+            border-radius: 0;
+            min-height: 100%;
+            background: var(--kd-forest);
+        }
+
+        .kd-service--feature .kd-service__media img {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            transform: scale(1.02);
+        }
+
+        .kd-service--feature:hover .kd-service__media img {
+            transform: scale(1.06);
+        }
+
+        .kd-service--feature .kd-service__body {
+            padding: clamp(28px, 4vw, 52px);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        /* reverse — image on the right */
+        .kd-service--feature.kd-service--reverse {
+            grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+        }
+
+        .kd-service--feature.kd-service--reverse .kd-service__media {
+            order: 2;
+        }
+
+        /* --- body content --- */
+        .kd-service__body {
+            padding: 20px 0 0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .kd-service__eyebrow {
+            margin: 0 0 12px;
+            font-size: .67rem;
+            font-weight: 600;
+            letter-spacing: .24em;
+            text-transform: uppercase;
+            color: var(--kd-sage);
+        }
+
+        .kd-service__title {
+            margin: 0 0 8px;
+            font-family: var(--kd-serif);
+            font-weight: 500;
+            font-size: clamp(1.35rem, 2vw, 1.8rem);
+            line-height: 1.18;
+            letter-spacing: -.005em;
+            color: var(--kd-forest);
+        }
+
+        .kd-service--feature .kd-service__title {
+            font-size: clamp(1.85rem, 3.2vw, 2.75rem);
+        }
+
+        .kd-service__desc {
+            margin: 12px 0 6px;
+            font-size: .93rem;
+            line-height: 1.65;
+            color: var(--kd-muted);
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .kd-service--feature .kd-service__desc {
+            -webkit-line-clamp: 4;
+            font-size: .97rem;
+        }
+
+        /* --- info grid --- */
+        .kd-service__info {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 14px 24px;
+            padding: 16px 0;
+            border-bottom: 1px solid rgba(20, 39, 31, .1);
+        }
+
+        .kd-service__info-item {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            min-width: 0;
+        }
+
+        .kd-service__info-item span {
+            font-size: .6rem;
+            font-weight: 600;
+            letter-spacing: .2em;
+            text-transform: uppercase;
+            color: var(--kd-sage);
+        }
+
+        .kd-service__info-item strong {
+            font-family: var(--kd-serif);
+            font-weight: 500;
+            font-size: .98rem;
+            color: var(--kd-forest);
+            line-height: 1.25;
+            overflow-wrap: break-word;
+        }
+
+        /* --- actions --- */
+        .kd-service__actions {
+            display: flex;
             flex-wrap: wrap;
+            align-items: center;
+            gap: 16px 24px;
+            padding-top: 18px;
             margin-top: auto;
-            padding-top: 10px;
         }
 
-            .transport-card__actions .btn {
-                display: inline-flex;
-                align-items: center;
-                justify-content: center;
-            }
+        .kd-btn-primary {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 14px 24px;
+            background: var(--kd-forest);
+            color: var(--kd-ivory);
+            font-size: .68rem;
+            font-weight: 600;
+            letter-spacing: .22em;
+            text-transform: uppercase;
+            text-decoration: none;
+            border-radius: 2px;
+            border: 1px solid var(--kd-forest);
+            transition:
+                background .35s var(--kd-ease),
+                color .35s var(--kd-ease),
+                border-color .35s var(--kd-ease),
+                transform .35s var(--kd-ease);
+        }
 
-        .empty-state {
+        .kd-btn-primary svg {
+            flex: none;
+            transition: transform .35s var(--kd-ease);
+        }
+
+        .kd-btn-primary:hover {
+            background: var(--kd-sand);
+            color: var(--kd-forest);
+            border-color: var(--kd-sand);
+            transform: translateY(-2px);
+        }
+
+        .kd-btn-primary:hover svg {
+            transform: translateX(4px);
+        }
+
+        .kd-btn-primary:focus-visible {
+            outline: 2px solid var(--kd-sand);
+            outline-offset: 3px;
+        }
+
+        .kd-link-details {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            font-size: .7rem;
+            font-weight: 600;
+            letter-spacing: .2em;
+            text-transform: uppercase;
+            color: var(--kd-forest);
+            text-decoration: none;
+            transition: color .3s var(--kd-ease);
+            white-space: nowrap;
+        }
+
+        .kd-link-details .kd-rule {
+            width: 22px;
+            height: 1px;
+            background: currentColor;
+            opacity: .55;
+            transition: width .4s var(--kd-ease), opacity .4s var(--kd-ease);
+        }
+
+        .kd-link-details:hover {
+            color: var(--kd-sage);
+        }
+
+        .kd-link-details:hover .kd-rule {
+            width: 42px;
+            opacity: 1;
+        }
+
+        .kd-link-details svg {
+            flex: none;
+            transition: transform .4s var(--kd-ease);
+        }
+
+        .kd-link-details:hover svg {
+            transform: translateX(4px);
+        }
+
+        /* --- regular grid of non-featured --- */
+        .kd-regular-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: clamp(20px, 2.4vw, 36px);
+        }
+
+        .kd-service--regular {
+            display: flex;
+            flex-direction: column;
+            background: var(--kd-white);
+            border: 1px solid rgba(20, 39, 31, .1);
+            border-radius: 3px;
+            overflow: hidden;
+            height: 100%;
+        }
+
+        .kd-service--regular:hover {
+            transform: translateY(-3px);
+        }
+
+        .kd-service--regular .kd-service__media {
+            aspect-ratio: 16 / 10;
+            border-radius: 0;
+        }
+
+        .kd-service--regular .kd-service__body {
+            padding: 22px clamp(20px, 2.4vw, 28px) clamp(20px, 2.4vw, 28px);
+        }
+
+        .kd-service--regular .kd-route {
+            margin: 14px 0;
+            padding: 16px 0;
+        }
+
+        .kd-service--regular .kd-route__city {
+            font-size: clamp(1rem, 1.3vw, 1.15rem);
+        }
+
+        .kd-service--regular .kd-service__info {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 12px 20px;
+            padding: 14px 0;
+        }
+
+        .kd-service--regular .kd-service__actions {
+            padding-top: 16px;
+            gap: 14px 20px;
+        }
+
+        .kd-service--regular .kd-btn-primary {
+            padding: 12px 20px;
+            font-size: .64rem;
+        }
+
+        .kd-service--regular .kd-link-details {
+            font-size: .66rem;
+            letter-spacing: .18em;
+        }
+
+        /* --- stagger --- */
+        .kd-featured-list > .kd-service:nth-child(1) { --kd-delay: 0ms; }
+        .kd-featured-list > .kd-service:nth-child(2) { --kd-delay: 100ms; }
+        .kd-featured-list > .kd-service:nth-child(3) { --kd-delay: 200ms; }
+        .kd-featured-list > .kd-service:nth-child(4) { --kd-delay: 300ms; }
+
+        .kd-regular-grid > .kd-service:nth-child(1) { --kd-delay: 0ms; }
+        .kd-regular-grid > .kd-service:nth-child(2) { --kd-delay: 70ms; }
+        .kd-regular-grid > .kd-service:nth-child(3) { --kd-delay: 130ms; }
+        .kd-regular-grid > .kd-service:nth-child(4) { --kd-delay: 190ms; }
+        .kd-regular-grid > .kd-service:nth-child(5) { --kd-delay: 250ms; }
+        .kd-regular-grid > .kd-service:nth-child(6) { --kd-delay: 310ms; }
+        .kd-regular-grid > .kd-service:nth-child(7) { --kd-delay: 370ms; }
+        .kd-regular-grid > .kd-service:nth-child(8) { --kd-delay: 430ms; }
+
+        /* ---------------------------------------------------- 05 — EMPTY ---- */
+        .kd-empty {
             text-align: center;
-            padding: 70px 24px;
-            border: 1px solid var(--line);
-            border-radius: var(--radius-lg);
-            background: var(--white);
+            padding: clamp(52px, 8vw, 100px) 24px;
+            background: var(--kd-white);
+            border: 1px solid rgba(20, 39, 31, .1);
+            border-radius: 3px;
         }
 
-            .empty-state h2 {
-                margin-bottom: 12px;
-            }
-
-            .empty-state p {
-                color: var(--muted);
-                max-width: 52ch;
-                margin: 0 auto;
-            }
-
-        .cta-band {
-            background: var(--sand);
-            padding: clamp(56px, 8vw, 100px) 0;
-            text-align: center;
+        .kd-empty .kd-eyebrow {
+            justify-content: center;
+            margin-bottom: 18px;
         }
 
-            .cta-band p {
-                color: var(--muted);
-                max-width: 56ch;
-                margin: 0 auto 28px;
+        .kd-empty h2 {
+            margin: 0 0 14px;
+            font-family: var(--kd-serif);
+            font-weight: 500;
+            font-size: clamp(1.9rem, 3.2vw, 2.5rem);
+            color: var(--kd-forest);
+        }
+
+        .kd-empty p {
+            margin: 0 auto;
+            max-width: 48ch;
+            font-size: .98rem;
+            line-height: 1.7;
+            color: var(--kd-muted);
+        }
+
+        /* ------------------------------------------------------- 06 — CTA ---- */
+        .kd-cta {
+            position: relative;
+            overflow: hidden;
+            padding: clamp(72px, 9vw, 128px) 0;
+            background: var(--kd-forest);
+            color: var(--kd-ivory);
+            border-top: 1px solid rgba(232, 223, 201, .16);
+            isolation: isolate;
+        }
+
+        .kd-cta::before {
+            content: "";
+            position: absolute;
+            top: -20%;
+            left: -10%;
+            width: 55%;
+            height: 140%;
+            background: radial-gradient(circle at center, rgba(143, 168, 136, .14), transparent 65%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .kd-cta__inner {
+            position: relative;
+            z-index: 2;
+            display: grid;
+            grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+            align-items: center;
+            gap: clamp(32px, 6vw, 88px);
+        }
+
+        .kd-cta__heading .kd-eyebrow {
+            margin-bottom: 20px;
+        }
+
+        .kd-cta h2 {
+            margin: 0;
+            font-family: var(--kd-serif);
+            font-weight: 500;
+            font-size: clamp(2.1rem, 4.2vw, 3.5rem);
+            line-height: 1.08;
+            letter-spacing: -.02em;
+            color: var(--kd-ivory);
+        }
+
+        .kd-cta__aside {
+            padding-left: clamp(0px, 2vw, 32px);
+            border-left: 1px solid rgba(232, 223, 201, .2);
+        }
+
+        .kd-cta__lede {
+            margin: 0 0 30px;
+            max-width: 42ch;
+            font-size: clamp(.98rem, 1.1vw, 1.05rem);
+            line-height: 1.75;
+            color: rgba(248, 246, 240, .8);
+        }
+
+        .kd-btn-outline {
+            display: inline-flex;
+            align-items: center;
+            gap: 14px;
+            padding: 18px 32px;
+            border: 1px solid rgba(232, 223, 201, .55);
+            border-radius: 2px;
+            background: transparent;
+            color: var(--kd-ivory);
+            font-size: .74rem;
+            font-weight: 600;
+            letter-spacing: .22em;
+            text-transform: uppercase;
+            text-decoration: none;
+            transition:
+                background .4s var(--kd-ease),
+                border-color .4s var(--kd-ease),
+                color .4s var(--kd-ease),
+                transform .4s var(--kd-ease);
+        }
+
+        .kd-btn-outline svg {
+            flex: none;
+            transition: transform .4s var(--kd-ease);
+        }
+
+        .kd-btn-outline:hover {
+            background: var(--kd-ivory);
+            border-color: var(--kd-ivory);
+            color: var(--kd-forest);
+            transform: translateY(-2px);
+        }
+
+        .kd-btn-outline:hover svg {
+            transform: translateX(5px);
+        }
+
+        .kd-btn-outline:focus-visible {
+            outline: 2px solid var(--kd-sand);
+            outline-offset: 4px;
+        }
+
+        /* --------------------------------------------------- RESPONSIVE ---- */
+        @@media (max-width: 1024px) {
+            .kd-hero {
+                padding: calc(var(--header-h, 80px) + 44px) 0 clamp(44px, 6vw, 68px);
             }
 
-        @@media (max-width: 780px) {
-            .transport-card {
+            .kd-hero__grid {
+                grid-template-columns: minmax(0, 1fr);
+                gap: clamp(26px, 5vw, 40px);
+            }
+
+            .kd-hero h1 { max-width: 18ch; }
+            .kd-hero__frame { height: clamp(280px, 48vw, 420px); }
+
+            .kd-service--feature,
+            .kd-service--feature.kd-service--reverse {
+                grid-template-columns: minmax(0, 1fr);
+                min-height: 0;
+            }
+
+            .kd-service--feature .kd-service__media {
+                order: 0;
+                aspect-ratio: 16 / 10;
+                min-height: 300px;
+            }
+
+            .kd-service--feature .kd-service__body {
+                padding: clamp(24px, 4vw, 40px);
+            }
+
+            .kd-regular-grid {
                 grid-template-columns: 1fr;
             }
 
-                .transport-card .media {
-                    aspect-ratio: 16 / 10;
-                    min-height: 0;
-                }
+            .kd-cta__inner {
+                grid-template-columns: minmax(0, 1fr);
+                gap: clamp(24px, 4vw, 36px);
+            }
+
+            .kd-cta__aside {
+                padding-left: 0;
+                border-left: 0;
+                border-top: 1px solid rgba(232, 223, 201, .2);
+                padding-top: 28px;
+            }
+        }
+
+        @@media (max-width: 640px) {
+            .kd-hero { padding-top: calc(var(--header-h, 80px) + 32px); }
+            .kd-hero h1 { margin-bottom: 18px; }
+
+            .kd-eyebrow {
+                letter-spacing: .24em;
+                font-size: .66rem;
+            }
+
+            .kd-intro {
+                padding: clamp(36px, 5vw, 56px) 0 clamp(24px, 3vw, 36px);
+                text-align: left;
+            }
+
+            .kd-intro__inner { max-width: none; }
+            .kd-intro__inner .kd-eyebrow { justify-content: flex-start; }
+            .kd-intro__desc { margin-left: 0; margin-right: 0; }
+
+            /* Route goes vertical on very small screens */
+            .kd-route {
+                grid-template-columns: 1fr;
+                gap: 12px;
+                padding: 18px 0;
+            }
+
+            .kd-route__end--to {
+                align-items: flex-start;
+                text-align: left;
+            }
+
+            .kd-route__middle {
+                width: 40px;
+                height: 14px;
+            }
+
+            .kd-route__middle::before {
+                right: 12px;
+            }
+
+            .kd-route__middle::after {
+                width: 8px;
+                height: 8px;
+            }
+
+            .kd-service--feature .kd-service__media {
+                aspect-ratio: 4 / 3;
+                min-height: 240px;
+            }
+
+            .kd-service--feature .kd-service__title { font-size: 1.75rem; }
+
+            .kd-service__info {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+
+            .kd-service__actions {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 14px;
+            }
+
+            .kd-btn-primary {
+                justify-content: center;
+                width: 100%;
+            }
+
+            .kd-link-details {
+                justify-content: flex-start;
+            }
+
+            .kd-btn-outline {
+                width: 100%;
+                justify-content: center;
+                padding: 18px 24px;
+            }
+        }
+
+        /* --------------------------------------------- REDUCED MOTION ---- */
+        @@media (prefers-reduced-motion: reduce) {
+            .kd-reveal {
+                opacity: 1 !important;
+                transform: none !important;
+                transition: none !important;
+            }
+
+            .kd-hero__frame img,
+            .kd-service__media img,
+            .kd-service,
+            .kd-link-details,
+            .kd-link-details .kd-rule,
+            .kd-link-details svg,
+            .kd-btn-primary,
+            .kd-btn-primary svg,
+            .kd-btn-outline,
+            .kd-btn-outline svg {
+                transition: none !important;
+            }
+
+            .kd-hero__frame img,
+            .kd-service__media img,
+            .kd-service:hover .kd-service__media img,
+            .kd-service--feature:hover .kd-service__media img {
+                transform: none !important;
+            }
+
+            .kd-service:hover,
+            .kd-service--regular:hover {
+                transform: none !important;
+            }
+
+            .kd-link-details:hover .kd-rule {
+                width: 22px !important;
+                opacity: .55 !important;
+            }
+
+            .kd-link-details:hover svg,
+            .kd-btn-primary:hover svg,
+            .kd-btn-outline:hover svg {
+                transform: none !important;
+            }
+
+            .kd-btn-primary:hover,
+            .kd-btn-outline:hover {
+                transform: none !important;
+            }
         }
     </style>
 }
 
-<header class="page-hero">
-    <div class="container" data-reveal>
-        <p class="eyebrow">Discover More · Travel Information</p>
-        <h1>Ways to Wander.</h1>
-        <p>
-            Discover transport options for your journey across Pakistan.
-            Explore available vehicles, routes and starting prices,
-            then send us a request to plan your travel.
-        </p>
-    </div>
-</header>
+<div class="kd-page">
 
-<section class="section section--ivory">
-    <div class="container">
+    <noscript>
+        <style>
+            .kd-reveal { opacity: 1 !important; transform: none !important; }
+            .kd-hero__frame img { transform: none !important; }
+        </style>
+    </noscript>
 
-        @if (Model != null && Model.Any())
-        {
-            foreach (var transport in Model)
-            {
-                var route = !string.IsNullOrWhiteSpace(transport.StartingCity)
-                    ? transport.StartingCity
-                    : "Location to be confirmed";
+    <!-- =====================================================================
+         SECTION 01 — CINEMATIC TRANSPORT HERO
+         ===================================================================== -->
+    <header class="kd-hero">
+        <div class="container kd-hero__grid">
 
-                var destination = !string.IsNullOrWhiteSpace(transport.DestinationCity)
-                    ? transport.DestinationCity
-                    : "Destination to be confirmed";
-
-                <article class="transport-card" data-reveal>
-
-                    <div class="media"
-                         data-fallback-label="@transport.Name">
-
-                        @if (!string.IsNullOrWhiteSpace(transport.ImageUrl))
-                        {
-                            <img src="@transport.ImageUrl"
-                                 alt="@transport.Name"
-                                 loading="lazy"
-                                 onerror="this.style.display='none';" />
-                        }
-                    </div>
-
-                    <div class="transport-card__body">
-
-                        <span class="transport-card__meta">
-                            @(string.IsNullOrWhiteSpace(transport.VehicleType)
-                                ? "Transport Service"
-                                : transport.VehicleType)
-                            · @(transport.IsFeatured ? "Featured Service" : "Travel Service")
-                        </span>
-
-                        <h3>@transport.Name</h3>
-
-                        <p>
-                            @(string.IsNullOrWhiteSpace(transport.Description)
-                                ? "Contact us for more information about this transport service."
-                                : transport.Description)
-                        </p>
-
-                        <div class="transport-card__info">
-
-                            <div>
-                                <span>Departure</span>
-                                <strong>@route</strong>
-                            </div>
-
-                            <div>
-                                <span>Destination</span>
-                                <strong>@destination</strong>
-                            </div>
-
-                            <div>
-                                <span>Passenger Capacity</span>
-                                <strong>
-                                    @(transport.PassengerCapacity.HasValue
-                                        ? transport.PassengerCapacity.Value + " passengers"
-                                        : "To be confirmed")
-                                </strong>
-                            </div>
-
-                            <div>
-                                <span>Starting Price</span>
-                                <strong>
-                                    @(transport.StartingPrice.HasValue
-                                        ? "PKR " + transport.StartingPrice.Value.ToString("N0")
-                                        : "On request")
-                                </strong>
-                            </div>
-
-                        </div>
-
-                        <div class="transport-card__actions">
-                            <a class="btn"
-                               href="@Url.Action("Create", "Bookings", new
-                               {
-                                   serviceType = "Transport",
-                                   serviceId = transport.Id
-                               })">
-                                Inquire About Transport
-                            </a>
-                        </div>
-
-                    </div>
-                </article>
-            }
-        }
-        else
-        {
-            <div class="empty-state" data-reveal>
-                <h2>Every journey begins somewhere.</h2>
-                <p>
-                    Our transport listings are being prepared.
-                    Please contact our team for help arranging your journey.
+            <div class="kd-hero__text kd-reveal">
+                <p class="kd-eyebrow kd-eyebrow--light">Discover More / Travel Information</p>
+                <h1>Every journey has a <em>way</em>.</h1>
+                <p class="kd-hero__lede">
+                    Explore transport options for travelling across Pakistan.
+                    Compare available vehicles, routes and passenger capacities
+                    before planning your journey.
                 </p>
             </div>
+
+            <div class="kd-hero__media kd-reveal" style="--kd-delay:140ms">
+                <figure class="kd-hero__frame media"
+                        data-fallback-label="Mountain road journey">
+                    <img src="https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?auto=format&fit=crop&w=1200&q=75"
+                         alt="A winding road through a mountain landscape"
+                         loading="eager" fetchpriority="high" />
+                </figure>
+            </div>
+
+        </div>
+    </header>
+
+    <!-- =====================================================================
+         SECTION 02 — TRANSPORT COLLECTION INTRODUCTION
+         ===================================================================== -->
+    <section class="kd-intro" aria-labelledby="kd-intro-heading">
+        <div class="container">
+            <div class="kd-intro__inner kd-reveal">
+                <p class="kd-eyebrow">The Collection</p>
+                <h2 id="kd-intro-heading">Choose how you travel.</h2>
+                <p class="kd-intro__desc">
+                    Discover available transport options and find a journey
+                    that suits your route and travel requirements.
+                </p>
+
+                @if (hasServices)
+                {
+                    <p class="kd-intro__count">
+                        <strong>@totalServices</strong>
+                        @(totalServices == 1 ? "service" : "services")
+                    </p>
+                }
+            </div>
+        </div>
+    </section>
+
+    @if (hasServices)
+    {
+        if (featuredCount > 0)
+        {
+            <!-- =============================================================
+                 SECTION 03 — FEATURED TRANSPORT SERVICES
+                 ============================================================= -->
+            <section class="kd-intro-section" aria-label="Featured transport services" style="padding: 0 0 clamp(20px, 2vw, 32px); background: var(--kd-ivory);">
+                <div class="container">
+                    <div class="kd-featured-list">
+
+                        @foreach (var transport in Model.Where(t => t.IsFeatured))
+                        {
+                            var route = !string.IsNullOrWhiteSpace(transport.StartingCity)
+                                ? transport.StartingCity
+                                : "Location to be confirmed";
+
+                            var destination = !string.IsNullOrWhiteSpace(transport.DestinationCity)
+                                ? transport.DestinationCity
+                                : "Destination to be confirmed";
+
+                            var vehicleType = string.IsNullOrWhiteSpace(transport.VehicleType)
+                                ? "Transport Service"
+                                : transport.VehicleType;
+
+                            var description = string.IsNullOrWhiteSpace(transport.Description)
+                                ? "Contact us for more information about this transport service."
+                                : transport.Description;
+
+                            var capacity = transport.PassengerCapacity.HasValue
+                                ? transport.PassengerCapacity.Value + " passengers"
+                                : "To be confirmed";
+
+                            var price = transport.StartingPrice.HasValue
+                                ? "PKR " + transport.StartingPrice.Value.ToString("N0")
+                                : "On request";
+
+                            var isReverse = (featuredCount - 1) % 2 == 1;
+
+                            <article class="kd-service kd-service--feature @(isReverse ? "kd-service--reverse" : "") kd-reveal">
+
+                                <div class="kd-service__media media"
+                                     data-fallback-label="@transport.Name">
+                                    @if (!string.IsNullOrWhiteSpace(transport.ImageUrl))
+                                    {
+                                        <img src="@transport.ImageUrl"
+                                             alt="@transport.Name"
+                                             loading="lazy"
+                                             onerror="this.style.display='none';" />
+                                    }
+                                    <span class="kd-service__badge">Featured Service</span>
+                                </div>
+
+                                <div class="kd-service__body">
+
+                                    <p class="kd-service__eyebrow">@vehicleType</p>
+                                    <h3 class="kd-service__title">@transport.Name</h3>
+
+                                    <div class="kd-route">
+                                        <div class="kd-route__end">
+                                            <span class="kd-route__label">Departure</span>
+                                            <span class="kd-route__city">@route</span>
+                                        </div>
+                                        <div class="kd-route__middle" aria-hidden="true"></div>
+                                        <div class="kd-route__end kd-route__end--to">
+                                            <span class="kd-route__label">Destination</span>
+                                            <span class="kd-route__city">@destination</span>
+                                        </div>
+                                    </div>
+
+                                    <p class="kd-service__desc">@description</p>
+
+                                    <div class="kd-service__info">
+                                        <div class="kd-service__info-item">
+                                            <span>Passenger Capacity</span>
+                                            <strong>@capacity</strong>
+                                        </div>
+                                        <div class="kd-service__info-item">
+                                            <span>Starting Price</span>
+                                            <strong>@price</strong>
+                                        </div>
+                                    </div>
+
+                                    <div class="kd-service__actions">
+                                        <a class="kd-btn-primary"
+                                           href="@Url.Action("Create", "Bookings", new { serviceType = "Transport", serviceId = transport.Id })">
+                                            Inquire About Transport
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                                                 stroke="currentColor" stroke-width="1.8"
+                                                 stroke-linecap="round" stroke-linejoin="round"
+                                                 aria-hidden="true" focusable="false">
+                                                <path d="M5 12h14M13 6l6 6-6 6" />
+                                            </svg>
+                                        </a>
+
+                                        <a class="kd-link-details"
+                                           href="@Url.Action("Details", "Transport", new { id = transport.Id })">
+                                            <span class="kd-rule" aria-hidden="true"></span>
+                                            View Details
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                                                 stroke="currentColor" stroke-width="1.8"
+                                                 stroke-linecap="round" stroke-linejoin="round"
+                                                 aria-hidden="true" focusable="false">
+                                                <path d="M5 12h14M13 6l6 6-6 6" />
+                                            </svg>
+                                        </a>
+                                    </div>
+
+                                </div>
+
+                            </article>
+                        }
+
+                    </div>
+                </div>
+            </section>
         }
 
-    </div>
-</section>
+        if (regularCount > 0)
+        {
+            <!-- =============================================================
+                 SECTION 04 — REGULAR TRANSPORT SERVICES GALLERY
+                 ============================================================= -->
+            <section class="kd-intro-section" aria-label="Transport services" style="padding: 0 0 clamp(64px, 8vw, 112px); background: var(--kd-ivory);">
+                <div class="container">
+                    <div class="kd-regular-grid">
 
-<section class="cta-band">
-    <div class="container" data-reveal>
-        <h2>Need help choosing a route?</h2>
-        <p>
-            Tell us where you want to go, when you plan to travel
-            and how many people are travelling. Our team can help
-            you explore suitable transport options.
-        </p>
-        <a class="btn" href="@Url.Action("Index", "Contact")">
-            Get in Touch
-        </a>
-    </div>
-</section>
+                        @foreach (var transport in Model.Where(t => !t.IsFeatured))
+                        {
+                            var route = !string.IsNullOrWhiteSpace(transport.StartingCity)
+                                ? transport.StartingCity
+                                : "Location to be confirmed";
+
+                            var destination = !string.IsNullOrWhiteSpace(transport.DestinationCity)
+                                ? transport.DestinationCity
+                                : "Destination to be confirmed";
+
+                            var vehicleType = string.IsNullOrWhiteSpace(transport.VehicleType)
+                                ? "Transport Service"
+                                : transport.VehicleType;
+
+                            var description = string.IsNullOrWhiteSpace(transport.Description)
+                                ? "Contact us for more information about this transport service."
+                                : transport.Description;
+
+                            var capacity = transport.PassengerCapacity.HasValue
+                                ? transport.PassengerCapacity.Value + " passengers"
+                                : "To be confirmed";
+
+                            var price = transport.StartingPrice.HasValue
+                                ? "PKR " + transport.StartingPrice.Value.ToString("N0")
+                                : "On request";
+
+                            <article class="kd-service kd-service--regular kd-reveal">
+
+                                <div class="kd-service__media media"
+                                     data-fallback-label="@transport.Name">
+                                    @if (!string.IsNullOrWhiteSpace(transport.ImageUrl))
+                                    {
+                                        <img src="@transport.ImageUrl"
+                                             alt="@transport.Name"
+                                             loading="lazy"
+                                             onerror="this.style.display='none';" />
+                                    }
+                                </div>
+
+                                <div class="kd-service__body">
+
+                                    <p class="kd-service__eyebrow">@vehicleType</p>
+                                    <h3 class="kd-service__title">@transport.Name</h3>
+
+                                    <div class="kd-route">
+                                        <div class="kd-route__end">
+                                            <span class="kd-route__label">Departure</span>
+                                            <span class="kd-route__city">@route</span>
+                                        </div>
+                                        <div class="kd-route__middle" aria-hidden="true"></div>
+                                        <div class="kd-route__end kd-route__end--to">
+                                            <span class="kd-route__label">Destination</span>
+                                            <span class="kd-route__city">@destination</span>
+                                        </div>
+                                    </div>
+
+                                    <p class="kd-service__desc">@description</p>
+
+                                    <div class="kd-service__info">
+                                        <div class="kd-service__info-item">
+                                            <span>Capacity</span>
+                                            <strong>@capacity</strong>
+                                        </div>
+                                        <div class="kd-service__info-item">
+                                            <span>Starting Price</span>
+                                            <strong>@price</strong>
+                                        </div>
+                                    </div>
+
+                                    <div class="kd-service__actions">
+                                        <a class="kd-btn-primary"
+                                           href="@Url.Action("Create", "Bookings", new { serviceType = "Transport", serviceId = transport.Id })">
+                                            Inquire
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                                                 stroke="currentColor" stroke-width="1.8"
+                                                 stroke-linecap="round" stroke-linejoin="round"
+                                                 aria-hidden="true" focusable="false">
+                                                <path d="M5 12h14M13 6l6 6-6 6" />
+                                            </svg>
+                                        </a>
+
+                                        <a class="kd-link-details"
+                                           href="@Url.Action("Details", "Transport", new { id = transport.Id })">
+                                            <span class="kd-rule" aria-hidden="true"></span>
+                                            Details
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                                                 stroke="currentColor" stroke-width="1.8"
+                                                 stroke-linecap="round" stroke-linejoin="round"
+                                                 aria-hidden="true" focusable="false">
+                                                <path d="M5 12h14M13 6l6 6-6 6" />
+                                            </svg>
+                                        </a>
+                                    </div>
+
+                                </div>
+
+                            </article>
+                        }
+
+                    </div>
+                </div>
+            </section>
+        }
+    }
+    else
+    {
+        <!-- =================================================================
+             SECTION 05 — EMPTY STATE
+             ================================================================= -->
+        <section class="kd-intro-section" aria-label="No transport services" style="padding: 0 0 clamp(64px, 8vw, 112px); background: var(--kd-ivory);">
+            <div class="container">
+                <div class="kd-empty kd-reveal">
+                    <p class="kd-eyebrow">Coming Soon</p>
+                    <h2>Every journey begins somewhere.</h2>
+                    <p>
+                        Our transport listings are being prepared.
+                        Please contact our team for help arranging your journey.
+                    </p>
+                </div>
+            </div>
+        </section>
+    }
+
+    <!-- =====================================================================
+         SECTION 06 — CLOSING CONTACT CTA
+         ===================================================================== -->
+    <section class="kd-cta" aria-labelledby="kd-cta-heading">
+        <div class="container kd-cta__inner">
+
+            <div class="kd-cta__heading kd-reveal">
+                <p class="kd-eyebrow kd-eyebrow--light">Plan With Us</p>
+                <h2 id="kd-cta-heading">Not sure which route to choose?</h2>
+            </div>
+
+            <div class="kd-cta__aside kd-reveal" style="--kd-delay:140ms">
+                <p class="kd-cta__lede">
+                    Tell us where you want to go, when you plan to travel and how many
+                    people are travelling. Our team can help you explore suitable
+                    transport options.
+                </p>
+                <a class="kd-btn-outline" href="@Url.Action("Index", "Contact")">
+                    Get in Touch
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="1.6"
+                         stroke-linecap="round" stroke-linejoin="round"
+                         aria-hidden="true" focusable="false">
+                        <path d="M5 12h14M13 6l6 6-6 6" />
+                    </svg>
+                </a>
+            </div>
+
+        </div>
+    </section>
+
+</div>
+
+@section Scripts {
+    <script>
+        (function () {
+            var items = document.querySelectorAll('.kd-reveal');
+            if (!items.length) { return; }
+
+            var prefersReduced = window.matchMedia
+                && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+            function showAll() {
+                for (var i = 0; i < items.length; i++) {
+                    items[i].classList.add('is-in');
+                }
+            }
+
+            if (prefersReduced || !('IntersectionObserver' in window)) {
+                showAll();
+                return;
+            }
+
+            var observer = new IntersectionObserver(function (entries) {
+                for (var i = 0; i < entries.length; i++) {
+                    if (entries[i].isIntersecting) {
+                        entries[i].target.classList.add('is-in');
+                        observer.unobserve(entries[i].target);
+                    }
+                }
+            }, {
+                root: null,
+                rootMargin: '0px 0px -8% 0px',
+                threshold: 0.12
+            });
+
+            for (var j = 0; j < items.length; j++) {
+                observer.observe(items[j]);
+            }
+        })();
+    </script>
+}

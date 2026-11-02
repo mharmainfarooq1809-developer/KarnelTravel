@@ -1,4 +1,5 @@
-﻿using KarnelTravel.Data;
+﻿
+using KarnelTravel.Data;
 using KarnelTravel.Models;
 using KarnelTravel.ViewModels;
 using Microsoft.AspNetCore.Mvc;
@@ -9,6 +10,14 @@ namespace KarnelTravel.Controllers;
 public class BookingsController : Controller
 {
     private readonly ApplicationDbContext _context;
+
+    private static readonly string[] RestaurantVisitPeriods =
+    {
+        "Breakfast",
+        "Lunch",
+        "Afternoon",
+        "Dinner"
+    };
 
     public BookingsController(ApplicationDbContext context)
     {
@@ -38,7 +47,8 @@ public class BookingsController : Controller
             Adults = 1,
             Children = 0,
             Rooms = 0,
-            TripType = service.Type == "Transport" ? "OneWay" : null
+            TripType = service.Type == "Transport" ? "OneWay" : null,
+            PreferredVisitTime = null
         };
 
         ViewBag.ServiceName = service.Name;
@@ -103,6 +113,59 @@ public class BookingsController : Controller
                     nameof(model.ReturnDate),
                     "The return date cannot be before the travel date.");
             }
+        }
+
+        // =====================================================
+        // RESTAURANT VALIDATION
+        // =====================================================
+
+        if (service.Type == "Restaurant")
+        {
+            model.PreferredVisitTime =
+                model.PreferredVisitTime?.Trim();
+
+            if (string.IsNullOrWhiteSpace(model.PreferredVisitTime))
+            {
+                ModelState.AddModelError(
+                    nameof(model.PreferredVisitTime),
+                    "Please select your preferred visit period.");
+            }
+            else if (!RestaurantVisitPeriods.Contains(
+                model.PreferredVisitTime,
+                StringComparer.OrdinalIgnoreCase))
+            {
+                ModelState.AddModelError(
+                    nameof(model.PreferredVisitTime),
+                    "Please select a valid restaurant visit period.");
+            }
+            else
+            {
+                // Store the canonical value.
+                model.PreferredVisitTime =
+                    RestaurantVisitPeriods.First(
+                        x => string.Equals(
+                            x,
+                            model.PreferredVisitTime,
+                            StringComparison.OrdinalIgnoreCase
+                        )
+                    );
+            }
+
+            // A restaurant booking does not use a return date.
+            model.ReturnDate = null;
+
+            // Rooms are not relevant to restaurant bookings.
+            model.Rooms = 0;
+
+            // Restaurant booking does not use transport fields.
+            model.PickupLocation = null;
+            model.DropoffLocation = null;
+            model.TripType = null;
+        }
+        else
+        {
+            // Do not retain restaurant-only data for other services.
+            model.PreferredVisitTime = null;
         }
 
         // =====================================================
@@ -220,8 +283,6 @@ public class BookingsController : Controller
                         ? model.ReturnDate!.Value.Date
                         : requestedStartDate;
 
-                // Add one day to make the end-date comparison
-                // inclusive while using a strict SQL comparison.
                 DateTime dayAfterRequestedEnd =
                     requestedEndDate.AddDays(1);
 
@@ -231,19 +292,11 @@ public class BookingsController : Controller
                         .AnyAsync(b =>
                             b.TransportServiceId == service.Id &&
                             b.ServiceType == "Transport" &&
-
-                            // Only these statuses block availability.
                             (
                                 b.Status == "Pending" ||
                                 b.Status == "Confirmed"
                             ) &&
-
-                            // Existing booking starts before or on
-                            // the requested booking's final date.
                             b.BookingDate < dayAfterRequestedEnd &&
-
-                            // Existing booking ends on or after
-                            // the requested booking's start date.
                             (b.ReturnDate ?? b.BookingDate)
                                 >= requestedStartDate
                         );
@@ -294,10 +347,8 @@ public class BookingsController : Controller
                     }
                     else
                     {
-                        // Outbound fare.
                         oneWayFare = routePricing.OneWayFarePKR;
 
-                        // Return fare.
                         if (model.TripType == "RoundTrip")
                         {
                             returnFare =
@@ -309,10 +360,8 @@ public class BookingsController : Controller
                             returnFare = 0m;
                         }
 
-                        // No discount configured.
                         discount = 0m;
 
-                        // Calculate total on the server.
                         totalFare =
                             oneWayFare.Value +
                             returnFare.Value -
@@ -359,13 +408,19 @@ public class BookingsController : Controller
 
             BookingDate = model.BookingDate.Date,
 
+            // Restaurant preferred visit period.
+            PreferredVisitTime = service.Type == "Restaurant"
+                ? model.PreferredVisitTime
+                : null,
+
             ReturnDate = model.ReturnDate?.Date,
 
             Adults = model.Adults,
 
             Children = model.Children,
 
-            Rooms = service.Type == "Transport"
+            Rooms = service.Type == "Transport" ||
+                    service.Type == "Restaurant"
                 ? 0
                 : model.Rooms,
 
@@ -381,7 +436,6 @@ public class BookingsController : Controller
                 ? model.TripType
                 : null,
 
-            // Save fare snapshots.
             EstimatedTotalPKR = totalFare,
 
             TransportOneWayFarePKR = oneWayFare,
@@ -512,10 +566,7 @@ public class BookingsController : Controller
 
                     return item == null
                         ? null
-                        : new ServiceInfo(
-                            "Destination",
-                            item.Id,
-                            item.Name);
+                        : new ServiceInfo("Destination", item.Id, item.Name);
                 }
 
             case "hotel":
@@ -528,10 +579,7 @@ public class BookingsController : Controller
 
                     return item == null
                         ? null
-                        : new ServiceInfo(
-                            "Hotel",
-                            item.Id,
-                            item.Name);
+                        : new ServiceInfo("Hotel", item.Id, item.Name);
                 }
 
             case "resort":
@@ -544,10 +592,7 @@ public class BookingsController : Controller
 
                     return item == null
                         ? null
-                        : new ServiceInfo(
-                            "Resort",
-                            item.Id,
-                            item.Name);
+                        : new ServiceInfo("Resort", item.Id, item.Name);
                 }
 
             case "restaurant":
@@ -560,10 +605,7 @@ public class BookingsController : Controller
 
                     return item == null
                         ? null
-                        : new ServiceInfo(
-                            "Restaurant",
-                            item.Id,
-                            item.Name);
+                        : new ServiceInfo("Restaurant", item.Id, item.Name);
                 }
 
             case "tour":
@@ -576,10 +618,7 @@ public class BookingsController : Controller
 
                     return item == null
                         ? null
-                        : new ServiceInfo(
-                            "Tour",
-                            item.Id,
-                            item.Name);
+                        : new ServiceInfo("Tour", item.Id, item.Name);
                 }
 
             case "transport":
@@ -592,10 +631,7 @@ public class BookingsController : Controller
 
                     return item == null
                         ? null
-                        : new ServiceInfo(
-                            "Transport",
-                            item.Id,
-                            item.Name);
+                        : new ServiceInfo("Transport", item.Id, item.Name);
                 }
 
             default:

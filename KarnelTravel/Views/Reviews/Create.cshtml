@@ -1,0 +1,293 @@
+﻿
+@model KarnelTravel.Models.ReviewSubmissionViewModel
+
+@{
+    ViewData["Title"] = "Write a Review | Karnel Travel Guide";
+    ViewData["Description"] = "Share your experience with Karnel Travel Guide.";
+
+    var successMessage = ViewBag.SuccessMessage as string;
+}
+
+@section Styles {
+    <style>
+        .review-hero {
+            padding: calc(var(--header-h) + 55px) 0 45px;
+            background: var(--forest-deep);
+            color: var(--ivory);
+        }
+
+        .review-hero h1 {
+            color: var(--ivory);
+            max-width: 18ch;
+        }
+
+        .review-hero p {
+            color: rgba(248,246,240,.78);
+        }
+
+        .review-section {
+            padding: 60px 0 100px;
+        }
+
+        .review-container {
+            max-width: 720px;
+            margin: auto;
+        }
+
+        .review-card {
+            background: var(--white);
+            border: 1px solid var(--line);
+            border-radius: var(--radius-lg);
+            padding: 36px;
+            box-shadow: var(--shadow-md);
+        }
+
+        .review-listing {
+            padding: 18px;
+            background: var(--ivory);
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            margin-bottom: 28px;
+        }
+
+        .review-listing small {
+            display: block;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: .12em;
+            font-size: .68rem;
+            margin-bottom: 6px;
+        }
+
+        .review-listing strong {
+            color: var(--forest-deep);
+            font-family: var(--serif);
+            font-size: 1.3rem;
+        }
+
+        .review-field {
+            margin-bottom: 22px;
+        }
+
+        .review-field label,
+        .review-field > span {
+            display: block;
+            font-size: .85rem;
+            font-weight: 600;
+            margin-bottom: 9px;
+            color: var(--forest-deep);
+        }
+
+        .review-field input,
+        .review-field textarea {
+            width: 100%;
+            padding: 13px 15px;
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            background: var(--white);
+            color: var(--forest-deep);
+            font: inherit;
+        }
+
+        .review-field textarea {
+            min-height: 150px;
+            resize: vertical;
+        }
+
+        .review-field input:focus,
+        .review-field textarea:focus {
+            outline: 2px solid var(--sage);
+            outline-offset: 2px;
+        }
+
+        .review-stars {
+            display: flex;
+            flex-direction: row-reverse;
+            justify-content: flex-end;
+            gap: 8px;
+        }
+
+        .review-stars input {
+            position: absolute;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .review-stars label {
+            font-size: 2.2rem;
+            color: #c9c9c9;
+            cursor: pointer;
+            margin: 0;
+            transition: color .2s ease;
+        }
+
+        .review-stars label:hover,
+        .review-stars label:hover ~ label,
+        .review-stars input:checked ~ label {
+            color: #c49b43;
+        }
+
+        .review-stars input:focus-visible + label {
+            outline: 2px solid var(--forest);
+            outline-offset: 3px;
+        }
+
+        .review-validation {
+            color: #a83232;
+            font-size: .8rem;
+            margin-top: 6px;
+            display: block;
+        }
+
+        .review-success {
+            padding: 18px;
+            background: #edf5ed;
+            border: 1px solid #b8d5b8;
+            color: #285b32;
+            border-radius: 10px;
+            margin-bottom: 24px;
+        }
+
+        .review-note {
+            padding: 16px;
+            background: var(--ivory);
+            border-radius: 9px;
+            color: var(--muted);
+            font-size: .85rem;
+            margin-bottom: 24px;
+            line-height: 1.7;
+        }
+
+        .review-actions {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-top: 28px;
+        }
+
+        @@media (max-width: 600px) {
+            .review-card {
+                padding: 22px;
+            }
+
+            .review-stars label {
+                font-size: 1.9rem;
+            }
+        }
+    </style>
+}
+
+<header class="review-hero">
+    <div class="container" data-reveal>
+        <p class="eyebrow">Your Experience Matters</p>
+        <h1>Share your journey.</h1>
+        <p>Help other travellers make better decisions by sharing your experience.</p>
+    </div>
+</header>
+
+<section class="container review-section">
+    <div class="review-container">
+        <div class="review-card">
+
+            @if (!string.IsNullOrWhiteSpace(successMessage))
+            {
+                <div class="review-success" role="status">
+                    <strong>Review submitted.</strong>
+                    <p>@successMessage</p>
+                </div>
+            }
+
+            <div class="review-listing">
+                <small>You are reviewing</small>
+                <strong>@Model.ListingName</strong>
+            </div>
+
+            <form asp-controller="Reviews"
+                  asp-action="Create"
+                  method="post">
+
+                @Html.AntiForgeryToken()
+
+                <input type="hidden" asp-for="ListingType" />
+                <input type="hidden" asp-for="ListingId" />
+
+                <div asp-validation-summary="ModelOnly"
+                     class="review-validation"></div>
+
+                <div class="review-field">
+                    <label asp-for="ReviewerName"></label>
+                    <input asp-for="ReviewerName"
+                           placeholder="Enter your name"
+                           maxlength="100" />
+                    <span asp-validation-for="ReviewerName"
+                          class="review-validation"></span>
+                </div>
+
+                <div class="review-field">
+                    <span>Your rating</span>
+
+                    <div class="review-stars" role="radiogroup"
+                         aria-label="Choose a rating from one to five stars">
+
+                        @for (int i = 5; i >= 1; i--)
+                        {
+                            <input type="radio"
+                                   id="rating-@i"
+                                   name="Rating"
+                                   value="@i"
+                                   checked="@(Model.Rating == i)" />
+
+                            <label for="rating-@i"
+                                   title="@i out of 5 stars"
+                                   aria-label="@i out of 5 stars">
+                                ★
+                            </label>
+                        }
+                    </div>
+
+                    <span asp-validation-for="Rating"
+                          class="review-validation"></span>
+                </div>
+
+                <div class="review-field">
+                    <label asp-for="Title"></label>
+                    <input asp-for="Title"
+                           placeholder="Give your review a title"
+                           maxlength="150" />
+                    <span asp-validation-for="Title"
+                          class="review-validation"></span>
+                </div>
+
+                <div class="review-field">
+                    <label asp-for="Comment"></label>
+                    <textarea asp-for="Comment"
+                              placeholder="Tell us about your experience..."
+                              maxlength="2000"></textarea>
+                    <span asp-validation-for="Comment"
+                          class="review-validation"></span>
+                </div>
+
+                <div class="review-note">
+                    Your review will be checked by our team before it
+                    appears publicly. Please share an honest and respectful
+                    account of your experience.
+                </div>
+
+                <div class="review-actions">
+                    <button type="submit" class="btn">
+                        Submit review
+                    </button>
+
+                    <a href="javascript:history.back()"
+                       class="btn btn--outline">
+                        Go back
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

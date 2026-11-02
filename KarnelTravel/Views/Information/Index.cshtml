@@ -5,171 +5,894 @@
 
 @section Styles {
     <style>
-        .info-hero {
-            padding: calc(var(--header-h) + 80px) 0 80px;
-            background: var(--sand);
-        }
-        .info-hero h1 { max-width: 18ch; }
-        .info-hero p { color: var(--muted); font-size: 1.05rem; max-width: 60ch; }
+        /* ==========================================================================
+           KARNEL TRAVEL GUIDE — DISCOVER MORE
+           Editorial directory page. Scoped with .kd- prefix so nothing else
+           in the shared layout is affected.
+           ========================================================================== */
 
-        .category-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 26px;
+        .kd-page {
+            --kd-forest: var(--forest-deep, #14271F);
+            --kd-ivory: var(--ivory, #F8F6F0);
+            --kd-sage: var(--sage, #8FA888);
+            --kd-sand: var(--sand, #E8DFC9);
+            --kd-white: #FFFFFF;
+            --kd-muted: var(--muted, #5A6B60);
+            --kd-serif: var(--serif, "Playfair Display", Georgia, "Times New Roman", serif);
+            --kd-sans: var(--sans, "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif);
+            --kd-ease: var(--ease, cubic-bezier(.22, .61, .36, 1));
+
+            background: var(--kd-ivory);
+            color: var(--kd-forest);
+            font-family: var(--kd-sans);
+            -webkit-font-smoothing: antialiased;
         }
-        .category-card {
+
+        /* -------------------------------------------------- shared atoms ---- */
+        .kd-eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 14px;
+            margin: 0 0 20px;
+            font-size: .7rem;
+            font-weight: 600;
+            letter-spacing: .34em;
+            text-transform: uppercase;
+            color: var(--kd-sage);
+        }
+
+        .kd-eyebrow::before {
+            content: "";
+            width: 36px;
+            height: 1px;
+            background: currentColor;
+            opacity: .75;
+        }
+
+        .kd-eyebrow--light { color: var(--kd-sand); }
+
+        /* Reveal system (self-contained, independent of the shared animator) */
+        .kd-reveal {
+            opacity: 0;
+            transform: translateY(26px);
+            transition:
+                opacity .9s var(--kd-ease),
+                transform .9s var(--kd-ease);
+            transition-delay: var(--kd-delay, 0ms);
+        }
+
+        .kd-reveal.is-in {
+            opacity: 1;
+            transform: none;
+        }
+
+        /* ------------------------------------------------------ 01 — HERO ---- */
+        .kd-hero {
             position: relative;
+            padding: calc(var(--header-h, 80px) + 72px) 0 clamp(56px, 7vw, 96px);
+            background: var(--kd-ivory);
+        }
+
+        .kd-hero__grid {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) minmax(0, 1.02fr);
+            align-items: center;
+            gap: clamp(32px, 6vw, 88px);
+        }
+
+        .kd-hero h1 {
+            margin: 0 0 26px;
+            max-width: 13ch;
+            font-family: var(--kd-serif);
+            font-weight: 500;
+            font-size: clamp(2.5rem, 5.2vw, 4.4rem);
+            line-height: 1.02;
+            letter-spacing: -.02em;
+            color: var(--kd-forest);
+        }
+
+        .kd-hero h1 em {
+            font-style: italic;
+            color: inherit;
+        }
+
+        .kd-hero__lede {
+            margin: 0;
+            max-width: 44ch;
+            font-size: clamp(1rem, 1.1vw, 1.1rem);
+            line-height: 1.75;
+            color: var(--kd-muted);
+        }
+
+        .kd-hero__media {
+            position: relative;
+        }
+
+        .kd-hero__frame {
+            margin: 0;
+            height: clamp(340px, 46vw, 540px);
             overflow: hidden;
-            border-radius: var(--radius-lg);
-            background: var(--forest-deep);
-            color: var(--ivory);
-            min-height: 380px;
-            display: flex;
-            flex-direction: column;
-            justify-content: flex-end;
-            padding: 32px;
-            isolation: isolate;
-            transition: transform .5s var(--ease), box-shadow .5s var(--ease);
+            border-radius: 4px;
+            background: var(--kd-forest);
         }
-        .category-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); }
-        .category-card__media {
-            position: absolute;
-            inset: 0;
-            z-index: -1;
-            border-radius: 0;
-        }
-        .category-card__media img {
+
+        .kd-hero__frame img,
+        .kd-hero__inset img {
+            display: block;
             width: 100%;
             height: 100%;
             object-fit: cover;
-            transition: transform 1.2s var(--ease);
         }
-        .category-card:hover .category-card__media img { transform: scale(1.06); }
-        .category-card::after {
+
+        .kd-hero__frame img {
+            transform: scale(1.06);
+            transition: transform 1.6s var(--kd-ease);
+        }
+
+        .kd-hero__media.is-in .kd-hero__frame img {
+            transform: scale(1);
+        }
+
+        .kd-hero__inset {
+            display: none;
+            position: absolute;
+            left: -34px;
+            bottom: -38px;
+            width: 40%;
+            max-width: 220px;
+            aspect-ratio: 1 / 1;
+            margin: 0;
+            overflow: hidden;
+            border: 6px solid var(--kd-ivory);
+            border-radius: 4px;
+            background: var(--kd-forest);
+            box-shadow: 0 26px 48px -28px rgba(20, 39, 31, .55);
+        }
+
+        /* ------------------------------------------------- 02 — DIRECTORY ---- */
+        .kd-experiences {
+            padding: clamp(56px, 7vw, 104px) 0 clamp(64px, 8vw, 120px);
+            background: var(--kd-ivory);
+        }
+
+        .kd-head {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: flex-end;
+            justify-content: space-between;
+            gap: 18px 48px;
+            padding-bottom: clamp(20px, 2.6vw, 32px);
+            margin-bottom: clamp(26px, 3.4vw, 48px);
+            border-bottom: 1px solid rgba(20, 39, 31, .12);
+        }
+
+        .kd-head .kd-eyebrow { margin-bottom: 16px; }
+
+        .kd-head h2 {
+            margin: 0;
+            font-family: var(--kd-serif);
+            font-weight: 500;
+            font-size: clamp(1.7rem, 3vw, 2.5rem);
+            line-height: 1.1;
+            letter-spacing: -.015em;
+        }
+
+        .kd-head__note {
+            margin: 0;
+            max-width: 38ch;
+            font-size: .93rem;
+            line-height: 1.75;
+            color: var(--kd-muted);
+        }
+
+        .kd-grid {
+            display: grid;
+            grid-template-columns: repeat(12, minmax(0, 1fr));
+            gap: clamp(14px, 1.5vw, 22px);
+        }
+
+        /* --- category card base --- */
+        .kd-card {
+            --kd-h: 460px;
+
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            min-height: var(--kd-h);
+            padding: clamp(22px, 2.4vw, 38px);
+            overflow: hidden;
+            border-radius: 3px;
+            background: var(--kd-forest);
+            color: var(--kd-ivory);
+            text-decoration: none;
+            isolation: isolate;
+            grid-column: span 4;
+        }
+
+        .kd-card .kd-card__media {
+            position: absolute;
+            inset: 0;
+            z-index: 0;
+            border-radius: 0;
+            background: var(--kd-forest);
+        }
+
+        .kd-card .kd-card__media img {
+            display: block;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transform: scale(1.02);
+            transition: transform 1.4s var(--kd-ease);
+        }
+
+        .kd-card:hover .kd-card__media img,
+        .kd-card:focus-visible .kd-card__media img {
+            transform: scale(1.08);
+        }
+
+        .kd-card__scrim {
+            position: absolute;
+            inset: 0;
+            z-index: 1;
+            pointer-events: none;
+            background:
+                linear-gradient(to top,
+                    rgba(10, 22, 17, .94) 0%,
+                    rgba(10, 22, 17, .68) 34%,
+                    rgba(10, 22, 17, .18) 68%,
+                    rgba(10, 22, 17, .30) 100%);
+            transition: opacity .5s var(--kd-ease);
+        }
+
+        .kd-card__body {
+            position: relative;
+            z-index: 2;
+            max-width: 44ch;
+        }
+
+        .kd-card__num {
+            display: block;
+            margin-bottom: 14px;
+            font-family: var(--kd-serif);
+            font-size: .95rem;
+            letter-spacing: .28em;
+            color: var(--kd-sand);
+        }
+
+        .kd-card__title {
+            margin: 0 0 10px;
+            font-family: var(--kd-serif);
+            font-weight: 500;
+            font-size: clamp(1.5rem, 2.1vw, 2rem);
+            line-height: 1.14;
+            letter-spacing: -.01em;
+            color: var(--kd-ivory);
+        }
+
+        .kd-card__label {
+            display: block;
+            margin-bottom: 14px;
+            font-size: .67rem;
+            font-weight: 600;
+            letter-spacing: .26em;
+            text-transform: uppercase;
+            color: var(--kd-sage);
+        }
+
+        .kd-card__desc {
+            margin: 0;
+            max-width: 42ch;
+            font-size: .93rem;
+            line-height: 1.7;
+            color: rgba(248, 246, 240, .82);
+        }
+
+        .kd-card__link {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 22px;
+            font-size: .72rem;
+            font-weight: 600;
+            letter-spacing: .24em;
+            text-transform: uppercase;
+            color: var(--kd-ivory);
+        }
+
+        .kd-card__link .kd-rule {
+            width: 26px;
+            height: 1px;
+            background: currentColor;
+            opacity: .55;
+            transition: width .45s var(--kd-ease), opacity .45s var(--kd-ease);
+        }
+
+        .kd-card__link svg {
+            flex: none;
+            transition: transform .45s var(--kd-ease);
+        }
+
+        .kd-card:hover .kd-card__link .kd-rule,
+        .kd-card:focus-visible .kd-card__link .kd-rule {
+            width: 54px;
+            opacity: 1;
+        }
+
+        .kd-card:hover .kd-card__link svg,
+        .kd-card:focus-visible .kd-card__link svg {
+            transform: translateX(6px);
+        }
+
+        .kd-card:focus-visible {
+            outline: 2px solid var(--kd-sand);
+            outline-offset: 3px;
+        }
+
+        /* --- composition variants --- */
+        .kd-card--feature {
+            grid-column: span 7;
+            --kd-h: clamp(420px, 44vw, 620px);
+        }
+
+        .kd-card--feature .kd-card__title {
+            font-size: clamp(1.9rem, 3.2vw, 2.85rem);
+        }
+
+        .kd-card--portrait {
+            grid-column: span 5;
+            --kd-h: clamp(420px, 44vw, 620px);
+        }
+
+        .kd-card--tall {
+            --kd-h: 460px;
+        }
+
+        /* top-aligned card — breaks the rhythm of the lower row */
+        .kd-card--reverse {
+            justify-content: flex-start;
+        }
+
+        .kd-card--reverse .kd-card__scrim {
+            background:
+                linear-gradient(to bottom,
+                    rgba(10, 22, 17, .93) 0%,
+                    rgba(10, 22, 17, .62) 38%,
+                    rgba(10, 22, 17, .16) 72%,
+                    rgba(10, 22, 17, .34) 100%);
+        }
+
+        /* full-width closing category */
+        .kd-card--wide {
+            grid-column: span 12;
+            --kd-h: 320px;
+            justify-content: center;
+        }
+
+        .kd-card--wide .kd-card__scrim {
+            background:
+                linear-gradient(90deg,
+                    rgba(10, 22, 17, .95) 0%,
+                    rgba(10, 22, 17, .78) 36%,
+                    rgba(10, 22, 17, .18) 76%,
+                    rgba(10, 22, 17, .06) 100%);
+        }
+
+        .kd-card--wide .kd-card__body {
+            max-width: 48ch;
+        }
+
+        /* staggered entrance */
+        .kd-grid > .kd-card:nth-child(1) { --kd-delay: 0ms; }
+        .kd-grid > .kd-card:nth-child(2) { --kd-delay: 90ms; }
+        .kd-grid > .kd-card:nth-child(3) { --kd-delay: 150ms; }
+        .kd-grid > .kd-card:nth-child(4) { --kd-delay: 210ms; }
+        .kd-grid > .kd-card:nth-child(5) { --kd-delay: 270ms; }
+
+        /* ------------------------------------------------------- 03 — CTA ---- */
+        .kd-cta {
+            position: relative;
+            overflow: hidden;
+            padding: clamp(72px, 10vw, 132px) 0;
+            background: var(--kd-forest);
+            color: var(--kd-ivory);
+            border-top: 1px solid rgba(232, 223, 201, .16);
+            isolation: isolate;
+        }
+
+        .kd-cta__bg {
+            position: absolute;
+            inset: 0;
+            z-index: 0;
+        }
+
+        .kd-cta__bg img {
+            display: block;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            opacity: .26;
+        }
+
+        .kd-cta::before {
             content: "";
             position: absolute;
             inset: 0;
-            z-index: -1;
-            background: linear-gradient(180deg, rgba(20, 39, 31, .1) 0%, rgba(20, 39, 31, .85) 100%);
+            z-index: 1;
+            pointer-events: none;
+            background:
+                linear-gradient(180deg,
+                    rgba(20, 39, 31, .88) 0%,
+                    rgba(20, 39, 31, .58) 46%,
+                    rgba(20, 39, 31, .95) 100%);
         }
-        .category-card__num {
-            font-family: var(--serif);
-            font-size: 1rem;
-            letter-spacing: .15em;
-            color: var(--sage);
-            margin-bottom: 12px;
-        }
-        .category-card h2 {
-            color: var(--ivory);
-            margin: 0 0 8px;
-            font-size: 1.7rem;
-        }
-        .category-card__sub {
-            font-size: .72rem;
-            letter-spacing: .18em;
-            text-transform: uppercase;
-            color: var(--sand);
-            margin-bottom: 16px;
-        }
-        .category-card p {
-            color: rgba(248, 246, 240, .82);
-            font-size: .94rem;
-            margin: 0 0 20px;
-            max-width: 44ch;
-        }
-        .category-card .link-arrow { color: var(--ivory); }
-        .category-card .link-arrow:hover { border-color: var(--sand); }
 
-        @@media (max-width: 600px) {
-            .category-card { min-height: 320px; padding: 24px; }
-            .category-card h2 { font-size: 1.4rem; }
+        .kd-cta__inner {
+            position: relative;
+            z-index: 2;
+            max-width: 760px;
+            margin: 0 auto;
+            text-align: center;
+        }
+
+        .kd-cta__inner .kd-eyebrow {
+            justify-content: center;
+            margin-bottom: 24px;
+        }
+
+        .kd-cta h2 {
+            margin: 0 0 22px;
+            font-family: var(--kd-serif);
+            font-weight: 500;
+            font-size: clamp(2rem, 4.2vw, 3.5rem);
+            line-height: 1.08;
+            letter-spacing: -.02em;
+            color: var(--kd-ivory);
+        }
+
+        .kd-cta__lede {
+            margin: 0 auto 38px;
+            max-width: 52ch;
+            font-size: clamp(.98rem, 1.1vw, 1.08rem);
+            line-height: 1.75;
+            color: rgba(248, 246, 240, .78);
+        }
+
+        .kd-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 14px;
+            padding: 18px 34px;
+            border: 1px solid transparent;
+            border-radius: 2px;
+            background: var(--kd-ivory);
+            color: var(--kd-forest);
+            font-size: .74rem;
+            font-weight: 600;
+            letter-spacing: .22em;
+            text-transform: uppercase;
+            text-decoration: none;
+            transition:
+                background .4s var(--kd-ease),
+                color .4s var(--kd-ease),
+                transform .4s var(--kd-ease);
+        }
+
+        .kd-btn svg {
+            flex: none;
+            transition: transform .4s var(--kd-ease);
+        }
+
+        .kd-btn:hover {
+            background: var(--kd-sand);
+            transform: translateY(-2px);
+        }
+
+        .kd-btn:hover svg {
+            transform: translateX(5px);
+        }
+
+        .kd-btn:focus-visible {
+            outline: 2px solid var(--kd-sand);
+            outline-offset: 4px;
+        }
+
+        /* --------------------------------------------------- RESPONSIVE ---- */
+        @@media (min-width: 993px) {
+            .kd-hero__inset { display: block; }
+        }
+
+        @@media (max-width: 1024px) {
+            .kd-hero {
+                padding: calc(var(--header-h, 80px) + 48px) 0 clamp(48px, 7vw, 72px);
+            }
+
+            .kd-hero__grid {
+                grid-template-columns: minmax(0, 1fr);
+                gap: clamp(28px, 5vw, 44px);
+            }
+
+            .kd-hero h1 { max-width: 18ch; }
+            .kd-hero__frame { height: clamp(300px, 50vw, 440px); }
+
+            .kd-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+            .kd-card {
+                grid-column: span 1;
+                --kd-h: 380px;
+            }
+
+            .kd-card--feature {
+                grid-column: span 2;
+                --kd-h: 420px;
+            }
+
+            .kd-card--wide {
+                grid-column: span 2;
+                --kd-h: 300px;
+            }
+        }
+
+        @@media (max-width: 640px) {
+            .kd-hero { padding-top: calc(var(--header-h, 80px) + 36px); }
+            .kd-hero h1 { margin-bottom: 20px; }
+
+            .kd-eyebrow {
+                letter-spacing: .26em;
+                font-size: .66rem;
+            }
+
+            .kd-head {
+                gap: 14px;
+                align-items: flex-start;
+                flex-direction: column;
+            }
+
+            .kd-grid { grid-template-columns: minmax(0, 1fr); }
+
+            .kd-card,
+            .kd-card--feature,
+            .kd-card--wide {
+                grid-column: 1 / -1;
+                --kd-h: 330px;
+                padding: 24px;
+            }
+
+            .kd-card--feature { --kd-h: 380px; }
+
+            .kd-card__title { font-size: 1.45rem; }
+            .kd-card--feature .kd-card__title { font-size: 1.75rem; }
+
+            .kd-card__desc { font-size: .9rem; }
+
+            /* the horizontal scrim reads poorly on narrow screens */
+            .kd-card--wide {
+                justify-content: flex-end;
+            }
+
+            .kd-card--wide .kd-card__scrim {
+                background:
+                    linear-gradient(to top,
+                        rgba(10, 22, 17, .94) 0%,
+                        rgba(10, 22, 17, .66) 42%,
+                        rgba(10, 22, 17, .22) 78%,
+                        rgba(10, 22, 17, .34) 100%);
+            }
+
+            .kd-cta__inner { text-align: left; }
+            .kd-cta__inner .kd-eyebrow { justify-content: flex-start; }
+            .kd-cta__lede { margin-left: 0; margin-right: 0; }
+
+            .kd-btn {
+                width: 100%;
+                justify-content: center;
+                padding: 18px 24px;
+            }
+        }
+
+        /* --------------------------------------------- REDUCED MOTION ---- */
+        @@media (prefers-reduced-motion: reduce) {
+            .kd-reveal {
+                opacity: 1 !important;
+                transform: none !important;
+                transition: none !important;
+            }
+
+            .kd-hero__frame img,
+            .kd-card__media img,
+            .kd-card__link svg,
+            .kd-card__link .kd-rule,
+            .kd-btn,
+            .kd-btn svg {
+                transition: none !important;
+            }
+
+            .kd-hero__frame img,
+            .kd-card__media img,
+            .kd-card:hover .kd-card__media img,
+            .kd-card:focus-visible .kd-card__media img {
+                transform: none !important;
+            }
+
+            .kd-card:hover .kd-card__link svg,
+            .kd-card:focus-visible .kd-card__link svg,
+            .kd-btn:hover svg {
+                transform: none !important;
+            }
+
+            .kd-btn:hover { transform: none; }
         }
     </style>
 }
 
-<header class="info-hero">
-    <div class="container" data-reveal>
-        <p class="eyebrow">Discover More</p>
-        <h1>Five categories, one guide.</h1>
-        <p>Each category below has its own page. Choose where to begin — from landscapes
-           to where to sleep at the end of the day.</p>
-    </div>
-</header>
+<div class="kd-page">
 
-<section class="section section--ivory">
-    <div class="container">
-        <div class="category-grid" data-reveal-group>
+    <noscript>
+        <style>
+            .kd-reveal { opacity: 1 !important; transform: none !important; }
+            .kd-hero__frame img { transform: none !important; }
+        </style>
+    </noscript>
 
-            <a class="category-card" href="@Url.Action("Index", "Destinations")" data-reveal>
-                <div class="category-card__media media" data-fallback-label="Mountain landscape">
-                    <img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=900&q=70"
-                         alt="Mountain landscape in northern Pakistan" loading="lazy" />
-                </div>
-                <span class="category-card__num">01</span>
-                <h2>Discover Pakistan</h2>
-                <span class="category-card__sub">Tourist Spots</span>
-                <p>Mountains, valleys, coastlines and historical places — organised by region.</p>
-                <span class="link-arrow">Explore</span>
-            </a>
+    <!-- =====================================================================
+         SECTION 01 — EDITORIAL HERO
+         ===================================================================== -->
+    <header class="kd-hero">
+        <div class="container kd-hero__grid">
 
-            <a class="category-card" href="@Url.Action("Index", "Transport")" data-reveal>
-                <div class="category-card__media media" data-fallback-label="Coach on a road">
-                    <img src="https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&w=900&q=70"
-                         alt="Coach travelling on a mountain road" loading="lazy" />
-                </div>
-                <span class="category-card__num">02</span>
-                <h2>Ways to Wander</h2>
-                <span class="category-card__sub">Travel Information</span>
-                <p>Bus, car, shared transport and air travel — described for guidance only.</p>
-                <span class="link-arrow">Explore</span>
-            </a>
+            <div class="kd-hero__text kd-reveal">
+                <p class="kd-eyebrow">Discover More</p>
+                <h1>Five ways to <em>experience</em> Pakistan.</h1>
+                <p class="kd-hero__lede">
+                    Explore the places, journeys, stays and experiences that bring every trip together.
+                </p>
+            </div>
 
-            <a class="category-card" href="@Url.Action("Index", "Hotels")" data-reveal>
-                <div class="category-card__media media" data-fallback-label="Hotel room">
-                    <img src="https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=900&q=70"
-                         alt="Hotel room with a window" loading="lazy" />
-                </div>
-                <span class="category-card__num">03</span>
-                <h2>Stay &amp; Unwind</h2>
-                <span class="category-card__sub">Hotel Information</span>
-                <p>Room types, facilities and sample price references across cities.</p>
-                <span class="link-arrow">Explore</span>
-            </a>
+            <div class="kd-hero__media kd-reveal" style="--kd-delay:140ms">
+                <figure class="kd-hero__frame media" data-fallback-label="Mountain valley in northern Pakistan">
+                    <img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=1200&q=75"
+                         alt="Snow-capped mountain peaks rising above a valley in northern Pakistan"
+                         loading="eager" fetchpriority="high" />
+                </figure>
 
-            <a class="category-card" href="@Url.Action("Index", "Restaurants")" data-reveal>
-                <div class="category-card__media media" data-fallback-label="Restaurant">
-                    <img src="https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=900&q=70"
-                         alt="Restaurant interior" loading="lazy" />
-                </div>
-                <span class="category-card__num">04</span>
-                <h2>Taste Trails</h2>
-                <span class="category-card__sub">Restaurant Information</span>
-                <p>Regional dishes, cuisine and dining references, organised by city.</p>
-                <span class="link-arrow">Explore</span>
-            </a>
-
-            <a class="category-card" href="@Url.Action("Index", "Resorts")" data-reveal>
-                <div class="category-card__media media" data-fallback-label="Resort pool">
-                    <img src="https://images.unsplash.com/photo-1571003123894-1f0594d2b5d9?auto=format&fit=crop&w=900&q=70"
-                         alt="Resort pool overlooking a lake" loading="lazy" />
-                </div>
-                <span class="category-card__num">05</span>
-                <h2>Resort Escapes</h2>
-                <span class="category-card__sub">Resorts Information</span>
-                <p>Longer stays in quieter settings — sample listings only.</p>
-                <span class="link-arrow">Explore</span>
-            </a>
+                <figure class="kd-hero__inset media" data-fallback-label="Mountain lake and road">
+                    <img src="https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?auto=format&fit=crop&w=600&q=70"
+                         alt="A calm mountain lake framed by forested slopes"
+                         loading="lazy" />
+                </figure>
+            </div>
 
         </div>
-    </div>
-</section>
+    </header>
 
-<section class="section section--sand" style="text-align:center;">
-    <div class="container" data-reveal>
-        <h2>Or start with a broader search.</h2>
-        <p style="color: var(--muted); max-width: 52ch; margin: 0 auto 28px;">
-            The Explore page combines all five categories so you can compare side by side.
-        </p>
-        <a class="btn" href="@Url.Action("Index", "Search")">Open Explore</a>
-    </div>
-</section>
+    <!-- =====================================================================
+         SECTION 02 — FIVE CATEGORY EXPERIENCES
+         ===================================================================== -->
+    <section class="kd-experiences" aria-labelledby="kd-directory-heading">
+        <div class="container">
+
+            <div class="kd-head kd-reveal">
+                <div>
+                    <p class="kd-eyebrow">The Directory</p>
+                    <h2 id="kd-directory-heading">Choose where to begin.</h2>
+                </div>
+                <p class="kd-head__note">
+                    Five directories, each with its own page — open one to start exploring.
+                </p>
+            </div>
+
+            <div class="kd-grid">
+
+                <!-- 01 — DISCOVER PAKISTAN -->
+                <a class="kd-card kd-card--feature kd-reveal"
+                   href="@Url.Action("Index", "Destinations")">
+                    <div class="kd-card__media media" data-fallback-label="Mountain landscape">
+                        <img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=1200&q=70"
+                             alt="Mountain landscape in northern Pakistan"
+                             loading="lazy" />
+                    </div>
+                    <span class="kd-card__scrim" aria-hidden="true"></span>
+                    <div class="kd-card__body">
+                        <span class="kd-card__num">01</span>
+                        <h2 class="kd-card__title">Discover Pakistan</h2>
+                        <span class="kd-card__label">Tourist Spots</span>
+                        <p class="kd-card__desc">
+                            Mountains, valleys, coastlines and historical places, organised by region.
+                        </p>
+                        <span class="kd-card__link">
+                            <span class="kd-rule" aria-hidden="true"></span>
+                            Explore
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                 stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"
+                                 aria-hidden="true" focusable="false">
+                                <path d="M5 12h14M13 6l6 6-6 6" />
+                            </svg>
+                        </span>
+                    </div>
+                </a>
+
+                <!-- 02 — WAYS TO WANDER -->
+                <a class="kd-card kd-card--portrait kd-reveal"
+                   href="@Url.Action("Index", "Transport")">
+                    <div class="kd-card__media media" data-fallback-label="Coach on a mountain road">
+                        <img src="https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&w=900&q=70"
+                             alt="Coach travelling along a mountain road"
+                             loading="lazy" />
+                    </div>
+                    <span class="kd-card__scrim" aria-hidden="true"></span>
+                    <div class="kd-card__body">
+                        <span class="kd-card__num">02</span>
+                        <h2 class="kd-card__title">Ways to Wander</h2>
+                        <span class="kd-card__label">Travel Information</span>
+                        <p class="kd-card__desc">
+                            Bus, car, shared transport and air travel information to help visitors understand
+                            their travel options.
+                        </p>
+                        <span class="kd-card__link">
+                            <span class="kd-rule" aria-hidden="true"></span>
+                            Explore
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                 stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"
+                                 aria-hidden="true" focusable="false">
+                                <path d="M5 12h14M13 6l6 6-6 6" />
+                            </svg>
+                        </span>
+                    </div>
+                </a>
+
+                <!-- 03 — STAY & UNWIND (top-aligned variant) -->
+                <a class="kd-card kd-card--portrait kd-card--tall kd-card--reverse kd-reveal"
+                   href="@Url.Action("Index", "Hotels")">
+                    <div class="kd-card__media media" data-fallback-label="Hotel room">
+                        <img src="https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=900&q=70"
+                             alt="Hotel room with a large window overlooking the surroundings"
+                             loading="lazy" />
+                    </div>
+                    <span class="kd-card__scrim" aria-hidden="true"></span>
+                    <div class="kd-card__body">
+                        <span class="kd-card__num">03</span>
+                        <h2 class="kd-card__title">Stay &amp; Unwind</h2>
+                        <span class="kd-card__label">Hotel Information</span>
+                        <p class="kd-card__desc">
+                            Discover accommodation options, room types, facilities and sample price references.
+                        </p>
+                        <span class="kd-card__link">
+                            <span class="kd-rule" aria-hidden="true"></span>
+                            Explore
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                 stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"
+                                 aria-hidden="true" focusable="false">
+                                <path d="M5 12h14M13 6l6 6-6 6" />
+                            </svg>
+                        </span>
+                    </div>
+                </a>
+
+                <!-- 04 — TASTE TRAILS -->
+                <a class="kd-card kd-card--feature kd-card--tall kd-reveal"
+                   href="@Url.Action("Index", "Restaurants")">
+                    <div class="kd-card__media media" data-fallback-label="Restaurant interior">
+                        <img src="https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=1200&q=70"
+                             alt="Warmly lit restaurant interior with set tables"
+                             loading="lazy" />
+                    </div>
+                    <span class="kd-card__scrim" aria-hidden="true"></span>
+                    <div class="kd-card__body">
+                        <span class="kd-card__num">04</span>
+                        <h2 class="kd-card__title">Taste Trails</h2>
+                        <span class="kd-card__label">Restaurant Information</span>
+                        <p class="kd-card__desc">
+                            Explore regional dishes, local cuisine and dining references organised by city.
+                        </p>
+                        <span class="kd-card__link">
+                            <span class="kd-rule" aria-hidden="true"></span>
+                            Explore
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                 stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"
+                                 aria-hidden="true" focusable="false">
+                                <path d="M5 12h14M13 6l6 6-6 6" />
+                            </svg>
+                        </span>
+                    </div>
+                </a>
+
+                <!-- 05 — RESORT ESCAPES (full-width closing category) -->
+                <a class="kd-card kd-card--wide kd-reveal"
+                   href="@Url.Action("Index", "Resorts")">
+                    <div class="kd-card__media media" data-fallback-label="Resort pool overlooking water">
+                        <img src="https://images.unsplash.com/photo-1571003123894-1f0594d2b5d9?auto=format&fit=crop&w=1600&q=70"
+                             alt="Resort pool overlooking a calm lake at dusk"
+                             loading="lazy" />
+                    </div>
+                    <span class="kd-card__scrim" aria-hidden="true"></span>
+                    <div class="kd-card__body">
+                        <span class="kd-card__num">05</span>
+                        <h2 class="kd-card__title">Resort Escapes</h2>
+                        <span class="kd-card__label">Resorts Information</span>
+                        <p class="kd-card__desc">
+                            Discover peaceful resort destinations and longer-stay experiences.
+                        </p>
+                        <span class="kd-card__link">
+                            <span class="kd-rule" aria-hidden="true"></span>
+                            Explore
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                 stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"
+                                 aria-hidden="true" focusable="false">
+                                <path d="M5 12h14M13 6l6 6-6 6" />
+                            </svg>
+                        </span>
+                    </div>
+                </a>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- =====================================================================
+         SECTION 03 — EXPLORE ALL
+         ===================================================================== -->
+    <section class="kd-cta" aria-labelledby="kd-cta-heading">
+        <div class="kd-cta__bg media" data-fallback-label="Cinematic travel landscape" aria-hidden="true">
+            <img src="https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1600&q=70"
+                 alt="" loading="lazy" />
+        </div>
+
+        <div class="container kd-cta__inner kd-reveal">
+            <p class="kd-eyebrow kd-eyebrow--light">Explore All</p>
+            <h2 id="kd-cta-heading">Your next journey starts with a search.</h2>
+            <p class="kd-cta__lede">
+                Bring destinations, transport, accommodation, dining and curated journeys together in one place.
+            </p>
+            <a class="kd-btn" href="@Url.Action("Index", "Search")">
+                Explore All
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"
+                     aria-hidden="true" focusable="false">
+                    <path d="M5 12h14M13 6l6 6-6 6" />
+                </svg>
+            </a>
+        </div>
+    </section>
+
+</div>
+
+@section Scripts {
+    <script>
+        (function () {
+            var items = document.querySelectorAll('.kd-reveal');
+            if (!items.length) { return; }
+
+            var prefersReduced = window.matchMedia
+                && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+            function showAll() {
+                for (var i = 0; i < items.length; i++) {
+                    items[i].classList.add('is-in');
+                }
+            }
+
+            if (prefersReduced || !('IntersectionObserver' in window)) {
+                showAll();
+                return;
+            }
+
+            var observer = new IntersectionObserver(function (entries) {
+                for (var i = 0; i < entries.length; i++) {
+                    if (entries[i].isIntersecting) {
+                        entries[i].target.classList.add('is-in');
+                        observer.unobserve(entries[i].target);
+                    }
+                }
+            }, {
+                root: null,
+                rootMargin: '0px 0px -8% 0px',
+                threshold: 0.12
+            });
+
+            for (var j = 0; j < items.length; j++) {
+                observer.observe(items[j]);
+            }
+        })();
+    </script>
+}

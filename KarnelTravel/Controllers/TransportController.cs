@@ -1,5 +1,6 @@
 
 using KarnelTravel.Data;
+using KarnelTravel.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -14,6 +15,7 @@ namespace KarnelTravel.Controllers
             _context = context;
         }
 
+        // TRANSPORT LISTING
         public async Task<IActionResult> Index()
         {
             var transportServices = await _context.TransportServices
@@ -26,6 +28,45 @@ namespace KarnelTravel.Controllers
             return View(
                 "~/Views/Information/Dropdown/Transport.cshtml",
                 transportServices
+            );
+        }
+
+        // TRANSPORT DETAILS
+        public async Task<IActionResult> Details(int id)
+        {
+            if (id <= 0)
+            {
+                return NotFound();
+            }
+
+            var transport = await _context.TransportServices
+                .AsNoTracking()
+                .FirstOrDefaultAsync(t =>
+                    t.Id == id && t.IsPublished);
+
+            if (transport == null)
+            {
+                return NotFound();
+            }
+
+            var reviews = await _context.Reviews
+                .AsNoTracking()
+                .Where(r =>
+                    r.TransportServiceId == transport.Id &&
+                    r.Status == ReviewStatus.Approved)
+                .OrderByDescending(r => r.CreatedAt)
+                .ToListAsync();
+
+            ViewBag.Reviews = reviews;
+            ViewBag.TotalReviews = reviews.Count;
+
+            ViewBag.AverageRating = reviews.Count > 0
+                ? Math.Round(reviews.Average(r => r.Rating), 1)
+                : 0;
+
+            return View(
+                "~/Views/Transport/Details.cshtml",
+                transport
             );
         }
     }

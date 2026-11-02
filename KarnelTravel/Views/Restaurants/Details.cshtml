@@ -1,5 +1,6 @@
 ﻿
 @model KarnelTravel.Models.Restaurant
+@using KarnelTravel.Models
 
 @{
     ViewData["Title"] = Model.Name + " | Karnel Travel Guide";
@@ -14,6 +15,16 @@
         serviceType = "Restaurant",
         serviceId = Model.Id
     });
+
+    var reviews = ViewBag.Reviews as List<Review> ?? new List<Review>();
+    double averageRating = ViewBag.AverageRating ?? 0;
+    int totalReviews = ViewBag.TotalReviews ?? 0;
+
+    var reviewUrl = Url.Action(
+        "Create",
+        "Reviews",
+        new { type = "Restaurant", id = Model.Id }
+    );
 }
 
 @section Styles {
@@ -164,6 +175,157 @@
             font-size: .9rem;
         }
 
+        /* RESTAURANT REVIEWS */
+
+        .restaurant-reviews {
+            padding: 70px 0 20px;
+            border-top: 1px solid var(--line);
+        }
+
+        .restaurant-reviews__heading {
+            margin-bottom: 35px;
+        }
+
+        .restaurant-reviews__eyebrow {
+            text-transform: uppercase;
+            letter-spacing: .17em;
+            font-size: .7rem;
+            color: var(--forest);
+            margin-bottom: 12px;
+        }
+
+        .restaurant-reviews__heading h2 {
+            font-size: clamp(2rem, 4vw, 3rem);
+            margin: 0 0 12px;
+        }
+
+        .restaurant-reviews__heading p {
+            color: var(--muted);
+            line-height: 1.7;
+            margin: 0;
+        }
+
+        .restaurant-reviews__summary {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 24px;
+            padding: 25px 28px;
+            margin-bottom: 30px;
+            background: var(--white);
+            border: 1px solid var(--line);
+            border-radius: var(--radius-lg);
+        }
+
+        .restaurant-reviews__average {
+            font-family: var(--serif);
+            font-size: 3rem;
+            line-height: 1;
+        }
+
+        .restaurant-reviews__stars {
+            color: #b28a43;
+            letter-spacing: 3px;
+            font-size: 1.05rem;
+        }
+
+        .restaurant-reviews__count {
+            color: var(--muted);
+            font-size: .82rem;
+            margin-top: 6px;
+        }
+
+        .restaurant-reviews__grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 18px;
+        }
+
+        .restaurant-review-card {
+            padding: 25px;
+            background: var(--white);
+            border: 1px solid var(--line);
+            border-radius: var(--radius-lg);
+        }
+
+        .restaurant-review-card__top {
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 17px;
+        }
+
+        .restaurant-review-card__name {
+            font-weight: 650;
+            font-size: .95rem;
+        }
+
+        .restaurant-review-card__date {
+            color: var(--muted);
+            font-size: .75rem;
+            margin-top: 5px;
+        }
+
+        .restaurant-review-card h3 {
+            font-size: 1.15rem;
+            margin: 12px 0 9px;
+        }
+
+        .restaurant-review-card__comment {
+            color: var(--muted);
+            font-size: .9rem;
+            line-height: 1.8;
+            white-space: pre-line;
+            overflow-wrap: anywhere;
+        }
+
+        .restaurant-reviews__empty {
+            padding: 35px;
+            text-align: center;
+            background: var(--white);
+            border: 1px dashed var(--line);
+            border-radius: var(--radius-lg);
+        }
+
+        .restaurant-reviews__empty h3 {
+            margin: 0 0 9px;
+        }
+
+        .restaurant-reviews__empty p {
+            color: var(--muted);
+            font-size: .9rem;
+            line-height: 1.7;
+        }
+
+        .restaurant-review-button {
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 25px;
+            padding: 14px 25px;
+            background: var(--forest-deep);
+            color: var(--ivory);
+            border-radius: 999px;
+            text-decoration: none;
+            font-size: .85rem;
+            font-weight: 600;
+            transition: background .3s ease, transform .3s ease;
+        }
+
+        .restaurant-review-button:hover {
+            background: var(--forest);
+            color: var(--ivory);
+            transform: translateY(-2px);
+        }
+
+        .restaurant-reviews__note {
+            margin-top: 22px;
+            color: var(--muted);
+            font-size: .76rem;
+            line-height: 1.7;
+        }
+
         @@media (max-width: 850px) {
             .restaurant-layout {
                 grid-template-columns: 1fr;
@@ -178,13 +340,21 @@
             }
         }
 
-        @@media (max-width: 550px) {
+        @@media (max-width: 600px) {
             .restaurant-main-image {
                 height: 260px;
             }
 
             .restaurant-sidebar {
                 padding: 22px;
+            }
+
+            .restaurant-reviews__grid {
+                grid-template-columns: 1fr;
+            }
+
+            .restaurant-reviews__summary {
+                padding: 20px;
             }
         }
     </style>
@@ -340,6 +510,94 @@
                 </aside>
 
             </div>
+
+        </div>
+    </section>
+
+    <!-- RESTAURANT REVIEWS -->
+    <section class="restaurant-reviews">
+        <div class="container">
+
+            <div class="restaurant-reviews__heading" data-reveal>
+                <p class="restaurant-reviews__eyebrow">Traveller experiences</p>
+                <h2>Reviews of @Model.Name</h2>
+                <p>Read feedback shared by visitors about this restaurant.</p>
+            </div>
+
+            @if (totalReviews > 0)
+            {
+                <div class="restaurant-reviews__summary" data-reveal>
+                    <div class="restaurant-reviews__average">
+                        @averageRating.ToString("0.0")
+                    </div>
+
+                    <div>
+                        <div class="restaurant-reviews__stars">
+                            @for (int i = 1; i <= 5; i++)
+                            {
+                                @(i <= Math.Round(averageRating, MidpointRounding.AwayFromZero) ? "★" : "☆")
+                            }
+                        </div>
+
+                        <div class="restaurant-reviews__count">
+                            @totalReviews approved review(s)
+                        </div>
+                    </div>
+                </div>
+
+                <div class="restaurant-reviews__grid">
+                    @foreach (var review in reviews)
+                    {
+                        <article class="restaurant-review-card" data-reveal>
+
+                            <div class="restaurant-review-card__top">
+                                <div>
+                                    <div class="restaurant-review-card__name">
+                                        @review.ReviewerName
+                                    </div>
+
+                                    <div class="restaurant-review-card__date">
+                                        @review.CreatedAt.ToString("dd MMM yyyy")
+                                    </div>
+                                </div>
+
+                                <div class="restaurant-reviews__stars"
+                                     aria-label="@review.Rating out of 5 stars">
+                                    @for (int i = 1; i <= 5; i++)
+                                    {
+                                        @(i <= review.Rating ? "★" : "☆")
+                                    }
+                                </div>
+                            </div>
+
+                            <h3>@review.Title</h3>
+
+                            <p class="restaurant-review-card__comment">
+                                @review.Comment
+                            </p>
+
+                        </article>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="restaurant-reviews__empty" data-reveal>
+                    <h3>No reviews yet</h3>
+                    <p>
+                        Be the first to share your experience
+                        at @Model.Name.
+                    </p>
+                </div>
+            }
+
+            <a href="@reviewUrl" class="restaurant-review-button">
+                Write a review →
+            </a>
+
+            <p class="restaurant-reviews__note">
+                Reviews are submitted for moderation before they appear publicly.
+            </p>
 
         </div>
     </section>

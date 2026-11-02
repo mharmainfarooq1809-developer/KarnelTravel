@@ -1,2 +1,651 @@
-@{ Layout = "_AdminLayout"; ViewData["Title"] = "Reviews"; }
-<div class="page-heading"><div><div class="eyebrow">Reputation studio · 9 awaiting review</div><h1>Listen closely.</h1><p>Moderate feedback with the same care as the experiences you publish.</p></div><div class="metric"><label>Average rating</label><strong>4.8</strong><small>From 246 reviews</small></div></div><div class="tabs"><button class="tab is-active">Pending 9</button><button class="tab">Approved 237</button><button class="tab">Rejected 0</button></div><div class="review-layout"><div><article class="review-card"><div class="panel-title"><div><strong>Maria Santos</strong><div class="stars">★★★★★</div></div><span class="status status-pending"><i></i>Pending</span></div><p>“The quiet moments between Karimabad and Passu were the real highlight. Our guide made every stop feel personal.”</p><small class="muted">Hunza in Autumn · 08 October 2025</small><div class="section-space"><button class="btn btn-primary" data-toast="Review approved in prototype mode.">Approve</button> <button class="btn" data-toast="Review rejected in prototype mode.">Reject</button></div></article><article class="review-card"><div class="panel-title"><div><strong>David Chen</strong><div class="stars">★★★★☆</div></div><span class="status status-pending"><i></i>Pending</span></div><p>“Beautiful route and excellent food. A little more detail on road times would help future guests.”</p><small class="muted">Lahore After Dark · 06 October 2025</small></article></div><div class="panel"><div class="panel-title"><h2>Rating pulse</h2></div><p><span class="stars">★★★★★</span> 78%</p><p><span class="stars">★★★★</span> 17%</p><p><span class="stars">★★★</span> 5%</p><hr /><p class="muted">Sample moderation data. Publishing decisions are not persisted.</p></div></div>
+
+@model IEnumerable<KarnelTravel.Models.Review>
+@using KarnelTravel.Models
+
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Review Moderation";
+
+    var reviews = Model?.ToList() ?? new List<Review>();
+
+    int totalReviews = ViewBag.TotalReviews ?? 0;
+    int pendingReviews = ViewBag.PendingReviews ?? 0;
+    int approvedReviews = ViewBag.ApprovedReviews ?? 0;
+    int rejectedReviews = ViewBag.RejectedReviews ?? 0;
+
+    string statusFilter = ViewBag.StatusFilter as string ?? "All";
+    string searchTerm = ViewBag.SearchTerm as string ?? "";
+
+    string GetListingName(Review review)
+    {
+        if (review.Destination != null) return review.Destination.Name;
+        if (review.Hotel != null) return review.Hotel.Name;
+        if (review.Restaurant != null) return review.Restaurant.Name;
+        if (review.Resort != null) return review.Resort.Name;
+        if (review.TransportService != null) return review.TransportService.Name;
+        if (review.TourPackage != null) return review.TourPackage.Name;
+        return "Unknown listing";
+    }
+
+    string GetListingType(Review review)
+    {
+        if (review.DestinationId.HasValue) return "Destination";
+        if (review.HotelId.HasValue) return "Hotel";
+        if (review.RestaurantId.HasValue) return "Restaurant";
+        if (review.ResortId.HasValue) return "Resort";
+        if (review.TransportServiceId.HasValue) return "Transport";
+        if (review.TourPackageId.HasValue) return "Tour package";
+        return "Unknown";
+    }
+
+    string StatusClass(ReviewStatus status)
+    {
+        return status switch
+        {
+            ReviewStatus.Approved => "status-approved",
+            ReviewStatus.Rejected => "status-rejected",
+            _ => "status-pending"
+        };
+    }
+}
+
+<style>
+    .reviews-page { width: 100%; }
+
+    .reviews-page .page-heading {
+        align-items: flex-start;
+        margin-bottom: 26px;
+    }
+
+    .reviews-page .page-heading h1 {
+        font-size: clamp(32px, 3.5vw, 46px);
+    }
+
+    .review-metrics {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 14px;
+        margin-bottom: 22px;
+    }
+
+    .review-metric {
+        background: var(--white, #fff);
+        border: 1px solid var(--line, #e5e9e3);
+        border-radius: var(--radius, 12px);
+        padding: 19px 20px;
+        min-width: 0;
+        transition: transform .2s ease, box-shadow .2s ease;
+    }
+
+    .review-metric:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-sm);
+    }
+
+    .review-metric-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .review-metric label {
+        color: var(--muted);
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: .07em;
+        text-transform: uppercase;
+    }
+
+    .review-metric-icon {
+        width: 35px;
+        height: 35px;
+        display: grid;
+        place-items: center;
+        border-radius: 9px;
+        background: var(--soft);
+        color: var(--forest);
+        font-size: 17px;
+    }
+
+    .review-metric strong {
+        display: block;
+        color: var(--forest);
+        font-size: 29px;
+        line-height: 1.2;
+        margin-top: 10px;
+        font-variant-numeric: tabular-nums;
+    }
+
+    .review-metric small {
+        display: block;
+        color: var(--muted);
+        font-size: 11.5px;
+        margin-top: 4px;
+    }
+
+    .review-toolbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 14px;
+        margin-bottom: 20px;
+    }
+
+    .review-filter-form {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 9px;
+        width: 100%;
+    }
+
+    .review-search {
+        flex: 1 1 230px;
+        min-width: 160px;
+    }
+
+    .review-search input,
+    .review-filter-form select {
+        width: 100%;
+        min-height: 42px;
+        border: 1px solid var(--line-hi);
+        border-radius: 8px;
+        background: var(--white);
+        padding: 9px 12px;
+        color: var(--ink);
+        outline: none;
+    }
+
+    .review-search input:focus,
+    .review-filter-form select:focus {
+        border-color: var(--accent);
+        box-shadow: var(--ring-accent);
+    }
+
+    .review-filter-form select {
+        width: auto;
+        min-width: 155px;
+    }
+
+    .review-table-wrap {
+        width: 100%;
+        overflow-x: auto;
+    }
+
+    .review-table {
+        width: 100%;
+        border-collapse: collapse;
+        min-width: 780px;
+    }
+
+    .review-table th {
+        text-align: left;
+        padding: 13px 12px;
+        background: var(--surface-sunken);
+        color: var(--muted);
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: .09em;
+        font-weight: 700;
+        border-bottom: 1px solid var(--line);
+    }
+
+    .review-table td {
+        padding: 17px 12px;
+        border-bottom: 1px solid var(--line);
+        vertical-align: top;
+        font-size: 12.5px;
+    }
+
+    .review-table tbody tr:last-child td { border-bottom: 0; }
+
+    .review-table tbody tr:hover { background: var(--surface-sunken); }
+
+    .reviewer-name {
+        display: block;
+        color: var(--ink);
+        font-weight: 700;
+        font-size: 13px;
+    }
+
+    .reviewer-date {
+        display: block;
+        color: var(--muted);
+        font-size: 11px;
+        margin-top: 4px;
+    }
+
+    .review-listing-name {
+        display: block;
+        font-weight: 700;
+        color: var(--forest);
+        max-width: 190px;
+    }
+
+    .review-listing-type {
+        display: inline-block;
+        margin-top: 5px;
+        color: var(--muted);
+        font-size: 10.5px;
+    }
+
+    .review-title {
+        display: block;
+        font-weight: 700;
+        color: var(--ink);
+        margin-bottom: 5px;
+    }
+
+    .review-comment {
+        color: var(--muted);
+        line-height: 1.6;
+        max-width: 310px;
+        overflow-wrap: anywhere;
+    }
+
+    .review-stars {
+        color: #bd8b3d;
+        white-space: nowrap;
+        letter-spacing: 1px;
+        font-size: 14px;
+    }
+
+    .review-rating-number {
+        display: block;
+        color: var(--muted);
+        font-size: 10px;
+        margin-top: 3px;
+    }
+
+    .review-status {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        border-radius: 99px;
+        padding: 5px 10px;
+        font-size: 10.5px;
+        font-weight: 700;
+        white-space: nowrap;
+    }
+
+    .review-status::before {
+        content: "";
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: currentColor;
+    }
+
+    .status-pending {
+        background: rgba(185,133,60,.12);
+        color: #8a5f22;
+    }
+
+    .status-approved {
+        background: rgba(60,145,105,.12);
+        color: #236b4d;
+    }
+
+    .status-rejected {
+        background: rgba(174,93,80,.12);
+        color: #984b40;
+    }
+
+    .review-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        min-width: 125px;
+    }
+
+    .review-action {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        padding: 7px 9px;
+        background: var(--white);
+        color: var(--ink);
+        font-size: 10.5px;
+        font-weight: 700;
+        transition: .15s ease;
+    }
+
+    .review-action:hover {
+        border-color: var(--accent);
+        color: var(--forest);
+    }
+
+    .review-action.approve {
+        background: var(--forest);
+        border-color: var(--forest);
+        color: #fff;
+    }
+
+    .review-action.approve:hover {
+        background: var(--green);
+        color: #fff;
+    }
+
+    .review-action.reject {
+        color: #984b40;
+    }
+
+    .review-action.reject:hover {
+        background: rgba(174,93,80,.08);
+        border-color: var(--red);
+    }
+
+    .review-alert {
+        padding: 13px 16px;
+        border-radius: 8px;
+        margin-bottom: 18px;
+        font-size: 12.5px;
+        font-weight: 600;
+    }
+
+    .review-alert.success {
+        background: rgba(60,145,105,.10);
+        color: var(--forest);
+        border: 1px solid rgba(60,145,105,.2);
+    }
+
+    .review-alert.error {
+        background: rgba(174,93,80,.10);
+        color: #984b40;
+        border: 1px solid rgba(174,93,80,.2);
+    }
+
+    .review-empty {
+        padding: 55px 20px;
+        text-align: center;
+    }
+
+    .review-empty-icon {
+        width: 52px;
+        height: 52px;
+        display: grid;
+        place-items: center;
+        margin: 0 auto 14px;
+        border-radius: 50%;
+        background: var(--soft);
+        color: var(--forest);
+        font-size: 23px;
+    }
+
+    .review-empty h3 {
+        font-family: var(--serif);
+        font-size: 23px;
+        font-weight: 400;
+        color: var(--forest);
+        margin: 0 0 7px;
+    }
+
+    .review-empty p {
+        color: var(--muted);
+        font-size: 12.5px;
+        margin: 0;
+    }
+
+    .review-pagination-note {
+        padding-top: 15px;
+        color: var(--muted);
+        font-size: 11.5px;
+    }
+
+    @@media (max-width: 1050px) {
+        .review-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+
+    @@media (max-width: 600px) {
+        .review-metrics { gap: 9px; }
+        .review-metric { padding: 14px; }
+        .review-metric strong { font-size: 24px; }
+        .review-filter-form { align-items: stretch; }
+        .review-filter-form select { width: 100%; }
+        .review-toolbar .btn { width: 100%; }
+    }
+</style>
+
+<div class="reviews-page">
+
+    <div class="page-heading">
+        <div>
+            <div class="eyebrow">Customer experience</div>
+            <h1>Review moderation</h1>
+            <p>Read customer feedback, moderate submissions and decide which reviews appear on your public website.</p>
+        </div>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="review-alert success">
+            ✓ @TempData["SuccessMessage"]
+        </div>
+    }
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="review-alert error">
+            @TempData["ErrorMessage"]
+        </div>
+    }
+
+    <div class="review-metrics">
+
+        <div class="review-metric">
+            <div class="review-metric-top">
+                <label>Total reviews</label>
+                <span class="review-metric-icon">▤</span>
+            </div>
+            <strong>@totalReviews</strong>
+            <small>All submitted reviews</small>
+        </div>
+
+        <div class="review-metric">
+            <div class="review-metric-top">
+                <label>Pending</label>
+                <span class="review-metric-icon">◷</span>
+            </div>
+            <strong>@pendingReviews</strong>
+            <small>Awaiting moderation</small>
+        </div>
+
+        <div class="review-metric">
+            <div class="review-metric-top">
+                <label>Approved</label>
+                <span class="review-metric-icon">✓</span>
+            </div>
+            <strong>@approvedReviews</strong>
+            <small>Approved for publication</small>
+        </div>
+
+        <div class="review-metric">
+            <div class="review-metric-top">
+                <label>Rejected</label>
+                <span class="review-metric-icon">×</span>
+            </div>
+            <strong>@rejectedReviews</strong>
+            <small>Not publicly displayed</small>
+        </div>
+
+    </div>
+
+    <div class="panel">
+
+        <div class="panel-title">
+            <div>
+                <h2>Customer reviews</h2>
+                <p class="panel-subtitle">Manage submissions from destinations, hotels, restaurants, resorts, transport and tour packages.</p>
+            </div>
+        </div>
+
+        <div class="review-toolbar">
+            <form method="get"
+                  asp-controller="Admin"
+                  asp-action="Reviews"
+                  class="review-filter-form">
+
+                <div class="review-search">
+                    <input type="search"
+                           name="search"
+                           value="@searchTerm"
+                           placeholder="Search reviewer, title or comment..." />
+                </div>
+
+                <select name="status">
+                    <option value="All" selected="@(statusFilter == "All")">All statuses</option>
+                    <option value="Pending" selected="@(statusFilter == "Pending")">Pending</option>
+                    <option value="Approved" selected="@(statusFilter == "Approved")">Approved</option>
+                    <option value="Rejected" selected="@(statusFilter == "Rejected")">Rejected</option>
+                </select>
+
+                <button type="submit" class="btn btn-primary">Apply filters</button>
+
+                <a asp-controller="Admin"
+                   asp-action="Reviews"
+                   class="btn btn-quiet">Clear</a>
+            </form>
+        </div>
+
+        @if (reviews.Count > 0)
+        {
+            <div class="review-table-wrap">
+                <table class="review-table">
+                    <thead>
+                        <tr>
+                            <th>Reviewer</th>
+                            <th>Listing</th>
+                            <th>Review</th>
+                            <th>Rating</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        @foreach (var review in reviews)
+                        {
+                            <tr>
+                                <td>
+                                    <span class="reviewer-name">@review.ReviewerName</span>
+                                    <span class="reviewer-date">
+                                        @review.CreatedAt.ToLocalTime().ToString("dd MMM yyyy")
+                                    </span>
+                                </td>
+
+                                <td>
+                                    <span class="review-listing-name">@GetListingName(review)</span>
+                                    <span class="review-listing-type">@GetListingType(review)</span>
+                                </td>
+
+                                <td>
+                                    <span class="review-title">@review.Title</span>
+                                    <div class="review-comment">@review.Comment</div>
+                                </td>
+
+                                <td>
+                                    <span class="review-stars">
+                                        @for (var i = 1; i <= 5; i++)
+                                        {
+                                            @(i <= review.Rating ? "★" : "☆")
+                                        }
+                                    </span>
+                                    <span class="review-rating-number">@review.Rating / 5</span>
+                                </td>
+
+                                <td>
+                                    <span class="review-status @StatusClass(review.Status)">
+                                        @review.Status
+                                    </span>
+                                </td>
+
+                                <td>
+                                    <div class="review-actions">
+
+                                        @if (review.Status != ReviewStatus.Approved)
+                                        {
+                                            <form asp-controller="Admin"
+                                                  asp-action="SetReviewStatus"
+                                                  asp-route-id="@review.Id"
+                                                  method="post">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="status" value="Approved" />
+                                                <input type="hidden" name="returnStatus" value="@statusFilter" />
+                                                <input type="hidden" name="search" value="@searchTerm" />
+
+                                                <button type="submit" class="review-action approve">
+                                                    Approve
+                                                </button>
+                                            </form>
+                                        }
+
+                                        @if (review.Status != ReviewStatus.Rejected)
+                                        {
+                                            <form asp-controller="Admin"
+                                                  asp-action="SetReviewStatus"
+                                                  asp-route-id="@review.Id"
+                                                  method="post">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="status" value="Rejected" />
+                                                <input type="hidden" name="returnStatus" value="@statusFilter" />
+                                                <input type="hidden" name="search" value="@searchTerm" />
+
+                                                <button type="submit" class="review-action reject">
+                                                    Reject
+                                                </button>
+                                            </form>
+                                        }
+
+                                        @if (review.Status != ReviewStatus.Pending)
+                                        {
+                                            <form asp-controller="Admin"
+                                                  asp-action="SetReviewStatus"
+                                                  asp-route-id="@review.Id"
+                                                  method="post">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="status" value="Pending" />
+                                                <input type="hidden" name="returnStatus" value="@statusFilter" />
+                                                <input type="hidden" name="search" value="@searchTerm" />
+
+                                                <button type="submit" class="review-action">
+                                                    Reset
+                                                </button>
+                                            </form>
+                                        }
+
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="review-pagination-note">
+                Showing @reviews.Count review(s).
+            </div>
+        }
+        else
+        {
+            <div class="review-empty">
+                <div class="review-empty-icon">☆</div>
+                <h3>No reviews found</h3>
+                <p>
+                    @if (!string.IsNullOrWhiteSpace(searchTerm))
+                    {
+                        <span>Try another search term or clear your filters.</span>
+                    }
+                    else
+                    {
+                        <span>Customer reviews will appear here when someone submits feedback.</span>
+                    }
+                </p>
+            </div>
+        }
+
+    </div>
+</div>

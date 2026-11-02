@@ -6,333 +6,2398 @@
 
 @section Styles {
     <style>
-        /* ================= HERO ================= */
+        @@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,500&display=swap');
+
+        /* ============================================================
+                   GLOBAL ENHANCEMENTS
+                ============================================================ */
+        :root {
+            --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+            --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+            --section-y: clamp(76px, 9vw, 132px);
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        ::selection {
+            background: var(--forest);
+            color: var(--ivory);
+        }
+
+        ::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--ivory);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--moss);
+            border-radius: 10px;
+            border: 2px solid var(--ivory);
+        }
+
+            ::-webkit-scrollbar-thumb:hover {
+                background: var(--forest);
+            }
+
+        /* Reveal system (activated by JS) */
+        .reveal-pending {
+            opacity: 0;
+            transform: translateY(44px);
+            filter: blur(6px);
+            transition: opacity 1.1s var(--ease-out), transform 1.1s var(--ease-out), filter 1.1s var(--ease-out);
+        }
+
+            .reveal-pending.is-revealed {
+                opacity: 1 !important;
+                transform: none !important;
+                filter: blur(0) !important;
+            }
+
+        /* ============================================================
+                   TYPOGRAPHY HELPERS
+                ============================================================ */
+        .eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            margin: 0 0 14px;
+            font-family: var(--sans);
+            font-size: 0.68rem;
+            font-weight: 600;
+            letter-spacing: 0.24em;
+            text-transform: uppercase;
+            color: var(--moss);
+        }
+
+            .eyebrow::before {
+                content: '';
+                width: 28px;
+                height: 1px;
+                background: currentColor;
+                flex: 0 0 auto;
+                opacity: 0.85;
+            }
+
+        .region-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.64rem;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+            color: var(--moss);
+        }
+
+            .region-tag::before {
+                content: '';
+                width: 5px;
+                height: 5px;
+                border-radius: 50%;
+                background: var(--sage);
+                flex: 0 0 auto;
+            }
+
+        .badge {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 999px;
+            font-size: 0.62rem;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            background: var(--sand);
+            color: var(--forest-deep);
+        }
+
+        .section {
+            position: relative;
+            padding: var(--section-y) 0;
+        }
+
+        .section--ivory {
+            background-color: var(--ivory);
+            background-image: radial-gradient(ellipse 60% 50% at 92% 8%, rgba(143, 168, 136, 0.10), transparent 60%), radial-gradient(ellipse 50% 60% at 8% 92%, rgba(232, 223, 201, 0.30), transparent 60%);
+        }
+
+        .section--sand {
+            background-color: var(--sand);
+            background-image: radial-gradient(ellipse 70% 60% at 100% 0%, rgba(255, 255, 255, 0.40), transparent 60%), radial-gradient(ellipse 50% 50% at 0% 100%, rgba(83, 107, 80, 0.08), transparent 60%);
+        }
+
+        .section--forest {
+            background-color: var(--forest);
+            color: var(--ivory);
+        }
+
+            .section--forest .section-head h2 {
+                color: var(--ivory);
+            }
+
+            .section--forest .section-head p {
+                color: rgba(248, 246, 240, 0.72);
+            }
+
+            .section--forest .eyebrow {
+                color: var(--sage);
+            }
+
+        .section-head {
+            max-width: 720px;
+            margin-bottom: clamp(36px, 5vw, 64px);
+        }
+
+            .section-head h2 {
+                margin: 14px 0 16px;
+                font-size: clamp(2rem, 3.6vw, 3.2rem);
+                line-height: 1.04;
+                letter-spacing: -0.02em;
+                text-wrap: balance;
+            }
+
+            .section-head p {
+                max-width: 60ch;
+                margin: 0;
+                color: var(--muted);
+                line-height: 1.7;
+            }
+
+        /* ============================================================
+                   BUTTONS & LINKS
+                ============================================================ */
+        .btn {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            min-height: 52px;
+            padding: 0 28px;
+            overflow: hidden;
+            isolation: isolate;
+            border: 1px solid transparent;
+            border-radius: var(--radius);
+            background: var(--forest);
+            color: var(--ivory);
+            font-family: var(--sans);
+            font-size: 0.74rem;
+            font-weight: 600;
+            letter-spacing: 0.16em;
+            text-transform: uppercase;
+            text-decoration: none;
+            cursor: pointer;
+            transition: transform 0.5s var(--ease-out), box-shadow 0.5s var(--ease-out), background 0.4s var(--ease), color 0.4s var(--ease), border-color 0.4s var(--ease);
+        }
+
+            .btn::after {
+                content: '';
+                position: absolute;
+                inset: 0;
+                z-index: 1;
+                background: linear-gradient(120deg, transparent 20%, rgba(255, 255, 255, 0.35) 50%, transparent 80%);
+                transform: translateX(-120%);
+                transition: transform 0.85s var(--ease-out);
+                pointer-events: none;
+            }
+
+            .btn:hover {
+                transform: translateY(-3px);
+                box-shadow: 0 18px 32px -18px rgba(20, 39, 31, 0.55);
+            }
+
+                .btn:hover::after {
+                    transform: translateX(120%);
+                }
+
+            .btn:active {
+                transform: translateY(-1px);
+            }
+
+        .btn--light {
+            background: var(--ivory);
+            color: var(--forest-deep);
+            border-color: var(--ivory);
+        }
+
+        .btn--ghost-light {
+            background: transparent;
+            color: var(--ivory);
+            border-color: rgba(248, 246, 240, 0.45);
+        }
+
+            .btn--ghost-light:hover {
+                border-color: var(--ivory);
+                background: rgba(248, 246, 240, 0.08);
+            }
+
+        .btn--forest {
+            background: var(--forest);
+            color: var(--ivory);
+        }
+
+        .btn--ghost-dark {
+            background: transparent;
+            color: var(--forest);
+            border-color: rgba(20, 39, 31, 0.28);
+        }
+
+            .btn--ghost-dark:hover {
+                border-color: var(--forest);
+            }
+
+        .link-arrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding-bottom: 3px;
+            border-bottom: 1px solid transparent;
+            font-size: 0.7rem;
+            font-weight: 600;
+            letter-spacing: 0.16em;
+            text-transform: uppercase;
+            color: var(--forest);
+            text-decoration: none;
+            transition: color 0.3s var(--ease), border-color 0.3s var(--ease);
+        }
+
+            .link-arrow::after {
+                content: '\2192';
+                font-size: 0.95rem;
+                transition: transform 0.4s var(--ease-out);
+            }
+
+            .link-arrow:hover {
+                color: var(--forest-deep);
+                border-color: currentColor;
+            }
+
+                .link-arrow:hover::after {
+                    transform: translateX(4px);
+                }
+
+        .link-arrow--light {
+            color: var(--sand);
+        }
+
+            .link-arrow--light:hover {
+                color: #fff;
+            }
+
+        /* ============================================================
+                   HERO
+                ============================================================ */
         .hero {
             position: relative;
-            min-height: 92vh;
+            min-height: 94vh;
             display: grid;
             align-items: center;
             padding: calc(var(--header-h) + 60px) 0 180px;
             overflow: hidden;
             color: var(--ivory);
+            isolation: isolate;
         }
+
         .hero__media {
             position: absolute;
             inset: 0;
-            border-radius: 0;
+            overflow: hidden;
             background: var(--forest-deep);
         }
-        .hero__media img { width: 100%; height: 100%; object-fit: cover; }
+
+            .hero__media img {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+                transform: scale(1.06);
+                will-change: transform;
+            }
+
         .hero__overlay {
             position: absolute;
             inset: 0;
-            background: linear-gradient(180deg, rgba(20, 39, 31, .35) 0%, rgba(20, 39, 31, .55) 45%, rgba(20, 39, 31, .82) 100%);
+            background: radial-gradient(ellipse 70% 80% at 20% 30%, rgba(20, 39, 31, 0.12), transparent 60%), linear-gradient(180deg, rgba(20, 39, 31, 0.40) 0%, rgba(20, 39, 31, 0.55) 45%, rgba(20, 39, 31, 0.88) 100%);
         }
-        .hero__content { position: relative; z-index: 2; max-width: 900px; }
 
-        .hero .eyebrow { color: var(--sage); }
+        .hero::after {
+            content: '';
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            height: 180px;
+            background: linear-gradient(180deg, transparent, var(--ivory));
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .hero__content {
+            position: relative;
+            z-index: 2;
+            max-width: 940px;
+        }
+
+        .hero .eyebrow {
+            color: var(--sage);
+        }
+
         .hero h1 {
+            max-width: 16ch;
+            margin: 0 0 24px;
             color: var(--ivory);
             font-size: clamp(2.8rem, 6.2vw, 5.4rem);
-            max-width: 15ch;
+            line-height: 0.98;
+            letter-spacing: -0.02em;
+            text-wrap: balance;
         }
-        .hero h1 em {
-            font-style: italic;
-            color: var(--sand);
-        }
+
+            .hero h1 em {
+                font-style: italic;
+                color: var(--sand);
+            }
+
         .hero__lede {
-            color: rgba(248, 246, 240, .82);
-            font-size: clamp(1rem, 1.4vw, 1.15rem);
             max-width: 52ch;
             margin-bottom: 32px;
+            color: rgba(248, 246, 240, 0.82);
+            font-size: clamp(1rem, 1.4vw, 1.15rem);
+            line-height: 1.65;
         }
-        .hero__cta { display: flex; flex-wrap: wrap; gap: 14px; }
+
+        .hero__cta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 14px;
+        }
+
+        .hero__meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: clamp(18px, 3vw, 44px);
+            margin-top: clamp(28px, 4vw, 46px);
+        }
+
+            .hero__meta div {
+                min-width: 118px;
+                padding-top: 14px;
+                border-top: 1px solid rgba(248, 246, 240, 0.22);
+            }
+
+            .hero__meta strong {
+                display: block;
+                font-family: var(--serif);
+                font-size: 1.6rem;
+                font-weight: 500;
+                line-height: 1;
+                color: var(--sand);
+            }
+
+            .hero__meta span {
+                display: block;
+                margin-top: 6px;
+                font-size: 0.64rem;
+                letter-spacing: 0.18em;
+                text-transform: uppercase;
+                color: rgba(248, 246, 240, 0.6);
+            }
+
         .hero__scroll {
             position: absolute;
             left: 50%;
             bottom: 42px;
             z-index: 2;
-            transform: translateX(-50%);
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 10px;
-            font-size: .68rem;
-            letter-spacing: .26em;
+            gap: 12px;
+            transform: translateX(-50%);
+            font-size: 0.68rem;
+            letter-spacing: 0.26em;
             text-transform: uppercase;
-            color: rgba(248, 246, 240, .7);
-        }
-        .hero__scroll::after {
-            content: "";
-            width: 1px;
-            height: 40px;
-            background: currentColor;
-            animation: heroScroll 2.4s var(--ease) infinite;
-            transform-origin: top;
-        }
-        @@keyframes heroScroll {
-            0%   { transform: scaleY(0); opacity: 0; }
-            40%  { transform: scaleY(1); opacity: 1; }
-            100% { transform: scaleY(1); opacity: 0; }
+            color: rgba(248, 246, 240, 0.7);
         }
 
-        /* Staggered hero entrance */
+            .hero__scroll::after {
+                content: "";
+                width: 1px;
+                height: 44px;
+                background: currentColor;
+                animation: heroScroll 2.4s var(--ease) infinite;
+                transform-origin: top;
+            }
+
+        @@keyframes heroScroll {
+            0% {
+                transform: scaleY(0);
+                opacity: 0;
+            }
+
+            40% {
+                transform: scaleY(1);
+                opacity: 1;
+            }
+
+            100% {
+                transform: scaleY(1);
+                opacity: 0;
+            }
+        }
+
         .hero__content > * {
             opacity: 0;
-            transform: translateY(24px);
-            animation: heroIn .9s var(--ease) forwards;
+            transform: translateY(30px);
+            filter: blur(8px);
+            animation: heroIn 1.1s var(--ease-out) forwards;
         }
-        .hero__content > *:nth-child(1) { animation-delay: .15s; }
-        .hero__content > *:nth-child(2) { animation-delay: .3s; }
-        .hero__content > *:nth-child(3) { animation-delay: .45s; }
-        .hero__content > *:nth-child(4) { animation-delay: .6s; }
-        @@keyframes heroIn { to { opacity: 1; transform: none; } }
 
-        /* ================= SEARCH BAND ================= */
-        .search-band {
-            position: relative;
-            z-index: 5;
-            margin-top: -100px;
-            padding-bottom: 40px;
+            .hero__content > *:nth-child(1) {
+                animation-delay: 0.15s;
+            }
+
+            .hero__content > *:nth-child(2) {
+                animation-delay: 0.35s;
+            }
+
+            .hero__content > *:nth-child(3) {
+                animation-delay: 0.55s;
+            }
+
+            .hero__content > *:nth-child(4) {
+                animation-delay: 0.75s;
+            }
+
+            .hero__content > *:nth-child(5) {
+                animation-delay: 0.95s;
+            }
+
+        @@keyframes heroIn {
+            to {
+                opacity: 1;
+                transform: none;
+                filter: blur(0);
+            }
         }
-        .search-panel {
+
+        /* ============================================================
+                   SECTION 02 — INTELLIGENT JOURNEY FINDER
+                ============================================================ */
+        .finder-band {
+            position: relative;
+            z-index: 6;
+            margin-top: clamp(-120px, -9vw, -70px);
+            padding-bottom: clamp(40px, 6vw, 72px);
+        }
+
+        .finder {
+            overflow: hidden;
             background: var(--ivory);
             border: 1px solid var(--line);
             border-radius: var(--radius-lg);
-            padding: 28px 28px 26px;
-            box-shadow: var(--shadow-lg);
+            box-shadow: 0 50px 100px -40px rgba(20, 39, 31, 0.4), 0 2px 4px rgba(20, 39, 31, 0.04), inset 0 1px 0 rgba(255, 255, 255, 0.8);
         }
-        .search-panel__head {
+
+        .finder__head {
             display: flex;
-            align-items: baseline;
-            justify-content: space-between;
-            gap: 16px;
             flex-wrap: wrap;
-            margin-bottom: 20px;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 18px;
+            padding: clamp(22px, 3vw, 34px) clamp(22px, 3vw, 38px) 0;
         }
-        .search-panel__head h2 { margin: 0; font-size: 1.35rem; }
-        .search-panel__head .badge { background: var(--sand); }
 
-        .search-grid {
-            display: grid;
-            grid-template-columns: 1.4fr 1fr 1fr auto;
-            gap: 14px;
-            align-items: end;
+            .finder__head h2 {
+                max-width: 22ch;
+                margin: 0;
+                font-size: clamp(1.3rem, 2vw, 1.7rem);
+                line-height: 1.15;
+                letter-spacing: -0.01em;
+            }
+
+        .finder__tabs {
+            display: flex;
+            gap: 4px;
+            margin-top: 18px;
+            padding: 0 clamp(22px, 3vw, 38px);
+            overflow-x: auto;
+            border-bottom: 1px solid var(--line);
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
         }
-        .field { display: flex; flex-direction: column; gap: 6px; }
-        .field > span {
-            font-size: .66rem;
-            letter-spacing: .18em;
-            text-transform: uppercase;
+
+            .finder__tabs::-webkit-scrollbar {
+                display: none;
+            }
+
+        .finder__tab {
+            position: relative;
+            flex: 0 0 auto;
+            padding: 14px 18px;
+            border: 0;
+            background: none;
             color: var(--muted);
-        }
-        .field input,
-        .field select {
-            height: 52px;
-            padding: 0 16px;
-            border: 1px solid var(--line);
-            border-radius: var(--radius);
-            background: var(--white);
-            color: var(--charcoal);
             font: inherit;
-            font-size: .95rem;
-            transition: border-color .3s var(--ease), box-shadow .3s var(--ease);
+            font-size: 0.7rem;
+            font-weight: 600;
+            letter-spacing: 0.16em;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: color 0.3s var(--ease);
         }
-        .field input:focus,
-        .field select:focus {
-            outline: none;
-            border-color: var(--moss);
-            box-shadow: 0 0 0 3px rgba(83, 107, 80, .16);
-        }
-        .field--submit { justify-content: flex-end; }
-        .field--submit .btn { height: 52px; padding: 0 30px; }
 
-        .search-panel__note {
-            display: block;
-            margin-top: 16px;
-            font-size: .72rem;
-            color: var(--muted);
-        }
-        .search-panel__note a { color: var(--forest); border-bottom: 1px solid currentColor; }
+            .finder__tab::after {
+                content: '';
+                position: absolute;
+                left: 18px;
+                right: 18px;
+                bottom: -1px;
+                height: 2px;
+                background: var(--forest);
+                transform: scaleX(0);
+                transform-origin: left;
+                transition: transform 0.45s var(--ease-out);
+            }
 
-        /* ================= SHARED CARD GRID ================= */
-        .cards-grid {
+            .finder__tab:hover {
+                color: var(--forest);
+            }
+
+            .finder__tab.is-active {
+                color: var(--forest);
+            }
+
+                .finder__tab.is-active::after {
+                    transform: scaleX(1);
+                }
+
+        .finder__panels {
+            padding: clamp(22px, 3vw, 32px) clamp(22px, 3vw, 38px) 0;
+        }
+
+        .finder__panel[hidden] {
+            display: none;
+        }
+
+        .finder__panel {
+            animation: finderIn 0.5s var(--ease-out);
+        }
+
+        @@keyframes finderIn {
+            from {
+                opacity: 0;
+                transform: translateY(8px);
+            }
+
+            to {
+                opacity: 1;
+                transform: none;
+            }
+        }
+
+        .finder__fields {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 28px;
-        }
-        .cards-grid--feature .card:first-child { grid-row: span 2; }
-        @@media (min-width: 900px) {
-            .cards-grid--feature { grid-template-columns: 1.3fr 1fr 1fr; }
-            .cards-grid--feature .card:first-child .media { aspect-ratio: auto; min-height: 100%; }
+            gap: 14px;
         }
 
-        .card {
+        .finder__fields--3 {
+            grid-template-columns: 1.4fr 1fr 1fr;
+        }
+
+        .finder__fields--2 {
+            grid-template-columns: 1fr 1fr;
+        }
+
+        .field {
             display: flex;
             flex-direction: column;
-            background: var(--white);
-            border: 1px solid var(--line);
-            border-radius: var(--radius-lg);
-            overflow: hidden;
-            transition: transform .4s var(--ease), box-shadow .4s var(--ease);
+            gap: 6px;
         }
-        .card:hover { transform: translateY(-4px); box-shadow: var(--shadow-md); }
-        .card .media { aspect-ratio: 4 / 3; }
-        .card:hover .media img { transform: scale(1.05); }
-        .card__body { padding: 22px; display: flex; flex-direction: column; gap: 10px; flex: 1; }
-        .card__meta { font-size: .68rem; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); }
-        .card h3 { margin: 0; font-size: 1.25rem; }
-        .card p { color: var(--muted); font-size: .92rem; margin: 0; flex: 1; }
 
-        /* ================= TRANSPORT STRIP ================= */
-        .transport-grid {
+            .field > span {
+                font-size: 0.64rem;
+                letter-spacing: 0.18em;
+                text-transform: uppercase;
+                color: var(--muted);
+            }
+
+            .field input,
+            .field select {
+                height: 54px;
+                padding: 0 16px;
+                border: 1px solid var(--line);
+                border-radius: var(--radius);
+                background: var(--white);
+                color: var(--charcoal);
+                font: inherit;
+                font-size: 0.95rem;
+                transition: border-color 0.3s var(--ease), box-shadow 0.3s var(--ease), background 0.3s var(--ease);
+            }
+
+                .field input:hover,
+                .field select:hover {
+                    border-color: rgba(83, 107, 80, 0.4);
+                }
+
+                .field input:focus,
+                .field select:focus {
+                    outline: none;
+                    border-color: var(--moss);
+                    background: #fff;
+                    box-shadow: 0 0 0 4px rgba(83, 107, 80, 0.14);
+                }
+
+        .finder__foot {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 18px;
+            padding: clamp(20px, 3vw, 28px) clamp(22px, 3vw, 38px) clamp(22px, 3vw, 32px);
+        }
+
+        .finder__note {
+            max-width: 58ch;
+            margin: 0;
+            font-size: 0.74rem;
+            line-height: 1.6;
+            color: var(--muted);
+        }
+
+            .finder__note a {
+                color: var(--forest);
+                border-bottom: 1px solid currentColor;
+                transition: color 0.3s var(--ease);
+            }
+
+                .finder__note a:hover {
+                    color: var(--forest-deep);
+                }
+
+        /* ============================================================
+                   SECTION 03 — DISCOVER PAKISTAN
+                ============================================================ */
+        .discover__head {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-            gap: 22px;
+            grid-template-columns: 1.2fr 0.8fr;
+            gap: clamp(24px, 4vw, 64px);
+            align-items: end;
+            margin-bottom: clamp(36px, 5vw, 60px);
         }
-        .transport-item {
-            padding: 30px 26px;
-            background: var(--white);
-            border: 1px solid var(--line);
-            border-radius: var(--radius-lg);
-            transition: border-color .3s var(--ease), transform .3s var(--ease);
-        }
-        .transport-item:hover { border-color: var(--moss); transform: translateY(-3px); }
-        .transport-item__num {
-            font-family: var(--serif);
-            font-size: 2rem;
-            color: var(--sage);
-            line-height: 1;
-            margin-bottom: 14px;
-        }
-        .transport-item h3 { font-size: 1.1rem; margin-bottom: 8px; }
-        .transport-item p { font-size: .9rem; color: var(--muted); margin: 0; }
 
-        /* ================= SPLIT (Taste Trails + Resort) ================= */
-        .split {
+            .discover__head .section-head {
+                margin-bottom: 0;
+            }
+
+        .discover__head-link {
+            justify-self: end;
+            margin-bottom: 8px;
+        }
+
+        .discover__grid {
+            display: grid;
+            grid-template-columns: 1.45fr 1fr;
+            gap: clamp(18px, 2.4vw, 32px);
+        }
+
+        .discover__feature {
+            position: relative;
+            display: flex;
+            align-items: flex-end;
+            min-height: clamp(460px, 46vw, 680px);
+            overflow: hidden;
+            border-radius: var(--radius-lg);
+            color: var(--ivory);
+            isolation: isolate;
+        }
+
+            .discover__feature img {
+                position: absolute;
+                inset: 0;
+                z-index: -2;
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+                transition: transform 1.1s var(--ease-out);
+            }
+
+            .discover__feature::after {
+                content: '';
+                position: absolute;
+                inset: 0;
+                z-index: -1;
+                background: linear-gradient(180deg, rgba(20, 39, 31, 0.05) 0%, rgba(20, 39, 31, 0.25) 45%, rgba(20, 39, 31, 0.88) 100%);
+            }
+
+            .discover__feature:hover img {
+                transform: scale(1.05);
+            }
+
+        .discover__feature-body {
+            max-width: 560px;
+            padding: clamp(26px, 4vw, 48px);
+        }
+
+        .discover__region {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.66rem;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            color: var(--sand);
+        }
+
+            .discover__region::before {
+                content: '';
+                width: 26px;
+                height: 1px;
+                background: currentColor;
+            }
+
+        .discover__feature h3 {
+            margin: 14px 0 12px;
+            color: var(--ivory);
+            font-size: clamp(2rem, 3.4vw, 3.2rem);
+            line-height: 1.02;
+            letter-spacing: -0.02em;
+        }
+
+        .discover__feature p {
+            max-width: 46ch;
+            margin: 0 0 20px;
+            color: rgba(248, 246, 240, 0.82);
+            line-height: 1.65;
+        }
+
+        .discover__stack {
+            display: grid;
+            grid-template-rows: 1fr 1fr;
+            gap: clamp(18px, 2.4vw, 32px);
+        }
+
+        .discover__item {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 40px;
-        }
-        .split__col {
-            display: flex;
-            flex-direction: column;
-            gap: 24px;
-        }
-        .split__col h3 { font-size: 1.7rem; }
-        .split__col p { color: var(--muted); max-width: 48ch; }
-        .mini-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 16px; }
-        .mini-list li {
-            display: flex;
-            gap: 16px;
-            align-items: center;
-            padding: 14px;
-            background: var(--white);
-            border: 1px solid var(--line);
-            border-radius: var(--radius);
-        }
-        .mini-list .media { width: 72px; height: 72px; flex: 0 0 auto; border-radius: var(--radius); }
-        .mini-list h4 { margin: 0; font-family: var(--serif); font-size: 1rem; }
-        .mini-list span { font-size: .78rem; color: var(--muted); }
-
-        /* ================= PACKAGES ================= */
-        .package-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 24px;
-        }
-        .package {
-            position: relative;
-            padding: 32px 28px;
+            overflow: hidden;
             background: var(--white);
             border: 1px solid var(--line);
             border-radius: var(--radius-lg);
+            transition: transform 0.5s var(--ease-out), box-shadow 0.5s var(--ease-out), border-color 0.4s var(--ease);
+        }
+
+            .discover__item:hover {
+                transform: translateY(-4px);
+                border-color: rgba(83, 107, 80, 0.25);
+                box-shadow: 0 30px 60px -34px rgba(20, 39, 31, 0.4);
+            }
+
+        .discover__item-media {
+            overflow: hidden;
+        }
+
+            .discover__item-media img {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+                transition: transform 1s var(--ease-out);
+            }
+
+        .discover__item:hover .discover__item-media img {
+            transform: scale(1.06);
+        }
+
+        .discover__item-body {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 10px;
+            padding: clamp(20px, 2.4vw, 30px);
+        }
+
+            .discover__item-body h3 {
+                margin: 0;
+                font-size: 1.35rem;
+                letter-spacing: -0.01em;
+            }
+
+            .discover__item-body p {
+                margin: 0;
+                color: var(--muted);
+                font-size: 0.9rem;
+                line-height: 1.6;
+            }
+
+        /* ============================================================
+                   SECTION 04 — THE QUIET ATLAS INTRO
+                ============================================================ */
+        .atlas-intro {
+            padding: var(--section-y) 0 clamp(40px, 6vw, 72px);
+            background-color: var(--ivory);
+        }
+
+            .atlas-intro .container {
+                display: grid;
+                grid-template-columns: 0.95fr 1.05fr;
+                gap: clamp(24px, 4vw, 72px);
+                align-items: end;
+            }
+
+            .atlas-intro h2 {
+                margin: 14px 0 0;
+                font-size: clamp(2rem, 3.6vw, 3.2rem);
+                line-height: 1.04;
+                letter-spacing: -0.02em;
+                text-wrap: balance;
+            }
+
+            .atlas-intro p {
+                margin: 0 0 16px;
+                color: var(--muted);
+                line-height: 1.7;
+            }
+
+        .atlas-intro__hint {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.68rem;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+            color: var(--moss);
+        }
+
+            .atlas-intro__hint::before {
+                content: '';
+                width: 22px;
+                height: 1px;
+                background: currentColor;
+            }
+
+        /* ============================================================
+                   SECTION 04 — NATURE SPOTS / SPHERE (preserved)
+                ============================================================ */
+        :root {
+            --arch-pad: clamp(14px, 2.6vw, 34px);
+            --arch-hw: min(56vw, 640px);
+        }
+
+        @@media (max-width: 640px) {
+            :root {
+                --arch-hw: min(84vw, 360px);
+            }
+        }
+
+        @@media (max-width: 380px) {
+            :root {
+                --arch-hw: min(88vw, 320px);
+            }
+        }
+
+        .archive {
+            position: relative;
+            height: 130vh;
+            background: var(--forest-deep);
+            color: var(--ivory);
+            overflow: hidden;
+        }
+
+        .archive__stage {
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            height: 100dvh;
+            overflow: hidden;
+            perspective: 1150px;
+            perspective-origin: 50% 50%;
+            touch-action: pan-y;
+            cursor: grab;
+        }
+
+            .archive__stage:active {
+                cursor: grabbing;
+            }
+
+        .archive__label {
+            position: absolute;
+            top: calc(var(--header-h, 80px) + 20px);
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+            z-index: 5;
+            pointer-events: none;
+            white-space: nowrap;
+            transition: opacity 0.4s var(--ease);
+        }
+
+            .archive__label .eyebrow {
+                color: var(--sage);
+                margin: 0;
+            }
+
+        #arch-world {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            transform-style: preserve-3d;
+            will-change: transform;
+        }
+
+        #arch-orb {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 0;
+            height: 0;
+            transform-style: preserve-3d;
+        }
+
+        .arch-card {
+            position: absolute;
+            top: 0;
+            left: 0;
+            transform-style: preserve-3d;
+            will-change: transform, opacity;
+        }
+
+            .arch-card figure {
+                width: 100%;
+                height: 100%;
+                margin: 0;
+                overflow: hidden;
+                border-radius: 6px;
+                background: #0a1210;
+                position: relative;
+                transition: transform 0.5s var(--ease);
+            }
+
+                .arch-card figure::after {
+                    content: '';
+                    position: absolute;
+                    inset: 0;
+                    background: rgba(0, 0, 0, var(--d, 0));
+                    box-shadow: inset 0 0 0 1px rgba(244, 242, 239, 0.07);
+                    border-radius: 6px;
+                    pointer-events: none;
+                }
+
+            .arch-card img {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+                display: block;
+                opacity: 0;
+                transition: opacity 0.8s ease-out;
+            }
+
+            .arch-card.in img {
+                opacity: 1;
+            }
+
+            .arch-card:hover figure {
+                transform: scale(1.045);
+            }
+
+        #arch-headline {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: var(--arch-hw);
+            margin: 0 0 0 calc(var(--arch-hw) / -2);
+            padding: 0;
+            text-align: center;
+            font-family: var(--serif, "Playfair Display", Georgia, serif);
+            font-weight: 400;
+            font-size: clamp(25px, 3.7vw, 55px);
+            line-height: 1.06;
+            letter-spacing: -0.005em;
+            color: var(--ivory);
+            text-shadow: 0 2px 34px rgba(0, 0, 0, 0.55);
+            pointer-events: none;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+            #arch-headline .inner {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                transform: translateY(-50%);
+            }
+
+                #arch-headline .inner span {
+                    display: inline-block;
+                    opacity: 0;
+                    transform: translateY(0.42em);
+                    filter: blur(7px);
+                    transition: opacity 1.05s var(--ease), transform 1.15s var(--ease), filter 1.05s var(--ease);
+                    transition-delay: calc(0.3s + var(--i) * 0.085s);
+                }
+
+        body.arch-inview #arch-headline .inner span {
+            opacity: 1;
+            transform: none;
+            filter: blur(0);
+        }
+
+        .archive__vig {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            z-index: 3;
+            background: radial-gradient(ellipse 88% 92% at 50% 50%, transparent 48%, rgba(0, 0, 0, 0.26) 80%, rgba(0, 0, 0, 0.72) 100%);
+            transition: opacity 0.6s var(--ease);
+        }
+
+        body.arch-gridview .archive__vig,
+        body.arch-lit .archive__vig {
+            opacity: 0;
+        }
+
+        .archive__cue {
+            position: absolute;
+            left: 50%;
+            bottom: calc(var(--arch-pad) + env(safe-area-inset-bottom) + 4px);
+            transform: translateX(-50%);
+            z-index: 4;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.24em;
+            color: rgba(248, 246, 240, 0.5);
+            white-space: nowrap;
+            pointer-events: none;
+        }
+
+            .archive__cue s {
+                display: inline-block;
+                width: 44px;
+                height: 1px;
+                background: rgba(244, 242, 239, 0.28);
+                overflow: hidden;
+                position: relative;
+                text-decoration: none;
+            }
+
+                .archive__cue s::after {
+                    content: '';
+                    position: absolute;
+                    inset: 0;
+                    background: var(--ivory);
+                    animation: archSweep 2.6s ease infinite;
+                }
+
+        @@keyframes archSweep {
+            0% {
+                transform: translateX(-100%);
+            }
+
+            55% {
+                transform: translateX(0);
+            }
+
+            100% {
+                transform: translateX(100%);
+            }
+        }
+
+        @@media (max-width: 640px) {
+            .archive__cue {
+                display: none;
+            }
+        }
+
+        .archive__gridbtn {
+            position: fixed;
+            left: calc(var(--arch-pad) + env(safe-area-inset-left));
+            bottom: calc(var(--arch-pad) + env(safe-area-inset-bottom) + 40px);
+            z-index: 210;
+            width: 44px;
+            height: 44px;
+            padding: 10px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: 1fr 1fr;
+            gap: 4px;
+            opacity: 0;
+            transform: translateY(8px);
+            pointer-events: none;
+            transition: opacity 0.4s var(--ease), transform 0.4s var(--ease);
+            background: rgba(20, 39, 31, 0.82);
+            border: 1px solid var(--line);
+            border-radius: var(--radius);
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+            cursor: pointer;
+        }
+
+        body.arch-inview .archive__gridbtn,
+        body.arch-gridview .archive__gridbtn,
+        body.arch-lit .archive__gridbtn {
+            opacity: 1;
+            transform: none;
+            pointer-events: auto;
+        }
+
+        .archive__gridbtn b {
+            display: block;
+            background: var(--ivory);
+            border-radius: 2px;
+            transition: background 0.3s var(--ease), transform 0.3s var(--ease);
+        }
+
+        .archive__gridbtn:hover b {
+            background: #fff;
+            transform: scale(0.86);
+        }
+
+        body.arch-gridview .archive__gridbtn b:nth-child(1) {
+            transform: translate(3px, 3px);
+        }
+
+        body.arch-gridview .archive__gridbtn b:nth-child(4) {
+            transform: translate(-3px, -3px);
+        }
+
+        /* ===== FLAT GRID ===== */
+        .arch-grid {
+            position: fixed;
+            inset: 0;
+            z-index: 200;
+            background: var(--forest-deep);
+            overflow-y: auto;
+            overscroll-behavior: contain;
+            padding: calc(var(--arch-pad) * 3.4) var(--arch-pad) calc(var(--arch-pad) * 4);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.5s var(--ease);
+        }
+
+        body.arch-gridview .arch-grid {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .arch-grid__rows {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: clamp(10px, 1.4vw, 20px);
+            max-width: 1680px;
+            margin: 0 auto;
+        }
+
+            .arch-grid__rows figure {
+                position: relative;
+                margin: 0;
+                aspect-ratio: 3 / 2;
+                border-radius: var(--radius);
+                overflow: hidden;
+                background: #0b1210;
+                cursor: pointer;
+            }
+
+            .arch-grid__rows img {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+                opacity: 0.85;
+                transition: opacity 0.6s var(--ease), transform 0.8s var(--ease);
+            }
+
+            .arch-grid__rows figure:hover img {
+                opacity: 1;
+                transform: scale(1.05);
+            }
+
+            .arch-grid__rows figcaption {
+                position: absolute;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                padding: 26px 14px 12px;
+                font-family: var(--serif, "Playfair Display", Georgia, serif);
+                font-size: 15px;
+                color: var(--ivory);
+                background: linear-gradient(to bottom, transparent, rgba(0, 0, 0, 0.82));
+                opacity: 0;
+                transform: translateY(6px);
+                transition: opacity 0.4s var(--ease), transform 0.4s var(--ease);
+            }
+
+            .arch-grid__rows figure:hover figcaption {
+                opacity: 1;
+                transform: none;
+            }
+
+        @@media (max-width: 900px) {
+            .arch-grid {
+                padding-top: calc(var(--arch-pad) * 2.8 + env(safe-area-inset-top));
+            }
+
+            .arch-grid__rows {
+                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            }
+        }
+
+        @@media (max-width: 640px) {
+            .arch-grid__rows {
+                grid-template-columns: 1fr 1fr;
+                gap: 8px;
+            }
+
+                .arch-grid__rows figcaption {
+                    opacity: 1;
+                    transform: none;
+                    font-size: 13px;
+                }
+
+            .arch-grid {
+                padding: calc(60px + env(safe-area-inset-top)) env(safe-area-inset-right) 40px env(safe-area-inset-left);
+            }
+        }
+
+        @@media (max-width: 380px) {
+            .arch-grid__rows {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* ===== LIGHTBOX ===== */
+        .arch-lit {
+            position: fixed;
+            inset: 0;
+            z-index: 300;
+            display: grid;
+            place-items: center;
+            padding: clamp(56px, 8vh, 84px) var(--arch-pad);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.4s var(--ease);
+        }
+
+        body.arch-lit .arch-lit {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .arch-lit__scrim {
+            position: absolute;
+            inset: 0;
+            background: rgba(8, 20, 14, 0.94);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            cursor: pointer;
+        }
+
+        .arch-lit__plate {
+            position: relative;
+            width: min(72vw, 860px, calc((100vh - 230px) * 1.5));
+            transition: transform 0.62s var(--ease), opacity 0.42s var(--ease);
+        }
+
+        .arch-lit__shot {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 3 / 2;
+            border-radius: var(--radius);
+            overflow: hidden;
+            background: #0b1210;
+            box-shadow: 0 30px 90px rgba(0, 0, 0, 0.75);
+        }
+
+            .arch-lit__shot img {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+                display: block;
+            }
+
+        .arch-lit__close {
+            position: absolute;
+            top: 12px;
+            right: 14px;
+            min-height: 44px;
+            padding: 10px 14px;
+            font-size: 12.5px;
+            letter-spacing: 0.05em;
+            color: var(--ivory);
+            background: rgba(0, 0, 0, 0.35);
+            border: 1px solid rgba(244, 242, 239, 0.78);
+            border-radius: 6px;
+            cursor: pointer;
+            font-family: var(--sans, inherit);
+            transition: background 0.3s, border-color 0.3s;
+        }
+
+            .arch-lit__close:hover {
+                border-color: #fff;
+                background: rgba(0, 0, 0, 0.55);
+            }
+
+        .arch-lit__meta {
+            display: grid;
+            grid-template-columns: minmax(0, 0.78fr) minmax(0, 1.22fr);
+            gap: clamp(22px, 3.2vw, 48px);
+            padding-top: 16px;
+            color: var(--ivory);
+        }
+
+            .arch-lit__meta h2 {
+                font-family: var(--serif, "Playfair Display", Georgia, serif);
+                font-weight: 400;
+                font-size: clamp(22px, 2.15vw, 32px);
+                line-height: 1.08;
+                letter-spacing: -0.01em;
+                margin: 0 0 6px;
+                color: var(--ivory);
+            }
+
+        .arch-lit__where {
+            font-size: 13px;
+            color: rgba(244, 242, 239, 0.62);
+            margin: 0;
+        }
+
+        .arch-lit__note {
+            font-size: 13.5px;
+            line-height: 1.55;
+            color: rgba(244, 242, 239, 0.92);
+            margin: 0;
+        }
+
+        @@media (max-width: 900px) {
+            .arch-lit__meta {
+                grid-template-columns: 1fr;
+                gap: 10px;
+                padding-top: 14px;
+            }
+
+            .arch-lit__plate {
+                width: min(92vw, calc((100dvh - 220px) * 1.5));
+            }
+        }
+
+        @@media (max-width: 768px) {
+            #arch-headline {
+                font-size: clamp(22px, 6.4vw, 34px);
+            }
+        }
+
+        @@media (max-width: 640px) {
+            .arch-lit {
+                display: block;
+                overflow-y: auto;
+                padding: calc(52px + env(safe-area-inset-top)) env(safe-area-inset-right) calc(52px + env(safe-area-inset-bottom)) env(safe-area-inset-left);
+            }
+
+            .arch-lit__plate {
+                width: 100%;
+                max-width: 560px;
+                margin: 0 auto;
+            }
+
+            .arch-lit__meta h2 {
+                font-size: clamp(20px, 5.6vw, 26px);
+            }
+
+            .arch-lit__note {
+                font-size: 12.5px;
+                line-height: 1.58;
+            }
+
+            .arch-lit__close {
+                top: 8px;
+                right: 8px;
+            }
+        }
+
+        @@media (max-height: 520px) and (orientation: landscape) {
+            #arch-headline {
+                font-size: clamp(18px, 4.8vh, 28px);
+            }
+
+            .arch-lit {
+                padding-top: calc(36px + env(safe-area-inset-top));
+            }
+
+            .arch-lit__plate {
+                width: min(58vw, calc((100dvh - 80px) * 1.5));
+            }
+
+            .arch-lit__meta {
+                padding-top: 10px;
+            }
+        }
+
+        /* ============================================================
+                   SECTION 05 — EXCEPTIONAL PLACES TO STAY
+                ============================================================ */
+        .stay__grid {
+            display: grid;
+            grid-template-columns: 1.25fr 1fr;
+            gap: clamp(22px, 3vw, 44px);
+            align-items: stretch;
+        }
+
+        .stay-feature {
+            display: grid;
+            grid-template-columns: 1.15fr 0.85fr;
+            min-height: 500px;
+            overflow: hidden;
+            background: var(--white);
+            border: 1px solid var(--line);
+            border-radius: var(--radius-lg);
+            transition: border-color 0.4s var(--ease), box-shadow 0.5s var(--ease-out);
+        }
+
+            .stay-feature:hover {
+                border-color: rgba(83, 107, 80, 0.25);
+                box-shadow: 0 34px 70px -40px rgba(20, 39, 31, 0.42);
+            }
+
+        .stay-feature__media {
+            overflow: hidden;
+        }
+
+            .stay-feature__media img {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+                transition: transform 1.1s var(--ease-out);
+            }
+
+        .stay-feature:hover .stay-feature__media img {
+            transform: scale(1.04);
+        }
+
+        .stay-feature__body {
             display: flex;
             flex-direction: column;
             gap: 14px;
-            transition: transform .4s var(--ease), box-shadow .4s var(--ease);
+            padding: clamp(24px, 3vw, 40px);
         }
-        .package:hover { transform: translateY(-4px); box-shadow: var(--shadow-md); }
-        .package h3 { font-size: 1.35rem; margin: 0; }
-        .package__meta {
+
+            .stay-feature__body h3 {
+                margin: 0;
+                font-size: clamp(1.6rem, 2.4vw, 2.2rem);
+                line-height: 1.06;
+                letter-spacing: -0.01em;
+            }
+
+            .stay-feature__body p {
+                margin: 0;
+                color: var(--muted);
+                line-height: 1.65;
+            }
+
+        .stay-feature__foot {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 14px;
+            margin-top: auto;
+            padding-top: 18px;
+            border-top: 1px solid var(--line);
+        }
+
+        .facilities {
             display: flex;
             flex-wrap: wrap;
             gap: 8px;
-            font-size: .78rem;
-            color: var(--muted);
+            margin: 0;
+            padding: 0;
+            list-style: none;
         }
-        .package__meta span {
-            padding: 4px 10px;
-            border-radius: 999px;
-            background: var(--ivory);
-            border: 1px solid var(--line);
+
+            .facilities li {
+                padding: 5px 11px;
+                border: 1px solid var(--line);
+                border-radius: 999px;
+                background: var(--ivory);
+                color: var(--muted);
+                font-size: 0.64rem;
+                letter-spacing: 0.12em;
+                text-transform: uppercase;
+            }
+
+        .facilities--dark li {
+            border-color: rgba(248, 246, 240, 0.22);
+            background: rgba(248, 246, 240, 0.06);
+            color: rgba(248, 246, 240, 0.8);
         }
-        .package ul { margin: 0; padding-left: 18px; color: var(--muted); font-size: .9rem; }
-        .package__footer {
+
+        .price {
+            font-family: var(--serif);
+            font-size: 1.4rem;
+            line-height: 1.1;
+            color: var(--forest-deep);
+            letter-spacing: -0.01em;
+        }
+
+            .price small {
+                display: block;
+                margin-bottom: 3px;
+                color: var(--muted);
+                font-family: var(--sans);
+                font-size: 0.62rem;
+                font-weight: 400;
+                letter-spacing: 0.16em;
+                text-transform: uppercase;
+            }
+
+        .price--light {
+            color: var(--sand);
+        }
+
+        .stay__list {
             display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 12px;
-            padding-top: 16px;
-            margin-top: auto;
+            flex-direction: column;
+            justify-content: center;
             border-top: 1px solid var(--line);
         }
-        .package__price { font-family: var(--serif); font-size: 1.35rem; color: var(--forest-deep); }
-        .package__price small {
-            display: block;
-            font-family: var(--sans);
-            font-size: .66rem;
-            letter-spacing: .14em;
-            text-transform: uppercase;
-            color: var(--muted);
-            font-weight: 400;
-            margin-bottom: 2px;
-        }
 
-        /* ================= WHY / TRUST ================= */
-        .trust-grid {
+        .stay-row {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
-            gap: 32px;
+            grid-template-columns: 132px 1fr;
+            gap: clamp(16px, 2vw, 24px);
+            align-items: center;
+            padding: clamp(18px, 2.4vw, 26px) 0;
+            border-bottom: 1px solid var(--line);
         }
-        .trust-item { padding-top: 24px; border-top: 1px solid var(--line); }
-        .trust-item h3 { font-size: 1.15rem; margin: 0 0 8px; }
-        .trust-item p { color: var(--muted); font-size: .9rem; margin: 0; }
 
-        /* ================= CTA BAND ================= */
-        .cta-band {
-            background: var(--forest-deep);
+        .stay-row__media {
+            aspect-ratio: 4 / 3;
+            overflow: hidden;
+            border-radius: var(--radius);
+        }
+
+            .stay-row__media img {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+                transition: transform 0.9s var(--ease-out);
+            }
+
+        .stay-row:hover .stay-row__media img {
+            transform: scale(1.08);
+        }
+
+        .stay-row h3 {
+            margin: 6px 0 6px;
+            font-size: 1.15rem;
+            letter-spacing: -0.01em;
+        }
+
+        .stay-row p {
+            margin: 0 0 10px;
+            color: var(--muted);
+            font-size: 0.88rem;
+            line-height: 1.55;
+        }
+
+        .stay-row__foot {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .stay-row__price {
+            font-family: var(--serif);
+            font-size: 1.02rem;
+            color: var(--forest-deep);
+        }
+
+            .stay-row__price small {
+                font-family: var(--sans);
+                font-size: 0.6rem;
+                letter-spacing: 0.14em;
+                text-transform: uppercase;
+                color: var(--muted);
+                margin-left: 6px;
+            }
+
+        /* ============================================================
+                   SECTION 06 — THE JOURNEY BETWEEN
+                ============================================================ */
+        .route-layout {
+            display: grid;
+            grid-template-columns: 0.9fr 1.1fr;
+            gap: clamp(30px, 5vw, 80px);
+            align-items: start;
+        }
+
+        .route-intro h2 {
+            margin: 14px 0 18px;
+            font-size: clamp(2rem, 3.6vw, 3.2rem);
+            line-height: 1.04;
+            letter-spacing: -0.02em;
+            text-wrap: balance;
+        }
+
+        .route-intro p {
+            max-width: 48ch;
+            margin: 0 0 26px;
+            color: rgba(248, 246, 240, 0.72);
+            line-height: 1.7;
+        }
+
+        .route {
+            position: relative;
+            margin: 0;
+            padding: 0;
+            list-style: none;
+        }
+
+            .route::before {
+                content: '';
+                position: absolute;
+                left: 27px;
+                top: 22px;
+                bottom: 22px;
+                width: 1px;
+                background: linear-gradient(180deg, rgba(232, 223, 201, 0.55), rgba(232, 223, 201, 0.12));
+            }
+
+        .route__node {
+            position: relative;
+            padding: 18px 0 18px 76px;
+        }
+
+            .route__node::before {
+                content: attr(data-step);
+                position: absolute;
+                left: 4px;
+                top: 22px;
+                display: grid;
+                place-items: center;
+                width: 48px;
+                height: 48px;
+                border: 1px solid rgba(232, 223, 201, 0.35);
+                border-radius: 50%;
+                background: var(--forest);
+                color: var(--sand);
+                font-family: var(--serif);
+                font-size: 1rem;
+                transition: border-color 0.4s var(--ease), transform 0.4s var(--ease-out);
+            }
+
+            .route__node:hover::before {
+                border-color: var(--sand);
+                transform: scale(1.06);
+            }
+
+            .route__node h3 {
+                margin: 0 0 6px;
+                color: var(--ivory);
+                font-size: 1.3rem;
+                letter-spacing: -0.01em;
+            }
+
+            .route__node p {
+                max-width: 44ch;
+                margin: 0;
+                color: rgba(248, 246, 240, 0.7);
+                font-size: 0.92rem;
+                line-height: 1.6;
+            }
+
+        .route__mode {
+            display: inline-block;
+            margin-top: 10px;
+            font-size: 0.62rem;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+            color: var(--sage);
+        }
+
+        /* ============================================================
+                   SECTION 07A — TASTE TRAILS
+                ============================================================ */
+        .taste {
+            display: grid;
+            grid-template-columns: 1.2fr 0.8fr;
+            gap: clamp(24px, 4vw, 64px);
+            align-items: center;
+        }
+
+        .taste__media {
+            position: relative;
+            aspect-ratio: 5 / 4;
+            overflow: hidden;
+            border-radius: var(--radius-lg);
+        }
+
+            .taste__media img {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+                transition: transform 1.2s var(--ease-out);
+            }
+
+            .taste__media:hover img {
+                transform: scale(1.05);
+            }
+
+        .taste__body h2 {
+            margin: 14px 0 18px;
+            font-size: clamp(2rem, 3.4vw, 3rem);
+            line-height: 1.04;
+            letter-spacing: -0.02em;
+            text-wrap: balance;
+        }
+
+        .taste__body > p {
+            margin: 0;
+            color: var(--muted);
+            line-height: 1.7;
+        }
+
+        .taste__list {
+            margin: 26px 0 28px;
+            padding: 0;
+            list-style: none;
+            border-top: 1px solid var(--line);
+        }
+
+            .taste__list li {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 16px;
+                padding: 16px 0;
+                border-bottom: 1px solid var(--line);
+            }
+
+            .taste__list strong {
+                display: block;
+                font-family: var(--serif);
+                font-size: 1.08rem;
+                font-weight: 500;
+                color: var(--charcoal);
+            }
+
+            .taste__list span {
+                display: block;
+                margin-top: 3px;
+                font-size: 0.78rem;
+                color: var(--muted);
+            }
+
+        .taste__tag {
+            flex: 0 0 auto;
+            padding: 5px 11px;
+            border: 1px solid var(--line);
+            border-radius: 999px;
+            font-size: 0.62rem !important;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            color: var(--moss) !important;
+            background: var(--white);
+        }
+
+        /* ============================================================
+                   SECTION 07B — RESORT ESCAPES
+                ============================================================ */
+        .retreat {
+            display: grid;
+            grid-template-columns: 0.95fr 1.05fr;
+            gap: clamp(24px, 4vw, 64px);
+            align-items: center;
+        }
+
+        .retreat__body h2 {
+            margin: 14px 0 18px;
             color: var(--ivory);
-            padding: clamp(64px, 8vw, 108px) 0;
-            text-align: center;
+            font-size: clamp(2rem, 3.4vw, 3rem);
+            line-height: 1.04;
+            letter-spacing: -0.02em;
+            text-wrap: balance;
         }
-        .cta-band h2 { color: var(--ivory); max-width: 22ch; margin: 0 auto 20px; }
-        .cta-band p { color: rgba(248, 246, 240, .78); max-width: 56ch; margin: 0 auto 32px; }
-        .cta-band__actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 14px; }
 
-        /* ================= RESPONSIVE ================= */
-        @@media (max-width: 900px) {
-            .hero { padding: calc(var(--header-h) + 40px) 0 160px; }
-            .search-grid { grid-template-columns: 1fr 1fr; }
-            .split { grid-template-columns: 1fr; }
+        .retreat__body > p {
+            margin: 0 0 22px;
+            color: rgba(248, 246, 240, 0.72);
+            line-height: 1.7;
         }
+
+        .retreat__media {
+            aspect-ratio: 4 / 5;
+            overflow: hidden;
+            border-radius: var(--radius-lg);
+        }
+
+            .retreat__media img {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+                transition: transform 1.2s var(--ease-out);
+            }
+
+            .retreat__media:hover img {
+                transform: scale(1.05);
+            }
+
+        .retreat__body .facilities {
+            margin: 0 0 26px;
+        }
+
+        /* ============================================================
+                   SECTION 08 — CURATED JOURNEYS
+                ============================================================ */
+        .journey-feature {
+            display: grid;
+            grid-template-columns: 1.05fr 0.95fr;
+            overflow: hidden;
+            background: var(--white);
+            border: 1px solid var(--line);
+            border-radius: var(--radius-lg);
+            transition: border-color 0.4s var(--ease), box-shadow 0.5s var(--ease-out);
+        }
+
+            .journey-feature:hover {
+                border-color: rgba(83, 107, 80, 0.25);
+                box-shadow: 0 34px 70px -40px rgba(20, 39, 31, 0.42);
+            }
+
+        .journey-feature__media {
+            min-height: 440px;
+            overflow: hidden;
+        }
+
+            .journey-feature__media img {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+                transition: transform 1.1s var(--ease-out);
+            }
+
+        .journey-feature:hover .journey-feature__media img {
+            transform: scale(1.04);
+        }
+
+        .journey-feature__body {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            padding: clamp(26px, 4vw, 52px);
+        }
+
+            .journey-feature__body h3 {
+                margin: 0;
+                font-size: clamp(1.8rem, 2.8vw, 2.6rem);
+                line-height: 1.04;
+                letter-spacing: -0.02em;
+            }
+
+            .journey-feature__body p {
+                margin: 0;
+                color: var(--muted);
+                line-height: 1.65;
+            }
+
+        .meta-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+            .meta-row span {
+                padding: 5px 11px;
+                border: 1px solid var(--line);
+                border-radius: 999px;
+                background: var(--ivory);
+                color: var(--muted);
+                font-size: 0.64rem;
+                letter-spacing: 0.12em;
+                text-transform: uppercase;
+            }
+
+        .included {
+            display: grid;
+            gap: 8px;
+            margin: 0;
+            padding: 0;
+            list-style: none;
+        }
+
+            .included li {
+                position: relative;
+                padding-left: 22px;
+                color: var(--muted);
+                font-size: 0.9rem;
+                line-height: 1.55;
+            }
+
+                .included li::before {
+                    content: '\2713';
+                    position: absolute;
+                    left: 0;
+                    top: 0;
+                    color: var(--moss);
+                    font-size: 0.8rem;
+                }
+
+        .journey-feature__foot {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: end;
+            justify-content: space-between;
+            gap: 16px;
+            margin-top: auto;
+            padding-top: 18px;
+            border-top: 1px solid var(--line);
+        }
+
+        .journey-list {
+            margin-top: clamp(28px, 4vw, 44px);
+            border-top: 1px solid var(--line);
+        }
+
+        .journey-row {
+            display: grid;
+            grid-template-columns: 150px 1fr auto;
+            gap: clamp(18px, 3vw, 32px);
+            align-items: center;
+            padding: clamp(18px, 2.6vw, 28px) 0;
+            border-bottom: 1px solid var(--line);
+        }
+
+        .journey-row__media {
+            aspect-ratio: 3 / 2;
+            overflow: hidden;
+            border-radius: var(--radius);
+        }
+
+            .journey-row__media img {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+                transition: transform 0.9s var(--ease-out);
+            }
+
+        .journey-row:hover .journey-row__media img {
+            transform: scale(1.07);
+        }
+
+        .journey-row h3 {
+            margin: 0 0 6px;
+            font-size: 1.2rem;
+            letter-spacing: -0.01em;
+        }
+
+        .journey-row p {
+            margin: 0 0 10px;
+            color: var(--muted);
+            font-size: 0.9rem;
+            line-height: 1.55;
+        }
+
+        .journey-row__action {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 8px;
+            text-align: right;
+        }
+
+        /* ============================================================
+                   SECTION 09 — THE KARNEL DIFFERENCE
+                ============================================================ */
+        .difference {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: clamp(30px, 5vw, 80px);
+            align-items: center;
+        }
+
+        .difference__media {
+            position: relative;
+            min-height: clamp(420px, 44vw, 620px);
+        }
+
+            .difference__media img {
+                position: absolute;
+                display: block;
+                object-fit: cover;
+                border-radius: var(--radius-lg);
+                box-shadow: 0 30px 60px -34px rgba(20, 39, 31, 0.5);
+            }
+
+                .difference__media img:first-child {
+                    top: 0;
+                    left: 0;
+                    width: 72%;
+                    height: 64%;
+                }
+
+                .difference__media img:last-child {
+                    right: 0;
+                    bottom: 0;
+                    width: 56%;
+                    height: 52%;
+                    border: 8px solid var(--ivory);
+                }
+
+        .difference__body h2 {
+            margin: 14px 0 18px;
+            font-size: clamp(2rem, 3.6vw, 3.2rem);
+            line-height: 1.04;
+            letter-spacing: -0.02em;
+            text-wrap: balance;
+        }
+
+        .difference__body > p {
+            margin: 0;
+            color: var(--muted);
+            line-height: 1.7;
+        }
+
+        .difference__list {
+            margin: 30px 0 0;
+            padding: 0;
+            list-style: none;
+        }
+
+            .difference__list li {
+                display: grid;
+                grid-template-columns: 48px 1fr;
+                gap: 18px;
+                padding: 16px 0;
+                border-top: 1px solid var(--line);
+            }
+
+                .difference__list li:last-child {
+                    border-bottom: 1px solid var(--line);
+                }
+
+            .difference__list b {
+                font-family: var(--serif);
+                font-size: 1rem;
+                font-weight: 500;
+                letter-spacing: 0.04em;
+                color: var(--sage);
+            }
+
+            .difference__list h3 {
+                margin: 0 0 4px;
+                font-size: 1.05rem;
+                letter-spacing: -0.01em;
+            }
+
+            .difference__list p {
+                margin: 0;
+                color: var(--muted);
+                font-size: 0.9rem;
+                line-height: 1.6;
+            }
+
+        /* ============================================================
+                   SECTION 10 — FINAL JOURNEY CTA
+                ============================================================ */
+        .final-cta {
+            position: relative;
+            display: grid;
+            place-items: center;
+            min-height: clamp(560px, 76vh, 780px);
+            overflow: hidden;
+            color: var(--ivory);
+            text-align: center;
+            isolation: isolate;
+        }
+
+            .final-cta > img {
+                position: absolute;
+                inset: 0;
+                z-index: -2;
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+                transform: scale(1.04);
+            }
+
+            .final-cta::after {
+                content: '';
+                position: absolute;
+                inset: 0;
+                z-index: -1;
+                background: linear-gradient(180deg, rgba(20, 39, 31, 0.45), rgba(20, 39, 31, 0.82));
+            }
+
+            .final-cta .container {
+                position: relative;
+                z-index: 2;
+                padding-top: 40px;
+                padding-bottom: 40px;
+            }
+
+            .final-cta .eyebrow {
+                color: var(--sage);
+            }
+
+            .final-cta h2 {
+                max-width: 18ch;
+                margin: 0 auto 20px;
+                color: var(--ivory);
+                font-size: clamp(2.4rem, 5.4vw, 4.6rem);
+                line-height: 1.02;
+                letter-spacing: -0.02em;
+                text-wrap: balance;
+            }
+
+            .final-cta p {
+                max-width: 54ch;
+                margin: 0 auto 32px;
+                color: rgba(248, 246, 240, 0.8);
+                line-height: 1.7;
+            }
+
+            .final-cta .hero__cta {
+                justify-content: center;
+            }
+
+        /* ============================================================
+                   RESPONSIVE
+                ============================================================ */
+        @@media (max-width: 1080px) {
+            .stay__grid {
+                grid-template-columns: 1fr;
+            }
+
+            .stay-feature {
+                min-height: 420px;
+            }
+
+            .route-layout {
+                grid-template-columns: 1fr;
+            }
+
+            .taste {
+                grid-template-columns: 1fr;
+            }
+
+            .taste__media {
+                aspect-ratio: 16 / 10;
+            }
+
+            .retreat {
+                grid-template-columns: 1fr;
+            }
+
+            .retreat__media {
+                aspect-ratio: 16 / 10;
+                order: -1;
+            }
+
+            .journey-feature {
+                grid-template-columns: 1fr;
+            }
+
+            .journey-feature__media {
+                min-height: 380px;
+            }
+
+            .difference {
+                grid-template-columns: 1fr;
+            }
+
+            .difference__media {
+                min-height: 460px;
+                order: -1;
+            }
+        }
+
+        @@media (max-width: 900px) {
+            .discover__head {
+                grid-template-columns: 1fr;
+                align-items: start;
+            }
+
+            .discover__head-link {
+                justify-self: start;
+                margin-top: 8px;
+            }
+
+            .discover__grid {
+                grid-template-columns: 1fr;
+            }
+
+            .discover__feature {
+                min-height: 520px;
+            }
+
+            .discover__stack {
+                grid-template-rows: auto auto;
+            }
+
+            .atlas-intro .container {
+                grid-template-columns: 1fr;
+            }
+
+            .atlas-intro h2 {
+                margin-bottom: 18px;
+            }
+
+            .stay-feature {
+                grid-template-columns: 1fr;
+            }
+
+            .stay-feature__media {
+                aspect-ratio: 16 / 10;
+            }
+
+            .journey-row {
+                grid-template-columns: 120px 1fr;
+            }
+
+            .journey-row__action {
+                grid-column: 2;
+                flex-direction: row;
+                align-items: center;
+                justify-content: space-between;
+                text-align: left;
+            }
+        }
+
+        @@media (max-width: 720px) {
+            .finder__fields--3,
+            .finder__fields--2 {
+                grid-template-columns: 1fr;
+            }
+
+            .finder__foot {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+                .finder__foot .btn {
+                    width: 100%;
+                }
+
+            .discover__item {
+                grid-template-columns: 1fr;
+            }
+
+            .discover__item-media {
+                aspect-ratio: 16 / 10;
+            }
+
+            .stay-row {
+                grid-template-columns: 104px 1fr;
+            }
+
+            .difference__media {
+                min-height: 400px;
+            }
+
+                .difference__media img:first-child {
+                    width: 78%;
+                    height: 60%;
+                }
+
+                .difference__media img:last-child {
+                    width: 60%;
+                    height: 50%;
+                    border-width: 6px;
+                }
+        }
+
         @@media (max-width: 600px) {
-            .hero { min-height: auto; padding: calc(var(--header-h) + 40px) 0 140px; }
-            .search-grid { grid-template-columns: 1fr; }
-            .search-band { margin-top: -80px; padding-bottom: 30px; }
-            .search-panel { padding: 22px; }
-            .hero__scroll { display: none; }
+            .hero {
+                min-height: auto;
+                padding: calc(var(--header-h) + 40px) 0 150px;
+            }
+
+            .hero__scroll {
+                display: none;
+            }
+
+            .finder-band {
+                margin-top: -70px;
+            }
+
+            .finder__tabs {
+                padding: 0 18px;
+            }
+
+            .finder__tab {
+                padding: 13px 14px;
+            }
+
+                .finder__tab::after {
+                    left: 14px;
+                    right: 14px;
+                }
+
+            .discover__feature {
+                min-height: 460px;
+            }
+
+            .journey-row {
+                grid-template-columns: 1fr;
+            }
+
+            .journey-row__action {
+                grid-column: 1;
+            }
+
+            .journey-feature__media {
+                min-height: 280px;
+            }
+
+            .journey-feature__body {
+                padding: 24px;
+            }
+        }
+
+        /* ============================================================
+                   REDUCED MOTION
+                ============================================================ */
+        @@media (prefers-reduced-motion: reduce) {
+            html {
+                scroll-behavior: auto;
+            }
+
+            .hero__content > * {
+                opacity: 1 !important;
+                transform: none !important;
+                filter: none !important;
+                animation: none !important;
+            }
+
+            .hero__scroll::after,
+            .finder__panel {
+                animation: none !important;
+            }
+
+            .reveal-pending {
+                opacity: 1 !important;
+                transform: none !important;
+                filter: none !important;
+                transition: none !important;
+            }
+
+            .archive *, .arch-grid *, .arch-lit * {
+                animation-duration: 0.01ms !important;
+                transition-duration: 0.14s !important;
+            }
         }
     </style>
 }
 
-<!-- ==================== A. HERO ==================== -->
+<!-- ==================== SECTION 01 — CINEMATIC HERO ==================== -->
 <section class="hero">
     <div class="hero__media media" data-fallback-label="Northern Pakistan mountain landscape">
-        <img
-            src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=1920&q=80"
-            alt="Snow-capped mountains of northern Pakistan at golden hour"
-            fetchpriority="high" />
+        <img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=1920&q=80"
+             alt="Snow-capped mountains of northern Pakistan at golden hour"
+             fetchpriority="high" />
         <div class="hero__overlay" aria-hidden="true"></div>
     </div>
 
@@ -348,351 +2413,635 @@
             <a class="btn btn--light" href="@Url.Action("Index", "Search")">Explore Destinations</a>
             <a class="btn btn--ghost-light" href="@Url.Action("Index", "Contact")">Plan Your Journey</a>
         </div>
+        <div class="hero__meta">
+            <div>
+                <strong>21</strong>
+                <span>Nature spots</span>
+            </div>
+            <div>
+                <strong>06</strong>
+                <span>Travel categories</span>
+            </div>
+            <div>
+                <strong>01</strong>
+                <span>Guide to Pakistan</span>
+            </div>
+        </div>
     </div>
 
     <div class="hero__scroll" aria-hidden="true">Scroll</div>
 </section>
 
-<!-- ==================== B. SEARCH PANEL ==================== -->
-<section class="search-band">
+<!-- ==================== SECTION 02 — INTELLIGENT JOURNEY FINDER ==================== -->
+<section class="finder-band" aria-labelledby="finder-title">
     <div class="container">
-        <form class="search-panel" id="home-search" novalidate>
-            <div class="search-panel__head">
-                <h2>Start your search</h2>
-                <span class="badge badge--sample">Frontend demo — not yet connected to database</span>
+        <form class="finder" id="home-search" action="@Url.Action("Index", "Search")" method="get" novalidate>
+            <div class="finder__head">
+                <div>
+                    <p class="eyebrow">Intelligent Journey Finder</p>
+                    <h2 id="finder-title">Start with a place, a stay, or a way to get there.</h2>
+                </div>
+                <span class="badge">Sample search — refine in Advanced Discovery</span>
             </div>
 
-            <div class="search-grid">
-                <label class="field">
-                    <span>Destination or keyword</span>
-                    <input type="text" name="keyword" placeholder="e.g. Hunza, Skardu, Lahore" autocomplete="off" />
-                </label>
+            <input type="hidden" name="category" id="finder-category" value="destinations" />
 
-                <label class="field">
-                    <span>Travel category</span>
-                    <select name="category">
-                        <option value="">All categories</option>
-                        <option value="destinations">Tourist Spots</option>
-                        <option value="hotels">Hotels</option>
-                        <option value="restaurants">Restaurants</option>
-                        <option value="resorts">Resorts</option>
-                        <option value="transport">Transportation</option>
-                    </select>
-                </label>
+            <div class="finder__tabs" role="tablist" aria-label="Journey categories">
+                <button class="finder__tab is-active" type="button" role="tab" id="finder-tab-destinations"
+                        aria-controls="finder-panel-destinations" aria-selected="true" tabindex="0"
+                        data-finder-tab="destinations">
+                    Destinations
+                </button>
+                <button class="finder__tab" type="button" role="tab" id="finder-tab-hotels"
+                        aria-controls="finder-panel-hotels" aria-selected="false" tabindex="-1"
+                        data-finder-tab="hotels">
+                    Hotels
+                </button>
+                <button class="finder__tab" type="button" role="tab" id="finder-tab-transport"
+                        aria-controls="finder-panel-transport" aria-selected="false" tabindex="-1"
+                        data-finder-tab="transport">
+                    Transport
+                </button>
+                <button class="finder__tab" type="button" role="tab" id="finder-tab-restaurants"
+                        aria-controls="finder-panel-restaurants" aria-selected="false" tabindex="-1"
+                        data-finder-tab="restaurants">
+                    Restaurants
+                </button>
+                <button class="finder__tab" type="button" role="tab" id="finder-tab-packages"
+                        aria-controls="finder-panel-packages" aria-selected="false" tabindex="-1"
+                        data-finder-tab="packages">
+                    Packages
+                </button>
+            </div>
 
-                <label class="field">
-                    <span>Approx. budget (PKR)</span>
-                    <select name="budget">
-                        <option value="">Any budget</option>
-                        <option value="25000">Up to 25,000</option>
-                        <option value="50000">Up to 50,000</option>
-                        <option value="100000">Up to 100,000</option>
-                        <option value="200000">Up to 200,000</option>
-                    </select>
-                </label>
+            <div class="finder__panels">
+                <div class="finder__panel is-active" id="finder-panel-destinations"
+                     role="tabpanel" aria-labelledby="finder-tab-destinations" data-finder-panel="destinations">
+                    <div class="finder__fields finder__fields--3">
+                        <label class="field">
+                            <span>Destination or keyword</span>
+                            <input type="text" name="keyword" placeholder="e.g. Hunza, Skardu, Lahore" autocomplete="off" />
+                        </label>
+                        <label class="field">
+                            <span>Region</span>
+                            <select name="region">
+                                <option value="">All regions</option>
+                                <option value="gilgit-baltistan">Gilgit-Baltistan</option>
+                                <option value="khyber-pakhtunkhwa">Khyber Pakhtunkhwa</option>
+                                <option value="punjab">Punjab</option>
+                                <option value="sindh">Sindh</option>
+                                <option value="balochistan">Balochistan</option>
+                                <option value="azad-kashmir">Azad Kashmir</option>
+                            </select>
+                        </label>
+                        <label class="field">
+                            <span>Approx. budget (PKR)</span>
+                            <select name="budget">
+                                <option value="">Any budget</option>
+                                <option value="25000">Up to 25,000</option>
+                                <option value="50000">Up to 50,000</option>
+                                <option value="100000">Up to 100,000</option>
+                                <option value="200000">Up to 200,000</option>
+                            </select>
+                        </label>
+                    </div>
+                </div>
 
-                <div class="field field--submit">
-                    <button class="btn" type="submit">Search</button>
+                <div class="finder__panel" id="finder-panel-hotels"
+                     role="tabpanel" aria-labelledby="finder-tab-hotels" data-finder-panel="hotels" hidden>
+                    <div class="finder__fields finder__fields--3">
+                        <label class="field">
+                            <span>City or hotel name</span>
+                            <input type="text" name="keyword" placeholder="e.g. Hunza, Lahore, Karachi" autocomplete="off" />
+                        </label>
+                        <label class="field">
+                            <span>Guests</span>
+                            <select name="guests">
+                                <option value="">Any number</option>
+                                <option value="1">1 guest</option>
+                                <option value="2">2 guests</option>
+                                <option value="3">3 guests</option>
+                                <option value="4">4 guests</option>
+                                <option value="5">5+ guests</option>
+                            </select>
+                        </label>
+                        <label class="field">
+                            <span>Approx. budget (PKR)</span>
+                            <select name="budget">
+                                <option value="">Any budget</option>
+                                <option value="25000">Up to 25,000</option>
+                                <option value="50000">Up to 50,000</option>
+                                <option value="100000">Up to 100,000</option>
+                                <option value="200000">Up to 200,000</option>
+                            </select>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="finder__panel" id="finder-panel-transport"
+                     role="tabpanel" aria-labelledby="finder-tab-transport" data-finder-panel="transport" hidden>
+                    <div class="finder__fields finder__fields--3">
+                        <label class="field">
+                            <span>From</span>
+                            <input type="text" name="from" placeholder="e.g. Islamabad" autocomplete="off" />
+                        </label>
+                        <label class="field">
+                            <span>To</span>
+                            <input type="text" name="to" placeholder="e.g. Gilgit" autocomplete="off" />
+                        </label>
+                        <label class="field">
+                            <span>Mode of travel</span>
+                            <select name="mode">
+                                <option value="">Any mode</option>
+                                <option value="bus">Bus &amp; Coach</option>
+                                <option value="private-car">Private Car</option>
+                                <option value="shared">Shared Transport</option>
+                                <option value="air">Air Travel</option>
+                            </select>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="finder__panel" id="finder-panel-restaurants"
+                     role="tabpanel" aria-labelledby="finder-tab-restaurants" data-finder-panel="restaurants" hidden>
+                    <div class="finder__fields finder__fields--3">
+                        <label class="field">
+                            <span>Restaurant or dish</span>
+                            <input type="text" name="keyword" placeholder="e.g. apricot, karahi" autocomplete="off" />
+                        </label>
+                        <label class="field">
+                            <span>City</span>
+                            <input type="text" name="city" placeholder="e.g. Lahore" autocomplete="off" />
+                        </label>
+                        <label class="field">
+                            <span>Cuisine</span>
+                            <select name="cuisine">
+                                <option value="">Any cuisine</option>
+                                <option value="pakistani">Pakistani</option>
+                                <option value="regional">Regional</option>
+                                <option value="street-food">Street food</option>
+                                <option value="continental">Continental</option>
+                            </select>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="finder__panel" id="finder-panel-packages"
+                     role="tabpanel" aria-labelledby="finder-tab-packages" data-finder-panel="packages" hidden>
+                    <div class="finder__fields finder__fields--3">
+                        <label class="field">
+                            <span>Destination or theme</span>
+                            <input type="text" name="keyword" placeholder="e.g. Northern Escape" autocomplete="off" />
+                        </label>
+                        <label class="field">
+                            <span>Duration</span>
+                            <select name="duration">
+                                <option value="">Any duration</option>
+                                <option value="3">3–4 nights</option>
+                                <option value="5">5–6 nights</option>
+                                <option value="7">7+ nights</option>
+                            </select>
+                        </label>
+                        <label class="field">
+                            <span>Approx. budget (PKR)</span>
+                            <select name="budget">
+                                <option value="">Any budget</option>
+                                <option value="50000">Up to 50,000</option>
+                                <option value="100000">Up to 100,000</option>
+                                <option value="200000">Up to 200,000</option>
+                                <option value="300000">Up to 300,000</option>
+                            </select>
+                        </label>
+                    </div>
                 </div>
             </div>
 
-            <span class="search-panel__note">
-                Looking for more control? Try
-                <a href="@Url.Action("Advanced", "Search")">Advanced Discovery</a>
-                to refine by region, facilities and rating.
-            </span>
+            <div class="finder__foot">
+                <p class="finder__note">
+                    Looking for more control? Try
+                    <a href="@Url.Action("Advanced", "Search")">Advanced Discovery</a>
+                    to refine by region, facilities and rating.
+                </p>
+                <button class="btn" type="submit">Search journeys</button>
+            </div>
         </form>
     </div>
 </section>
 
-<!-- ==================== C. FEATURED DESTINATIONS ==================== -->
-<section class="section section--ivory" aria-labelledby="featured-title">
+<!-- ==================== SECTION 03 — DISCOVER PAKISTAN ==================== -->
+<section class="section section--ivory" aria-labelledby="discover-title">
     <div class="container">
-        <div class="section-head" data-reveal>
-            <p class="eyebrow">Featured Destinations</p>
-            <h2 id="featured-title">Places worth the detour.</h2>
-            <p>A small, curated collection of regions across Pakistan — chosen for their
-               landscape, history and quiet moments in between.</p>
+        <div class="discover__head">
+            <div class="section-head" data-reveal>
+                <p class="eyebrow">Discover Pakistan</p>
+                <h2 id="discover-title">Places worth the detour.</h2>
+                <p>
+                    A small, curated collection of regions across Pakistan — chosen for their
+                    landscape, history and quiet moments in between.
+                </p>
+            </div>
+            <a class="link-arrow discover__head-link" href="@Url.Action("Index", "Destinations")" data-reveal>
+                Explore all destinations
+            </a>
         </div>
 
-        <div class="cards-grid cards-grid--feature" data-reveal-group>
-            <article class="card" data-reveal>
-                <div class="media" data-fallback-label="Hunza Valley">
-                    <img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=1200&q=75"
-                         alt="Hunza Valley surrounded by snow-capped mountains" loading="lazy" />
-                </div>
-                <div class="card__body">
-                    <span class="card__meta">Gilgit-Baltistan</span>
+        <div class="discover__grid" data-reveal-group>
+            <article class="discover__feature" data-reveal>
+                <img src="https://images.unsplash.com/photo-1519681393784-d120267933ba?auto=format&fit=crop&w=1400&q=80"
+                     alt="Snow-capped peaks above Hunza Valley" loading="lazy" decoding="async" />
+                <div class="discover__feature-body">
+                    <span class="discover__region">Gilgit-Baltistan</span>
                     <h3>Hunza Valley</h3>
-                    <p>Famous for apricot orchards, forts and views of Rakaposhi — a scenic
-                       base for northern exploration.</p>
-                    <a class="link-arrow" href="@Url.Action("Index", "Destinations")">View destination</a>
+                    <p>
+                        Famous for apricot orchards, forts and views of Rakaposhi — a scenic
+                        base for northern exploration and long, unhurried mornings.
+                    </p>
+                    <a class="link-arrow link-arrow--light" href="@Url.Action("Index", "Destinations")">
+                        Explore Hunza
+                    </a>
                 </div>
             </article>
 
-            <article class="card" data-reveal>
-                <div class="media" data-fallback-label="Skardu">
-                    <img src="https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=900&q=75"
-                         alt="Mountain lake near Skardu" loading="lazy" />
-                </div>
-                <div class="card__body">
-                    <span class="card__meta">Baltistan</span>
-                    <h3>Skardu</h3>
-                    <p>Cold desert, alpine lakes and a gateway to some of the world's highest peaks.</p>
-                    <a class="link-arrow" href="@Url.Action("Index", "Destinations")">View destination</a>
-                </div>
-            </article>
+            <div class="discover__stack">
+                <article class="discover__item" data-reveal>
+                    <div class="discover__item-media">
+                        <img src="https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=800&q=75"
+                             alt="Mountain lake near Skardu" loading="lazy" decoding="async" />
+                    </div>
+                    <div class="discover__item-body">
+                        <span class="region-tag">Baltistan</span>
+                        <h3>Skardu</h3>
+                        <p>Cold desert, alpine lakes and a gateway to some of the world's highest peaks.</p>
+                        <a class="link-arrow" href="@Url.Action("Index", "Destinations")">Explore Skardu</a>
+                    </div>
+                </article>
 
-            <article class="card" data-reveal>
-                <div class="media" data-fallback-label="Swat Valley">
-                    <img src="https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=900&q=75"
-                         alt="Green valley in Swat with river and pine forest" loading="lazy" />
-                </div>
-                <div class="card__body">
-                    <span class="card__meta">Khyber Pakhtunkhwa</span>
-                    <h3>Swat Valley</h3>
-                    <p>Rivers, pine forests and meadow trails — a quieter side of the north.</p>
-                    <a class="link-arrow" href="@Url.Action("Index", "Destinations")">View destination</a>
-                </div>
-            </article>
+                <article class="discover__item" data-reveal>
+                    <div class="discover__item-media">
+                        <img src="https://images.unsplash.com/photo-1441974231531-c6227db76b6e?auto=format&fit=crop&w=800&q=75"
+                             alt="Green valley in Swat with pine forest" loading="lazy" decoding="async" />
+                    </div>
+                    <div class="discover__item-body">
+                        <span class="region-tag">Khyber Pakhtunkhwa</span>
+                        <h3>Swat Valley</h3>
+                        <p>Rivers, pine forests and meadow trails — a quieter side of the north.</p>
+                        <a class="link-arrow" href="@Url.Action("Index", "Destinations")">Explore Swat</a>
+                    </div>
+                </article>
+            </div>
         </div>
     </div>
 </section>
 
-<!-- ==================== D. WAYS TO WANDER ==================== -->
-<section class="section section--sand" aria-labelledby="transport-title">
+<!-- ==================== SECTION 04 — THE QUIET ATLAS INTRO ==================== -->
+<section class="atlas-intro" aria-labelledby="atlas-title">
     <div class="container">
-        <div class="section-head" data-reveal>
-            <p class="eyebrow">Ways to Wander</p>
-            <h2 id="transport-title">Getting there is part of the story.</h2>
-            <p>Travel options between destinations — described for guidance only. Actual
-               schedules, fares and availability will be connected to the database later.</p>
+        <div data-reveal>
+            <p class="eyebrow">The Quiet Atlas</p>
+            <h2 id="atlas-title">A slow atlas of the places that stay with you.</h2>
         </div>
-
-        <div class="transport-grid" data-reveal-group>
-            <div class="transport-item" data-reveal>
-                <div class="transport-item__num">01</div>
-                <h3>Bus &amp; Coach</h3>
-                <p>Intercity coaches on popular northern and central routes.</p>
-            </div>
-            <div class="transport-item" data-reveal>
-                <div class="transport-item__num">02</div>
-                <h3>Private Car</h3>
-                <p>Chauffeur-driven or self-drive options for flexible itineraries.</p>
-            </div>
-            <div class="transport-item" data-reveal>
-                <div class="transport-item__num">03</div>
-                <h3>Shared Transport</h3>
-                <p>Shared vans and jeeps for common mountain routes.</p>
-            </div>
-            <div class="transport-item" data-reveal>
-                <div class="transport-item__num">04</div>
-                <h3>Air Travel</h3>
-                <p>Domestic flights to northern hubs — details to be confirmed.</p>
-            </div>
+        <div data-reveal>
+            <p>
+                Twenty-one nature destinations, gathered into a single rotating archive.
+                No rankings, no noise — just the landscapes that define the journey.
+            </p>
+            <p class="atlas-intro__hint">Drag the sphere to explore &middot; open the grid for a closer look</p>
         </div>
-
-        <p style="margin-top:32px;" data-reveal>
-            <a class="link-arrow" href="@Url.Action("Index", "Transport")">See all travel information</a>
-        </p>
     </div>
 </section>
 
-<!-- ==================== E. STAY & UNWIND ==================== -->
-<section class="section section--ivory" aria-labelledby="hotels-title">
-    <div class="container">
-        <div class="section-head" data-reveal>
-            <p class="eyebrow">Stay &amp; Unwind</p>
-            <h2 id="hotels-title">Somewhere quiet to come back to.</h2>
-            <p>Illustrative accommodation examples. Sample prices are marked and are not live rates.</p>
+<!-- ==================== SECTION 04 — NATURE SPOTS / SPHERE ==================== -->
+<section class="archive" id="archive" aria-labelledby="arch-headline">
+    <div class="archive__stage" id="arch-stage">
+        <div class="archive__label" id="arch-label">
+            <p class="eyebrow">The Quiet Atlas &middot; Twenty-One Nature Spots</p>
         </div>
 
-        <div class="cards-grid" data-reveal-group>
-            <article class="card" data-reveal>
-                <div class="media" data-fallback-label="Mountain lodge">
-                    <img src="https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=900&q=75"
-                         alt="Mountain lodge room with a valley view" loading="lazy" />
+        <div id="arch-world">
+            <div id="arch-orb"></div>
+            <h2 id="arch-headline">
+                <span class="inner">
+                    <span style="--i:0">Where</span>
+                    <span style="--i:1">The</span>
+                    <span style="--i:2">Earth</span>
+                    <span style="--i:3">Still</span>
+                    <span style="--i:4">Breathes</span>
+                </span>
+            </h2>
+        </div>
+
+        <div class="archive__vig" aria-hidden="true"></div>
+        <div class="archive__cue" aria-hidden="true">
+            <s></s>
+            <span>Drag to rotate</span>
+            <s></s>
+        </div>
+    </div>
+
+    <button class="archive__gridbtn" id="arch-grid-btn"
+            type="button" aria-label="Toggle grid view" aria-pressed="false">
+        <b></b><b></b><b></b><b></b>
+    </button>
+</section>
+
+<!-- ==================== FLAT GRID OVERLAY ==================== -->
+<div class="arch-grid" id="arch-grid" aria-hidden="true">
+    <div class="arch-grid__rows" id="arch-grid-rows"></div>
+</div>
+
+<!-- ==================== LIGHTBOX ==================== -->
+<div class="arch-lit" id="arch-lit" role="dialog" aria-modal="true" aria-hidden="true">
+    <div class="arch-lit__scrim" data-close></div>
+    <div class="arch-lit__plate">
+        <div class="arch-lit__shot">
+            <img id="arch-lit-img" alt="" />
+            <button class="arch-lit__close" type="button" data-close>Close</button>
+        </div>
+        <div class="arch-lit__meta">
+            <div>
+                <h2 id="arch-lit-title"></h2>
+                <p class="arch-lit__where" id="arch-lit-where"></p>
+            </div>
+            <p class="arch-lit__note" id="arch-lit-note"></p>
+        </div>
+    </div>
+</div>
+
+<!-- ==================== SECTION 05 — EXCEPTIONAL PLACES TO STAY ==================== -->
+<section class="section section--sand" aria-labelledby="stay-title">
+    <div class="container">
+        <div class="section-head" data-reveal>
+            <p class="eyebrow">Exceptional Places to Stay</p>
+            <h2 id="stay-title">Somewhere quiet to come back to.</h2>
+            <p>
+                Illustrative accommodation examples, from mountain lodges to heritage
+                city stays. Sample prices are marked and are not live rates.
+            </p>
+        </div>
+
+        <div class="stay__grid">
+            <article class="stay-feature" data-reveal>
+                <div class="stay-feature__media">
+                    <img src="https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1100&q=75"
+                         alt="Mountain lodge room with a valley view" loading="lazy" decoding="async" />
                 </div>
-                <div class="card__body">
-                    <span class="card__meta">Hunza · Sample listing</span>
+                <div class="stay-feature__body">
+                    <span class="region-tag">Hunza · Sample listing</span>
                     <h3>Valley View Lodge</h3>
-                    <p>Mountain-facing rooms, breakfast included, walking distance from the bazaar.</p>
-                    <div class="package__meta" style="padding-top:8px;">
-                        <span>Wi-Fi</span><span>Breakfast</span><span>Parking</span>
-                    </div>
-                    <div class="package__footer">
-                        <div class="package__price"><small>Sample price / night</small>PKR 18,500</div>
-                        <a class="link-arrow" href="@Url.Action("Index", "Hotels")">Details</a>
-                    </div>
-                </div>
-            </article>
-
-            <article class="card" data-reveal>
-                <div class="media" data-fallback-label="City hotel">
-                    <img src="https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=900&q=75"
-                         alt="Modern hotel exterior at dusk" loading="lazy" />
-                </div>
-                <div class="card__body">
-                    <span class="card__meta">Lahore · Sample listing</span>
-                    <h3>Old City Courtyard</h3>
-                    <p>Heritage-style rooms near Walled City landmarks and food streets.</p>
-                    <div class="package__meta" style="padding-top:8px;">
-                        <span>Wi-Fi</span><span>Restaurant</span><span>Laundry</span>
-                    </div>
-                    <div class="package__footer">
-                        <div class="package__price"><small>Sample price / night</small>PKR 24,000</div>
-                        <a class="link-arrow" href="@Url.Action("Index", "Hotels")">Details</a>
+                    <p>
+                        Mountain-facing rooms, breakfast included, and a short walk from the
+                        bazaar. The kind of base that makes a valley feel like a neighbourhood.
+                    </p>
+                    <ul class="facilities">
+                        <li>Wi-Fi</li>
+                        <li>Breakfast</li>
+                        <li>Parking</li>
+                        <li>Valley view</li>
+                    </ul>
+                    <div class="stay-feature__foot">
+                        <div class="price">
+                            <small>Sample price / night</small>
+                            PKR 18,500
+                        </div>
+                        <a class="link-arrow" href="@Url.Action("Index", "Hotels")">View details</a>
                     </div>
                 </div>
             </article>
 
-            <article class="card" data-reveal>
-                <div class="media" data-fallback-label="Seaside hotel">
-                    <img src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=900&q=75"
-                         alt="Seaside hotel with a beach in the foreground" loading="lazy" />
-                </div>
-                <div class="card__body">
-                    <span class="card__meta">Karachi · Sample listing</span>
-                    <h3>Seabreeze Suites</h3>
-                    <p>Comfortable rooms close to the coast, with easy access to nearby restaurants.</p>
-                    <div class="package__meta" style="padding-top:8px;">
-                        <span>Wi-Fi</span><span>Sea view</span><span>Parking</span>
+            <div class="stay__list" data-reveal-group>
+                <article class="stay-row" data-reveal>
+                    <div class="stay-row__media">
+                        <img src="https://images.unsplash.com/photo-1571003123894-1f0594d2b5d9?auto=format&fit=crop&w=400&q=70"
+                             alt="Heritage-style courtyard hotel" loading="lazy" decoding="async" />
                     </div>
-                    <div class="package__footer">
-                        <div class="package__price"><small>Sample price / night</small>PKR 21,000</div>
-                        <a class="link-arrow" href="@Url.Action("Index", "Hotels")">Details</a>
+                    <div>
+                        <span class="region-tag">Lahore · Sample listing</span>
+                        <h3>Old City Courtyard</h3>
+                        <p>Heritage-style rooms near Walled City landmarks and food streets.</p>
+                        <div class="stay-row__foot">
+                            <span class="stay-row__price">From PKR 24,000 <small>sample / night</small></span>
+                            <a class="link-arrow" href="@Url.Action("Index", "Hotels")">Details</a>
+                        </div>
                     </div>
-                </div>
-            </article>
+                </article>
+
+                <article class="stay-row" data-reveal>
+                    <div class="stay-row__media">
+                        <img src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=400&q=70"
+                             alt="Seaside hotel with a beach in the foreground" loading="lazy" decoding="async" />
+                    </div>
+                    <div>
+                        <span class="region-tag">Karachi · Sample listing</span>
+                        <h3>Seabreeze Suites</h3>
+                        <p>Comfortable rooms close to the coast, with easy access to nearby restaurants.</p>
+                        <div class="stay-row__foot">
+                            <span class="stay-row__price">From PKR 21,000 <small>sample / night</small></span>
+                            <a class="link-arrow" href="@Url.Action("Index", "Hotels")">Details</a>
+                        </div>
+                    </div>
+                </article>
+            </div>
         </div>
     </div>
 </section>
 
-<!-- ==================== F. TASTE TRAILS + RESORTS ==================== -->
-<section class="section section--sand" aria-labelledby="taste-title">
+<!-- ==================== SECTION 06 — THE JOURNEY BETWEEN ==================== -->
+<section class="section section--forest" aria-labelledby="route-title">
     <div class="container">
-        <div class="split" data-reveal-group>
-            <div class="split__col" data-reveal>
+        <div class="route-layout">
+            <div class="route-intro" data-reveal>
+                <p class="eyebrow">The Journey Between</p>
+                <h2 id="route-title">Getting there is part of the story.</h2>
+                <p>
+                    Travel options between destinations — described for guidance only.
+                    Actual schedules, fares and availability will be connected to the
+                    database later.
+                </p>
+                <a class="link-arrow link-arrow--light" href="@Url.Action("Index", "Transport")">
+                    See all travel information
+                </a>
+            </div>
+
+            <ol class="route" data-reveal-group>
+                <li class="route__node" data-step="01" data-reveal>
+                    <h3>Bus &amp; Coach</h3>
+                    <p>Intercity coaches on popular northern and central routes, with regular departures from major hubs.</p>
+                    <span class="route__mode">Intercity</span>
+                </li>
+                <li class="route__node" data-step="02" data-reveal>
+                    <h3>Private Car</h3>
+                    <p>Chauffeur-driven or self-drive options for flexible itineraries and slower, scenic roads.</p>
+                    <span class="route__mode">Flexible</span>
+                </li>
+                <li class="route__node" data-step="03" data-reveal>
+                    <h3>Shared Transport</h3>
+                    <p>Shared vans and jeeps for common mountain routes, where the road decides the timetable.</p>
+                    <span class="route__mode">Local</span>
+                </li>
+                <li class="route__node" data-step="04" data-reveal>
+                    <h3>Air Travel</h3>
+                    <p>Domestic flights to northern hubs — details to be confirmed once live schedules are connected.</p>
+                    <span class="route__mode">Domestic</span>
+                </li>
+            </ol>
+        </div>
+    </div>
+</section>
+
+<!-- ==================== SECTION 07A — TASTE TRAILS ==================== -->
+<section class="section section--ivory" aria-labelledby="taste-title">
+    <div class="container">
+        <div class="taste">
+            <div class="taste__media" data-reveal>
+                <img src="https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=1200&q=80"
+                     alt="Regional dish being served at a restaurant table" loading="lazy" decoding="async" />
+            </div>
+            <div class="taste__body" data-reveal>
                 <p class="eyebrow">Taste Trails</p>
-                <h3 id="taste-title">Food that remembers the road.</h3>
-                <p>Regional dishes, street food and quieter dining rooms — organised by
-                   location. All restaurant entries on this site are illustrative examples.</p>
-                <ul class="mini-list">
+                <h2 id="taste-title">Food that remembers the road.</h2>
+                <p>
+                    Regional dishes, street food and quieter dining rooms — organised by
+                    location. All restaurant entries on this site are illustrative examples.
+                </p>
+                <ul class="taste__list">
                     <li>
-                        <div class="media" data-fallback-label="Restaurant">
-                            <img src="https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=300&q=70"
-                                 alt="Restaurant interior" loading="lazy" />
-                        </div>
                         <div>
-                            <h4>The Apricot Table</h4>
+                            <strong>The Apricot Table</strong>
                             <span>Hunza · Sample restaurant</span>
                         </div>
+                        <span class="taste__tag">Regional</span>
                     </li>
                     <li>
-                        <div class="media" data-fallback-label="Restaurant">
-                            <img src="https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=300&q=70"
-                                 alt="Regional dish being served" loading="lazy" />
-                        </div>
                         <div>
-                            <h4>Old Lahore Kitchen</h4>
+                            <strong>Old Lahore Kitchen</strong>
                             <span>Lahore · Sample restaurant</span>
                         </div>
+                        <span class="taste__tag">Street food</span>
                     </li>
                 </ul>
-                <a class="link-arrow" href="@Url.Action("Index", "Restaurants")">Explore Taste Trails</a>
-            </div>
-
-            <div class="split__col" data-reveal>
-                <p class="eyebrow">Resort Escapes</p>
-                <h3>Slow mornings, wide horizons.</h3>
-                <p>Resorts for longer stays and quieter travel, from lakeside retreats to
-                   hillside getaways. All listings are sample content.</p>
-                <ul class="mini-list">
-                    <li>
-                        <div class="media" data-fallback-label="Resort">
-                            <img src="https://images.unsplash.com/photo-1571003123894-1f0594d2b5d9?auto=format&fit=crop&w=300&q=70"
-                                 alt="Resort pool overlooking a landscape" loading="lazy" />
-                        </div>
-                        <div>
-                            <h4>Lakeview Retreat</h4>
-                            <span>Skardu · Sample resort</span>
-                        </div>
-                    </li>
-                    <li>
-                        <div class="media" data-fallback-label="Resort">
-                            <img src="https://images.unsplash.com/photo-1571003123894-1f0594d2b5d9?auto=format&fit=crop&w=300&q=70"
-                                 alt="Resort bungalows in a forest setting" loading="lazy" />
-                        </div>
-                        <div>
-                            <h4>Pinewood Heights</h4>
-                            <span>Murree · Sample resort</span>
-                        </div>
-                    </li>
-                </ul>
-                <a class="link-arrow" href="@Url.Action("Index", "Resorts")">Explore Resort Escapes</a>
+                <a class="link-arrow" href="@Url.Action("Index", "Restaurants")">Explore restaurants</a>
             </div>
         </div>
     </div>
 </section>
 
-<!-- ==================== G. PACKAGES ==================== -->
-<section class="section section--ivory" aria-labelledby="packages-title">
+<!-- ==================== SECTION 07B — RESORT ESCAPES ==================== -->
+<section class="section section--forest" aria-labelledby="retreat-title">
+    <div class="container">
+        <div class="retreat">
+            <div class="retreat__body" data-reveal>
+                <p class="eyebrow">Resort Escapes</p>
+                <h2 id="retreat-title">Slow mornings, wide horizons.</h2>
+                <p>
+                    Resorts for longer stays and quieter travel, from lakeside retreats to
+                    hillside getaways. All listings are sample content.
+                </p>
+                <ul class="facilities facilities--dark">
+                    <li>Lake view</li>
+                    <li>Breakfast</li>
+                    <li>Guided walks</li>
+                    <li>Fireplace</li>
+                </ul>
+                <a class="link-arrow link-arrow--light" href="@Url.Action("Index", "Resorts")">
+                    Explore resorts
+                </a>
+            </div>
+            <div class="retreat__media" data-reveal>
+                <img src="https://images.unsplash.com/photo-1571003123894-1f0594d2b5d9?auto=format&fit=crop&w=1200&q=80"
+                     alt="Resort pool overlooking a mountain landscape" loading="lazy" decoding="async" />
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ==================== SECTION 08 — CURATED JOURNEYS ==================== -->
+<section class="section section--sand" aria-labelledby="journeys-title">
     <div class="container">
         <div class="section-head" data-reveal>
-            <p class="eyebrow">Curated Getaways</p>
-            <h2 id="packages-title">Sample travel packages.</h2>
-            <p>Illustrative itineraries to show how package information will be presented
-               once the backend is connected. Prices are examples, not confirmed rates.</p>
+            <p class="eyebrow">Curated Journeys</p>
+            <h2 id="journeys-title">Sample travel packages.</h2>
+            <p>
+                Illustrative itineraries to show how package information will be presented
+                once the backend is connected. Prices are examples, not confirmed rates.
+            </p>
         </div>
 
-        <div class="package-grid" data-reveal-group>
-            <article class="package" data-reveal>
+        <article class="journey-feature" data-reveal>
+            <div class="journey-feature__media">
+                <img src="https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=1200&q=80"
+                     alt="Mountain lake reflecting a northern landscape" loading="lazy" decoding="async" />
+            </div>
+            <div class="journey-feature__body">
+                <span class="region-tag">Featured sample journey</span>
                 <h3>Northern Escape</h3>
-                <div class="package__meta">
+                <div class="meta-row">
                     <span>Hunza · Skardu</span>
                     <span>7 nights</span>
+                    <span>Guided</span>
                 </div>
-                <ul>
+                <p>
+                    A slow arc through the north, pairing valley stays with high-altitude
+                    day trips. Built around early starts, long views and unhurried evenings.
+                </p>
+                <ul class="included">
                     <li>Sample accommodation in each location</li>
                     <li>Intercity transport (illustrative)</li>
                     <li>Selected guided day trips</li>
+                    <li>Breakfast daily</li>
                 </ul>
-                <div class="package__footer">
-                    <div class="package__price"><small>Sample price / person</small>PKR 145,000</div>
+                <div class="journey-feature__foot">
+                    <div class="price">
+                        <small>Sample price / person</small>
+                        PKR 145,000
+                    </div>
+                    <a class="btn btn--forest" href="@Url.Action("Index", "Contact")">View package</a>
+                </div>
+            </div>
+        </article>
+
+        <div class="journey-list" data-reveal-group>
+            <article class="journey-row" data-reveal>
+                <div class="journey-row__media">
+                    <img src="https://images.unsplash.com/photo-1500534623283-312aade485b7?auto=format&fit=crop&w=400&q=70"
+                         alt="High meadow beneath a mountain" loading="lazy" decoding="async" />
+                </div>
+                <div>
+                    <span class="region-tag">Sample package</span>
+                    <h3>Heritage &amp; Coast</h3>
+                    <p>Lahore · Karachi · 5 nights — city stays, guided heritage walks and an optional coastal day trip.</p>
+                    <div class="meta-row">
+                        <span>5 nights</span>
+                        <span>City &amp; coast</span>
+                    </div>
+                </div>
+                <div class="journey-row__action">
+                    <div class="price">
+                        <small>Sample / person</small>
+                        PKR 98,000
+                    </div>
                     <a class="link-arrow" href="@Url.Action("Index", "Contact")">Send inquiry</a>
                 </div>
             </article>
 
-            <article class="package" data-reveal>
-                <h3>Heritage &amp; Coast</h3>
-                <div class="package__meta">
-                    <span>Lahore · Karachi</span>
-                    <span>5 nights</span>
+            <article class="journey-row" data-reveal>
+                <div class="journey-row__media">
+                    <img src="https://images.unsplash.com/photo-1472214103451-9374bd1c798e?auto=format&fit=crop&w=400&q=70"
+                         alt="Rolling green hills in a valley" loading="lazy" decoding="async" />
                 </div>
-                <ul>
-                    <li>City-stay accommodation (sample)</li>
-                    <li>Guided heritage walks</li>
-                    <li>Optional coastal day trip</li>
-                </ul>
-                <div class="package__footer">
-                    <div class="package__price"><small>Sample price / person</small>PKR 98,000</div>
-                    <a class="link-arrow" href="@Url.Action("Index", "Contact")">Send inquiry</a>
+                <div>
+                    <span class="region-tag">Sample package</span>
+                    <h3>Valley &amp; Meadow</h3>
+                    <p>Swat · Kalam · 4 nights — riverside stay, local transfers and two guided trail walks.</p>
+                    <div class="meta-row">
+                        <span>4 nights</span>
+                        <span>Walking</span>
+                    </div>
                 </div>
-            </article>
-
-            <article class="package" data-reveal>
-                <h3>Valley &amp; Meadow</h3>
-                <div class="package__meta">
-                    <span>Swat · Kalam</span>
-                    <span>4 nights</span>
-                </div>
-                <ul>
-                    <li>Riverside stay (sample)</li>
-                    <li>Local transfers</li>
-                    <li>Two guided trail walks</li>
-                </ul>
-                <div class="package__footer">
-                    <div class="package__price"><small>Sample price / person</small>PKR 72,000</div>
+                <div class="journey-row__action">
+                    <div class="price">
+                        <small>Sample / person</small>
+                        PKR 72,000
+                    </div>
                     <a class="link-arrow" href="@Url.Action("Index", "Contact")">Send inquiry</a>
                 </div>
             </article>
@@ -700,56 +3049,711 @@
     </div>
 </section>
 
-<!-- ==================== H. WHY TRAVEL WITH KARNEL ==================== -->
-<section class="section section--sand" aria-labelledby="why-title">
+<!-- ==================== SECTION 09 — THE KARNEL DIFFERENCE ==================== -->
+<section class="section section--ivory" aria-labelledby="difference-title">
     <div class="container">
-        <div class="section-head" data-reveal>
-            <p class="eyebrow">Why Travel With Karnel</p>
-            <h2 id="why-title">A guide, not just a catalogue.</h2>
-            <p>Karnel Travel Guide is organised around the practical questions travellers ask
-               before they set out.</p>
-        </div>
-
-        <div class="trust-grid" data-reveal-group>
-            <div class="trust-item" data-reveal>
-                <h3>One place to discover</h3>
-                <p>Destinations, transport, accommodation, dining and resorts side by side.</p>
+        <div class="difference">
+            <div class="difference__media" data-reveal>
+                <img src="https://images.unsplash.com/photo-1441974231531-c6227db76b6e?auto=format&fit=crop&w=900&q=75"
+                     alt="Forest path through tall pines" loading="lazy" decoding="async" />
+                <img src="https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?auto=format&fit=crop&w=900&q=75"
+                     alt="Misty hills at dawn" loading="lazy" decoding="async" />
             </div>
-            <div class="trust-item" data-reveal>
-                <h3>Clear information</h3>
-                <p>Package details and pricing shown honestly, with sample content clearly marked.</p>
-            </div>
-            <div class="trust-item" data-reveal>
-                <h3>Inquiry support</h3>
-                <p>A direct way to send questions before committing to a plan.</p>
-            </div>
-            <div class="trust-item" data-reveal>
-                <h3>Room to grow</h3>
-                <p>Built so a live backend and real availability can be added without a redesign.</p>
+            <div class="difference__body" data-reveal>
+                <p class="eyebrow">The Karnel Difference</p>
+                <h2 id="difference-title">A guide, not just a catalogue.</h2>
+                <p>
+                    Karnel Travel Guide is organised around the practical questions travellers
+                    ask before they set out — and the places they hope to remember afterwards.
+                </p>
+                <ol class="difference__list">
+                    <li>
+                        <b>01</b>
+                        <div>
+                            <h3>Destination discovery</h3>
+                            <p>Regions, landscapes and quiet corners, gathered into one readable atlas.</p>
+                        </div>
+                    </li>
+                    <li>
+                        <b>02</b>
+                        <div>
+                            <h3>Accommodation</h3>
+                            <p>Lodges, heritage stays and city hotels, presented with honest sample pricing.</p>
+                        </div>
+                    </li>
+                    <li>
+                        <b>03</b>
+                        <div>
+                            <h3>Transportation</h3>
+                            <p>Routes and modes explained as part of the journey, not an afterthought.</p>
+                        </div>
+                    </li>
+                    <li>
+                        <b>04</b>
+                        <div>
+                            <h3>Restaurants &amp; resorts</h3>
+                            <p>Two distinct identities: food that remembers the road, and stays that slow it down.</p>
+                        </div>
+                    </li>
+                    <li>
+                        <b>05</b>
+                        <div>
+                            <h3>Travel packages</h3>
+                            <p>Curated itineraries with clear inclusions and clearly marked sample prices.</p>
+                        </div>
+                    </li>
+                    <li>
+                        <b>06</b>
+                        <div>
+                            <h3>Room to grow</h3>
+                            <p>Built so a live backend and real availability can be added without a redesign.</p>
+                        </div>
+                    </li>
+                </ol>
             </div>
         </div>
     </div>
 </section>
 
-<!-- ==================== I. FINAL CTA ==================== -->
-<section class="cta-band">
+<!-- ==================== SECTION 10 — FINAL JOURNEY CTA ==================== -->
+<section class="final-cta" aria-labelledby="final-cta-title">
+    <img src="https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1920&q=80"
+         alt="Wide mountain landscape at dusk" loading="lazy" decoding="async" />
     <div class="container" data-reveal>
-        <h2>Ready to plan your next journey?</h2>
-        <p>Start with a destination, or tell us what you have in mind and we'll help you take it from there.</p>
-        <div class="cta-band__actions">
-            <a class="btn btn--light" href="@Url.Action("Index", "Search")">Explore Destinations</a>
-            <a class="btn btn--ghost-light" href="@Url.Action("Index", "Contact")">Get in Touch</a>
+        <p class="eyebrow">Plan Your Journey</p>
+        <h2 id="final-cta-title">The next chapter starts with a single step.</h2>
+        <p>
+            Start with a destination, or tell us what you have in mind and we'll help you
+            take it from there.
+        </p>
+        <div class="hero__cta">
+            <a class="btn btn--light" href="@Url.Action("Index", "Contact")">Plan Your Journey</a>
+            <a class="btn btn--ghost-light" href="@Url.Action("Index", "Destinations")">Explore Destinations</a>
         </div>
     </div>
 </section>
 
 @section Scripts {
     <script>
-        /* Home page — search panel forwards to Explore */
+        /* ============================================================
+           NATURE SPOTS — Fibonacci sphere, drag-to-rotate, scroll dolly,
+           flat grid, lightbox. Self-contained.
+           Each entry carries its own thumb + full URL (no CDN base).
+        ============================================================ */
+        (function () {
+            'use strict';
+
+            var shots = [
+                { thumb: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=800&q=75',
+                  full:  'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=1600&q=85',
+                  title: 'Rakaposhi at First Light',
+                  place: 'Hunza Valley · Gilgit-Baltistan',
+                  note: 'The peak does not appear so much as arrive. One moment the valley is dark, the next the summit holds all the light there is. Hunza rewards early risers.' },
+
+                { thumb: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=800&q=75',
+                  full:  'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1600&q=85',
+                  title: 'Shangrila Lake',
+                  place: 'Skardu · Baltistan',
+                  note: 'Cold desert on one shore, alpine water on the other. Skardu is a gateway to some of the highest peaks on earth and the quietest lakes in the country.' },
+
+                { thumb: 'https://images.unsplash.com/photo-1519681393784-d120267933ba?auto=format&fit=crop&w=800&q=75',
+                  full:  'https://images.unsplash.com/photo-1519681393784-d120267933ba?auto=format&fit=crop&w=1600&q=85',
+                  title: 'Snow Line',
+                  place: 'Nanga Parbat · Diamer',
+                  note: 'The snow line is not a line. It is a slow negotiation between altitude, wind and time. Every hour it looks different and by evening it has moved.' },
+
+                { thumb: 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?auto=format&fit=crop&w=800&q=75',
+                  full:  'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?auto=format&fit=crop&w=1600&q=85',
+                  title: 'Forest Floor',
+                  place: 'Ayubia National Park',
+                  note: 'A short drive from the plains and suddenly it is quiet. The pines filter what little light gets through, and the ground absorbs whatever sound is left.' },
+
+                { thumb: 'https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?auto=format&fit=crop&w=800&q=75',
+                  full:  'https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?auto=format&fit=crop&w=1600&q=85',
+                  title: 'Morning Fog',
+                  place: 'Murree Hills · Punjab',
+                  note: 'The fog rolls in most mornings. It lifts slowly and returns suddenly, and that rhythm is the whole weather report. You learn to read the hills by silhouette.' },
+
+                { thumb: 'https://images.unsplash.com/photo-1447752875215-b2761acb3c5d?auto=format&fit=crop&w=800&q=75',
+                  full:  'https://images.unsplash.com/photo-1447752875215-b2761acb3c5d?auto=format&fit=crop&w=1600&q=85',
+                  title: 'Trail Through Pines',
+                  place: 'Naran · Kaghan Valley',
+                  note: 'A path that keeps promising something around the next bend and never quite delivers. That is the point, and it is why people walk it twice.' },
+
+                { thumb: 'https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=800&q=75',
+                  full:  'https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=1600&q=85',
+                  title: 'Still Water',
+                  place: 'Saif-ul-Malook · Kaghan',
+                  note: 'A glacial lake with a reflection that is more truthful than the mountain itself. After a while you notice nothing has moved, and you have not either.' },
+
+                { thumb: 'https://images.unsplash.com/photo-1500534623283-312aade485b7?auto=format&fit=crop&w=800&q=75',
+                  full:  'https://images.unsplash.com/photo-1500534623283-312aade485b7?auto=format&fit=crop&w=1600&q=85',
+                  title: 'High Meadow',
+                  place: 'Fairy Meadows · Diamer',
+                  note: 'Grass at altitude. Everything here is smaller, slower and more deliberate than it looks from the road, and the road is very far below.' },
+
+                { thumb: 'https://images.unsplash.com/photo-1426604966848-d7adac402bff?auto=format&fit=crop&w=800&q=75',
+                  full:  'https://images.unsplash.com/photo-1426604966848-d7adac402bff?auto=format&fit=crop&w=1600&q=85',
+                  title: 'Valley View',
+                  place: 'Chitral · Khyber Pakhtunkhwa',
+                  note: 'Chitral is a valley you read by its rivers. The main one runs dark green most of the year and brown in July, and the locals know exactly which week is which.' },
+
+                { thumb: 'https://images.unsplash.com/photo-1444927714506-8492d94b4e3d?auto=format&fit=crop&w=800&q=75',
+                  full:  'https://images.unsplash.com/photo-1444927714506-8492d94b4e3d?auto=format&fit=crop&w=1600&q=85',
+                  title: 'Wildflower Field',
+                  place: 'Deosai Plains · Skardu',
+                  note: 'For three months a year Deosai is a plateau of flowers and standing water. For the other nine it is snow, and nobody argues with it.' },
+
+                { thumb: 'https://images.unsplash.com/photo-1418065460487-3e41a6c84dc5?auto=format&fit=crop&w=800&q=75',
+                  full:  'https://images.unsplash.com/photo-1418065460487-3e41a6c84dc5?auto=format&fit=crop&w=1600&q=85',
+                  title: 'Sunlit Pines',
+                  place: 'Shogran · Kaghan Valley',
+                  note: 'Low light and long shadows. Shogran is the kind of place you photograph because the light asked you to, and because the light will not last.' },
+
+                { thumb: 'https://images.unsplash.com/photo-1472214103451-9374bd1c798e?auto=format&fit=crop&w=800&q=75',
+                  full:  'https://images.unsplash.com/photo-1472214103451-9374bd1c798e?auto=format&fit=crop&w=1600&q=85',
+                  title: 'Rolling Hills',
+                  place: 'Neelum Valley · Azad Kashmir',
+                  note: 'Green on green on green, until the river cuts through it. Neelum is a valley that reads as an interruption, and the road follows the interruption exactly.' },
+
+                { thumb: 'https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?auto=format&fit=crop&w=800&q=75',
+                  full:  'https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?auto=format&fit=crop&w=1600&q=85',
+                  title: 'Desert Dunes',
+                  place: 'Thar · Sindh',
+                  note: 'Thar is a landscape of interruptions: dune, thorn, then nothing, then dune again. The heat rearranges things faster than memory can hold.' },
+
+                { thumb: 'https://images.unsplash.com/photo-1504198453319-5ce911bafcde?auto=format&fit=crop&w=800&q=75',
+                  full:  'https://images.unsplash.com/photo-1504198453319-5ce911bafcde?auto=format&fit=crop&w=1600&q=85',
+                  title: 'Winter Stillness',
+                  place: 'Kalam · Swat',
+                  note: 'Kalam in winter is a place of held breath. The river keeps moving because it has to; everything else has agreed to wait.' },
+
+                { thumb: 'https://images.unsplash.com/photo-1465056836041-7f43ac27dcb5?auto=format&fit=crop&w=800&q=75',
+                  full:  'https://images.unsplash.com/photo-1465056836041-7f43ac27dcb5?auto=format&fit=crop&w=1600&q=85',
+                  title: 'Rock & Ice',
+                  place: 'Passu Glacier · Hunza',
+                  note: 'Glaciers are slow rivers. Passu moves about a metre a day, which is fast for ice and slow for everything else. The sound is the thing you remember.' },
+
+                { thumb: 'https://images.unsplash.com/photo-1444464666168-49d633b86797?auto=format&fit=crop&w=800&q=75',
+                  full:  'https://images.unsplash.com/photo-1444464666168-49d633b86797?auto=format&fit=crop&w=1600&q=85',
+                  title: 'Autumn Birches',
+                  place: 'Kalash Valleys · Chitral',
+                  note: 'The Kalash valleys turn gold in October. For two weeks the whole hillside becomes the subject, and then it becomes the ground.' },
+
+                { thumb: 'https://images.unsplash.com/photo-1476231682828-37e571bc172f?auto=format&fit=crop&w=800&q=75',
+                  full:  'https://images.unsplash.com/photo-1476231682828-37e571bc172f?auto=format&fit=crop&w=1600&q=85',
+                  title: 'Moonrise',
+                  place: 'Khunjerab Pass · Gilgit-Baltistan',
+                  note: 'At 4,700 m the air is thinner and the night is louder. Khunjerab is a pass you feel before you see it, and you remember it before you understand it.' },
+
+                { thumb: 'https://images.unsplash.com/photo-1439853949127-fa647821eba0?auto=format&fit=crop&w=800&q=75',
+                  full:  'https://images.unsplash.com/photo-1439853949127-fa647821eba0?auto=format&fit=crop&w=1600&q=85',
+                  title: 'Coastline',
+                  place: 'Gwadar · Balochistan',
+                  note: 'The Makran coast is a thin line of road between the sea and the hills. For hours there is nothing else, and that is exactly what it is for.' },
+
+                { thumb: 'https://images.unsplash.com/photo-1502082553048-f009c37129b9?auto=format&fit=crop&w=800&q=75',
+                  full:  'https://images.unsplash.com/photo-1502082553048-f009c37129b9?auto=format&fit=crop&w=1600&q=85',
+                  title: 'Riverside',
+                  place: 'Kalam · Swat',
+                  note: 'The river runs cold all year. Locals walk its edge in the evening; visitors learn to do the same, and stop checking the time.' },
+
+                { thumb: 'https://images.unsplash.com/photo-1432405972618-c60b0225b8f9?auto=format&fit=crop&w=800&h=1000&q=75',
+                  full:  'https://images.unsplash.com/photo-1432405972618-c60b0225b8f9?auto=format&fit=crop&w=1400&h=1750&q=85',
+                  title: 'Above the Clouds',
+                  place: 'Rakaposhi Base Camp',
+                  note: 'Not every entry has to be a landscape. Sometimes it is a single moment above the cloud line, when the weather agrees to hold still.',
+                  tall: true },
+
+                { thumb: 'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?auto=format&fit=crop&w=800&q=75',
+                  full:  'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?auto=format&fit=crop&w=1600&q=85',
+                  title: 'Beyond the Trail',
+                  place: 'Margalla Hills · Islamabad',
+                  note: 'The hills above the capital are easy to dismiss until you walk them. Then they stop being background and start being the day.' }
+            ];
+
+            var stage    = document.getElementById('arch-stage');
+            var archive  = document.getElementById('archive');
+            var world    = document.getElementById('arch-world');
+            var orb      = document.getElementById('arch-orb');
+            var headline = document.getElementById('arch-headline');
+            var label    = document.getElementById('arch-label');
+            var gridEl   = document.getElementById('arch-grid');
+            var gridRows = document.getElementById('arch-grid-rows');
+            var gridBtn  = document.getElementById('arch-grid-btn');
+            var litEl    = document.getElementById('arch-lit');
+            var litImg   = document.getElementById('arch-lit-img');
+            var litTitle = document.getElementById('arch-lit-title');
+            var litWhere = document.getElementById('arch-lit-where');
+            var litNote  = document.getElementById('arch-lit-note');
+
+            if (!stage || !archive) return;
+
+            var cards = [];
+            var R = 300, cw = 130, persp = 1150;
+            var spin = 0, tilt = -4, dragX = 0, dragY = 0, velX = 0, velY = 0, camZ = 0;
+            var dragging = false, lit = false, focused = -1;
+            var litToken = 0;
+            var raf = null;
+            var layoutScheduled = false;
+
+            /* ---------- Build cards on a Fibonacci sphere ---------- */
+            var N = shots.length;
+            var GA = Math.PI * (3 - Math.sqrt(5));
+
+            for (var i = 0; i < N; i++) {
+                var y = 1 - (i / (N - 1)) * 2;
+                var rad = Math.sqrt(Math.max(0, 1 - y * y));
+                var theta = i * GA;
+                var x = Math.cos(theta) * rad;
+                var z = Math.sin(theta) * rad;
+                var lat = Math.asin(y) * 180 / Math.PI;
+                var lon = Math.atan2(x, z) * 180 / Math.PI;
+
+                var el = document.createElement('div');
+                el.className = 'arch-card' + (shots[i].tall ? ' is-tall' : '');
+                el.dataset.idx = i;
+
+                var fig = document.createElement('figure');
+                var img = document.createElement('img');
+                img.alt = shots[i].title;
+                img.crossOrigin = 'anonymous';
+                fig.appendChild(img);
+                el.appendChild(fig);
+                orb.appendChild(el);
+
+                cards.push({
+                    el: el,
+                    imgEl: img,
+                    ux: x, uy: y, uz: z,
+                    lat: lat, lon: lon,
+                    lastD: -1
+                });
+            }
+
+            /* ---------- Build the flat grid ---------- */
+            shots.forEach(function (shot, i) {
+                var fig = document.createElement('figure');
+                fig.dataset.idx = i;
+                var im = document.createElement('img');
+                im.alt = shot.title;
+                im.loading = 'lazy';
+                var cap = document.createElement('figcaption');
+                cap.textContent = shot.title;
+                fig.appendChild(im);
+                fig.appendChild(cap);
+                gridRows.appendChild(fig);
+            });
+
+            /* ---------- Layout ---------- */
+            function resize() {
+                var w = window.innerWidth;
+                var h = window.innerHeight;
+                var hr = w <= 380 ? 0.38 : w <= 640 ? 0.42 : 0.46;
+                var wr = w <= 380 ? 0.48 : w <= 640 ? 0.52 : 0.58;
+                var floor = w <= 380 ? 108 : w <= 640 ? 120 : 155;
+                R = Math.max(floor, Math.min(480, h * hr, w * wr));
+
+                var scale = w <= 380 ? 0.44 : w <= 640 ? 0.46 : 0.47;
+                cw = Math.round(Math.max(72, R * scale));
+
+                persp = w <= 380 ? 620 : w <= 640 ? 760 : w <= 900 ? 920 : 1150;
+                stage.style.perspective = persp + 'px';
+                stage.style.setProperty('--persp', persp + 'px');
+
+                cards.forEach(function (c) {
+                    var idx = parseInt(c.el.dataset.idx, 10);
+                    var tall = shots[idx] && shots[idx].tall;
+                    c.el.style.width  = cw + 'px';
+                    c.el.style.height = tall ? (cw * 1.25) + 'px' : (cw / 1.5) + 'px';
+                    c.el.style.marginLeft = (-cw / 2) + 'px';
+                    c.el.style.marginTop  = tall ? (-cw * 0.625) + 'px' : (-cw / 3) + 'px';
+                    c.el.style.transform =
+                        'translate3d(' + (c.ux * R) + 'px,' +
+                                         (-c.uy * R) + 'px,' +
+                                         (c.uz * R) + 'px) ' +
+                        'rotateY(' + c.lon + 'deg) ' +
+                        'rotateX(' + c.lat + 'deg)';
+                });
+                layoutScheduled = false;
+            }
+
+            function scheduleLayout() {
+                if (layoutScheduled) return;
+                layoutScheduled = true;
+                requestAnimationFrame(resize);
+            }
+
+            /* ---------- Downscale thumbs via canvas (webp q0.88) ---------- */
+            function downscale(url, maxW) {
+                return new Promise(function (resolve) {
+                    var im = new Image();
+                    im.crossOrigin = 'anonymous';
+                    im.onload = function () {
+                        if (im.naturalWidth <= maxW) return resolve(url);
+                        try {
+                            var s = maxW / im.naturalWidth;
+                            var cvs = document.createElement('canvas');
+                            cvs.width = maxW;
+                            cvs.height = Math.round(im.naturalHeight * s);
+                            cvs.getContext('2d').drawImage(im, 0, 0, cvs.width, cvs.height);
+                            cvs.toBlob(function (blob) {
+                                resolve(blob ? URL.createObjectURL(blob) : url);
+                            }, 'image/webp', 0.88);
+                        } catch (e) { resolve(url); }
+                    };
+                    im.onerror = function () { resolve(url); };
+                    im.src = url;
+                });
+            }
+
+            function decodeMax() {
+                var w = window.innerWidth;
+                return w <= 380 ? 420 : w <= 640 ? 520 : w <= 900 ? 640 : 760;
+            }
+
+            function loadAll() {
+                var maxW = decodeMax();
+                shots.forEach(function (s, i) {
+                    downscale(s.thumb, maxW).then(function (src) {
+                        var cardImg = cards[i].imgEl;
+                        cardImg.onload = function () { cards[i].el.classList.add('in'); };
+                        cardImg.src = src;
+                        var gridFig = gridRows.querySelector('figure[data-idx="' + i + '"]');
+                        if (gridFig) {
+                            var gImg = gridFig.querySelector('img');
+                            if (gImg) gImg.src = src;
+                        }
+                    });
+                });
+            }
+
+            /* ---------- Scroll progress of the archive section ---------- */
+            function getProgress() {
+                var rect = archive.getBoundingClientRect();
+                var total = archive.offsetHeight - window.innerHeight;
+                if (total <= 0) return 0;
+                var scrolled = Math.min(Math.max(-rect.top, 0), total);
+                return scrolled / total;
+            }
+
+            /* ---------- Camera loop ---------- */
+            function frame() {
+                var inView = document.body.classList.contains('arch-inview');
+                var overlay = document.body.classList.contains('arch-gridview') ||
+                              document.body.classList.contains('arch-lit');
+                if (!inView && !overlay) { raf = null; return; }
+
+                if (!dragging && !lit) {
+                    dragX += velX;
+                    dragY += velY;
+                    velX *= 0.94;
+                    velY *= 0.94;
+                    if (Math.abs(velX) < 0.002) velX = 0;
+                    if (Math.abs(velY) < 0.002) velY = 0;
+                }
+                var minDY = -32 - tilt;
+                var maxDY =  32 - tilt;
+                if (dragY < minDY) dragY = minDY;
+                if (dragY > maxDY) dragY = maxDY;
+
+                var p = getProgress();
+                var camZTarget = p * Math.min(64, R * 0.12);
+                camZ += (camZTarget - camZ) * 0.075;
+
+                var sx = tilt + dragY;
+                var sy = spin + dragX;
+
+                world.style.transform =
+                    'translateZ(' + camZ + 'px) ' +
+                    'rotateY(' + sy + 'deg) ' +
+                    'rotateX(' + sx + 'deg)';
+
+                headline.style.transform =
+                    'rotateX(' + (-sx) + 'deg) ' +
+                    'rotateY(' + (-sy) + 'deg) ' +
+                    'translateZ(' + (R * 0.62) + 'px)';
+                headline.style.opacity = Math.max(0, 1 - p * 0.55).toFixed(3);
+
+                if (label) label.style.opacity = Math.max(0, 1 - p * 1.8).toFixed(3);
+
+                var shade = 1 - Math.min(1, p * 1.6);
+                var near  = persp * 0.66;
+                var cy = Math.cos(sy * Math.PI / 180), cyS = Math.sin(sy * Math.PI / 180);
+                var cx = Math.cos(sx * Math.PI / 180), cxS = Math.sin(sx * Math.PI / 180);
+
+                for (var i = 0; i < cards.length; i++) {
+                    var c = cards[i];
+                    var x1 = c.ux * cy + c.uz * cyS;
+                    var y1 = c.uy;
+                    var z1 = -c.ux * cyS + c.uz * cy;
+                    var y2 = y1 * cx - z1 * cxS;
+                    var z2 = y1 * cxS + z1 * cx;
+                    var zf = z2;
+
+                    var base = 0.14 + 0.86 * Math.pow((zf + 1) / 2, 0.85);
+                    var d = shade * (1 - base);
+                    var f = 1;
+                    var absZ = zf * R + camZ;
+                    if (absZ > near) f = Math.max(0, 1 - (absZ - near) / 190);
+
+                    if (lit) {
+                        d = Math.min(1, d + 0.78);
+                        if (i === focused) f = 0;
+                    }
+
+                    var fs = String(f);
+                    if (c.el.style.opacity !== fs) c.el.style.opacity = fs;
+                    if (c.lastD !== d) {
+                        c.el.style.setProperty('--d', d.toFixed(3));
+                        c.lastD = d;
+                    }
+                }
+
+                raf = requestAnimationFrame(frame);
+            }
+
+            /* ---------- Drag ---------- */
+            stage.addEventListener('pointerdown', function (e) {
+                if (lit) return;
+                if (e.button !== undefined && e.button !== 0) return;
+
+                var target = e.target;
+                var cardEl = target && target.closest ? target.closest('.arch-card') : null;
+                var startX = e.clientX, startY = e.clientY;
+                var isTouch = e.pointerType === 'touch';
+                var slop = isTouch ? 14 : 6;
+                var captured = !isTouch;
+                var lastX = startX, lastY = startY;
+                dragging = true;
+
+                if (captured) {
+                    try { stage.setPointerCapture(e.pointerId); } catch (_) {}
+                }
+
+                function onMove(ev) {
+                    if (ev.pointerId !== e.pointerId) return;
+                    var tdx = ev.clientX - startX;
+                    var tdy = ev.clientY - startY;
+
+                    if (isTouch && !captured) {
+                        if (Math.abs(tdy) > Math.abs(tdx) * 1.15 && Math.abs(tdy) > 10) {
+                            dragging = false;
+                            cleanup();
+                            return;
+                        }
+                        if (Math.abs(tdx) > 10) {
+                            captured = true;
+                            try { stage.setPointerCapture(e.pointerId); } catch (_) {}
+                        }
+                        lastX = ev.clientX;
+                        lastY = ev.clientY;
+                        return;
+                    }
+
+                    var dx = ev.clientX - lastX;
+                    var dy = ev.clientY - lastY;
+                    dragX -= dx * 0.13;
+                    dragY += dy * 0.13;
+                    velX = -dx * 0.13 * 0.6;
+                    velY =  dy * 0.13 * 0.6;
+                    lastX = ev.clientX;
+                    lastY = ev.clientY;
+                }
+
+                function onUp(ev) {
+                    if (ev.pointerId !== e.pointerId) return;
+                    dragging = false;
+                    var movedFar = Math.abs(ev.clientX - startX) > slop ||
+                                   Math.abs(ev.clientY - startY) > slop;
+                    if (!movedFar && cardEl) {
+                        var idx = parseInt(cardEl.dataset.idx, 10);
+                        if (!isNaN(idx)) openLightbox(idx);
+                    }
+                    cleanup();
+                }
+
+                function cleanup() {
+                    dragging = false;
+                    stage.removeEventListener('pointermove', onMove);
+                    stage.removeEventListener('pointerup', onUp);
+                    stage.removeEventListener('pointercancel', onUp);
+                    try { stage.releasePointerCapture(e.pointerId); } catch (_) {}
+                }
+
+                stage.addEventListener('pointermove', onMove);
+                stage.addEventListener('pointerup', onUp);
+                stage.addEventListener('pointercancel', onUp);
+            });
+
+            /* ---------- Lightbox ---------- */
+            function openLightbox(idx) {
+                focused = idx;
+                lit = true;
+                document.body.classList.add('arch-lit');
+                document.body.style.overflow = 'hidden';
+                litEl.setAttribute('aria-hidden', 'false');
+
+                var shot = shots[idx];
+                litTitle.textContent = shot.title;
+                litWhere.textContent = shot.place;
+                litNote.textContent  = shot.note;
+                litImg.alt = shot.title;
+
+                var thumbSrc = cards[idx].imgEl.currentSrc || cards[idx].imgEl.src;
+                if (thumbSrc) litImg.src = thumbSrc;
+
+                var token = ++litToken;
+                var full = new Image();
+                full.onload = function () {
+                    if (token !== litToken) return;
+                    litImg.src = full.src;
+                };
+                full.src = shot.full;
+
+                var plate = litEl.querySelector('.arch-lit__plate');
+                plate.style.transition = 'none';
+                plate.style.transform = 'scale(.96)';
+                plate.style.opacity = '0';
+                void plate.offsetWidth;
+                plate.style.transition = '';
+                plate.style.transform = '';
+                plate.style.opacity = '';
+
+                if (!raf) raf = requestAnimationFrame(frame);
+            }
+
+            function closeLightbox() {
+                focused = -1;
+                lit = false;
+                litToken++;
+                document.body.classList.remove('arch-lit');
+                document.body.style.overflow = '';
+                litEl.setAttribute('aria-hidden', 'true');
+            }
+
+            litEl.addEventListener('click', function (e) {
+                if (e.target.closest('[data-close]')) closeLightbox();
+            });
+
+            /* ---------- Grid toggle ---------- */
+            gridBtn.addEventListener('click', function () {
+                var on = document.body.classList.toggle('arch-gridview');
+                gridBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
+                gridEl.setAttribute('aria-hidden', on ? 'false' : 'true');
+                document.body.style.overflow = on ? 'hidden' : '';
+                if (on && !raf) raf = requestAnimationFrame(frame);
+            });
+
+            gridRows.addEventListener('click', function (e) {
+                var fig = e.target.closest('figure[data-idx]');
+                if (!fig) return;
+                openLightbox(parseInt(fig.dataset.idx, 10));
+            });
+
+            /* ---------- Escape / keys ---------- */
+            document.addEventListener('keydown', function (e) {
+                if (e.key === 'Escape') {
+                    if (document.body.classList.contains('arch-lit')) {
+                        closeLightbox();
+                    } else if (document.body.classList.contains('arch-gridview')) {
+                        gridBtn.click();
+                    }
+                }
+            });
+
+            /* ---------- IntersectionObserver ---------- */
+            var io = new IntersectionObserver(function (entries) {
+                entries.forEach(function (entry) {
+                    document.body.classList.toggle('arch-inview', entry.isIntersecting);
+                    if (entry.isIntersecting && !raf) raf = requestAnimationFrame(frame);
+                });
+            }, { threshold: 0 });
+            io.observe(archive);
+
+            /* ---------- Resize ---------- */
+            var lastW = window.innerWidth, lastH = window.innerHeight;
+            function onResize() {
+                if (Math.abs(window.innerWidth - lastW) < 20 &&
+                    Math.abs(window.innerHeight - lastH) < 20) return;
+                lastW = window.innerWidth;
+                lastH = window.innerHeight;
+                scheduleLayout();
+            }
+            window.addEventListener('resize', onResize);
+            window.addEventListener('orientationchange', function () {
+                setTimeout(scheduleLayout, 220);
+            });
+            if (window.visualViewport) {
+                window.visualViewport.addEventListener('resize', onResize);
+            }
+
+            /* ---------- Boot ---------- */
+            resize();
+            loadAll();
+            raf = requestAnimationFrame(frame);
+        })();
+
+        /* ============================================================
+           INTELLIGENT JOURNEY FINDER
+           - Category tabs
+           - Adaptive fields per category
+           - Preserves existing keyword / category / budget parameters
+        ============================================================ */
         (function () {
             'use strict';
             var form = document.getElementById('home-search');
             if (!form) { return; }
+
+            var tabs = form.querySelectorAll('[data-finder-tab]');
+            var panels = form.querySelectorAll('[data-finder-panel]');
+            var categoryInput = document.getElementById('finder-category');
+
+            function activate(name) {
+                Array.prototype.forEach.call(tabs, function (tab) {
+                    var on = tab.getAttribute('data-finder-tab') === name;
+                    tab.classList.toggle('is-active', on);
+                    tab.setAttribute('aria-selected', on ? 'true' : 'false');
+                    tab.tabIndex = on ? 0 : -1;
+                });
+
+                Array.prototype.forEach.call(panels, function (panel) {
+                    var on = panel.getAttribute('data-finder-panel') === name;
+                    panel.classList.toggle('is-active', on);
+                    panel.hidden = !on;
+                    Array.prototype.forEach.call(panel.querySelectorAll('input, select, textarea'), function (field) {
+                        field.disabled = !on;
+                    });
+                });
+
+                if (categoryInput) { categoryInput.value = name; }
+            }
+
+            Array.prototype.forEach.call(tabs, function (tab, index) {
+                tab.addEventListener('click', function () {
+                    activate(tab.getAttribute('data-finder-tab'));
+                });
+
+                tab.addEventListener('keydown', function (event) {
+                    var key = event.key;
+                    var next = -1;
+                    if (key === 'ArrowRight') { next = (index + 1) % tabs.length; }
+                    else if (key === 'ArrowLeft') { next = (index - 1 + tabs.length) % tabs.length; }
+                    else if (key === 'Home') { next = 0; }
+                    else if (key === 'End') { next = tabs.length - 1; }
+
+                    if (next > -1) {
+                        event.preventDefault();
+                        tabs[next].focus();
+                        activate(tabs[next].getAttribute('data-finder-tab'));
+                    }
+                });
+            });
+
+            var initial = form.querySelector('.finder__tab.is-active') || tabs[0];
+            if (initial) {
+                activate(initial.getAttribute('data-finder-tab'));
+            }
 
             form.addEventListener('submit', function (event) {
                 event.preventDefault();
@@ -757,16 +3761,80 @@
                 var data = new FormData(form);
                 var params = new URLSearchParams();
 
-                ['keyword', 'category', 'budget'].forEach(function (key) {
-                    var value = (data.get(key) || '').toString().trim();
-                    if (value) { params.set(key, value); }
+                data.forEach(function (value, key) {
+                    var v = (value || '').toString().trim();
+                    if (v) { params.append(key, v); }
                 });
 
-                // Forward to the Explore page so the user's intent is preserved.
                 var target = '@Url.Action("Index", "Search")';
-                if (params.toString()) { target += '?' + params.toString(); }
+                var query = params.toString();
+                if (query) { target += '?' + query; }
+
                 window.location.href = target;
             });
+        })();
+
+        /* ============================================================
+           Reveal animations & subtle hero parallax (additive — safe)
+        ============================================================ */
+        (function () {
+            'use strict';
+
+            var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            if (reduceMotion) return;
+
+            /* --- IntersectionObserver reveal system --- */
+            var observer = new IntersectionObserver(function (entries) {
+                entries.forEach(function (entry) {
+                    if (!entry.isIntersecting) return;
+                    var el = entry.target;
+
+                    if (el.hasAttribute('data-reveal-group')) {
+                        var children = el.children;
+                        for (var i = 0; i < children.length; i++) {
+                            children[i].style.transitionDelay = (i * 0.09) + 's';
+                            children[i].classList.add('is-revealed');
+                        }
+                    } else {
+                        el.classList.add('is-revealed');
+                    }
+                    observer.unobserve(el);
+                });
+            }, { threshold: 0.12, rootMargin: '0px 0px -60px 0px' });
+
+            /* Standalone reveals (skip ones already inside a group) */
+            document.querySelectorAll('[data-reveal]').forEach(function (el) {
+                if (el.closest('[data-reveal-group]')) return;
+                el.classList.add('reveal-pending');
+                observer.observe(el);
+            });
+
+            /* Grouped reveals */
+            document.querySelectorAll('[data-reveal-group]').forEach(function (el) {
+                Array.prototype.forEach.call(el.children, function (child) {
+                    child.classList.add('reveal-pending');
+                });
+                observer.observe(el);
+            });
+
+            /* --- Hero parallax (very subtle) --- */
+            var heroImg = document.querySelector('.hero__media img');
+            if (heroImg) {
+                var ticking = false;
+                window.addEventListener('scroll', function () {
+                    if (ticking) return;
+                    ticking = true;
+                    requestAnimationFrame(function () {
+                        var y = window.scrollY;
+                        var vh = window.innerHeight;
+                        if (y < vh * 1.2) {
+                            heroImg.style.transform =
+                                'scale(1.08) translate3d(0, ' + (y * 0.35) + 'px, 0)';
+                        }
+                        ticking = false;
+                    });
+                }, { passive: true });
+            }
         })();
     </script>
 }

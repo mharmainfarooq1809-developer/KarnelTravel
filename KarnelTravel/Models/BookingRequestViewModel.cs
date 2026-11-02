@@ -52,6 +52,10 @@ public class BookingRequestViewModel
     [Display(Name = "Journey type")]
     public string? TripType { get; set; }
 
+    [StringLength(20)]
+    [Display(Name = "Preferred visit time")]
+    public string? PreferredVisitTime { get; set; }
+
     [StringLength(1000)]
     [Display(Name = "Additional requests")]
     public string? CustomerNotes { get; set; }

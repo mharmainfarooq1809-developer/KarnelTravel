@@ -34,6 +34,10 @@ public class Booking
     [Required]
     public DateTime BookingDate { get; set; }
 
+    // Restaurant preferred visit period
+    [StringLength(20)]
+    public string? PreferredVisitTime { get; set; }
+
     public DateTime? ReturnDate { get; set; }
 
     [Range(1, 100)]

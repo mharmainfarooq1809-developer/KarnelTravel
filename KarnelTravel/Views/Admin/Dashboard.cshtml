@@ -1,8 +1,213 @@
-@{ Layout = "_AdminLayout"; ViewData["Title"] = "Overview"; }
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Overview";
+}
+
+<style>
+    /* ============================================================
+       Dashboard refinements — scoped to this view only.
+       Complements the shared wwwroot/css/admin.css without
+       overriding it. Class names match the shared stylesheet.
+       ============================================================ */
+
+    /* Utility: muted body text (not defined in admin.css) */
+    .muted {
+        color: var(--muted, #758078);
+        font-size: 13px;
+        line-height: 1.55;
+        margin: 0;
+    }
+
+    /* Panel titles can carry a subtitle without breaking the flex row */
+    .panel-title > div { min-width: 0; }
+    .panel-title > div h2 {
+        margin: 0;
+        line-height: 1.15;
+    }
+    .panel-subtitle {
+        margin: 5px 0 0;
+        color: var(--muted, #758078);
+        font-size: 12.5px;
+        line-height: 1.5;
+        letter-spacing: 0;
+        font-family: var(--sans, 'DM Sans', system-ui, sans-serif);
+        font-weight: 400;
+    }
+
+    /* Hero panel: give the CTA breathing room */
+    .hero-copy .btn { margin-top: 20px; }
+
+    /* Metric deltas — default neutral, opt-in per class.
+       Replaces the shared rule that prefixed EVERY .metric small with ▲. */
+    .metric small {
+        color: var(--muted, #758078);
+        font-size: 12px;
+        font-weight: 600;
+    }
+    .metric small::before { content: ""; }
+
+    .metric small.metric-up { color: var(--accent, #3c9169); }
+    .metric small.metric-up::before {
+        content: "▲ ";
+        font-size: 9px;
+        opacity: .8;
+    }
+
+    .metric small.metric-warn { color: var(--amber, #b9853c); }
+    .metric small.metric-warn::before {
+        content: "● ";
+        font-size: 9px;
+        opacity: .85;
+    }
+
+    .metric small.metric-down { color: var(--red, #ae5d50); }
+    .metric small.metric-down::before {
+        content: "▼ ";
+        font-size: 9px;
+        opacity: .8;
+    }
+</style>
+
 <section class="hero-panel">
-    <div class="hero-copy"><div class="eyebrow">Tuesday · 14 October 2025</div><h1>Good morning,<br />Muhammad Harmain.</h1><p>Your guide to the week ahead: 18 departures are being prepared and three new journeys are ready for review.</p><a class="btn btn-primary" href="/Admin/Tours">Open operations view →</a></div><span class="hero-note">Prototype data · October</span>
+    <div class="hero-copy">
+        <div class="eyebrow">Tuesday · 14 October 2025</div>
+        <h1>Good morning,<br />Muhammad Harmain.</h1>
+        <p>Your guide to the week ahead: 18 departures are being prepared and three new journeys are ready for review.</p>
+        <a class="btn btn-primary" href="/Admin/Tours">Open operations view →</a>
+    </div>
+    <span class="hero-note">Prototype data · October</span>
 </section>
-<div class="metric-row"><div class="metric"><label>Total bookings</label><strong>284</strong><small>↑ 18% this month</small></div><div class="metric"><label>Pending inquiries</label><strong>17</strong><small>Needs your attention</small></div><div class="metric"><label>Live listings</label><strong>64</strong><small>Across 12 regions</small></div><div class="metric"><label>Recorded revenue</label><strong>$42.8k</strong><small>↑ 9.4% vs September</small></div></div>
-<div class="dashboard-grid"><div class="panel"><div class="panel-title"><h2>Booking rhythm</h2><a href="/Admin/Reports">View report ↗</a></div><p class="muted">Confirmed reservations over the last eight weeks</p><div class="activity"><div class="bar" style="height:38%"><span>Aug 25</span></div><div class="bar" style="height:54%"><span>Sep 1</span></div><div class="bar" style="height:42%"><span>Sep 8</span></div><div class="bar" style="height:66%"><span>Sep 15</span></div><div class="bar" style="height:59%"><span>Sep 22</span></div><div class="bar" style="height:78%"><span>Sep 29</span></div><div class="bar" style="height:71%"><span>Oct 6</span></div><div class="bar" style="height:90%"><span>Oct 13</span></div></div></div><div class="panel"><div class="panel-title"><h2>Quick studio</h2></div><div class="quick-actions"><a class="quick-action" href="/Admin/Destinations/Create">＋ Destination</a><a class="quick-action" href="/Admin/Tours/Create">＋ Experience</a><a class="quick-action" href="/Admin/Properties">＋ Property</a><a class="quick-action" href="/Admin/WebsiteContent">Edit homepage</a></div><div class="section-space"><div class="eyebrow">Public website</div><p>Keep the next chapter of Pakistan’s story looking fresh.</p><a class="btn btn-quiet" href="/" target="_blank">Visit live guide ↗</a></div></div></div>
-<div class="dashboard-grid section-space"><div class="panel"><div class="panel-title"><h2>Recent bookings</h2><a href="/Admin/Bookings">See all</a></div><div class="booking-list"><div class="list-item"><div><strong>BK-10482 · Hamza Qureshi</strong><small>Hunza Valley escape · 4 guests</small></div><span class="status status-confirmed"><i></i>Confirmed</span></div><div class="list-item"><div><strong>BK-10481 · Clara Morgan</strong><small>Skardu by road · 2 guests</small></div><span class="status status-pending"><i></i>Pending</span></div><div class="list-item"><div><strong>BK-10479 · Omar Shah</strong><small>Lahore heritage walk · 6 guests</small></div><span class="status status-confirmed"><i></i>Confirmed</span></div></div></div><div class="panel"><div class="panel-title"><h2>Next departures</h2><a href="/Admin/Calendar">Calendar</a></div><div class="departure-list"><div class="list-item"><div><strong>Hunza in Autumn</strong><small>18 Oct · 08:00 · 8 guests</small></div><span class="status status-confirmed"><i></i>Ready</span></div><div class="list-item"><div><strong>Deosai Wild Week</strong><small>22 Oct · 06:30 · 5 guests</small></div><span class="status status-pending"><i></i>Briefing</span></div></div></div></div>
-<div class="panel section-space"><div class="panel-title"><h2>Customer notes</h2><a href="/Admin/Inquiries">Open inbox</a></div><div class="list-item"><div><strong>“Can we add a sunrise viewpoint to our Hunza route?”</strong><small>Elena Rossi · 12 minutes ago · Assigned to Muhammad Harmain</small></div><span class="status status-in-progress"><i></i>In progress</span></div></div>
+
+<div class="metric-row">
+    <div class="metric">
+        <label>Total bookings</label>
+        <strong>284</strong>
+        <small class="metric-up">18% this month</small>
+    </div>
+    <div class="metric">
+        <label>Pending inquiries</label>
+        <strong>17</strong>
+        <small class="metric-warn">Needs your attention</small>
+    </div>
+    <div class="metric">
+        <label>Live listings</label>
+        <strong>64</strong>
+        <small>Across 12 regions</small>
+    </div>
+    <div class="metric">
+        <label>Recorded revenue</label>
+        <strong>$42.8k</strong>
+        <small class="metric-up">9.4% vs September</small>
+    </div>
+</div>
+
+<div class="dashboard-grid">
+    <div class="panel">
+        <div class="panel-title">
+            <div>
+                <h2>Booking rhythm</h2>
+                <p class="panel-subtitle">Confirmed reservations over the last eight weeks</p>
+            </div>
+            <a href="/Admin/Reports">View report ↗</a>
+        </div>
+        <div class="activity">
+            <div class="bar" style="height:38%" data-value="32 bookings"><span>Aug 25</span></div>
+            <div class="bar" style="height:54%" data-value="45 bookings"><span>Sep 1</span></div>
+            <div class="bar" style="height:42%" data-value="35 bookings"><span>Sep 8</span></div>
+            <div class="bar" style="height:66%" data-value="55 bookings"><span>Sep 15</span></div>
+            <div class="bar" style="height:59%" data-value="49 bookings"><span>Sep 22</span></div>
+            <div class="bar" style="height:78%" data-value="65 bookings"><span>Sep 29</span></div>
+            <div class="bar" style="height:71%" data-value="59 bookings"><span>Oct 6</span></div>
+            <div class="bar" style="height:90%" data-value="75 bookings"><span>Oct 13</span></div>
+        </div>
+    </div>
+
+    <div class="panel">
+        <div class="panel-title">
+            <div>
+                <h2>Quick studio</h2>
+                <p class="panel-subtitle">Jump into the workflow that needs you.</p>
+            </div>
+        </div>
+        <div class="quick-actions">
+            <a class="quick-action" href="/Admin/Destinations/Create">Destination</a>
+            <a class="quick-action" href="/Admin/Tours/Create">Experience</a>
+            <a class="quick-action" href="/Admin/Properties">Property</a>
+            <a class="quick-action" href="/Admin/WebsiteContent">Edit homepage</a>
+        </div>
+        <div class="section-space">
+            <div class="eyebrow">Public website</div>
+            <p class="muted">Keep the next chapter of Pakistan's story looking fresh.</p>
+            <a class="btn btn-quiet" href="/" target="_blank">Visit live guide ↗</a>
+        </div>
+    </div>
+</div>
+
+<div class="dashboard-grid section-space">
+    <div class="panel">
+        <div class="panel-title">
+            <h2>Recent bookings</h2>
+            <a href="/Admin/Bookings">See all</a>
+        </div>
+        <div class="booking-list">
+            <div class="list-item">
+                <div>
+                    <strong>BK-10482 · Hamza Qureshi</strong>
+                    <small>Hunza Valley escape · 4 guests</small>
+                </div>
+                <span class="status status-confirmed"><i></i>Confirmed</span>
+            </div>
+            <div class="list-item">
+                <div>
+                    <strong>BK-10481 · Clara Morgan</strong>
+                    <small>Skardu by road · 2 guests</small>
+                </div>
+                <span class="status status-pending"><i></i>Pending</span>
+            </div>
+            <div class="list-item">
+                <div>
+                    <strong>BK-10479 · Omar Shah</strong>
+                    <small>Lahore heritage walk · 6 guests</small>
+                </div>
+                <span class="status status-confirmed"><i></i>Confirmed</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="panel">
+        <div class="panel-title">
+            <h2>Next departures</h2>
+            <a href="/Admin/Calendar">Calendar</a>
+        </div>
+        <div class="departure-list">
+            <div class="list-item">
+                <div>
+                    <strong>Hunza in Autumn</strong>
+                    <small>18 Oct · 08:00 · 8 guests</small>
+                </div>
+                <span class="status status-confirmed"><i></i>Ready</span>
+            </div>
+            <div class="list-item">
+                <div>
+                    <strong>Deosai Wild Week</strong>
+                    <small>22 Oct · 06:30 · 5 guests</small>
+                </div>
+                <span class="status status-pending"><i></i>Briefing</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="panel section-space">
+    <div class="panel-title">
+        <h2>Customer notes</h2>
+        <a href="/Admin/Inquiries">Open inbox</a>
+    </div>
+    <div class="list-item">
+        <div>
+            <strong>“Can we add a sunrise viewpoint to our Hunza route?”</strong>
+            <small>Elena Rossi · 12 minutes ago · Assigned to Muhammad Harmain</small>
+        </div>
+        <span class="status status-in-progress"><i></i>In progress</span>
+    </div>
+</div>

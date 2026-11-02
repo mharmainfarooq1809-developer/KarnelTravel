@@ -115,6 +115,10 @@ namespace KarnelTravel.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
 
+                    b.Property<string>("PreferredVisitTime")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
                     b.Property<string>("ReferenceNumber")
                         .IsRequired()
                         .HasMaxLength(30)
@@ -504,6 +508,82 @@ namespace KarnelTravel.Migrations
                     b.ToTable("Restaurants", (string)null);
                 });
 
+            modelBuilder.Entity("KarnelTravel.Models.Review", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Comment")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETUTCDATE()");
+
+                    b.Property<int?>("DestinationId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("HotelId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Rating")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("ResortId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("RestaurantId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ReviewerName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<int?>("TourPackageId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("TransportServiceId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DestinationId");
+
+                    b.HasIndex("HotelId");
+
+                    b.HasIndex("ResortId");
+
+                    b.HasIndex("RestaurantId");
+
+                    b.HasIndex("TourPackageId");
+
+                    b.HasIndex("TransportServiceId");
+
+                    b.HasIndex("Status", "CreatedAt");
+
+                    b.ToTable("Reviews", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_Reviews_ExactlyOneListing", "(\r\n                            CASE WHEN DestinationId IS NULL THEN 0 ELSE 1 END +\r\n                            CASE WHEN HotelId IS NULL THEN 0 ELSE 1 END +\r\n                            CASE WHEN RestaurantId IS NULL THEN 0 ELSE 1 END +\r\n                            CASE WHEN ResortId IS NULL THEN 0 ELSE 1 END +\r\n                            CASE WHEN TransportServiceId IS NULL THEN 0 ELSE 1 END +\r\n                            CASE WHEN TourPackageId IS NULL THEN 0 ELSE 1 END\r\n                        ) = 1");
+
+                            t.HasCheckConstraint("CK_Reviews_Rating", "[Rating] >= 1 AND [Rating] <= 5");
+                        });
+                });
+
             modelBuilder.Entity("KarnelTravel.Models.TourPackage", b =>
                 {
                     b.Property<int>("Id")
@@ -846,6 +926,51 @@ namespace KarnelTravel.Migrations
                         .HasForeignKey("DestinationId");
 
                     b.Navigation("Destination");
+                });
+
+            modelBuilder.Entity("KarnelTravel.Models.Review", b =>
+                {
+                    b.HasOne("KarnelTravel.Models.Destination", "Destination")
+                        .WithMany()
+                        .HasForeignKey("DestinationId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("KarnelTravel.Models.Hotel", "Hotel")
+                        .WithMany()
+                        .HasForeignKey("HotelId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("KarnelTravel.Models.Resort", "Resort")
+                        .WithMany()
+                        .HasForeignKey("ResortId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("KarnelTravel.Models.Restaurant", "Restaurant")
+                        .WithMany()
+                        .HasForeignKey("RestaurantId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("KarnelTravel.Models.TourPackage", "TourPackage")
+                        .WithMany()
+                        .HasForeignKey("TourPackageId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("KarnelTravel.Models.TransportService", "TransportService")
+                        .WithMany()
+                        .HasForeignKey("TransportServiceId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Destination");
+
+                    b.Navigation("Hotel");
+
+                    b.Navigation("Resort");
+
+                    b.Navigation("Restaurant");
+
+                    b.Navigation("TourPackage");
+
+                    b.Navigation("TransportService");
                 });
 
             modelBuilder.Entity("KarnelTravel.Models.TourPackage", b =>

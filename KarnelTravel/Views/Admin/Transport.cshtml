@@ -1,4 +1,3 @@
-
 @model IEnumerable<KarnelTravel.Models.TransportRoutePricing>
 
 @using KarnelTravel.Models
@@ -17,172 +16,881 @@
     var inactiveCount = routes.Count(x => !x.IsActive);
 }
 
-<div class="page-heading">
-    <div>
-        <div class="eyebrow">Routes & movement</div>
-        <h1>Make the miles easy.</h1>
-        <p>Manage vehicles, routes and transport fares.</p>
+<style>
+   
+
+    .transport-page {
+        color: var(--ink, #1b2922);
+        padding-bottom: 36px;
+    }
+
+    /* ---------- Header ---------- */
+    .transport-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        gap: 24px;
+        margin-bottom: 26px;
+    }
+    .transport-eyebrow {
+        margin: 0 0 8px;
+        color: var(--accent, #3c9169);
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: .16em;
+        text-transform: uppercase;
+    }
+    .transport-header h1 {
+        font-family: var(--serif, Georgia, serif);
+        font-weight: 400;
+        color: var(--forest, #164734);
+        font-size: clamp(28px, 3.2vw, 42px);
+        line-height: 1.1;
+        letter-spacing: -.02em;
+        margin: 0;
+    }
+    .transport-header p {
+        margin: 10px 0 0;
+        color: var(--muted, #758078);
+        font-size: 13.5px;
+        line-height: 1.6;
+        max-width: 62ch;
+    }
+
+    /* ---------- Buttons ---------- */
+    .transport-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 11px 18px;
+        border: 1px solid transparent;
+        border-radius: 10px;
+        font: inherit;
+        font-size: 13px;
+        font-weight: 700;
+        text-decoration: none;
+        cursor: pointer;
+        white-space: nowrap;
+        transition: background .14s ease, border-color .14s ease, color .14s ease, box-shadow .14s ease, transform .14s ease;
+    }
+    .transport-btn-primary {
+        background: var(--forest, #164734);
+        color: #fff;
+        border-color: var(--forest, #164734);
+        box-shadow: 0 2px 10px -4px rgba(22,71,52,.4);
+    }
+    .transport-btn-primary:hover {
+        background: var(--green, #236b4d);
+        border-color: var(--green, #236b4d);
+        color: #fff;
+        box-shadow: 0 6px 20px -8px rgba(22,71,52,.5);
+        transform: translateY(-1px);
+    }
+    .transport-btn-secondary {
+        background: var(--white, #fff);
+        color: var(--ink, #1b2922);
+        border-color: var(--line, #e5e9e3);
+    }
+    .transport-btn-secondary:hover {
+        background: var(--soft, #edf2ed);
+        border-color: var(--line-hi, #d6dcd4);
+        color: var(--forest, #164734);
+    }
+    .transport-btn-ghost {
+        background: var(--soft, #edf2ed);
+        color: var(--forest, #164734);
+    }
+    .transport-btn-ghost:hover {
+        background: var(--soft-2, #e3ece5);
+        color: var(--forest, #164734);
+    }
+    .transport-btn-warn {
+        background: rgba(220,164,61,.10);
+        color: #8a6516;
+        border-color: rgba(220,164,61,.28);
+    }
+    .transport-btn-warn:hover {
+        background: rgba(220,164,61,.20);
+        border-color: rgba(220,164,61,.44);
+    }
+
+    /* ---------- Alerts ---------- */
+    .transport-alert {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 13px 16px;
+        margin-bottom: 18px;
+        border-radius: 10px;
+        font-size: 13px;
+        font-weight: 500;
+    }
+    .transport-alert svg { flex-shrink: 0; }
+    .transport-alert-success {
+        background: rgba(60,145,105,.10);
+        border: 1px solid rgba(60,145,105,.22);
+        color: #236b4d;
+    }
+    .transport-alert-error {
+        background: rgba(174,93,80,.10);
+        border: 1px solid rgba(174,93,80,.22);
+        color: #8b4137;
+    }
+
+    /* ---------- Stat tiles ---------- */
+    .transport-stats {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 16px;
+        margin-bottom: 18px;
+    }
+    .transport-stat {
+        padding: 20px 22px;
+        background: var(--white, #fff);
+        border: 1px solid var(--line, #e5e9e3);
+        border-radius: 14px;
+        transition: border-color .18s ease, box-shadow .18s ease;
+    }
+    .transport-stat:hover {
+        border-color: var(--line-hi, #d6dcd4);
+        box-shadow: 0 2px 6px -2px rgba(22,71,52,.08);
+    }
+    .transport-stat-label {
+        display: block;
+        color: var(--muted, #758078);
+        font-size: 11.5px;
+        font-weight: 600;
+        letter-spacing: .04em;
+        text-transform: uppercase;
+        margin-bottom: 6px;
+    }
+    .transport-stat-value {
+        display: block;
+        font-family: var(--serif, Georgia, serif);
+        font-weight: 400;
+        font-size: 28px;
+        color: var(--forest, #164734);
+        line-height: 1.15;
+        letter-spacing: -.01em;
+        font-variant-numeric: tabular-nums;
+    }
+    .transport-stat-dot {
+        display: inline-block;
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        margin-right: 6px;
+        vertical-align: middle;
+    }
+    .transport-stat-dot.active   { background: #28b485; box-shadow: 0 0 0 3px rgba(40,180,133,.15); }
+    .transport-stat-dot.inactive { background: #dca43d; box-shadow: 0 0 0 3px rgba(220,164,61,.15); }
+
+    /* ---------- Panel ---------- */
+    .transport-panel {
+        background: var(--white, #fff);
+        border: 1px solid var(--line, #e5e9e3);
+        border-radius: 14px;
+        overflow: hidden;
+    }
+    .transport-panel-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 15px;
+        padding: 20px 24px;
+        border-bottom: 1px solid var(--line, #e5e9e3);
+    }
+    .transport-panel-head h2 {
+        font-family: var(--serif, Georgia, serif);
+        font-weight: 400;
+        font-size: 20px;
+        color: var(--forest, #164734);
+        letter-spacing: -.01em;
+        margin: 0;
+    }
+    .transport-panel-head p {
+        margin: 6px 0 0;
+        color: var(--muted, #758078);
+        font-size: 12.5px;
+        line-height: 1.5;
+    }
+    .transport-panel-count {
+        padding: 6px 11px;
+        border: 1px solid var(--line, #e5e9e3);
+        border-radius: 999px;
+        background: var(--surface-sunken, #fbfcfa);
+        color: var(--muted, #758078);
+        font-size: 11.5px;
+        font-weight: 500;
+        white-space: nowrap;
+    }
+
+    /* ---------- Toolbar ---------- */
+    .transport-toolbar {
+        display: flex;
+        gap: 10px;
+        padding: 16px 24px;
+        border-bottom: 1px solid var(--line, #e5e9e3);
+        background: var(--surface-sunken, #fbfcfa);
+    }
+    .transport-search {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        flex: 1;
+        min-width: 150px;
+        height: 42px;
+        padding: 0 14px;
+        border: 1px solid var(--line, #e5e9e3);
+        border-radius: 10px;
+        background: var(--white, #fff);
+        color: var(--muted, #758078);
+        transition: border-color .14s ease, box-shadow .14s ease;
+    }
+    .transport-search:focus-within {
+        border-color: var(--accent, #3c9169);
+        box-shadow: 0 0 0 3px rgba(60,145,105,.20);
+    }
+    .transport-search > svg {
+        width: 16px;
+        height: 16px;
+        flex-shrink: 0;
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 1.8;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+    }
+    .transport-search input {
+        width: 100%;
+        min-width: 0;
+        height: 100%;
+        border: 0;
+        outline: 0;
+        background: transparent;
+        color: var(--ink, #1b2922);
+        font: inherit;
+        font-size: 13px;
+    }
+    .transport-search input::placeholder { color: var(--muted, #758078); }
+
+    .transport-toolbar select {
+        height: 42px;
+        padding: 0 34px 0 14px;
+        border: 1px solid var(--line, #e5e9e3);
+        border-radius: 10px;
+        background: var(--white, #fff) url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23758078' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>") no-repeat right 12px center / 14px;
+        color: var(--ink, #1b2922);
+        font: inherit;
+        font-size: 13px;
+        cursor: pointer;
+        appearance: none;
+        -webkit-appearance: none;
+        transition: border-color .14s ease, box-shadow .14s ease;
+        max-width: 200px;
+    }
+    .transport-toolbar select:focus {
+        outline: none;
+        border-color: var(--accent, #3c9169);
+        box-shadow: 0 0 0 3px rgba(60,145,105,.20);
+    }
+
+    /* ---------- CARD GRID ---------- */
+    .transport-card-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(min(340px, 100%), 1fr));
+        gap: 18px;
+        padding: 24px;
+    }
+
+    .transport-card {
+        display: flex;
+        flex-direction: column;
+        background: var(--white, #fff);
+        border: 1px solid var(--line, #e5e9e3);
+        border-radius: 14px;
+        overflow: hidden;
+        contain: layout;
+        transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease;
+    }
+    .transport-card:hover {
+        border-color: var(--line-hi, #d6dcd4);
+        box-shadow: 0 8px 20px -12px rgba(22,71,52,.22);
+        transform: translateY(-2px);
+    }
+    .transport-card[hidden] { display: none; }
+
+    /* Card header */
+    .transport-card-head {
+        position: relative;
+        padding: 20px 20px 16px;
+        background:
+            linear-gradient(135deg, rgba(60,145,105,.06), rgba(22,71,52,.02)),
+            repeating-linear-gradient(45deg, transparent 0 14px, rgba(60,145,105,.03) 14px 15px);
+        border-bottom: 1px solid var(--line, #e5e9e3);
+    }
+    .transport-route-name {
+        font-family: var(--serif, Georgia, serif);
+        font-weight: 400;
+        font-size: 19px;
+        line-height: 1.25;
+        letter-spacing: -.01em;
+        color: var(--forest, #164734);
+        margin: 0 0 4px;
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+    .transport-route-name svg {
+        width: 15px;
+        height: 15px;
+        flex-shrink: 0;
+        stroke: currentColor;
+        fill: none;
+        stroke-width: 2;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        opacity: .55;
+    }
+    .transport-route-sub {
+        font-size: 11.5px;
+        color: var(--muted, #758078);
+        letter-spacing: .02em;
+    }
+
+    .transport-status {
+        position: absolute;
+        top: 16px;
+        right: 16px;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 10px;
+        border-radius: 999px;
+        font-size: 10.5px;
+        font-weight: 700;
+        letter-spacing: .04em;
+        text-transform: uppercase;
+    }
+    .transport-status.active {
+        background: rgba(40,180,133,.12);
+        color: #1c8a64;
+    }
+    .transport-status.inactive {
+        background: rgba(220,164,61,.16);
+        color: #8a6516;
+    }
+    .transport-status i {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        flex-shrink: 0;
+    }
+    .transport-status.active i   { background: #28b485; }
+    .transport-status.inactive i { background: #dca43d; }
+
+    /* Card body */
+    .transport-card-body {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        padding: 16px 20px 18px;
+    }
+    .transport-vehicle {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 12px;
+        border-radius: 10px;
+        background: var(--surface-sunken, #fbfcfa);
+        border: 1px solid var(--line, #e5e9e3);
+        margin-bottom: 14px;
+    }
+    .transport-vehicle-icon {
+        width: 32px;
+        height: 32px;
+        flex-shrink: 0;
+        border-radius: 8px;
+        background: var(--soft, #edf2ed);
+        color: var(--forest, #164734);
+        display: grid;
+        place-items: center;
+    }
+    .transport-vehicle-icon svg {
+        width: 16px;
+        height: 16px;
+        stroke: currentColor;
+        fill: none;
+        stroke-width: 1.8;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+    }
+    .transport-vehicle-info { min-width: 0; }
+    .transport-vehicle-name {
+        display: block;
+        font-size: 12.5px;
+        font-weight: 700;
+        color: var(--ink, #1b2922);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .transport-vehicle-meta {
+        display: block;
+        font-size: 11px;
+        color: var(--muted, #758078);
+        margin-top: 1px;
+    }
+
+    /* Fare grid */
+    .transport-fares {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        padding: 12px 14px;
+        border-radius: 10px;
+        background: rgba(60,145,105,.05);
+        border: 1px dashed rgba(60,145,105,.20);
+        margin-bottom: 14px;
+    }
+    .transport-fare-label {
+        display: block;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+        color: var(--muted, #758078);
+        margin-bottom: 3px;
+    }
+    .transport-fare-value {
+        display: block;
+        font-size: 14px;
+        font-weight: 700;
+        color: var(--forest, #164734);
+        font-variant-numeric: tabular-nums;
+        line-height: 1.2;
+    }
+    .transport-fare-value.empty {
+        font-size: 11.5px;
+        font-weight: 500;
+        font-style: italic;
+        color: var(--muted, #758078);
+    }
+
+    /* Actions */
+    .transport-actions {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-top: auto;
+    }
+    .transport-actions form {
+        display: inline-flex;
+        margin: 0;
+    }
+
+    /* ---------- Empty / no results ---------- */
+    .transport-empty {
+        padding: 56px 24px;
+        text-align: center;
+    }
+    .transport-empty-icon {
+        width: 56px;
+        height: 56px;
+        margin: 0 auto 16px;
+        border-radius: 50%;
+        background: var(--soft, #edf2ed);
+        color: var(--accent, #3c9169);
+        display: grid;
+        place-items: center;
+    }
+    .transport-empty-icon svg {
+        width: 26px;
+        height: 26px;
+        stroke: currentColor;
+        fill: none;
+        stroke-width: 1.7;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+    }
+    .transport-empty h3 {
+        margin: 0 0 8px;
+        font-family: var(--serif, Georgia, serif);
+        font-weight: 400;
+        font-size: 22px;
+        color: var(--forest, #164734);
+    }
+    .transport-empty p {
+        max-width: 430px;
+        margin: 0 auto 18px;
+        color: var(--muted, #758078);
+        font-size: 13px;
+        line-height: 1.6;
+    }
+    .transport-no-results[hidden] { display: none; }
+
+    .transport-panel-footer {
+        padding: 14px 24px;
+        border-top: 1px solid var(--line, #e5e9e3);
+        background: var(--surface-sunken, #fbfcfa);
+        color: var(--muted, #758078);
+        font-size: 12px;
+    }
+
+    /* ---------- Add/Edit form ---------- */
+    .transport-form-panel {
+        margin-top: 26px;
+        padding: 28px;
+        background: var(--white, #fff);
+        border: 1px solid var(--line, #e5e9e3);
+        border-radius: 16px;
+        scroll-margin-top: 90px;
+        contain: layout;
+    }
+    .transport-form-head {
+        margin-bottom: 22px;
+        padding-bottom: 18px;
+        border-bottom: 1px solid var(--line, #e5e9e3);
+    }
+    .transport-form-head h2 {
+        font-family: var(--serif, Georgia, serif);
+        font-weight: 400;
+        font-size: 22px;
+        color: var(--forest, #164734);
+        letter-spacing: -.01em;
+        margin: 6px 0 6px;
+        line-height: 1.2;
+    }
+    .transport-form-head p {
+        margin: 0;
+        color: var(--muted, #758078);
+        font-size: 12.5px;
+        line-height: 1.55;
+        max-width: 62ch;
+    }
+
+    .transport-form-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 18px;
+        margin-bottom: 20px;
+    }
+    .transport-field {
+        display: flex;
+        flex-direction: column;
+        gap: 7px;
+    }
+    .transport-field label {
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--ink, #1b2922);
+        letter-spacing: .01em;
+    }
+    .transport-field label .optional {
+        font-weight: 500;
+        color: var(--muted, #758078);
+        font-size: 11px;
+        margin-left: 6px;
+    }
+
+    .transport-input,
+    .transport-select,
+    .transport-textarea {
+        width: 100%;
+        border: 1px solid var(--line, #e5e9e3);
+        border-radius: 10px;
+        background: var(--white, #fff);
+        color: var(--ink, #1b2922);
+        font: inherit;
+        font-size: 13.5px;
+        box-sizing: border-box;
+        transition: border-color .14s ease, box-shadow .14s ease;
+    }
+    .transport-input,
+    .transport-select {
+        height: 44px;
+        padding: 0 14px;
+    }
+    .transport-select {
+        appearance: none;
+        -webkit-appearance: none;
+        padding-right: 34px;
+        background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23758078' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");
+        background-repeat: no-repeat;
+        background-position: right 12px center;
+        background-size: 14px;
+        cursor: pointer;
+    }
+    .transport-textarea {
+        min-height: 100px;
+        padding: 12px 14px;
+        resize: vertical;
+        line-height: 1.6;
+    }
+    .transport-input:hover,
+    .transport-select:hover,
+    .transport-textarea:hover {
+        border-color: var(--line-hi, #d6dcd4);
+    }
+    .transport-input:focus,
+    .transport-select:focus,
+    .transport-textarea:focus {
+        outline: none;
+        border-color: var(--accent, #3c9169);
+        box-shadow: 0 0 0 3px rgba(60,145,105,.20);
+    }
+    .transport-input::placeholder,
+    .transport-textarea::placeholder {
+        color: var(--muted, #758078);
+    }
+
+    .transport-help {
+        font-size: 11.5px;
+        color: var(--muted, #758078);
+        line-height: 1.5;
+        margin-top: 2px;
+    }
+
+    .transport-checkbox-row {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        padding: 14px 16px;
+        border: 1px solid var(--line, #e5e9e3);
+        border-radius: 11px;
+        background: var(--surface-sunken, #fbfcfa);
+        cursor: pointer;
+        transition: border-color .14s ease, background .14s ease;
+    }
+    .transport-checkbox-row:hover {
+        border-color: var(--line-hi, #d6dcd4);
+        background: var(--white, #fff);
+    }
+    .transport-checkbox-row:has(input:checked) {
+        border-color: var(--accent, #3c9169);
+        background: rgba(60,145,105,.05);
+    }
+    .transport-checkbox-row input[type="checkbox"] {
+        width: 18px;
+        height: 18px;
+        margin: 2px 0 0;
+        accent-color: var(--accent, #3c9169);
+        cursor: pointer;
+        flex-shrink: 0;
+    }
+    .transport-checkbox-row span {
+        font-size: 13px;
+        color: var(--ink, #1b2922);
+        line-height: 1.5;
+    }
+
+    .transport-form-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 22px;
+        padding-top: 20px;
+        border-top: 1px solid var(--line, #e5e9e3);
+    }
+
+    /* ---------- Responsive ---------- */
+    @@media (max-width: 700px) {
+        .transport-header {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        .transport-header .transport-btn { width: 100%; }
+        .transport-stats { grid-template-columns: 1fr 1fr; gap: 10px; }
+        .transport-stat { padding: 16px; }
+        .transport-stat-value { font-size: 22px; }
+        .transport-toolbar {
+            flex-direction: column;
+            padding: 14px 16px;
+        }
+        .transport-toolbar select { width: 100%; max-width: none; }
+        .transport-panel-head {
+            flex-direction: column;
+            align-items: flex-start;
+            padding: 18px;
+        }
+        .transport-card-grid { padding: 16px; gap: 14px; }
+        .transport-form-panel { padding: 20px; }
+        .transport-actions {
+            flex-wrap: wrap;
+        }
+        .transport-actions .transport-btn { flex: 1; }
+    }
+
+    @@media (prefers-reduced-motion: reduce) {
+        .transport-card,
+        .transport-btn,
+        .transport-input,
+        .transport-select,
+        .transport-textarea {
+            transition-duration: .001ms !important;
+        }
+        .transport-card:hover { transform: none; }
+        .transport-btn-primary:hover { transform: none; }
+    }
+</style>
+
+<div class="transport-page">
+
+    <!-- HEADER -->
+    <div class="transport-header">
+        <div>
+            <p class="transport-eyebrow">Routes &amp; movement</p>
+            <h1>Make the miles easy.</h1>
+            <p>Manage vehicles, routes and transport fares.</p>
+        </div>
+
+        <a href="@Url.Action("Transport", "Admin")#route-form"
+           class="transport-btn transport-btn-primary">
+            + Add route
+        </a>
     </div>
 
-    <a href="@Url.Action("Transport", "Admin")#route-form"
-       class="btn btn-primary">
-        ＋ Add route
-    </a>
-</div>
+    <!-- ALERTS -->
+    @if (TempData["SuccessMessage"] is string successMsg)
+    {
+        <div class="transport-alert transport-alert-success" role="status">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            <span>@successMsg</span>
+        </div>
+    }
+    @if (TempData["ErrorMessage"] is string errorMsg)
+    {
+        <div class="transport-alert transport-alert-error" role="alert">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            <span>@errorMsg</span>
+        </div>
+    }
 
-@if (TempData["SuccessMessage"] != null)
-{
-    <div class="alert alert-success" style="margin-bottom:20px;">
-        @TempData["SuccessMessage"]
-    </div>
-}
-
-@if (TempData["ErrorMessage"] != null)
-{
-    <div class="alert alert-danger" style="margin-bottom:20px;">
-        @TempData["ErrorMessage"]
-    </div>
-}
-
-<!-- ROUTE STATISTICS -->
-<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:15px;margin-bottom:25px;">
-
-    <div class="table-wrap" style="padding:18px;">
-        <div class="eyebrow">Total routes</div>
-        <h2>@routes.Count</h2>
-    </div>
-
-    <div class="table-wrap" style="padding:18px;">
-        <div class="eyebrow">Active routes</div>
-        <h2>@activeCount</h2>
-    </div>
-
-    <div class="table-wrap" style="padding:18px;">
-        <div class="eyebrow">Inactive routes</div>
-        <h2>@inactiveCount</h2>
+    <!-- STATS -->
+    <div class="transport-stats">
+        <div class="transport-stat">
+            <span class="transport-stat-label">Total routes</span>
+            <span class="transport-stat-value">@routes.Count</span>
+        </div>
+        <div class="transport-stat">
+            <span class="transport-stat-label">
+                <span class="transport-stat-dot active"></span>Active routes
+            </span>
+            <span class="transport-stat-value">@activeCount</span>
+        </div>
+        <div class="transport-stat">
+            <span class="transport-stat-label">
+                <span class="transport-stat-dot inactive"></span>Inactive routes
+            </span>
+            <span class="transport-stat-value">@inactiveCount</span>
+        </div>
     </div>
 
-</div>
+    <!-- PANEL -->
+    <section class="transport-panel">
+        <div class="transport-panel-head">
+            <div>
+                <h2>Transport routes</h2>
+                <p>Review, edit, or toggle the availability of each route.</p>
+            </div>
+            <span class="transport-panel-count">@routes.Count records</span>
+        </div>
 
-<!-- FILTERS -->
-<div class="toolbar">
-    <div class="filters">
+        <!-- FILTERS -->
+        <div class="transport-toolbar">
+            <div class="transport-search">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+                <input type="search"
+                       id="routeSearch"
+                       placeholder="Search route or vehicle..."
+                       aria-label="Search routes" />
+            </div>
 
-        <input class="input search-input"
-               id="routeSearch"
-               placeholder="Search route or vehicle..." />
+            <select id="vehicleFilter" aria-label="Filter by vehicle type">
+                <option value="">All vehicle types</option>
+                @foreach (var type in services
+                    .Where(x => !string.IsNullOrWhiteSpace(x.VehicleType))
+                    .Select(x => x.VehicleType)
+                    .Distinct()
+                    .OrderBy(x => x))
+                {
+                    <option value="@type">@type</option>
+                }
+            </select>
 
-        <select class="select" id="vehicleFilter">
-            <option value="">All vehicle types</option>
+            <select id="statusFilter" aria-label="Filter by status">
+                <option value="">All statuses</option>
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+            </select>
+        </div>
 
-            @foreach (var type in services
-                .Where(x => !string.IsNullOrWhiteSpace(x.VehicleType))
-                .Select(x => x.VehicleType)
-                .Distinct()
-                .OrderBy(x => x))
-            {
-                <option value="@type">@type</option>
-            }
-        </select>
-
-        <select class="select" id="statusFilter">
-            <option value="">All statuses</option>
-            <option value="active">Active</option>
-            <option value="inactive">Inactive</option>
-        </select>
-
-    </div>
-</div>
-
-<!-- ROUTES TABLE -->
-<div class="table-wrap">
-    <table class="data-table" id="route-list">
-
-        <thead>
-            <tr>
-                <th>Route</th>
-                <th>Vehicle</th>
-                <th>Capacity</th>
-                <th>One-way fare</th>
-                <th>Return fare</th>
-                <th>Availability</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-
-        <tbody>
-
-            @if (routes.Any())
-            {
-                foreach (var route in routes)
+        <!-- CARDS / EMPTY -->
+        @if (routes.Any())
+        {
+            <div class="transport-card-grid" id="route-list">
+                @foreach (var route in routes)
                 {
                     var vehicle = route.TransportService;
                     var vehicleType = vehicle?.VehicleType ?? "Unknown";
                     var vehicleName = vehicle?.Name ?? "Unknown vehicle";
                     var capacity = vehicle?.PassengerCapacity ?? 0;
 
-                    <tr class="filterable"
-                        data-search="@($"{route.PickupCity} {route.DropoffCity} {vehicleName} {vehicleType}")"
-                        data-vehicle="@vehicleType"
-                        data-status="@(route.IsActive ? "active" : "inactive")">
+                    <article class="transport-card"
+                             data-search="@($"{route.PickupCity} {route.DropoffCity} {vehicleName} {vehicleType}")"
+                             data-vehicle="@vehicleType"
+                             data-status="@(route.IsActive ? "active" : "inactive")">
 
-                        <td>
-                            <span class="record-name">
-                                @route.PickupCity → @route.DropoffCity
+                        <!-- Head -->
+                        <div class="transport-card-head">
+                            <h3 class="transport-route-name">
+                                @route.PickupCity
+                                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>
+                                @route.DropoffCity
+                            </h3>
+                            <span class="transport-route-sub">Route #@route.Id</span>
+
+                            <span class="transport-status @(route.IsActive ? "active" : "inactive")">
+                                <i></i>
+                                @(route.IsActive ? "Active" : "Inactive")
                             </span>
+                        </div>
 
-                            <span class="record-sub">
-                                Route #@route.Id
-                            </span>
-                        </td>
+                        <!-- Body -->
+                        <div class="transport-card-body">
 
-                        <td>
-                            @vehicleName
-                            <span class="record-sub">@vehicleType</span>
-                        </td>
+                            <div class="transport-vehicle">
+                                <div class="transport-vehicle-icon">
+                                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 16.5V9a3 3 0 0 1 3-3h10a3 3 0 0 1 3 3v7.5"/><path d="M3 16.5h18"/><circle cx="7.5" cy="18.5" r="1.6"/><circle cx="16.5" cy="18.5" r="1.6"/></svg>
+                                </div>
+                                <div class="transport-vehicle-info">
+                                    <span class="transport-vehicle-name">@vehicleName</span>
+                                    <span class="transport-vehicle-meta">@vehicleType · @capacity seats</span>
+                                </div>
+                            </div>
 
-                        <td>@capacity seats</td>
+                            <div class="transport-fares">
+                                <div>
+                                    <span class="transport-fare-label">One-way</span>
+                                    <span class="transport-fare-value">PKR @route.OneWayFarePKR.ToString("N0")</span>
+                                </div>
+                                <div>
+                                    <span class="transport-fare-label">Return</span>
+                                    @if (route.ReturnFarePKR.HasValue)
+                                    {
+                                        <span class="transport-fare-value">PKR @route.ReturnFarePKR.Value.ToString("N0")</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="transport-fare-value empty">Same as outbound</span>
+                                    }
+                                </div>
+                            </div>
 
-                        <td>
-                            <strong>
-                                PKR @route.OneWayFarePKR.ToString("N0")
-                            </strong>
-                        </td>
-
-                        <td>
-                            @if (route.ReturnFarePKR.HasValue)
-                            {
-                                <strong>
-                                    PKR @route.ReturnFarePKR.Value.ToString("N0")
-                                </strong>
-                            }
-                            else
-                            {
-                                <span class="record-sub">
-                                    Same as outbound
-                                </span>
-                            }
-                        </td>
-
-                        <td>
-                            @if (route.IsActive)
-                            {
-                                <span class="status status-confirmed">
-                                    <i></i> Active
-                                </span>
-                            }
-                            else
-                            {
-                                <span class="status status-pending">
-                                    <i></i> Inactive
-                                </span>
-                            }
-                        </td>
-
-                        <td>
-                            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-
-                                <a class="btn btn-secondary"
+                            <div class="transport-actions">
+                                <a class="transport-btn transport-btn-secondary"
                                    href="@Url.Action("Transport", "Admin", new { editId = route.Id })#route-form">
                                     Edit
                                 </a>
@@ -191,267 +899,232 @@
                                       asp-action="ToggleTransportRoute"
                                       asp-route-id="@route.Id"
                                       method="post"
-                                      style="display:inline;">
-
+                                      onsubmit="return confirm('Are you sure you want to @(route.IsActive ? "deactivate" : "activate") this route?');">
                                     @Html.AntiForgeryToken()
-
                                     <button type="submit"
-                                            class="btn btn-secondary"
-                                            onclick="return confirm('Are you sure you want to @(route.IsActive ? "deactivate" : "activate") this route?');">
-
+                                            class="transport-btn @(route.IsActive ? "transport-btn-warn" : "transport-btn-ghost")">
                                         @(route.IsActive ? "Deactivate" : "Activate")
-
                                     </button>
-
                                 </form>
-
                             </div>
-                        </td>
-
-                    </tr>
-                }
-            }
-            else
-            {
-                <tr>
-                    <td colspan="7" style="text-align:center;padding:35px;">
-                        <strong>No transport routes configured.</strong>
-
-                        <div class="record-sub">
-                            Add your first route using the form below.
                         </div>
-                    </td>
-                </tr>
-            }
-
-        </tbody>
-    </table>
-</div>
-
-<!-- ADD / EDIT ROUTE FORM -->
-<div id="route-form"
-     style="margin-top:35px;padding:25px;border:1px solid var(--border, #e5e7eb);border-radius:14px;">
-
-    <div class="eyebrow">
-        @(editRoute == null ? "Create route" : "Update route")
-    </div>
-
-    <h2 style="margin-top:8px;">
-        @(editRoute == null ? "Add transport route" : "Edit transport route")
-    </h2>
-
-    <p>
-        Configure the vehicle, journey cities and one-way and optional return fares.
-    </p>
-
-    @if (!services.Any())
-    {
-        <div class="alert alert-danger">
-            No transport vehicles were found. Add a transport vehicle first.
-        </div>
-    }
-    else
-    {
-        <form asp-controller="Admin"
-              asp-action="SaveTransportRoute"
-              method="post">
-
-            @Html.AntiForgeryToken()
-
-            <input type="hidden"
-                   name="Id"
-                   value="@(editRoute?.Id ?? 0)" />
-
-            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:18px;">
-
-                <!-- VEHICLE -->
-                <div>
-                    <label class="form-label" for="TransportServiceId">
-                        Transport vehicle
-                    </label>
-
-                    <select class="select"
-                            id="TransportServiceId"
-                            name="TransportServiceId"
-                            required
-                            style="width:100%;">
-
-                        <option value="">Select vehicle</option>
-
-                        @foreach (var service in services)
-                        {
-                            <option value="@service.Id"
-                                    selected="@(editRoute?.TransportServiceId == service.Id)">
-                                @service.Name — @service.VehicleType
-                                (@service.PassengerCapacity seats)
-                            </option>
-                        }
-
-                    </select>
-                </div>
-
-                <!-- PICKUP -->
-                <div>
-                    <label class="form-label" for="PickupCity">
-                        Pickup city
-                    </label>
-
-                    <input class="input"
-                           id="PickupCity"
-                           name="PickupCity"
-                           value="@editRoute?.PickupCity"
-                           maxlength="150"
-                           placeholder="e.g. Islamabad"
-                           required
-                           style="width:100%;" />
-                </div>
-
-                <!-- DROPOFF -->
-                <div>
-                    <label class="form-label" for="DropoffCity">
-                        Drop-off city
-                    </label>
-
-                    <input class="input"
-                           id="DropoffCity"
-                           name="DropoffCity"
-                           value="@editRoute?.DropoffCity"
-                           maxlength="150"
-                           placeholder="e.g. Murree"
-                           required
-                           style="width:100%;" />
-                </div>
-
-                <!-- ONE WAY FARE -->
-                <div>
-                    <label class="form-label" for="OneWayFarePKR">
-                        One-way fare (PKR)
-                    </label>
-
-                    <input class="input"
-                           type="number"
-                           id="OneWayFarePKR"
-                           name="OneWayFarePKR"
-                           value="@(editRoute?.OneWayFarePKR.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture))"
-                           min="0.01"
-                           step="0.01"
-                           placeholder="5000"
-                           required
-                           style="width:100%;" />
-                </div>
-
-                <!-- OPTIONAL RETURN FARE -->
-                <div>
-                    <label class="form-label" for="ReturnFarePKR">
-                        Return fare (PKR)
-                        <span class="record-sub">Optional</span>
-                    </label>
-
-                    <input class="input"
-                           type="number"
-                           id="ReturnFarePKR"
-                           name="ReturnFarePKR"
-                           value="@(editRoute?.ReturnFarePKR?.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture))"
-                           min="0.01"
-                           step="0.01"
-                           placeholder="Leave empty to use one-way fare"
-                           style="width:100%;" />
-
-                    <span class="record-sub">
-                        Empty means the return fare equals the one-way fare.
-                    </span>
-                </div>
-
+                    </article>
+                }
             </div>
 
-            <!-- ACTIVE STATUS -->
-            <div style="margin-top:20px;">
+            <div id="no-results" class="transport-empty transport-no-results" hidden>
+                <div class="transport-empty-icon">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+                </div>
+                <h3>No matching routes</h3>
+                <p>Try a different search term or clear the filters to see all routes.</p>
+            </div>
 
-                <label style="display:flex;align-items:center;gap:10px;">
+            <div class="transport-panel-footer">
+                <span id="routeResultCount">Showing @routes.Count routes</span>
+            </div>
+        }
+        else
+        {
+            <div class="transport-empty">
+                <div class="transport-empty-icon">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 16.5V9a3 3 0 0 1 3-3h10a3 3 0 0 1 3 3v7.5"/><path d="M3 16.5h18"/><circle cx="7.5" cy="18.5" r="1.6"/><circle cx="16.5" cy="18.5" r="1.6"/></svg>
+                </div>
+                <h3>No transport routes configured</h3>
+                <p>Add your first route using the form below.</p>
+                <a href="#route-form" class="transport-btn transport-btn-primary">+ Add your first route</a>
+            </div>
+        }
+    </section>
 
+    <!-- ADD / EDIT FORM -->
+    <div id="route-form" class="transport-form-panel">
+        <div class="transport-form-head">
+            <div class="transport-eyebrow">
+                @(editRoute == null ? "Create route" : "Update route")
+            </div>
+            <h2>
+                @(editRoute == null ? "Add transport route" : "Edit transport route")
+            </h2>
+            <p>Configure the vehicle, journey cities and one-way and optional return fares.</p>
+        </div>
+
+        @if (!services.Any())
+        {
+            <div class="transport-alert transport-alert-error" role="alert">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                <span>No transport vehicles were found. Add a transport vehicle first.</span>
+            </div>
+        }
+        else
+        {
+            <form asp-controller="Admin"
+                  asp-action="SaveTransportRoute"
+                  method="post">
+
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="Id" value="@(editRoute?.Id ?? 0)" />
+
+                <div class="transport-form-grid">
+
+                    <!-- Vehicle -->
+                    <div class="transport-field">
+                        <label for="TransportServiceId">Transport vehicle</label>
+                        <select class="transport-select"
+                                id="TransportServiceId"
+                                name="TransportServiceId"
+                                required>
+                            <option value="">Select vehicle</option>
+                            @foreach (var service in services)
+                            {
+                                <option value="@service.Id"
+                                        selected="@(editRoute?.TransportServiceId == service.Id ? "selected" : null)">
+                                    @service.Name — @service.VehicleType (@service.PassengerCapacity seats)
+                                </option>
+                            }
+                        </select>
+                    </div>
+
+                    <!-- Pickup -->
+                    <div class="transport-field">
+                        <label for="PickupCity">Pickup city</label>
+                        <input class="transport-input"
+                               id="PickupCity"
+                               name="PickupCity"
+                               value="@editRoute?.PickupCity"
+                               maxlength="150"
+                               placeholder="e.g. Islamabad"
+                               required />
+                    </div>
+
+                    <!-- Drop-off -->
+                    <div class="transport-field">
+                        <label for="DropoffCity">Drop-off city</label>
+                        <input class="transport-input"
+                               id="DropoffCity"
+                               name="DropoffCity"
+                               value="@editRoute?.DropoffCity"
+                               maxlength="150"
+                               placeholder="e.g. Murree"
+                               required />
+                    </div>
+
+                    <!-- One-way fare -->
+                    <div class="transport-field">
+                        <label for="OneWayFarePKR">One-way fare (PKR)</label>
+                        <input class="transport-input"
+                               type="number"
+                               id="OneWayFarePKR"
+                               name="OneWayFarePKR"
+                               value="@(editRoute?.OneWayFarePKR.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture))"
+                               min="0.01"
+                               step="0.01"
+                               placeholder="5000"
+                               required />
+                    </div>
+
+                    <!-- Return fare -->
+                    <div class="transport-field">
+                        <label for="ReturnFarePKR">
+                            Return fare (PKR)
+                            <span class="optional">· Optional</span>
+                        </label>
+                        <input class="transport-input"
+                               type="number"
+                               id="ReturnFarePKR"
+                               name="ReturnFarePKR"
+                               value="@(editRoute?.ReturnFarePKR?.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture))"
+                               min="0.01"
+                               step="0.01"
+                               placeholder="Leave empty to use one-way fare" />
+                        <span class="transport-help">
+                            Empty means the return fare equals the one-way fare.
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Active -->
+                <label class="transport-checkbox-row">
                     <input type="checkbox"
                            name="IsActive"
                            value="true"
                            checked="@(editRoute == null || editRoute.IsActive)" />
-
-                    <span>
-                        Route is active and available for customer bookings
-                    </span>
-
+                    <span>Route is active and available for customer bookings</span>
                 </label>
 
-            </div>
+                <!-- Actions -->
+                <div class="transport-form-actions">
+                    <button type="submit" class="transport-btn transport-btn-primary">
+                        @(editRoute == null ? "Save route" : "Update route")
+                    </button>
 
-            <!-- FORM BUTTONS -->
-            <div style="display:flex;gap:10px;margin-top:24px;flex-wrap:wrap;">
-
-                <button type="submit" class="btn btn-primary">
-                    @(editRoute == null ? "Save route" : "Update route")
-                </button>
-
-                @if (editRoute != null)
-                {
-                    <a href="@Url.Action("Transport", "Admin")"
-                       class="btn btn-secondary">
-                        Cancel
-                    </a>
-                }
-
-            </div>
-
-        </form>
-    }
-
+                    @if (editRoute != null)
+                    {
+                        <a href="@Url.Action("Transport", "Admin")"
+                           class="transport-btn transport-btn-secondary">
+                            Cancel
+                        </a>
+                    }
+                </div>
+            </form>
+        }
+    </div>
 </div>
 
 <script>
-    document.addEventListener("DOMContentLoaded", function () {
-
+    (() => {
         const search = document.getElementById("routeSearch");
         const vehicleFilter = document.getElementById("vehicleFilter");
         const statusFilter = document.getElementById("statusFilter");
+        const cardGrid = document.getElementById("route-list");
+        const noResults = document.getElementById("no-results");
+        const resultCount = document.getElementById("routeResultCount");
 
-        const rows = document.querySelectorAll(
-            "#route-list tbody tr.filterable"
-        );
+        if (!search || !vehicleFilter || !statusFilter || !cardGrid) return;
+
+        const cards = Array.from(cardGrid.querySelectorAll(".transport-card"));
 
         function filterRoutes() {
-
             const searchValue = search.value.toLowerCase().trim();
             const vehicleValue = vehicleFilter.value.toLowerCase();
             const statusValue = statusFilter.value.toLowerCase();
+            let visible = 0;
 
-            rows.forEach(row => {
+            cards.forEach(card => {
+                const searchText = (card.dataset.search || "").toLowerCase();
+                const vehicle = (card.dataset.vehicle || "").toLowerCase();
+                const status = (card.dataset.status || "").toLowerCase();
 
-                const searchText =
-                    (row.dataset.search || "").toLowerCase();
+                const matches =
+                    searchText.includes(searchValue) &&
+                    (!vehicleValue || vehicle === vehicleValue) &&
+                    (!statusValue || status === statusValue);
 
-                const vehicle =
-                    (row.dataset.vehicle || "").toLowerCase();
+                card.hidden = !matches;
+                if (matches) visible++;
+            });
 
-                const status =
-                    (row.dataset.status || "").toLowerCase();
+            if (noResults) noResults.hidden = visible !== 0;
+            if (resultCount) {
+                resultCount.textContent = `Showing ${visible} of ${cards.length} routes`;
+            }
+        }
 
-                const matchesSearch =
-                    searchText.includes(searchValue);
-
-                const matchesVehicle =
-                    !vehicleValue || vehicle === vehicleValue;
-
-                const matchesStatus =
-                    !statusValue || status === statusValue;
-
-                row.style.display =
-                    matchesSearch && matchesVehicle && matchesStatus
-                        ? ""
-                        : "none";
-
+        // rAF throttle — 1 filter per frame
+        let framePending = false;
+        function scheduleFilter() {
+            if (framePending) return;
+            framePending = true;
+            requestAnimationFrame(() => {
+                filterRoutes();
+                framePending = false;
             });
         }
 
-        search.addEventListener("input", filterRoutes);
+        search.addEventListener("input", scheduleFilter);
         vehicleFilter.addEventListener("change", filterRoutes);
         statusFilter.addEventListener("change", filterRoutes);
 
-    });
+        filterRoutes();
+    })();
 </script>

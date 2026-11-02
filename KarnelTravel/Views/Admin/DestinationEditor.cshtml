@@ -1,4 +1,3 @@
-
 @model KarnelTravel.Models.Destination
 
 @{
@@ -9,13 +8,397 @@
     ViewData["Section"] = "Destinations";
 }
 
+<style>
+
+    /* ---------- Editor grid ---------- */
+    .dest-editor {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 340px;
+        gap: 24px;
+        align-items: start;
+    }
+
+    .dest-editor-main {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        min-width: 0;
+    }
+
+    .dest-editor-aside {
+        position: sticky;
+        top: calc(var(--topbar-h, 72px) + 24px);
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        height: max-content;
+    }
+
+    /* ---------- Form card ---------- */
+    .dest-form-card {
+        background: var(--white, #fff);
+        border: 1px solid var(--line, #e5e9e3);
+        border-radius: 14px;
+        padding: 28px;
+        transition: border-color .18s ease, box-shadow .18s ease;
+    }
+    .dest-form-card:hover {
+        border-color: var(--line-hi, #d6dcd4);
+    }
+    .dest-form-card h2 {
+        font-family: var(--serif, Georgia, serif);
+        font-weight: 400;
+        font-size: 24px;
+        color: var(--forest, #164734);
+        letter-spacing: -.01em;
+        margin: 0 0 4px;
+        line-height: 1.2;
+    }
+    .dest-form-card > p {
+        color: var(--muted, #758078);
+        font-size: 13px;
+        margin: 0 0 24px;
+        line-height: 1.5;
+    }
+
+    /* ---------- Two-column field grid ---------- */
+    .dest-grid-2 {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 18px;
+    }
+    .dest-grid-2 .dest-full { grid-column: 1 / -1; }
+
+    /* ---------- Field ---------- */
+    .dest-field {
+        display: flex;
+        flex-direction: column;
+        gap: 7px;
+    }
+    .dest-field label {
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--ink, #1b2922);
+        letter-spacing: .01em;
+    }
+    .dest-field .hint {
+        font-size: 11.5px;
+        color: var(--muted, #758078);
+        line-height: 1.4;
+    }
+
+    /* ---------- Inputs ---------- */
+    .dest-input,
+    .dest-textarea {
+        width: 100%;
+        border: 1px solid var(--line, #e5e9e3);
+        border-radius: 10px;
+        background: var(--white, #fff);
+        color: var(--ink, #1b2922);
+        font-family: inherit;
+        font-size: 13.5px;
+        line-height: 1.5;
+        transition: border-color .14s ease, box-shadow .14s ease;
+    }
+    .dest-input { height: 44px; padding: 0 14px; }
+    .dest-textarea {
+        min-height: 100px;
+        padding: 12px 14px;
+        resize: vertical;
+    }
+    .dest-input:hover,
+    .dest-textarea:hover {
+        border-color: var(--line-hi, #d6dcd4);
+    }
+    .dest-input:focus,
+    .dest-textarea:focus {
+        outline: none;
+        border-color: var(--accent, #3c9169);
+        box-shadow: 0 0 0 3px rgba(60,145,105,.20);
+    }
+
+    /* ---------- File input ---------- */
+    .dest-file-input {
+        padding: 8px 12px;
+        height: auto;
+        min-height: 44px;
+        cursor: pointer;
+    }
+    .dest-file-input::file-selector-button {
+        margin-right: 12px;
+        padding: 8px 14px;
+        border: 0;
+        border-radius: 8px;
+        background: var(--soft, #edf2ed);
+        color: var(--forest, #164734);
+        font-weight: 600;
+        font-size: 12.5px;
+        cursor: pointer;
+        transition: background .14s ease;
+        font-family: inherit;
+    }
+    .dest-file-input::file-selector-button:hover {
+        background: var(--soft-2, #e3ece5);
+    }
+
+    /* ---------- Current image ---------- */
+    .dest-image-current {
+        position: relative;
+        border-radius: 12px;
+        overflow: hidden;
+        border: 1px solid var(--line, #e5e9e3);
+        margin-bottom: 16px;
+        max-width: 420px;
+    }
+    .dest-image-current img {
+        display: block;
+        width: 100%;
+        height: 200px;
+        object-fit: cover;
+    }
+    .dest-image-current .caption {
+        position: absolute;
+        left: 10px;
+        bottom: 10px;
+        padding: 4px 10px;
+        background: rgba(15,50,37,.78);
+        color: #fff;
+        font-size: 10.5px;
+        font-weight: 700;
+        letter-spacing: .06em;
+        text-transform: uppercase;
+        border-radius: 6px;
+        backdrop-filter: blur(6px);
+        -webkit-backdrop-filter: blur(6px);
+    }
+
+    /* ---------- New image preview ---------- */
+    .dest-image-preview {
+        width: 100%;
+        max-width: 420px;
+        height: 200px;
+        object-fit: cover;
+        border-radius: 12px;
+        margin-top: 12px;
+        border: 1px solid var(--accent, #3c9169);
+        box-shadow: 0 0 0 3px rgba(60,145,105,.12);
+    }
+
+    /* ---------- Checkbox cards ---------- */
+    .dest-checks {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+    }
+    .dest-check {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        padding: 14px 16px;
+        border: 1px solid var(--line, #e5e9e3);
+        border-radius: 12px;
+        background: var(--surface-sunken, #fbfcfa);
+        cursor: pointer;
+        user-select: none;
+        transition: border-color .14s ease, background .14s ease;
+    }
+    .dest-check:hover {
+        border-color: var(--line-hi, #d6dcd4);
+        background: var(--white, #fff);
+    }
+    .dest-check:has(input:checked) {
+        border-color: var(--accent, #3c9169);
+        background: rgba(60,145,105,.06);
+    }
+    .dest-check input[type="checkbox"] {
+        appearance: none;
+        -webkit-appearance: none;
+        width: 20px;
+        height: 20px;
+        border-radius: 6px;
+        border: 1.5px solid var(--line-hi, #d6dcd4);
+        background: var(--white, #fff);
+        cursor: pointer;
+        flex-shrink: 0;
+        margin: 1px 0 0;
+        position: relative;
+        transition: background .14s ease, border-color .14s ease;
+    }
+    .dest-check input[type="checkbox"]:checked {
+        background: var(--accent, #3c9169);
+        border-color: var(--accent, #3c9169);
+    }
+    .dest-check input[type="checkbox"]:checked::after {
+        content: "";
+        position: absolute;
+        left: 6px;
+        top: 2px;
+        width: 5px;
+        height: 10px;
+        border: solid #fff;
+        border-width: 0 2px 2px 0;
+        transform: rotate(45deg);
+    }
+    .dest-check input[type="checkbox"]:focus-visible {
+        outline: 2px solid var(--accent, #3c9169);
+        outline-offset: 2px;
+    }
+    .dest-check-body { flex: 1; min-width: 0; }
+    .dest-check-title {
+        display: block;
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--ink, #1b2922);
+        margin-bottom: 2px;
+    }
+    .dest-check-desc {
+        display: block;
+        font-size: 11.5px;
+        color: var(--muted, #758078);
+        line-height: 1.45;
+    }
+
+    /* ---------- Validation ---------- */
+    .dest-field .text-danger,
+    .dest-form-card .text-danger {
+        color: #ae5d50;
+        font-size: 11.5px;
+        font-weight: 500;
+        margin-top: 2px;
+        line-height: 1.4;
+    }
+    .dest-validation-summary.validation-summary-valid { display: none; }
+    .dest-validation-summary.validation-summary-errors {
+        padding: 12px 16px;
+        border-radius: 10px;
+        background: rgba(174,93,80,.08);
+        border: 1px solid rgba(174,93,80,.22);
+        color: #8b4137;
+        font-size: 13px;
+        margin-bottom: 16px;
+        line-height: 1.5;
+    }
+    .dest-validation-summary.validation-summary-errors ul {
+        margin: 0;
+        padding-left: 18px;
+    }
+    .dest-validation-summary.validation-summary-errors li { margin: 2px 0; }
+
+    /* ---------- Sticky submit row ---------- */
+    .dest-submit-row {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 10px;
+        padding: 16px 20px;
+        background: var(--white, #fff);
+        border: 1px solid var(--line, #e5e9e3);
+        border-radius: 12px;
+        position: sticky;
+        bottom: 16px;
+        box-shadow: 0 -8px 24px -12px rgba(22,71,52,.12);
+    }
+    .dest-submit-row .spacer { flex: 1; }
+    .dest-submit-hint {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 12px;
+        color: var(--muted, #758078);
+    }
+    .dest-submit-hint i {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--accent, #3c9169);
+    }
+
+    /* ---------- Sidebar cards ---------- */
+    .dest-side-card {
+        background: var(--white, #fff);
+        border: 1px solid var(--line, #e5e9e3);
+        border-radius: 14px;
+        padding: 20px;
+    }
+    .dest-side-card h3 {
+        font-family: var(--serif, Georgia, serif);
+        font-weight: 400;
+        font-size: 18px;
+        color: var(--forest, #164734);
+        margin: 0 0 14px;
+        letter-spacing: -.01em;
+    }
+
+    .dest-checklist {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+    .dest-checklist li {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        font-size: 12.5px;
+        color: var(--ink, #1b2922);
+        line-height: 1.5;
+    }
+    .dest-checklist li::before {
+        content: "✓";
+        flex-shrink: 0;
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        background: rgba(60,145,105,.12);
+        color: var(--accent, #3c9169);
+        font-size: 11px;
+        font-weight: 700;
+        display: grid;
+        place-items: center;
+        margin-top: 1px;
+        line-height: 1;
+    }
+
+    .dest-meta { display: flex; flex-direction: column; }
+    .dest-meta-row {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        font-size: 12.5px;
+        padding: 9px 0;
+        border-bottom: 1px solid var(--line, #e5e9e3);
+    }
+    .dest-meta-row:first-child { padding-top: 0; }
+    .dest-meta-row:last-child { border-bottom: 0; padding-bottom: 0; }
+    .dest-meta-label { color: var(--muted, #758078); }
+    .dest-meta-value {
+        color: var(--ink, #1b2922);
+        font-weight: 600;
+        text-align: right;
+    }
+
+    /* ---------- Responsive ---------- */
+    @@media (max-width: 1024px) {
+        .dest-editor { grid-template-columns: 1fr; }
+        .dest-editor-aside { position: static; }
+    }
+    @@media (max-width: 640px) {
+        .dest-grid-2 { grid-template-columns: 1fr; }
+        .dest-checks { grid-template-columns: 1fr; }
+        .dest-form-card { padding: 20px; }
+        .dest-submit-row { position: static; }
+        .dest-submit-hint { display: none; }
+    }
+</style>
+
 <div class="page-heading">
     <div>
         <div class="eyebrow">Atlas / Destination editor</div>
         <h1>@(isEdit ? "Refine the story." : "Tell a better story.")</h1>
         <p>Manage destination details saved to the Karnel travel database.</p>
     </div>
-
     <a class="btn btn-quiet" href="/Admin/Destinations">
         ← Back to atlas
     </a>
@@ -26,181 +409,173 @@
       action="@(isEdit ? $"/Admin/Destinations/Edit/{Model.Id}" : "/Admin/Destinations/Create")">
 
     @Html.AntiForgeryToken()
-
     <input type="hidden" asp-for="Id" />
 
-    <div asp-validation-summary="ModelOnly"
-         class="text-danger"
-         role="alert"></div>
+    <div asp-validation-summary="ModelOnly" class="dest-validation-summary" role="alert"></div>
 
-    <div class="editor-layout">
-        <div>
-            <section class="form-section">
+    <div class="dest-editor">
+        <div class="dest-editor-main">
+
+            <!-- ============ Identity ============ -->
+            <section class="dest-form-card">
                 <h2>Identity</h2>
                 <p>The essentials visitors see first.</p>
 
-                <div class="form-grid">
-                    <div class="field">
+                <div class="dest-grid-2">
+                    <div class="dest-field">
                         <label asp-for="Name">Destination name</label>
-                        <input asp-for="Name"
-                               class="input"
-                               required
-                               maxlength="150" />
+                        <input asp-for="Name" class="dest-input" required maxlength="150" />
                         <span asp-validation-for="Name" class="text-danger"></span>
                     </div>
 
-                    <div class="field">
+                    <div class="dest-field">
                         <label asp-for="Slug">URL slug</label>
-                        <input asp-for="Slug"
-                               class="input"
-                               required
-                               maxlength="180" />
+                        <input asp-for="Slug" class="dest-input" required maxlength="180" />
                         <span asp-validation-for="Slug" class="text-danger"></span>
                     </div>
 
-                    <div class="field">
+                    <div class="dest-field">
                         <label asp-for="Region">Region</label>
-                        <input asp-for="Region"
-                               class="input"
-                               placeholder="e.g. Gilgit-Baltistan"
-                               maxlength="100" />
+                        <input asp-for="Region" class="dest-input"
+                               placeholder="e.g. Gilgit-Baltistan" maxlength="100" />
                         <span asp-validation-for="Region" class="text-danger"></span>
                     </div>
 
-                    <div class="field">
+                    <div class="dest-field">
                         <label asp-for="DisplayOrder">Display order</label>
-                        <input asp-for="DisplayOrder"
-                               class="input"
-                               type="number"
-                               min="0" />
+                        <input asp-for="DisplayOrder" class="dest-input" type="number" min="0" />
                         <span asp-validation-for="DisplayOrder" class="text-danger"></span>
                     </div>
 
-                    <div class="field full">
+                    <div class="dest-field dest-full">
                         <label asp-for="ShortDescription">Short summary</label>
-                        <textarea asp-for="ShortDescription"
-                                  class="input"
-                                  rows="3"
-                                  maxlength="500"></textarea>
+                        <textarea asp-for="ShortDescription" class="dest-textarea" rows="3" maxlength="500"></textarea>
+                        <span class="hint">Up to 500 characters. Shown on cards and previews.</span>
                         <span asp-validation-for="ShortDescription" class="text-danger"></span>
                     </div>
 
-                    <div class="field full">
+                    <div class="dest-field dest-full">
                         <label asp-for="Description">Long description</label>
-                        <textarea asp-for="Description"
-                                  class="input"
-                                  rows="7"></textarea>
+                        <textarea asp-for="Description" class="dest-textarea" rows="7"></textarea>
                         <span asp-validation-for="Description" class="text-danger"></span>
                     </div>
                 </div>
             </section>
 
-            <section class="form-section">
+            <!-- ============ Travel notes ============ -->
+            <section class="dest-form-card">
                 <h2>Travel notes</h2>
                 <p>Help visitors plan their trip.</p>
 
-                <div class="form-grid">
-                    <div class="field full">
-                        <label asp-for="BestTimeToVisit">Best time to visit</label>
-                        <input asp-for="BestTimeToVisit"
-                               class="input"
-                               placeholder="e.g. April to October"
-                               maxlength="150" />
-                        <span asp-validation-for="BestTimeToVisit" class="text-danger"></span>
-                    </div>
+                <div class="dest-field">
+                    <label asp-for="BestTimeToVisit">Best time to visit</label>
+                    <input asp-for="BestTimeToVisit" class="dest-input"
+                           placeholder="e.g. April to October" maxlength="150" />
+                    <span asp-validation-for="BestTimeToVisit" class="text-danger"></span>
                 </div>
             </section>
 
-            <section class="form-section">
+            <!-- ============ Media ============ -->
+            <section class="dest-form-card">
                 <h2>Media</h2>
                 <p>Select an image from your computer. It will be uploaded to your website.</p>
 
-                <div class="field full">
+                @if (!string.IsNullOrWhiteSpace(Model.ImageUrl))
+                {
+                    <div class="dest-image-current">
+                        <img src="@Model.ImageUrl" alt="Current destination image" />
+                        <span class="caption">Current image</span>
+                    </div>
+                }
+
+                <div class="dest-field">
                     <label for="imageFile">Main destination image</label>
-
-                    @if (!string.IsNullOrWhiteSpace(Model.ImageUrl))
-                    {
-                        <div style="margin-bottom:12px;">
-                            <img src="@Model.ImageUrl"
-                                 alt="Current destination image"
-                                 style="width:100%;max-width:420px;max-height:240px;object-fit:cover;border-radius:12px;" />
-                            <p class="muted">Current image</p>
-                        </div>
-                    }
-
                     <input type="file"
                            id="imageFile"
                            name="imageFile"
-                           class="input"
+                           class="dest-input dest-file-input"
                            accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" />
-
                     <span asp-validation-for="ImageUrl" class="text-danger"></span>
-
-                    <p class="muted">JPG, PNG or WebP · Maximum 5 MB</p>
+                    <span class="hint">JPG, PNG or WebP · Maximum 5 MB</span>
 
                     <img id="image-preview"
+                         class="dest-image-preview"
                          alt="Selected image preview"
-                         style="display:none;width:100%;max-width:420px;max-height:240px;object-fit:cover;border-radius:12px;margin-top:12px;" />
+                         style="display:none;" />
                 </div>
             </section>
 
-            <section class="form-section">
+            <!-- ============ Publication ============ -->
+            <section class="dest-form-card">
                 <h2>Publication</h2>
                 <p>Control how this destination is managed.</p>
 
-                <div class="field">
-                    <label>
+                <div class="dest-checks">
+                    <label class="dest-check">
                         <input asp-for="IsPublished" />
-                        Published
+                        <span class="dest-check-body">
+                            <span class="dest-check-title">Published</span>
+                            <span class="dest-check-desc">Visible on the public website.</span>
+                        </span>
                     </label>
-                </div>
 
-                <div class="field">
-                    <label>
+                    <label class="dest-check">
                         <input asp-for="IsFeatured" />
-                        Featured destination
+                        <span class="dest-check-body">
+                            <span class="dest-check-title">Featured destination</span>
+                            <span class="dest-check-desc">Pinned in highlighted sections.</span>
+                        </span>
                     </label>
                 </div>
             </section>
 
-            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;">
+            <!-- ============ Submit row ============ -->
+            <div class="dest-submit-row">
                 <button class="btn btn-primary" type="submit">
                     @(isEdit ? "Save changes" : "Create destination")
                 </button>
-
-                <a class="btn btn-quiet" href="/Admin/Destinations">
-                    Cancel
-                </a>
+                <a class="btn btn-quiet" href="/Admin/Destinations">Cancel</a>
+                <span class="spacer"></span>
+                <span class="dest-submit-hint">
+                    <i></i> Saved to the Karnel travel database
+                </span>
             </div>
         </div>
 
-        <aside class="editor-aside">
-            <div class="panel section-space">
-                <div class="panel-title">
-                    <h3>Before publishing</h3>
-                </div>
-
-                <p>✓ Add a clear destination name</p>
-                <p>✓ Use a unique URL slug</p>
-                <p>✓ Write a useful summary</p>
-                <p>✓ Select a suitable image</p>
-                <p>✓ Check publication status</p>
+        <!-- ============ Sidebar ============ -->
+        <aside class="dest-editor-aside">
+            <div class="dest-side-card">
+                <h3>Before publishing</h3>
+                <ul class="dest-checklist">
+                    <li>Add a clear destination name</li>
+                    <li>Use a unique URL slug</li>
+                    <li>Write a useful summary</li>
+                    <li>Select a suitable image</li>
+                    <li>Check publication status</li>
+                </ul>
             </div>
 
             @if (isEdit)
             {
-                <div class="panel section-space">
-                    <div class="panel-title">
-                        <h3>Record information</h3>
+                <div class="dest-side-card">
+                    <h3>Record information</h3>
+                    <div class="dest-meta">
+                        <div class="dest-meta-row">
+                            <span class="dest-meta-label">Destination ID</span>
+                            <span class="dest-meta-value">@Model.Id</span>
+                        </div>
+                        <div class="dest-meta-row">
+                            <span class="dest-meta-label">Created</span>
+                            <span class="dest-meta-value">@Model.CreatedAt.ToString("dd MMM yyyy")</span>
+                        </div>
+                        @if (Model.UpdatedAt.HasValue)
+                        {
+                            <div class="dest-meta-row">
+                                <span class="dest-meta-label">Last updated</span>
+                                <span class="dest-meta-value">@Model.UpdatedAt.Value.ToString("dd MMM yyyy")</span>
+                            </div>
+                        }
                     </div>
-
-                    <p>Destination ID: @Model.Id</p>
-                    <p>Created: @Model.CreatedAt.ToString("dd MMM yyyy")</p>
-
-                    @if (Model.UpdatedAt.HasValue)
-                    {
-                        <p>Last updated: @Model.UpdatedAt.Value.ToString("dd MMM yyyy")</p>
-                    }
                 </div>
             }
         </aside>
@@ -211,6 +586,8 @@
     (() => {
         const input = document.getElementById("imageFile");
         const preview = document.getElementById("image-preview");
+
+        if (!input || !preview) return;
 
         let previousUrl = null;
 
@@ -228,11 +605,7 @@
                 return;
             }
 
-            const allowedTypes = [
-                "image/jpeg",
-                "image/png",
-                "image/webp"
-            ];
+            const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
 
             if (!allowedTypes.includes(file.type)) {
                 alert("Choose a JPG, PNG, or WebP image.");

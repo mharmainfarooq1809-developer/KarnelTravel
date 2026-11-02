@@ -29,6 +29,9 @@ namespace KarnelTravel.Data
         public DbSet<TripInquiry> TripInquiries => Set<TripInquiry>();
         public DbSet<Booking> Bookings => Set<Booking>();
 
+        // REVIEWS
+        public DbSet<Review> Reviews => Set<Review>();
+
         protected override void OnModelCreating(ModelBuilder model)
         {
             base.OnModelCreating(model);
@@ -214,7 +217,6 @@ namespace KarnelTravel.Data
                 e.Property(x => x.EstimatedTotalPKR)
                     .HasPrecision(18, 2);
 
-                // Transport fare snapshot precision
                 e.Property(x => x.TransportOneWayFarePKR)
                     .HasPrecision(18, 2);
 
@@ -271,14 +273,90 @@ namespace KarnelTravel.Data
                 e.Property(x => x.BudgetPKR).HasPrecision(18, 2);
                 e.Property(x => x.Status).HasMaxLength(30).IsRequired();
             });
+
+            // REVIEWS
+            model.Entity<Review>(e =>
+            {
+                e.ToTable("Reviews", table =>
+                {
+                    table.HasCheckConstraint(
+                        "CK_Reviews_ExactlyOneListing",
+                        @"(
+                            CASE WHEN DestinationId IS NULL THEN 0 ELSE 1 END +
+                            CASE WHEN HotelId IS NULL THEN 0 ELSE 1 END +
+                            CASE WHEN RestaurantId IS NULL THEN 0 ELSE 1 END +
+                            CASE WHEN ResortId IS NULL THEN 0 ELSE 1 END +
+                            CASE WHEN TransportServiceId IS NULL THEN 0 ELSE 1 END +
+                            CASE WHEN TourPackageId IS NULL THEN 0 ELSE 1 END
+                        ) = 1"
+                    );
+
+                    table.HasCheckConstraint(
+                        "CK_Reviews_Rating",
+                        "[Rating] >= 1 AND [Rating] <= 5"
+                    );
+                });
+
+                e.HasKey(x => x.Id);
+
+                e.Property(x => x.ReviewerName)
+                    .HasMaxLength(100)
+                    .IsRequired();
+
+                e.Property(x => x.Title)
+                    .HasMaxLength(150)
+                    .IsRequired();
+
+                e.Property(x => x.Comment)
+                    .HasMaxLength(2000)
+                    .IsRequired();
+
+                e.Property(x => x.CreatedAt)
+                    .HasDefaultValueSql("GETUTCDATE()");
+
+                e.Property(x => x.Status)
+                    .HasConversion<int>()
+                    .IsRequired();
+
+                e.HasIndex(x => new { x.Status, x.CreatedAt });
+
+                e.HasOne(x => x.Destination)
+                    .WithMany()
+                    .HasForeignKey(x => x.DestinationId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                e.HasOne(x => x.Hotel)
+                    .WithMany()
+                    .HasForeignKey(x => x.HotelId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                e.HasOne(x => x.Restaurant)
+                    .WithMany()
+                    .HasForeignKey(x => x.RestaurantId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                e.HasOne(x => x.Resort)
+                    .WithMany()
+                    .HasForeignKey(x => x.ResortId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                e.HasOne(x => x.TransportService)
+                    .WithMany()
+                    .HasForeignKey(x => x.TransportServiceId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                e.HasOne(x => x.TourPackage)
+                    .WithMany()
+                    .HasForeignKey(x => x.TourPackageId)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
         }
 
         private static void ConfigureDestinationRelationship<TEntity>(
             Microsoft.EntityFrameworkCore.Metadata.Builders.EntityTypeBuilder<TEntity> e)
             where TEntity : class
         {
-            // Relationship configuration is declared explicitly for each
-            // listing entity below, because each has its own FK property.
+            // Existing destination relationship configuration.
         }
     }
 }

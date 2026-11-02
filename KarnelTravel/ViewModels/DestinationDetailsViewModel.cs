@@ -12,4 +12,10 @@ public class DestinationDetailsViewModel
     public List<Restaurant> Restaurants { get; set; } = new();
 
     public List<Resort> Resorts { get; set; } = new();
+
+    public List<Review> Reviews { get; set; } = new();
+
+    public double AverageRating { get; set; }
+
+    public int TotalReviews { get; set; }
 }
