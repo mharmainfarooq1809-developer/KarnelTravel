@@ -1,0 +1,86 @@
+﻿
+@model KarnelTravel.Models.TourPackage
+
+@{
+    ViewData["Title"] = Model.Name + " | Karnel Travel Guide";
+    var departures = Model.Departures
+        .Where(d => d.IsActive && d.DepartureDate.Date >= DateTime.Today)
+        .OrderBy(d => d.DepartureDate)
+        .ToList();
+}
+
+<section style="padding:130px 6% 60px; background:#173b32; color:#f7f4eb;">
+    <p>@Model.DestinationName</p>
+    <h1 style="font-size:clamp(38px,6vw,68px);">@Model.Name</h1>
+    <p>@Model.ShortDescription</p>
+</section>
+
+<section style="padding:60px 6%; background:#f7f4eb; color:#243b32;">
+    @if (!string.IsNullOrWhiteSpace(Model.ImageUrl))
+    {
+        <img src="@Model.ImageUrl" alt="@Model.Name"
+             style="width:100%; max-height:500px; object-fit:cover; border-radius:12px;" />
+    }
+
+    <div style="max-width:850px; margin:40px auto; line-height:1.9;">
+        <h2>About This Journey</h2>
+        <p>@Model.Description</p>
+
+        <h2 style="margin-top:35px;">Tour Information</h2>
+        <p>Duration: @Model.DurationDays days</p>
+        <p>Adult price: @(Model.PricePerAdult.HasValue ? "PKR " + Model.PricePerAdult.Value.ToString("N0") : "Price on request")</p>
+        <p>Child price: @(Model.PricePerChild.HasValue ? "PKR " + Model.PricePerChild.Value.ToString("N0") : "Price on request")</p>
+
+        <h2 style="margin-top:35px;">Tour Itinerary</h2>
+        @if (Model.ItineraryDays.Any())
+        {
+            @foreach (var day in Model.ItineraryDays.OrderBy(d => d.DayNumber))
+            {
+                <article style="padding:20px 0; border-bottom:1px solid #d8d5ca;">
+                    <h3>Day @day.DayNumber — @day.Title</h3>
+                    <p>@day.Description</p>
+                    @if (!string.IsNullOrWhiteSpace(day.OvernightLocation))
+                    {
+                        <p>Overnight: @day.OvernightLocation</p>
+                    }
+                </article>
+            }
+        }
+        else
+        {
+            <p>Itinerary details will be announced soon.</p>
+        }
+
+        <h2 style="margin-top:35px;">What's Included</h2>
+        <p style="white-space:pre-line;">@Model.Inclusions</p>
+
+        <h2 style="margin-top:25px;">What's Not Included</h2>
+        <p style="white-space:pre-line;">@Model.Exclusions</p>
+
+        <h2 style="margin-top:35px;">Available Departures</h2>
+
+        @if (departures.Any())
+        {
+            @foreach (var departure in departures)
+            {
+                <div style="padding:18px; background:white; margin:12px 0; border-radius:8px;">
+                    <strong>@departure.DepartureDate.ToString("dd MMM yyyy")</strong>
+                    <p>Return: @departure.ReturnDate.ToString("dd MMM yyyy")</p>
+                    <p>Available seats: @departure.AvailableSeats</p>
+                </div>
+            }
+        }
+        else
+        {
+            <p>Contact us for custom travel dates.</p>
+        }
+
+        <a asp-controller="Bookings"
+           asp-action="Create"
+           asp-route-serviceType="tour"
+           asp-route-serviceId="@Model.Id"
+           style="display:inline-block; margin-top:25px; padding:16px 30px; background:#24483b; color:white; text-decoration:none; border-radius:5px;">
+            Book This Tour
+        </a>
+    </div>
+</section>

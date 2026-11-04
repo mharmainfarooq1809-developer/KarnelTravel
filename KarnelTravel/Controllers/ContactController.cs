@@ -1,43 +1,56 @@
+
+using KarnelTravel.Data;
 using KarnelTravel.Models;
 using Microsoft.AspNetCore.Mvc;
-using System.Collections.Generic;
-using System.Linq;
+using Microsoft.EntityFrameworkCore;
 
 namespace KarnelTravel.Controllers
 {
     public class ContactController : Controller
     {
-        // Simple in-memory store for demo purposes.
-        private static readonly List<ContactInquiry> _inquiries = new List<ContactInquiry>();
-        private static int _nextId = 1;
+        private readonly ApplicationDbContext _db;
 
+        public ContactController(ApplicationDbContext db)
+        {
+            _db = db;
+        }
+
+        // Display contact form
         [HttpGet]
         public IActionResult Index()
         {
             return View(new ContactInquiry());
         }
 
+        // Save contact inquiry
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult Index(ContactInquiry model)
+        public async Task<IActionResult> Index(ContactInquiry model)
         {
             if (!ModelState.IsValid)
             {
                 return View(model);
             }
 
-            model.Id = _nextId++;
-            _inquiries.Add(model);
+            model.Id = 0;
+            model.Name = model.Name.Trim();
+            model.Email = model.Email.Trim();
+            model.Phone = model.Phone?.Trim();
+            model.Category = model.Category.Trim();
+            model.Message = model.Message.Trim();
 
-            TempData["ContactSuccess"] = "Thank you — your inquiry has been received. We will contact you soon.";
+            model.SubmittedAt = DateTime.UtcNow;
+            model.Status = "New";
+            model.AdminNotes = null;
+
+            _db.ContactInquiries.Add(model);
+
+            await _db.SaveChangesAsync();
+
+            TempData["ContactSuccess"] =
+                "Thank you — your inquiry has been received. We will contact you soon.";
+
             return RedirectToAction(nameof(Index));
-        }
-
-        // For basic admin/demo viewing of inquiries (not linked in nav)
-        [HttpGet]
-        public IActionResult Submissions()
-        {
-            return View(_inquiries.OrderByDescending(i => i.SubmittedAt).ToList());
         }
     }
 }

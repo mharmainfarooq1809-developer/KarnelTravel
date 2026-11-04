@@ -1,58 +1,892 @@
 @model KarnelTravel.Models.ContactInquiry
 @{
     ViewData["Title"] = "Contact Us";
+    ViewData["Description"] = "Get in touch with Karnel Travel Guide — ask about destinations, transport, hotels, restaurants, resorts or a complete journey.";
 }
 
-<div class="container section">
-    <h1>Contact Us</h1>
+@section Styles {
+    <style>
+        @@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,500;1,600&display=swap');
 
-    @if (TempData["ContactSuccess"] != null)
-    {
-        <div class="notice success">@TempData["ContactSuccess"]</div>
-    }
+        /* ============================================================
+           GLOBAL ENHANCEMENTS
+        ============================================================ */
+        :root {
+            --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+            --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+            --contact-y: clamp(72px, 8.5vw, 120px);
+        }
 
-    <form asp-action="Index" method="post" novalidate>
-        <div>
-            <label for="Name">Name</label>
-            <input asp-for="Name" id="Name" />
-            <span asp-validation-for="Name" class="validation"></span>
+        html { scroll-behavior: smooth; }
+
+        ::selection { background: var(--forest); color: var(--ivory); }
+
+        ::-webkit-scrollbar { width: 10px; }
+        ::-webkit-scrollbar-track { background: var(--ivory); }
+        ::-webkit-scrollbar-thumb {
+            background: var(--moss);
+            border-radius: 10px;
+            border: 2px solid var(--ivory);
+        }
+        ::-webkit-scrollbar-thumb:hover { background: var(--forest); }
+
+        /* Reveal system (activated by JS, safe fallback if JS off) */
+        .reveal-pending {
+            opacity: 0;
+            transform: translateY(40px);
+            filter: blur(6px);
+            transition:
+                opacity 1.05s var(--ease-out),
+                transform 1.05s var(--ease-out),
+                filter 1.05s var(--ease-out);
+        }
+        .reveal-pending.is-revealed {
+            opacity: 1 !important;
+            transform: none !important;
+            filter: blur(0) !important;
+        }
+
+        /* ============================================================
+           SHARED ATOMS
+        ============================================================ */
+        .eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            margin: 0 0 16px;
+            font-family: var(--sans);
+            font-size: 0.66rem;
+            font-weight: 600;
+            letter-spacing: 0.24em;
+            text-transform: uppercase;
+            color: var(--moss);
+        }
+        .eyebrow::before {
+            content: '';
+            width: 28px;
+            height: 1px;
+            background: currentColor;
+            flex: 0 0 auto;
+            opacity: 0.85;
+        }
+        .eyebrow--light { color: var(--sage); }
+
+        .btn {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            min-height: 54px;
+            padding: 0 30px;
+            overflow: hidden;
+            isolation: isolate;
+            border: 1px solid transparent;
+            border-radius: var(--radius);
+            background: var(--forest);
+            color: var(--ivory);
+            font-family: var(--sans);
+            font-size: 0.74rem;
+            font-weight: 600;
+            letter-spacing: 0.16em;
+            text-transform: uppercase;
+            text-decoration: none;
+            cursor: pointer;
+            transition:
+                transform 0.5s var(--ease-out),
+                box-shadow 0.5s var(--ease-out),
+                background 0.4s var(--ease),
+                color 0.4s var(--ease),
+                border-color 0.4s var(--ease);
+        }
+        .btn::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            z-index: 1;
+            background: linear-gradient(120deg,
+                transparent 20%,
+                rgba(255, 255, 255, 0.35) 50%,
+                transparent 80%);
+            transform: translateX(-120%);
+            transition: transform 0.85s var(--ease-out);
+            pointer-events: none;
+        }
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 20px 34px -18px rgba(20, 39, 31, 0.55);
+        }
+        .btn:hover::after { transform: translateX(120%); }
+        .btn:active { transform: translateY(-1px); }
+
+        .btn--light {
+            background: var(--ivory);
+            color: var(--forest-deep);
+            border-color: var(--ivory);
+        }
+
+        .link-arrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding-bottom: 3px;
+            border-bottom: 1px solid transparent;
+            font-size: 0.68rem;
+            font-weight: 600;
+            letter-spacing: 0.16em;
+            text-transform: uppercase;
+            color: var(--forest);
+            text-decoration: none;
+            transition: color 0.3s var(--ease), border-color 0.3s var(--ease);
+        }
+        .link-arrow::after {
+            content: '\2192';
+            font-size: 0.92rem;
+            transition: transform 0.4s var(--ease-out);
+        }
+        .link-arrow:hover {
+            color: var(--forest-deep);
+            border-color: currentColor;
+        }
+        .link-arrow:hover::after { transform: translateX(4px); }
+
+        .link-arrow--light { color: var(--sand); }
+        .link-arrow--light:hover { color: #fff; }
+
+        /* ============================================================
+           SECTION A — EDITORIAL HERO
+        ============================================================ */
+        .contact-hero {
+            position: relative;
+            display: flex;
+            align-items: flex-end;
+            min-height: clamp(460px, 62vh, 660px);
+            padding: calc(var(--header-h) + clamp(48px, 7vw, 92px)) 0 clamp(90px, 11vw, 150px);
+            overflow: hidden;
+            color: var(--ivory);
+            isolation: isolate;
+            background: var(--forest-deep);
+        }
+        .contact-hero__media {
+            position: absolute;
+            inset: 0;
+            z-index: -2;
+            overflow: hidden;
+        }
+        .contact-hero__media img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transform: scale(1.08);
+            will-change: transform;
+        }
+        .contact-hero::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            z-index: -1;
+            background:
+                linear-gradient(180deg, rgba(20, 39, 31, 0.42) 0%, rgba(20, 39, 31, 0.55) 48%, rgba(20, 39, 31, 0.9) 100%),
+                radial-gradient(ellipse 60% 70% at 12% 25%, rgba(20, 39, 31, 0.08), transparent 65%);
+        }
+        .contact-hero__inner {
+            position: relative;
+            z-index: 1;
+            max-width: 860px;
+        }
+        .contact-hero h1 {
+            max-width: 18ch;
+            margin: 0 0 20px;
+            color: var(--ivory);
+            font-size: clamp(2.5rem, 5.2vw, 4.4rem);
+            line-height: 1;
+            letter-spacing: -0.025em;
+            text-wrap: balance;
+        }
+        .contact-hero h1 em {
+            font-style: italic;
+            color: var(--sand);
+        }
+        .contact-hero p {
+            max-width: 56ch;
+            margin: 0;
+            color: rgba(248, 246, 240, 0.82);
+            font-size: clamp(1rem, 1.2vw, 1.1rem);
+            line-height: 1.7;
+        }
+        .contact-hero__meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px 26px;
+            margin-top: 30px;
+            padding-top: 22px;
+            border-top: 1px solid rgba(248, 246, 240, 0.18);
+            max-width: 620px;
+        }
+        .contact-hero__meta span {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.62rem;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            color: rgba(248, 246, 240, 0.66);
+        }
+        .contact-hero__meta span::before {
+            content: '';
+            width: 16px;
+            height: 1px;
+            background: currentColor;
+            opacity: 0.7;
+        }
+
+        .contact-hero__inner > * {
+            opacity: 0;
+            transform: translateY(28px);
+            filter: blur(8px);
+            animation: contactIn 1.05s var(--ease-out) forwards;
+        }
+        .contact-hero__inner > *:nth-child(1) { animation-delay: 0.15s; }
+        .contact-hero__inner > *:nth-child(2) { animation-delay: 0.33s; }
+        .contact-hero__inner > *:nth-child(3) { animation-delay: 0.51s; }
+        .contact-hero__inner > *:nth-child(4) { animation-delay: 0.69s; }
+
+        @@keyframes contactIn {
+            to {
+                opacity: 1;
+                transform: none;
+                filter: blur(0);
+            }
+        }
+
+        /* ============================================================
+           SECTION B — INQUIRY EXPERIENCE
+        ============================================================ */
+        .inquiry {
+            position: relative;
+            padding: clamp(28px, 4vw, 44px) 0 var(--contact-y);
+            background-color: var(--ivory);
+            background-image:
+                radial-gradient(ellipse 60% 50% at 92% 8%, rgba(143, 168, 136, 0.10), transparent 60%),
+                radial-gradient(ellipse 50% 60% at 8% 92%, rgba(232, 223, 201, 0.30), transparent 60%);
+        }
+
+        .inquiry__grid {
+            display: grid;
+            grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+            gap: clamp(30px, 5vw, 80px);
+            align-items: start;
+        }
+
+        /* -------- LEFT COLUMN: introduction -------- */
+        .inquiry__aside {
+            position: sticky;
+            top: calc(var(--header-h) + 40px);
+        }
+        .inquiry__aside h2 {
+            max-width: 14ch;
+            margin: 0 0 22px;
+            font-size: clamp(2rem, 3.4vw, 2.9rem);
+            line-height: 1.04;
+            letter-spacing: -0.02em;
+            text-wrap: balance;
+        }
+        .inquiry__aside p {
+            margin: 0 0 26px;
+            max-width: 46ch;
+            color: var(--muted);
+            line-height: 1.7;
+        }
+
+        .inquiry__categories {
+            margin: 0;
+            padding: 0;
+            list-style: none;
+            border-top: 1px solid var(--line);
+        }
+        .inquiry__categories li {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            gap: 16px;
+            padding: 13px 0;
+            border-bottom: 1px solid var(--line);
+            transition: border-color 0.4s var(--ease);
+        }
+        .inquiry__categories li:hover { border-bottom-color: var(--moss); }
+        .inquiry__categories strong {
+            font-family: var(--serif);
+            font-size: 1.02rem;
+            font-weight: 500;
+            letter-spacing: -0.01em;
+            color: var(--charcoal);
+        }
+        .inquiry__categories span {
+            font-family: var(--serif);
+            font-style: italic;
+            font-size: 0.86rem;
+            color: var(--sage);
+        }
+
+        .inquiry__note {
+            margin-top: 28px;
+            padding: 18px 20px;
+            border-left: 2px solid var(--sage);
+            background: var(--white);
+            border-radius: 0 var(--radius) var(--radius) 0;
+            color: var(--muted);
+            font-size: 0.86rem;
+            line-height: 1.65;
+        }
+        .inquiry__note b {
+            display: block;
+            margin-bottom: 4px;
+            font-family: var(--serif);
+            font-style: italic;
+            font-weight: 400;
+            font-size: 1rem;
+            color: var(--forest-deep);
+        }
+
+        /* -------- RIGHT COLUMN: form -------- */
+        .inquiry__panel {
+            position: relative;
+            overflow: hidden;
+            padding: clamp(26px, 3.6vw, 48px);
+            background: var(--white);
+            border: 1px solid var(--line);
+            border-radius: var(--radius-lg);
+            box-shadow:
+                0 50px 100px -50px rgba(20, 39, 31, 0.35),
+                0 2px 4px rgba(20, 39, 31, 0.04);
+        }
+        .inquiry__panel::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--sage), var(--moss), var(--sage), transparent);
+            pointer-events: none;
+        }
+        .inquiry__panel-head {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: baseline;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 26px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--line);
+        }
+        .inquiry__panel-head h3 {
+            margin: 0;
+            font-size: clamp(1.3rem, 2vw, 1.6rem);
+            letter-spacing: -0.01em;
+            line-height: 1.15;
+        }
+        .inquiry__panel-head span {
+            font-size: 0.6rem;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            color: var(--muted);
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px 20px;
+        }
+        .form-field {
+            display: flex;
+            flex-direction: column;
+            gap: 7px;
+        }
+        .form-field--full { grid-column: 1 / -1; }
+
+        .form-field label {
+            font-size: 0.62rem;
+            font-weight: 600;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+            color: var(--muted);
+        }
+
+        .form-field input,
+        .form-field select,
+        .form-field textarea {
+            width: 100%;
+            padding: 15px 16px;
+            border: 1px solid var(--line);
+            border-radius: var(--radius);
+            background: var(--ivory);
+            color: var(--charcoal);
+            font: inherit;
+            font-size: 0.96rem;
+            line-height: 1.4;
+            transition:
+                border-color 0.3s var(--ease),
+                box-shadow 0.3s var(--ease),
+                background 0.3s var(--ease);
+        }
+        .form-field input::placeholder,
+        .form-field textarea::placeholder {
+            color: rgba(20, 39, 31, 0.36);
+        }
+        .form-field textarea {
+            min-height: 152px;
+            resize: vertical;
+        }
+        .form-field select {
+            appearance: none;
+            -webkit-appearance: none;
+            padding-right: 44px;
+            background-image:
+                linear-gradient(45deg, transparent 50%, var(--moss) 50%),
+                linear-gradient(135deg, var(--moss) 50%, transparent 50%);
+            background-position:
+                calc(100% - 22px) calc(50% - 3px),
+                calc(100% - 16px) calc(50% - 3px);
+            background-size: 6px 6px, 6px 6px;
+            background-repeat: no-repeat;
+            background-color: var(--ivory);
+            cursor: pointer;
+        }
+        .form-field input:hover,
+        .form-field select:hover,
+        .form-field textarea:hover {
+            border-color: rgba(83, 107, 80, 0.4);
+        }
+        .form-field input:focus,
+        .form-field select:focus,
+        .form-field textarea:focus {
+            outline: none;
+            border-color: var(--moss);
+            background-color: #fff;
+            box-shadow: 0 0 0 4px rgba(83, 107, 80, 0.14);
+        }
+
+        .form-field .validation {
+            display: block;
+            min-height: 1em;
+            font-size: 0.76rem;
+            color: #b23b2e;
+            line-height: 1.4;
+        }
+        .form-field .validation:empty { min-height: 0; }
+
+        .form-field input.input-validation-error,
+        .form-field select.input-validation-error,
+        .form-field textarea.input-validation-error {
+            border-color: #b23b2e;
+            background-color: #fdf6f4;
+            box-shadow: 0 0 0 3px rgba(178, 59, 46, 0.14);
+        }
+
+        .inquiry__foot {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            margin-top: 28px;
+            padding-top: 24px;
+            border-top: 1px solid var(--line);
+        }
+        .inquiry__foot-note {
+            margin: 0;
+            max-width: 42ch;
+            font-size: 0.78rem;
+            line-height: 1.6;
+            color: var(--muted);
+        }
+        .inquiry__foot .btn { min-width: 200px; }
+
+        /* ============================================================
+           SECTION C — SUCCESS / VALIDATION STATES
+        ============================================================ */
+        .contact-success {
+            position: relative;
+            display: flex;
+            align-items: flex-start;
+            gap: 14px;
+            margin-bottom: 24px;
+            padding: 16px 20px 16px 20px;
+            border: 1px solid rgba(83, 107, 80, 0.35);
+            border-left: 3px solid var(--forest);
+            border-radius: var(--radius);
+            background: linear-gradient(90deg, rgba(143, 168, 136, 0.18), rgba(143, 168, 136, 0.04));
+            color: var(--forest-deep);
+            font-size: 0.94rem;
+            line-height: 1.55;
+            animation: successIn 0.7s var(--ease-out);
+        }
+        .contact-success::before {
+            content: '\2713';
+            display: inline-grid;
+            place-items: center;
+            flex: 0 0 auto;
+            width: 24px;
+            height: 24px;
+            margin-top: 1px;
+            border-radius: 50%;
+            background: var(--forest);
+            color: var(--ivory);
+            font-size: 0.78rem;
+            line-height: 1;
+        }
+
+        @@keyframes successIn {
+            from {
+                opacity: 0;
+                transform: translateY(-6px);
+            }
+            to {
+                opacity: 1;
+                transform: none;
+            }
+        }
+
+        /* ============================================================
+           SECTION D — CLOSING EDITORIAL
+        ============================================================ */
+        .contact-closing {
+            position: relative;
+            display: grid;
+            place-items: center;
+            min-height: clamp(480px, 66vh, 640px);
+            padding: clamp(72px, 9vw, 130px) 0;
+            overflow: hidden;
+            color: var(--ivory);
+            text-align: center;
+            isolation: isolate;
+        }
+        .contact-closing__media {
+            position: absolute;
+            inset: 0;
+            z-index: -2;
+        }
+        .contact-closing__media img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transform: scale(1.06);
+            will-change: transform;
+        }
+        .contact-closing::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            z-index: -1;
+            background:
+                linear-gradient(180deg, rgba(20, 39, 31, 0.42) 0%, rgba(20, 39, 31, 0.78) 100%),
+                radial-gradient(ellipse 60% 70% at 50% 50%, transparent, rgba(20, 39, 31, 0.4));
+        }
+        .contact-closing .container {
+            position: relative;
+            z-index: 1;
+            max-width: 720px;
+        }
+        .contact-closing h2 {
+            margin: 0 0 18px;
+            color: var(--ivory);
+            font-size: clamp(2.2rem, 4.4vw, 3.6rem);
+            line-height: 1.04;
+            letter-spacing: -0.02em;
+            text-wrap: balance;
+        }
+        .contact-closing h2 em {
+            font-style: italic;
+            color: var(--sand);
+        }
+        .contact-closing p {
+            margin: 0 auto;
+            max-width: 52ch;
+            color: rgba(248, 246, 240, 0.82);
+            line-height: 1.75;
+        }
+
+        /* ============================================================
+           RESPONSIVE
+        ============================================================ */
+        @@media (max-width: 1024px) {
+            .inquiry__grid {
+                grid-template-columns: 1fr;
+            }
+            .inquiry__aside {
+                position: static;
+            }
+            .inquiry__aside h2 { max-width: none; }
+        }
+
+        @@media (max-width: 700px) {
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+            .form-field--full { grid-column: auto; }
+            .inquiry__foot {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .inquiry__foot .btn { width: 100%; }
+        }
+
+        @@media (max-width: 600px) {
+            .contact-hero {
+                min-height: 0;
+                padding-bottom: clamp(72px, 16vw, 110px);
+            }
+            .contact-hero h1 { max-width: none; }
+            .inquiry__panel { padding: 24px 22px; }
+        }
+
+        /* ============================================================
+           REDUCED MOTION
+        ============================================================ */
+        @@media (prefers-reduced-motion: reduce) {
+            html { scroll-behavior: auto; }
+            .contact-hero__inner > * {
+                opacity: 1 !important;
+                transform: none !important;
+                filter: none !important;
+                animation: none !important;
+            }
+            .reveal-pending,
+            .contact-success {
+                opacity: 1 !important;
+                transform: none !important;
+                filter: none !important;
+                animation: none !important;
+                transition: none !important;
+            }
+            .btn,
+            .form-field input,
+            .form-field select,
+            .form-field textarea,
+            .inquiry__categories li {
+                transition: none !important;
+            }
+            .btn:hover { transform: none !important; }
+        }
+    </style>
+}
+
+<!-- ==================== SECTION A — EDITORIAL HERO ==================== -->
+<header class="contact-hero">
+    <div class="contact-hero__media">
+        <img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=1920&q=80"
+             alt="Mountain landscape across northern Pakistan"
+             fetchpriority="high" decoding="async" />
+    </div>
+
+    <div class="container contact-hero__inner">
+        <p class="eyebrow eyebrow--light">Contact Karnel</p>
+        <h1>Every journey begins with <em>a conversation.</em></h1>
+        <p>
+            Whether you're exploring destinations, arranging transport, discovering places
+            to stay or planning a complete journey, we're here to help you take the next
+            step.
+        </p>
+        <div class="contact-hero__meta">
+            <span>Destinations</span>
+            <span>Transport</span>
+            <span>Hotels &amp; Resorts</span>
+            <span>Dining</span>
         </div>
+    </div>
+</header>
 
-        <div>
-            <label for="Email">Email</label>
-            <input asp-for="Email" id="Email" />
-            <span asp-validation-for="Email" class="validation"></span>
-        </div>
+<!-- ==================== SECTION B — INQUIRY EXPERIENCE ==================== -->
+<section class="inquiry" aria-labelledby="inquiry-title">
+    <div class="container">
+        <div class="inquiry__grid">
 
-        <div>
-            <label for="Phone">Phone</label>
-            <input asp-for="Phone" id="Phone" />
-            <span asp-validation-for="Phone" class="validation"></span>
-        </div>
+            <!-- -------- LEFT: introduction -------- -->
+            <aside class="inquiry__aside" data-reveal>
+                <p class="eyebrow">Let's plan something meaningful</p>
+                <h2 id="inquiry-title">Tell us what you have in mind.</h2>
+                <p>
+                    Share a destination, a route, a stay or an itinerary you're considering.
+                    The more context you give, the more useful our reply can be — there's no
+                    wrong place to start.
+                </p>
 
-        <div>
-            <label for="Category">Category</label>
-            <select asp-for="Category" id="Category">
-                <option value="General">General</option>
-                <option value="Destinations">Destinations</option>
-                <option value="Transport">Transport</option>
-                <option value="Hotels">Hotels</option>
-                <option value="Restaurants">Restaurants</option>
-                <option value="Resorts">Resorts</option>
-            </select>
-            <span asp-validation-for="Category" class="validation"></span>
-        </div>
+                <ul class="inquiry__categories" aria-label="Inquiry categories">
+                    <li><strong>General</strong><span>i.</span></li>
+                    <li><strong>Destinations</strong><span>ii.</span></li>
+                    <li><strong>Transport</strong><span>iii.</span></li>
+                    <li><strong>Hotels</strong><span>iv.</span></li>
+                    <li><strong>Restaurants</strong><span>v.</span></li>
+                    <li><strong>Resorts</strong><span>vi.</span></li>
+                </ul>
 
-        <div>
-            <label for="Message">Message</label>
-            <textarea asp-for="Message" id="Message"></textarea>
-            <span asp-validation-for="Message" class="validation"></span>
-        </div>
+                <div class="inquiry__note">
+                    <b>A note on our replies</b>
+                    Inquiry details are handled through the form on the right. Share only
+                    what you're comfortable putting in writing — we'll take it from there.
+                </div>
+            </aside>
 
-        <div>
-            <button type="submit">Send inquiry</button>
+            <!-- -------- RIGHT: form -------- -->
+            <div class="inquiry__panel" data-reveal>
+
+                @if (TempData["ContactSuccess"] != null)
+                {
+                    <div class="contact-success" role="status" aria-live="polite">
+                        <div>@TempData["ContactSuccess"]</div>
+                    </div>
+                }
+
+                <div class="inquiry__panel-head">
+                    <h3>Send an inquiry</h3>
+                    <span>All fields marked required</span>
+                </div>
+
+                <form asp-action="Index" method="post" novalidate>
+                    <div class="form-grid">
+
+                        <div class="form-field">
+                            <label asp-for="Name" for="Name">Name</label>
+                            <input asp-for="Name" id="Name" placeholder="Your full name" autocomplete="name" />
+                            <span asp-validation-for="Name" class="validation"></span>
+                        </div>
+
+                        <div class="form-field">
+                            <label asp-for="Email" for="Email">Email</label>
+                            <input asp-for="Email" id="Email" type="email" placeholder="you@example.com" autocomplete="email" />
+                            <span asp-validation-for="Email" class="validation"></span>
+                        </div>
+
+                        <div class="form-field">
+                            <label asp-for="Phone" for="Phone">Phone</label>
+                            <input asp-for="Phone" id="Phone" type="tel" placeholder="Optional contact number" autocomplete="tel" />
+                            <span asp-validation-for="Phone" class="validation"></span>
+                        </div>
+
+                        <div class="form-field">
+                            <label asp-for="Category" for="Category">Category</label>
+                            <select asp-for="Category" id="Category">
+                                <option value="General">General</option>
+                                <option value="Destinations">Destinations</option>
+                                <option value="Transport">Transport</option>
+                                <option value="Hotels">Hotels</option>
+                                <option value="Restaurants">Restaurants</option>
+                                <option value="Resorts">Resorts</option>
+                            </select>
+                            <span asp-validation-for="Category" class="validation"></span>
+                        </div>
+
+                        <div class="form-field form-field--full">
+                            <label asp-for="Message" for="Message">Message</label>
+                            <textarea asp-for="Message" id="Message"
+                                      placeholder="Tell us about the destination, dates, or the journey you have in mind."></textarea>
+                            <span asp-validation-for="Message" class="validation"></span>
+                        </div>
+                    </div>
+
+                    <div class="inquiry__foot">
+                        <p class="inquiry__foot-note">
+                            We reply to inquiries directly. Providing accurate contact details
+                            helps us get back to you without delay.
+                        </p>
+                        <button class="btn" type="submit">Send inquiry</button>
+                    </div>
+                </form>
+            </div>
         </div>
-    </form>
+    </div>
+</section>
+
+<!-- ==================== SECTION D — CLOSING EDITORIAL ==================== -->
+<section class="contact-closing" aria-labelledby="closing-title">
+    <div class="contact-closing__media">
+        <img src="https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1920&q=80"
+             alt="Mountain landscape at dusk"
+             loading="lazy" decoding="async" />
+    </div>
+
+    <div class="container" data-reveal>
+        <p class="eyebrow eyebrow--light" style="justify-content:center;">The next step</p>
+        <h2 id="closing-title">Your next journey <em>starts here.</em></h2>
+        <p>
+            Share your plans with us, and let's explore the possibilities together.
+        </p>
+    </div>
+</section>
+
+@section Scripts {
+    <script>
+        /* ============================================================
+           Reveal animations and subtle hero parallax.
+           Purely additive — no form, model or validation logic touched.
+        ============================================================ */
+        (function () {
+            'use strict';
+
+            var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            if (reduceMotion) return;
+
+            var observer = new IntersectionObserver(function (entries) {
+                entries.forEach(function (entry) {
+                    if (!entry.isIntersecting) return;
+                    var el = entry.target;
+
+                    if (el.hasAttribute('data-reveal-group')) {
+                        var children = el.children;
+                        for (var i = 0; i < children.length; i++) {
+                            children[i].style.transitionDelay = (i * 0.07) + 's';
+                            children[i].classList.add('is-revealed');
+                        }
+                    } else {
+                        el.classList.add('is-revealed');
+                    }
+                    observer.unobserve(el);
+                });
+            }, { threshold: 0.1, rootMargin: '0px 0px -60px 0px' });
+
+            document.querySelectorAll('[data-reveal]').forEach(function (el) {
+                if (el.closest('[data-reveal-group]')) return;
+                el.classList.add('reveal-pending');
+                observer.observe(el);
+            });
+
+            document.querySelectorAll('[data-reveal-group]').forEach(function (el) {
+                Array.prototype.forEach.call(el.children, function (child) {
+                    child.classList.add('reveal-pending');
+                });
+                observer.observe(el);
+            });
+
+            /* --- Subtle hero + closing parallax --- */
+            var parallaxTargets = [
+                document.querySelector('.contact-hero__media img'),
+                document.querySelector('.contact-closing__media img')
+            ].filter(Boolean);
+
+            if (parallaxTargets.length) {
+                var ticking = false;
+                window.addEventListener('scroll', function () {
+                    if (ticking) return;
+                    ticking = true;
+                    requestAnimationFrame(function () {
+                        var vh = window.innerHeight;
+                        parallaxTargets.forEach(function (img) {
+                            var wrap = img.parentElement;
+                            var rect = wrap.getBoundingClientRect();
+                            if (rect.bottom < 0 || rect.top > vh) return;
+                            var progress = (vh - rect.top) / (vh + rect.height);
+                            progress = Math.max(0, Math.min(1, progress));
+                            var offset = (progress - 0.5) * 24;
+                            img.style.transform =
+                                'scale(1.08) translate3d(0, ' + offset.toFixed(2) + 'px, 0)';
+                        });
+                        ticking = false;
+                    });
+                }, { passive: true });
+            }
+        })();
+    </script>
 
     <partial name="_ValidationScriptsPartial" />
-</div>
+}

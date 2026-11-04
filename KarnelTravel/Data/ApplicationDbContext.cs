@@ -1,6 +1,7 @@
 ﻿
 using KarnelTravel.Models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace KarnelTravel.Data
 {
@@ -12,13 +13,20 @@ namespace KarnelTravel.Data
         {
         }
 
+        // =====================================================
+        // DATABASE TABLES
+        // =====================================================
+
         public DbSet<AdminUser> AdminUsers => Set<AdminUser>();
 
         public DbSet<Destination> Destinations => Set<Destination>();
         public DbSet<Hotel> Hotels => Set<Hotel>();
         public DbSet<Restaurant> Restaurants => Set<Restaurant>();
         public DbSet<Resort> Resorts => Set<Resort>();
+
         public DbSet<TourPackage> TourPackages => Set<TourPackage>();
+        public DbSet<TourItineraryDay> TourItineraryDays => Set<TourItineraryDay>();
+        public DbSet<TourDeparture> TourDepartures => Set<TourDeparture>();
 
         public DbSet<TransportService> TransportServices
             => Set<TransportService>();
@@ -27,10 +35,14 @@ namespace KarnelTravel.Data
             => Set<TransportRoutePricing>();
 
         public DbSet<TripInquiry> TripInquiries => Set<TripInquiry>();
-        public DbSet<Booking> Bookings => Set<Booking>();
+        public DbSet<ContactInquiry> ContactInquiries => Set<ContactInquiry>();
 
-        // REVIEWS
+        public DbSet<Booking> Bookings => Set<Booking>();
         public DbSet<Review> Reviews => Set<Review>();
+
+        // =====================================================
+        // MODEL CONFIGURATION
+        // =====================================================
 
         protected override void OnModelCreating(ModelBuilder model)
         {
@@ -134,20 +146,87 @@ namespace KarnelTravel.Data
             {
                 e.ToTable("TourPackages");
                 e.HasKey(x => x.Id);
+
                 e.HasIndex(x => x.Slug).IsUnique();
 
                 e.Property(x => x.Name).HasMaxLength(150).IsRequired();
                 e.Property(x => x.Slug).HasMaxLength(150).IsRequired();
-                e.Property(x => x.DestinationName).HasMaxLength(150).IsRequired();
-                e.Property(x => x.ShortDescription).HasMaxLength(1000).IsRequired();
-                e.Property(x => x.Description).HasMaxLength(3000).IsRequired();
-                e.Property(x => x.ImageUrl).HasMaxLength(500).IsRequired();
-                e.Property(x => x.Inclusions).HasMaxLength(2000).IsRequired();
-                e.Property(x => x.Exclusions).HasMaxLength(2000).IsRequired();
+
+                e.Property(x => x.DestinationName).HasMaxLength(150);
+                e.Property(x => x.ShortDescription).HasMaxLength(1000);
+                e.Property(x => x.Description).HasMaxLength(3000);
+                e.Property(x => x.ImageUrl).HasMaxLength(500);
+                e.Property(x => x.Inclusions).HasMaxLength(2000);
+                e.Property(x => x.Exclusions).HasMaxLength(2000);
+
                 e.Property(x => x.PricePerAdult).HasPrecision(18, 2);
                 e.Property(x => x.PricePerChild).HasPrecision(18, 2);
 
-                ConfigureDestinationRelationship<TourPackage>(e);
+                e.HasOne(x => x.Destination)
+                    .WithMany(x => x.TourPackages)
+                    .HasForeignKey(x => x.DestinationId)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            // TOUR ITINERARY DAYS
+            model.Entity<TourItineraryDay>(e =>
+            {
+                e.ToTable("TourItineraryDays");
+                e.HasKey(x => x.Id);
+
+                e.Property(x => x.Title)
+                    .HasMaxLength(150)
+                    .IsRequired();
+
+                e.Property(x => x.Description)
+                    .HasMaxLength(2000);
+
+                e.Property(x => x.OvernightLocation)
+                    .HasMaxLength(150);
+
+                e.HasIndex(x => new
+                {
+                    x.TourPackageId,
+                    x.DayNumber
+                }).IsUnique();
+
+                e.HasOne(x => x.TourPackage)
+                    .WithMany(x => x.ItineraryDays)
+                    .HasForeignKey(x => x.TourPackageId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            // TOUR DEPARTURES
+            model.Entity<TourDeparture>(e =>
+            {
+                e.ToTable("TourDepartures", table =>
+                {
+                    table.HasCheckConstraint(
+                        "CK_TourDepartures_DateRange",
+                        "[ReturnDate] >= [DepartureDate]");
+
+                    table.HasCheckConstraint(
+                        "CK_TourDepartures_SeatCapacity",
+                        "[MaximumGroupSize] >= 1 AND " +
+                        "[AvailableSeats] >= 0 AND " +
+                        "[AvailableSeats] <= [MaximumGroupSize]");
+                });
+
+                e.HasKey(x => x.Id);
+
+                e.Property(x => x.MaximumGroupSize).IsRequired();
+                e.Property(x => x.AvailableSeats).IsRequired();
+
+                e.HasIndex(x => new
+                {
+                    x.TourPackageId,
+                    x.DepartureDate
+                });
+
+                e.HasOne(x => x.TourPackage)
+                    .WithMany(x => x.Departures)
+                    .HasForeignKey(x => x.TourPackageId)
+                    .OnDelete(DeleteBehavior.Cascade);
             });
 
             // TRANSPORT SERVICES
@@ -214,17 +293,10 @@ namespace KarnelTravel.Data
                 e.Property(x => x.ServiceType).HasMaxLength(30).IsRequired();
                 e.Property(x => x.ServiceName).HasMaxLength(150).IsRequired();
 
-                e.Property(x => x.EstimatedTotalPKR)
-                    .HasPrecision(18, 2);
-
-                e.Property(x => x.TransportOneWayFarePKR)
-                    .HasPrecision(18, 2);
-
-                e.Property(x => x.TransportReturnFarePKR)
-                    .HasPrecision(18, 2);
-
-                e.Property(x => x.TransportDiscountPKR)
-                    .HasPrecision(18, 2);
+                e.Property(x => x.EstimatedTotalPKR).HasPrecision(18, 2);
+                e.Property(x => x.TransportOneWayFarePKR).HasPrecision(18, 2);
+                e.Property(x => x.TransportReturnFarePKR).HasPrecision(18, 2);
+                e.Property(x => x.TransportDiscountPKR).HasPrecision(18, 2);
 
                 e.Property(x => x.Status).HasMaxLength(30).IsRequired();
                 e.Property(x => x.CustomerNotes).HasMaxLength(1000);
@@ -248,6 +320,11 @@ namespace KarnelTravel.Data
                 e.HasOne<TourPackage>()
                     .WithMany()
                     .HasForeignKey(x => x.TourPackageId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                e.HasOne(x => x.TourDeparture)
+                    .WithMany(x => x.Bookings)
+                    .HasForeignKey(x => x.TourDepartureId)
                     .OnDelete(DeleteBehavior.Restrict);
 
                 e.HasOne<TransportService>()
@@ -274,6 +351,31 @@ namespace KarnelTravel.Data
                 e.Property(x => x.Status).HasMaxLength(30).IsRequired();
             });
 
+            // CONTACT INQUIRIES
+            model.Entity<ContactInquiry>(e =>
+            {
+                e.ToTable("ContactInquiries");
+                e.HasKey(x => x.Id);
+
+                e.Property(x => x.Name).HasMaxLength(100).IsRequired();
+                e.Property(x => x.Email).HasMaxLength(256).IsRequired();
+                e.Property(x => x.Phone).HasMaxLength(30);
+                e.Property(x => x.Category).HasMaxLength(50).IsRequired();
+                e.Property(x => x.Message).HasMaxLength(2000).IsRequired();
+
+                e.Property(x => x.Status)
+                    .HasMaxLength(30)
+                    .HasDefaultValue("New")
+                    .IsRequired();
+
+                e.Property(x => x.AdminNotes).HasMaxLength(2000);
+
+                e.Property(x => x.SubmittedAt)
+                    .HasDefaultValueSql("GETUTCDATE()");
+
+                e.HasIndex(x => new { x.Status, x.SubmittedAt });
+            });
+
             // REVIEWS
             model.Entity<Review>(e =>
             {
@@ -288,13 +390,11 @@ namespace KarnelTravel.Data
                             CASE WHEN ResortId IS NULL THEN 0 ELSE 1 END +
                             CASE WHEN TransportServiceId IS NULL THEN 0 ELSE 1 END +
                             CASE WHEN TourPackageId IS NULL THEN 0 ELSE 1 END
-                        ) = 1"
-                    );
+                        ) = 1");
 
                     table.HasCheckConstraint(
                         "CK_Reviews_Rating",
-                        "[Rating] >= 1 AND [Rating] <= 5"
-                    );
+                        "[Rating] >= 1 AND [Rating] <= 5");
                 });
 
                 e.HasKey(x => x.Id);
@@ -352,8 +452,12 @@ namespace KarnelTravel.Data
             });
         }
 
+        // =====================================================
+        // DESTINATION RELATIONSHIP CONFIGURATION
+        // =====================================================
+
         private static void ConfigureDestinationRelationship<TEntity>(
-            Microsoft.EntityFrameworkCore.Metadata.Builders.EntityTypeBuilder<TEntity> e)
+            EntityTypeBuilder<TEntity> e)
             where TEntity : class
         {
             // Existing destination relationship configuration.

@@ -1,4 +1,741 @@
-@{ Layout = "_AdminLayout"; ViewData["Title"] = "Experiences"; }
-<div class="page-heading"><div><div class="eyebrow">The experience desk</div><h1>Journeys in motion.</h1><p>Build, schedule and release experiences people remember.</p></div><a class="btn btn-primary" href="/Admin/Tours/Create">＋ Create package</a></div>
-<div class="toolbar"><div class="filters"><input class="input search-input" placeholder="Search packages…" data-filter-target="tour-list" /><select class="select" data-status-filter="tour-list"><option value="all">All availability</option><option>Available</option><option>Waitlist</option></select></div><button class="btn btn-quiet" data-toast="Grid view coming soon.">▦ Grid view</button></div>
-<div class="table-wrap"><table class="data-table" id="tour-list"><thead><tr><th>Package</th><th>Destination</th><th>Duration</th><th>Price / person</th><th>Next departure</th><th>Capacity</th><th>Status</th></tr></thead><tbody><tr class="filterable" data-status="Available"><td><img class="thumb" src="https://images.unsplash.com/photo-1518005020951-eccb494ad742?auto=format&fit=crop&w=120&q=80" alt="" /><span class="record-name">Hunza in Autumn</span><span class="record-sub">Mountain escape</span></td><td>Hunza</td><td>6 days</td><td>$680</td><td>18 Oct 2025</td><td>8 / 12</td><td><span class="status status-confirmed"><i></i>Available</span></td></tr><tr class="filterable" data-status="Available"><td><img class="thumb" src="https://images.unsplash.com/photo-1548013146-72479768bada?auto=format&fit=crop&w=120&q=80" alt="" /><span class="record-name">Deosai Wild Week</span><span class="record-sub">High plateau</span></td><td>Skardu</td><td>8 days</td><td>$940</td><td>22 Oct 2025</td><td>5 / 10</td><td><span class="status status-confirmed"><i></i>Available</span></td></tr><tr class="filterable" data-status="Waitlist"><td><img class="thumb" src="https://images.unsplash.com/photo-1530789253388-582c481c54b0?auto=format&fit=crop&w=120&q=80" alt="" /><span class="record-name">Lahore After Dark</span><span class="record-sub">Culture & cuisine</span></td><td>Lahore</td><td>3 days</td><td>$290</td><td>01 Nov 2025</td><td>12 / 12</td><td><span class="status status-pending"><i></i>Waitlist</span></td></tr></tbody></table></div>
+
+@model IEnumerable<KarnelTravel.ViewModels.AdminTourPackageRowViewModel>
+
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Tour Packages";
+    ViewData["Section"] = "Experiences";
+
+    var packages = Model?.ToList()
+        ?? new List<KarnelTravel.ViewModels.AdminTourPackageRowViewModel>();
+
+    var totalPackages = packages.Count;
+    var publishedPackages = packages.Count(x => x.IsPublished);
+    var draftPackages = totalPackages - publishedPackages;
+    var featuredPackages = packages.Count(x => x.IsFeatured);
+}
+
+<style>
+    .tour-page {
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+    }
+
+    .tour-heading {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        gap: 20px;
+        flex-wrap: wrap;
+    }
+
+    .tour-heading .eyebrow {
+        color: var(--accent, #a7b99c);
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        margin-bottom: 10px;
+    }
+
+    .tour-heading h1 {
+        margin: 0;
+        font-size: clamp(28px, 4vw, 42px);
+        font-weight: 600;
+        letter-spacing: -1.5px;
+    }
+
+    .tour-heading p {
+        margin: 9px 0 0;
+        color: var(--text-muted, #888);
+        font-size: 14px;
+    }
+
+    .tour-create-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 9px;
+        padding: 12px 18px;
+        border-radius: 8px;
+        background: var(--accent, #a7b99c);
+        color: #172018;
+        text-decoration: none;
+        font-size: 13px;
+        font-weight: 700;
+        transition: .2s ease;
+        white-space: nowrap;
+    }
+
+    .tour-create-btn:hover {
+        transform: translateY(-2px);
+        filter: brightness(1.08);
+    }
+
+    .tour-create-btn span {
+        font-size: 20px;
+        line-height: 1;
+    }
+
+    .tour-stats {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 14px;
+    }
+
+    .tour-stat {
+        padding: 19px;
+        border: 1px solid var(--border, rgba(255,255,255,.09));
+        border-radius: 10px;
+        background: var(--surface, rgba(255,255,255,.025));
+    }
+
+    .tour-stat-label {
+        color: var(--text-muted, #888);
+        font-size: 12px;
+        margin-bottom: 12px;
+    }
+
+    .tour-stat-value {
+        font-size: 27px;
+        font-weight: 650;
+        letter-spacing: -.7px;
+    }
+
+    .tour-toolbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 14px;
+        flex-wrap: wrap;
+    }
+
+    .tour-filters {
+        display: flex;
+        gap: 10px;
+        flex: 1;
+        flex-wrap: wrap;
+    }
+
+    .tour-search {
+        width: min(340px, 100%);
+        min-width: 180px;
+    }
+
+    .tour-search,
+    .tour-status-filter {
+        min-height: 42px;
+        padding: 0 13px;
+        border: 1px solid var(--border, rgba(255,255,255,.12));
+        border-radius: 7px;
+        background: var(--surface, rgba(255,255,255,.035));
+        color: inherit;
+        font: inherit;
+        font-size: 13px;
+        outline: none;
+    }
+
+    .tour-search:focus,
+    .tour-status-filter:focus {
+        border-color: var(--accent, #a7b99c);
+    }
+
+    .tour-status-filter {
+        min-width: 155px;
+    }
+
+    .tour-status-filter option {
+        color: #222;
+    }
+
+    .tour-result-count {
+        color: var(--text-muted, #888);
+        font-size: 12px;
+    }
+
+    .tour-table-wrap {
+        overflow-x: auto;
+        border: 1px solid var(--border, rgba(255,255,255,.09));
+        border-radius: 10px;
+        background: var(--surface, rgba(255,255,255,.02));
+    }
+
+    .tour-table {
+        width: 100%;
+        min-width: 1000px;
+        border-collapse: collapse;
+        text-align: left;
+    }
+
+    .tour-table th {
+        padding: 15px 17px;
+        color: var(--text-muted, #888);
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 1.2px;
+        text-transform: uppercase;
+        border-bottom: 1px solid var(--border, rgba(255,255,255,.09));
+        white-space: nowrap;
+    }
+
+    .tour-table td {
+        padding: 15px 17px;
+        border-bottom: 1px solid var(--border, rgba(255,255,255,.07));
+        vertical-align: middle;
+        font-size: 13px;
+    }
+
+    .tour-table tbody tr:last-child td {
+        border-bottom: none;
+    }
+
+    .tour-table tbody tr:hover {
+        background: rgba(255,255,255,.025);
+    }
+
+    .tour-package-cell {
+        display: flex;
+        align-items: center;
+        gap: 13px;
+        min-width: 230px;
+    }
+
+    .tour-image {
+        width: 54px;
+        height: 48px;
+        flex-shrink: 0;
+        border-radius: 6px;
+        object-fit: cover;
+        background: rgba(255,255,255,.07);
+    }
+
+    .tour-image-placeholder {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--text-muted, #888);
+        font-size: 19px;
+    }
+
+    .tour-package-name {
+        display: block;
+        max-width: 220px;
+        overflow: hidden;
+        color: var(--text, inherit);
+        font-weight: 650;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .tour-package-slug {
+        display: block;
+        margin-top: 5px;
+        color: var(--text-muted, #888);
+        font-size: 11px;
+    }
+
+    .tour-muted {
+        color: var(--text-muted, #888);
+    }
+
+    .tour-price {
+        font-weight: 650;
+        white-space: nowrap;
+    }
+
+    .tour-departure-count {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 30px;
+        height: 27px;
+        padding: 0 8px;
+        border-radius: 6px;
+        background: rgba(167,185,156,.12);
+        color: var(--accent, #a7b99c);
+        font-weight: 700;
+        text-decoration: none;
+        transition: .2s ease;
+    }
+
+    .tour-departure-count:hover {
+        background: rgba(167,185,156,.23);
+        transform: translateY(-1px);
+    }
+
+    .tour-status {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        padding: 6px 9px;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 650;
+        white-space: nowrap;
+    }
+
+    .tour-status::before {
+        content: "";
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: currentColor;
+    }
+
+    .tour-status.published {
+        color: #8fc9a0;
+        background: rgba(75,160,100,.12);
+    }
+
+    .tour-status.draft {
+        color: #d2ad75;
+        background: rgba(190,145,70,.12);
+    }
+
+    .tour-featured {
+        display: inline-block;
+        margin-left: 5px;
+        padding: 3px 6px;
+        border-radius: 4px;
+        background: rgba(167,185,156,.12);
+        color: var(--accent, #a7b99c);
+        font-size: 9px;
+        font-weight: 700;
+        text-transform: uppercase;
+    }
+
+    .tour-actions {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+    }
+
+    .tour-actions form {
+        margin: 0;
+    }
+
+    .tour-action {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 32px;
+        padding: 0 10px;
+        border: 1px solid var(--border, rgba(255,255,255,.12));
+        border-radius: 6px;
+        background: transparent;
+        color: inherit;
+        text-decoration: none;
+        font-size: 11px;
+        cursor: pointer;
+        transition: .2s ease;
+        white-space: nowrap;
+    }
+
+    .tour-action:hover {
+        border-color: var(--accent, #a7b99c);
+        color: var(--accent, #a7b99c);
+    }
+
+    .tour-action.departures {
+        border-color: rgba(167,185,156,.3);
+        background: rgba(167,185,156,.07);
+        color: var(--accent, #a7b99c);
+    }
+
+    .tour-action.departures:hover {
+        background: rgba(167,185,156,.16);
+        border-color: var(--accent, #a7b99c);
+    }
+
+    .tour-action.delete:hover {
+        border-color: #c97878;
+        color: #e28c8c;
+    }
+
+    .tour-empty {
+        padding: 65px 20px;
+        text-align: center;
+    }
+
+    .tour-empty-icon {
+        margin-bottom: 15px;
+        color: var(--text-muted, #888);
+        font-size: 35px;
+    }
+
+    .tour-empty h3 {
+        margin: 0 0 8px;
+        font-size: 18px;
+    }
+
+    .tour-empty p {
+        margin: 0 auto 20px;
+        max-width: 400px;
+        color: var(--text-muted, #888);
+        font-size: 13px;
+    }
+
+    .tour-no-results {
+        display: none;
+        padding: 35px 15px;
+        color: var(--text-muted, #888);
+        text-align: center;
+        font-size: 13px;
+    }
+
+    .tour-alert {
+        padding: 13px 16px;
+        border-radius: 7px;
+        font-size: 13px;
+    }
+
+    .tour-alert.success {
+        border: 1px solid rgba(90,180,110,.25);
+        background: rgba(90,180,110,.09);
+        color: #91d1a0;
+    }
+
+    .tour-alert.error {
+        border: 1px solid rgba(210,100,100,.25);
+        background: rgba(210,100,100,.09);
+        color: #e59a9a;
+    }
+
+    @@media (max-width: 900px) {
+        .tour-stats {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+
+    @@media (max-width: 550px) {
+        .tour-stats {
+            gap: 9px;
+        }
+
+        .tour-stat {
+            padding: 14px;
+        }
+
+        .tour-stat-value {
+            font-size: 23px;
+        }
+
+        .tour-heading {
+            align-items: flex-start;
+        }
+
+        .tour-create-btn {
+            width: 100%;
+        }
+
+        .tour-filters {
+            width: 100%;
+        }
+
+        .tour-search {
+            width: 100%;
+        }
+
+        .tour-status-filter {
+            width: 100%;
+        }
+    }
+</style>
+
+<div class="tour-page">
+
+    @if (TempData["SuccessMessage"] != null || TempData["Success"] != null)
+    {
+        <div class="tour-alert success">
+            @(TempData["SuccessMessage"] ?? TempData["Success"])
+        </div>
+    }
+
+    @if (TempData["ErrorMessage"] != null || TempData["Error"] != null)
+    {
+        <div class="tour-alert error">
+            @(TempData["ErrorMessage"] ?? TempData["Error"])
+        </div>
+    }
+
+    <div class="tour-heading">
+        <div>
+            <div class="eyebrow">The experience desk</div>
+            <h1>Journeys in motion.</h1>
+            <p>Manage your tour packages, destinations, pricing and publication status.</p>
+        </div>
+
+        <a class="tour-create-btn" href="@Url.Action("CreateTour", "Admin")">
+            <span>+</span>
+            Create package
+        </a>
+    </div>
+
+    <div class="tour-stats">
+        <div class="tour-stat">
+            <div class="tour-stat-label">Total packages</div>
+            <div class="tour-stat-value">@totalPackages</div>
+        </div>
+
+        <div class="tour-stat">
+            <div class="tour-stat-label">Published</div>
+            <div class="tour-stat-value">@publishedPackages</div>
+        </div>
+
+        <div class="tour-stat">
+            <div class="tour-stat-label">Drafts</div>
+            <div class="tour-stat-value">@draftPackages</div>
+        </div>
+
+        <div class="tour-stat">
+            <div class="tour-stat-label">Featured</div>
+            <div class="tour-stat-value">@featuredPackages</div>
+        </div>
+    </div>
+
+    @if (packages.Any())
+    {
+        <div class="tour-toolbar">
+            <div class="tour-filters">
+                <input
+                    type="search"
+                    id="tourSearch"
+                    class="tour-search"
+                    placeholder="Search by package, slug or destination..." />
+
+                <select id="tourStatusFilter" class="tour-status-filter">
+                    <option value="all">All packages</option>
+                    <option value="published">Published</option>
+                    <option value="draft">Drafts</option>
+                    <option value="featured">Featured</option>
+                </select>
+            </div>
+
+            <div class="tour-result-count">
+                Showing <strong id="tourVisibleCount">@totalPackages</strong>
+                of @totalPackages packages
+            </div>
+        </div>
+
+        <div class="tour-table-wrap">
+            <table class="tour-table" id="tourTable">
+                <thead>
+                    <tr>
+                        <th>Package</th>
+                        <th>Destination</th>
+                        <th>Duration</th>
+                        <th>Adult price</th>
+                        <th>Child price</th>
+                        <th>Departures</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    @foreach (var package in packages)
+                    {
+                        var searchText = $"{package.Name} {package.Slug} {package.DestinationName}".ToLowerInvariant();
+
+                        var departuresUrl = Url.Action(
+                            "Departures",
+                            "Admin",
+                            new { packageId = package.Id }
+                        );
+
+                        <tr class="tour-row"
+                            data-search="@searchText"
+                            data-status="@(package.IsPublished ? "published" : "draft")"
+                            data-featured="@(package.IsFeatured ? "true" : "false")">
+
+                            <td>
+                                <div class="tour-package-cell">
+                                    @if (!string.IsNullOrWhiteSpace(package.ImageUrl))
+                                    {
+                                        <img
+                                            class="tour-image"
+                                            src="@package.ImageUrl"
+                                            alt="@package.Name"
+                                            loading="lazy" />
+                                    }
+                                    else
+                                    {
+                                        <div class="tour-image tour-image-placeholder">
+                                            ◇
+                                        </div>
+                                    }
+
+                                    <div>
+                                        <span class="tour-package-name">
+                                            @package.Name
+                                        </span>
+
+                                        <span class="tour-package-slug">
+                                            /@package.Slug
+                                        </span>
+
+                                        @if (package.IsFeatured)
+                                        {
+                                            <span class="tour-featured">Featured</span>
+                                        }
+                                    </div>
+                                </div>
+                            </td>
+
+                            <td>
+                                @(string.IsNullOrWhiteSpace(package.DestinationName)
+                                    ? "Not assigned"
+                                    : package.DestinationName)
+                            </td>
+
+                            <td>
+                                @package.DurationDays
+                                @(package.DurationDays == 1 ? "day" : "days")
+                            </td>
+
+                            <td class="tour-price">
+                                @(package.PricePerAdult.HasValue
+                                    ? "PKR " + package.PricePerAdult.Value.ToString("N0")
+                                    : "Not set")
+                            </td>
+
+                            <td class="tour-price">
+                                @(package.PricePerChild.HasValue
+                                    ? "PKR " + package.PricePerChild.Value.ToString("N0")
+                                    : "Not set")
+                            </td>
+
+                            <td>
+                                <a
+                                    class="tour-departure-count"
+                                    href="@departuresUrl"
+                                    title="Manage departures for @package.Name">
+                                    @package.DepartureCount
+                                </a>
+                            </td>
+
+                            <td>
+                                @if (package.IsPublished)
+                                {
+                                    <span class="tour-status published">Published</span>
+                                }
+                                else
+                                {
+                                    <span class="tour-status draft">Draft</span>
+                                }
+                            </td>
+
+                            <td>
+                                <div class="tour-actions">
+
+                                    <a
+                                        class="tour-action departures"
+                                        href="@departuresUrl">
+                                        Departures
+                                    </a>
+
+                                    <a
+                                        class="tour-action"
+                                        href="@Url.Action("EditTour", "Admin", new { id = package.Id })">
+                                        Edit
+                                    </a>
+
+                                    <form
+                                        method="post"
+                                        action="@Url.Action("DeleteTour", "Admin", new { id = package.Id })"
+                                        onsubmit="return confirm('Delete this tour package? This action cannot be undone.');">
+
+                                        @Html.AntiForgeryToken()
+
+                                        <button type="submit" class="tour-action delete">
+                                            Delete
+                                        </button>
+                                    </form>
+
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+
+            <div id="tourNoResults" class="tour-no-results">
+                No packages match your search or selected filter.
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="tour-table-wrap">
+            <div class="tour-empty">
+                <div class="tour-empty-icon">◇</div>
+                <h3>No tour packages yet</h3>
+                <p>
+                    Your tour packages will appear here after you create them.
+                    Start by adding your first travel experience.
+                </p>
+
+                <a class="tour-create-btn" href="@Url.Action("CreateTour", "Admin")">
+                    <span>+</span>
+                    Create your first package
+                </a>
+            </div>
+        </div>
+    }
+
+</div>
+
+<script>
+    (() => {
+        const searchInput = document.getElementById("tourSearch");
+        const statusFilter = document.getElementById("tourStatusFilter");
+        const rows = Array.from(document.querySelectorAll(".tour-row"));
+        const visibleCount = document.getElementById("tourVisibleCount");
+        const noResults = document.getElementById("tourNoResults");
+
+        if (!searchInput || !statusFilter) return;
+
+        function filterPackages() {
+            const searchTerm = searchInput.value.trim().toLowerCase();
+            const selectedStatus = statusFilter.value;
+
+            let visible = 0;
+
+            rows.forEach(row => {
+                const searchText = row.dataset.search || "";
+                const status = row.dataset.status || "";
+                const featured = row.dataset.featured === "true";
+
+                const matchesSearch = searchText.includes(searchTerm);
+
+                let matchesStatus = true;
+
+                if (selectedStatus === "published") {
+                    matchesStatus = status === "published";
+                } else if (selectedStatus === "draft") {
+                    matchesStatus = status === "draft";
+                } else if (selectedStatus === "featured") {
+                    matchesStatus = featured;
+                }
+
+                const show = matchesSearch && matchesStatus;
+
+                row.style.display = show ? "" : "none";
+
+                if (show) visible++;
+            });
+
+            if (visibleCount) {
+                visibleCount.textContent = visible;
+            }
+
+            if (noResults) {
+                noResults.style.display = visible === 0 ? "block" : "none";
+            }
+        }
+
+        searchInput.addEventListener("input", filterPackages);
+        statusFilter.addEventListener("change", filterPackages);
+    })();
+</script>

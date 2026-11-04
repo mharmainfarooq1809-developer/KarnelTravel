@@ -1,0 +1,665 @@
+﻿@model KarnelTravel.Models.ContactInquiry
+
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Inquiry Details";
+    ViewData["Section"] = "Inquiries";
+
+    var statusClass = Model.Status switch
+    {
+        "New" => "status-pending",
+        "In Progress" => "status-in-progress",
+        "Responded" => "status-success",
+        "Closed" => "status-neutral",
+        _ => "status-neutral"
+    };
+
+    var hasPhone = !string.IsNullOrWhiteSpace(Model.Phone);
+    var hasNotes = !string.IsNullOrWhiteSpace(Model.AdminNotes);
+    var hasEmail = !string.IsNullOrWhiteSpace(Model.Email);
+}
+
+<style>
+    /* ==========================================================================
+       KARNEL TRAVEL GUIDE — ADMIN INQUIRY DETAILS
+       Scoped with .kid- prefix. Inline <style> because _AdminLayout does not
+       render a Styles section, matching the pattern used on the Inquiries list.
+       ========================================================================== */
+
+    .kid-page {
+        --kid-forest: var(--forest-deep, #14271F);
+        --kid-ivory: var(--ivory, #F8F6F0);
+        --kid-sage: var(--sage, #8FA888);
+        --kid-sand: var(--sand, #E8DFC9);
+        --kid-white: #FFFFFF;
+        --kid-muted: var(--muted, #5A6B60);
+        --kid-line: var(--line, rgba(20, 39, 31, .12));
+        --kid-serif: var(--serif, "Playfair Display", Georgia, "Times New Roman", serif);
+        --kid-sans: var(--sans, "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif);
+        --kid-ease: var(--ease, cubic-bezier(.22, .61, .36, 1));
+
+        animation: kid-fade .4s var(--kid-ease) both;
+    }
+
+    @@keyframes kid-fade {
+        from { opacity: 0; transform: translateY(4px); }
+        to   { opacity: 1; transform: none; }
+    }
+
+    .kid-page .visually-hidden {
+        position: absolute !important;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+    }
+
+    /* -------------------------------------------------------- PAGE HEAD ---- */
+    .kid-page .kid-head {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 20px 32px;
+        padding-bottom: 22px;
+        margin-bottom: 22px;
+        border-bottom: 1px solid var(--kid-line);
+    }
+
+    .kid-page .kid-back {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 16px;
+        padding: 8px 14px;
+        border: 1px solid var(--kid-line);
+        border-radius: 2px;
+        background: transparent;
+        color: var(--kid-forest);
+        font-family: var(--kid-sans);
+        font-size: .64rem;
+        font-weight: 600;
+        letter-spacing: .2em;
+        text-transform: uppercase;
+        text-decoration: none;
+        transition:
+            background-color .25s var(--kid-ease),
+            border-color .25s var(--kid-ease),
+            color .25s var(--kid-ease);
+    }
+
+    .kid-page .kid-back svg {
+        flex: none;
+        transition: transform .25s var(--kid-ease);
+    }
+
+    .kid-page .kid-back:hover {
+        background: var(--kid-forest);
+        border-color: var(--kid-forest);
+        color: var(--kid-ivory);
+    }
+
+    .kid-page .kid-back:hover svg {
+        transform: translateX(-3px);
+    }
+
+    .kid-page .kid-back:focus-visible {
+        outline: 2px solid var(--kid-sand);
+        outline-offset: 2px;
+    }
+
+    .kid-page .kid-head__eyebrow {
+        margin: 0 0 10px;
+        font-family: var(--kid-sans);
+        font-size: .62rem;
+        font-weight: 700;
+        letter-spacing: .26em;
+        text-transform: uppercase;
+        color: var(--kid-sage);
+    }
+
+    .kid-page .kid-head h1 {
+        margin: 0 0 6px;
+        font-family: var(--kid-serif);
+        font-weight: 500;
+        font-size: clamp(1.8rem, 3vw, 2.4rem);
+        line-height: 1.12;
+        letter-spacing: -.01em;
+        color: var(--kid-forest);
+    }
+
+    .kid-page .kid-head__sub {
+        margin: 0;
+        font-size: .9rem;
+        line-height: 1.55;
+        color: var(--kid-muted);
+    }
+
+    .kid-page .kid-head__aside {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 10px;
+    }
+
+    /* -------------------------------------------------------- STATUS ---- */
+    .kid-page .kid-status {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 7px 14px;
+        border-radius: 999px;
+        font-family: var(--kid-sans);
+        font-size: .66rem;
+        font-weight: 600;
+        letter-spacing: .14em;
+        text-transform: uppercase;
+        white-space: nowrap;
+    }
+
+    .kid-page .kid-status i {
+        display: inline-block;
+        flex: none;
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: currentColor;
+    }
+
+    .kid-page .status-pending {
+        background: rgba(232, 199, 107, .22);
+        color: #7a5a14;
+    }
+
+    .kid-page .status-in-progress {
+        background: rgba(200, 175, 130, .25);
+        color: #6b5424;
+    }
+
+    .kid-page .status-success {
+        background: rgba(143, 168, 136, .22);
+        color: #2e5238;
+    }
+
+    .kid-page .status-neutral {
+        background: rgba(20, 39, 31, .06);
+        color: #5a6b60;
+    }
+
+    .kid-page .kid-head__ref {
+        margin: 0;
+        font-family: var(--kid-sans);
+        font-size: .62rem;
+        font-weight: 600;
+        letter-spacing: .22em;
+        text-transform: uppercase;
+        color: var(--kid-muted);
+    }
+
+    /* -------------------------------------------------------- LAYOUT ---- */
+    .kid-page .kid-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
+        gap: 22px;
+        align-items: start;
+    }
+
+    .kid-page .kid-stack {
+        display: flex;
+        flex-direction: column;
+        gap: 22px;
+    }
+
+    /* --------------------------------------------------------- CARDS ---- */
+    .kid-page .kid-card {
+        position: relative;
+        background: var(--kid-white);
+        border: 1px solid var(--kid-line);
+        border-radius: 4px;
+        padding: 24px 26px;
+    }
+
+    .kid-page .kid-card__head {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 18px;
+        padding-bottom: 14px;
+        border-bottom: 1px solid var(--kid-line);
+    }
+
+    .kid-page .kid-card__title {
+        margin: 0;
+        font-family: var(--kid-serif);
+        font-weight: 500;
+        font-size: 1.2rem;
+        line-height: 1.2;
+        letter-spacing: -.005em;
+        color: var(--kid-forest);
+    }
+
+    .kid-page .kid-card__meta {
+        margin: 0;
+        font-family: var(--kid-sans);
+        font-size: .62rem;
+        font-weight: 600;
+        letter-spacing: .2em;
+        text-transform: uppercase;
+        color: var(--kid-sage);
+        white-space: nowrap;
+    }
+
+    /* ----------------------------------------------------- MESSAGE BODY ---- */
+    .kid-page .kid-message {
+        margin: 0;
+        font-family: var(--kid-sans);
+        font-size: .96rem;
+        line-height: 1.8;
+        color: var(--kid-forest);
+        white-space: pre-wrap;
+        overflow-wrap: break-word;
+        word-break: break-word;
+    }
+
+    /* ----------------------------------------------------- CUSTOMER INFO ---- */
+    .kid-page .kid-info-list {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+
+    .kid-page .kid-info-list li {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        min-width: 0;
+    }
+
+    .kid-page .kid-info-label {
+        font-family: var(--kid-sans);
+        font-size: .6rem;
+        font-weight: 700;
+        letter-spacing: .22em;
+        text-transform: uppercase;
+        color: var(--kid-sage);
+    }
+
+    .kid-page .kid-info-value {
+        font-family: var(--kid-sans);
+        font-size: .95rem;
+        line-height: 1.5;
+        color: var(--kid-forest);
+        overflow-wrap: break-word;
+        word-break: break-word;
+    }
+
+    .kid-page .kid-info-value--serif {
+        font-family: var(--kid-serif);
+        font-size: 1.15rem;
+        font-weight: 500;
+        line-height: 1.3;
+    }
+
+    .kid-page .kid-info-value--muted {
+        color: var(--kid-muted);
+        font-style: italic;
+    }
+
+    .kid-page .kid-info-link {
+        color: var(--kid-forest);
+        text-decoration: none;
+        border-bottom: 1px solid rgba(20, 39, 31, .25);
+        padding-bottom: 1px;
+        transition: border-color .25s var(--kid-ease), color .25s var(--kid-ease);
+    }
+
+    .kid-page .kid-info-link:hover {
+        color: var(--kid-sage);
+        border-color: var(--kid-sage);
+    }
+
+    /* ----------------------------------------------------------- NOTES ---- */
+    .kid-page .kid-notes {
+        margin: 0;
+        padding: 16px 18px;
+        background: var(--kid-ivory);
+        border: 1px solid var(--kid-line);
+        border-radius: 3px;
+        font-family: var(--kid-sans);
+        font-size: .92rem;
+        line-height: 1.65;
+        color: var(--kid-forest);
+        white-space: pre-wrap;
+        overflow-wrap: break-word;
+        word-break: break-word;
+    }
+
+    .kid-page .kid-notes--empty {
+        color: var(--kid-muted);
+        font-style: italic;
+    }
+
+    /* --------------------------------------------------- SUBMISSION META ---- */
+    .kid-page .kid-meta-list {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 16px 24px;
+        margin: 0;
+    }
+
+    .kid-page .kid-meta-list > div {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        min-width: 0;
+    }
+
+    .kid-page .kid-meta-label {
+        font-family: var(--kid-sans);
+        font-size: .6rem;
+        font-weight: 700;
+        letter-spacing: .22em;
+        text-transform: uppercase;
+        color: var(--kid-sage);
+    }
+
+    .kid-page .kid-meta-value {
+        font-family: var(--kid-sans);
+        font-size: .92rem;
+        color: var(--kid-forest);
+    }
+
+    /* --------------------------------------------------------- ACTIONS ---- */
+    .kid-page .kid-actions {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin-top: 6px;
+    }
+
+    .kid-page .kid-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        padding: 12px 18px;
+        border-radius: 2px;
+        font-family: var(--kid-sans);
+        font-size: .68rem;
+        font-weight: 600;
+        letter-spacing: .2em;
+        text-transform: uppercase;
+        text-decoration: none;
+        transition:
+            background-color .25s var(--kid-ease),
+            border-color .25s var(--kid-ease),
+            color .25s var(--kid-ease),
+            transform .25s var(--kid-ease);
+    }
+
+    .kid-page .kid-btn svg {
+        flex: none;
+        transition: transform .25s var(--kid-ease);
+    }
+
+    .kid-page .kid-btn--primary {
+        background: var(--kid-forest);
+        border: 1px solid var(--kid-forest);
+        color: var(--kid-ivory);
+    }
+
+    .kid-page .kid-btn--primary:hover {
+        background: var(--kid-sand);
+        border-color: var(--kid-sand);
+        color: var(--kid-forest);
+        transform: translateY(-1px);
+    }
+
+    .kid-page .kid-btn--primary:hover svg {
+        transform: translateX(3px);
+    }
+
+    .kid-page .kid-btn--quiet {
+        background: transparent;
+        border: 1px solid var(--kid-line);
+        color: var(--kid-forest);
+    }
+
+    .kid-page .kid-btn--quiet:hover {
+        border-color: var(--kid-forest);
+        background: var(--kid-ivory);
+    }
+
+    .kid-page .kid-btn:focus-visible {
+        outline: 2px solid var(--kid-sand);
+        outline-offset: 2px;
+    }
+
+    /* ------------------------------------------------------ RESPONSIVE ---- */
+    @@media (max-width: 900px) {
+        .kid-page .kid-grid {
+            grid-template-columns: minmax(0, 1fr);
+        }
+
+        .kid-page .kid-head {
+            align-items: flex-start;
+        }
+
+        .kid-page .kid-head__aside {
+            align-items: flex-start;
+        }
+
+        .kid-page .kid-meta-list {
+            grid-template-columns: minmax(0, 1fr);
+        }
+    }
+
+    @@media (max-width: 560px) {
+        .kid-page .kid-card {
+            padding: 20px;
+        }
+
+        .kid-page .kid-head h1 {
+            font-size: 1.65rem;
+        }
+
+        .kid-page .kid-btn {
+            width: 100%;
+        }
+    }
+
+    /* --------------------------------------------- REDUCED MOTION ---- */
+    @@media (prefers-reduced-motion: reduce) {
+        .kid-page {
+            animation: none;
+        }
+
+        .kid-page *,
+        .kid-page *::before,
+        .kid-page *::after {
+            transition: none !important;
+            animation: none !important;
+        }
+    }
+</style>
+
+<div class="admin-page kid-page">
+
+    <div class="kid-head">
+
+        <div>
+            <a asp-controller="Admin"
+               asp-action="Inquiries"
+               class="kid-back">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
+                     stroke="currentColor" stroke-width="1.8"
+                     stroke-linecap="round" stroke-linejoin="round"
+                     aria-hidden="true" focusable="false">
+                    <path d="M19 12H5M11 6l-6 6 6 6" />
+                </svg>
+                Back to Inquiries
+            </a>
+
+            <p class="kid-head__eyebrow">Inquiry #@Model.Id</p>
+            <h1>@Model.Name</h1>
+            <p class="kid-head__sub">Review the customer's contact inquiry.</p>
+        </div>
+
+        <div class="kid-head__aside">
+            <span class="kid-status @statusClass">
+                <i aria-hidden="true"></i>
+                @Model.Status
+            </span>
+            <p class="kid-head__ref">
+                @Model.Category
+            </p>
+        </div>
+
+    </div>
+
+    <div class="kid-grid">
+
+        <!-- =========================== MAIN COLUMN =========================== -->
+        <div class="kid-stack">
+
+            <section class="kid-card" aria-labelledby="kid-message-heading">
+                <div class="kid-card__head">
+                    <h2 class="kid-card__title" id="kid-message-heading">Message</h2>
+                    <p class="kid-card__meta">
+                        @Model.SubmittedAt.ToLocalTime().ToString("dd MMM yyyy")
+                    </p>
+                </div>
+
+                <p class="kid-message">@Model.Message</p>
+            </section>
+
+            <section class="kid-card" aria-labelledby="kid-notes-heading">
+                <div class="kid-card__head">
+                    <h2 class="kid-card__title" id="kid-notes-heading">Admin Notes</h2>
+                </div>
+
+                @if (hasNotes)
+                {
+                    <p class="kid-notes">@Model.AdminNotes</p>
+                }
+                else
+                {
+                    <p class="kid-notes kid-notes--empty">No notes added.</p>
+                }
+            </section>
+
+            <section class="kid-card" aria-labelledby="kid-submission-heading">
+                <div class="kid-card__head">
+                    <h2 class="kid-card__title" id="kid-submission-heading">Submission Information</h2>
+                </div>
+
+                <div class="kid-meta-list">
+                    <div>
+                        <span class="kid-meta-label">Submitted</span>
+                        <span class="kid-meta-value">
+                            @Model.SubmittedAt.ToLocalTime().ToString("dd MMM yyyy, hh:mm tt")
+                        </span>
+                    </div>
+
+                    <div>
+                        <span class="kid-meta-label">Category</span>
+                        <span class="kid-meta-value">@Model.Category</span>
+                    </div>
+
+                    <div>
+                        <span class="kid-meta-label">Current Status</span>
+                        <span class="kid-meta-value">@Model.Status</span>
+                    </div>
+
+                    <div>
+                        <span class="kid-meta-label">Reference</span>
+                        <span class="kid-meta-value">#@Model.Id</span>
+                    </div>
+                </div>
+            </section>
+
+        </div>
+
+        <!-- =========================== SIDE COLUMN =========================== -->
+        <aside class="kid-stack">
+
+            <section class="kid-card" aria-labelledby="kid-customer-heading">
+                <div class="kid-card__head">
+                    <h2 class="kid-card__title" id="kid-customer-heading">Customer Information</h2>
+                </div>
+
+                <ul class="kid-info-list">
+                    <li>
+                        <span class="kid-info-label">Name</span>
+                        <span class="kid-info-value kid-info-value--serif">@Model.Name</span>
+                    </li>
+
+                    <li>
+                        <span class="kid-info-label">Email</span>
+                        <span class="kid-info-value">
+                            @if (hasEmail)
+                            {
+                                <a class="kid-info-link" href="mailto:@Model.Email">@Model.Email</a>
+                            }
+                            else
+                            {
+                                <span class="kid-info-value--muted">Not provided</span>
+                            }
+                        </span>
+                    </li>
+
+                    <li>
+                        <span class="kid-info-label">Phone</span>
+                        <span class="kid-info-value">
+                            @if (hasPhone)
+                            {
+                                @Model.Phone
+                            }
+                            else
+                            {
+                                <span class="kid-info-value--muted">Not provided</span>
+                            }
+                        </span>
+                    </li>
+
+                    <li>
+                        <span class="kid-info-label">Category</span>
+                        <span class="kid-info-value">@Model.Category</span>
+                    </li>
+                </ul>
+
+                <div class="kid-actions">
+                    @if (hasEmail)
+                    {
+                        <a class="kid-btn kid-btn--primary" href="mailto:@Model.Email">
+                            Reply by Email
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
+                                 stroke="currentColor" stroke-width="1.8"
+                                 stroke-linecap="round" stroke-linejoin="round"
+                                 aria-hidden="true" focusable="false">
+                                <path d="M5 12h14M13 6l6 6-6 6" />
+                            </svg>
+                        </a>
+                    }
+
+                    <a asp-controller="Admin"
+                       asp-action="Inquiries"
+                       class="kid-btn kid-btn--quiet">
+                        Back to Inbox
+                    </a>
+                </div>
+            </section>
+
+        </aside>
+
+    </div>
+
+</div>

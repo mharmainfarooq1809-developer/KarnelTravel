@@ -1,26 +1,694 @@
 @model IEnumerable<KarnelTravel.Models.ContactInquiry>
 @{
     ViewData["Title"] = "Contact Submissions";
+
+    var submissions = Model?.ToList() ?? new List<KarnelTravel.Models.ContactInquiry>();
+    int totalCount = submissions.Count;
+
+    int uniqueCategories = submissions
+        .Where(s => !string.IsNullOrWhiteSpace(s.Category))
+        .Select(s => s.Category)
+        .Distinct()
+        .Count();
+
+    DateTime? latestSubmission = submissions
+        .OrderByDescending(s => s.SubmittedAt)
+        .Select(s => (DateTime?)s.SubmittedAt)
+        .FirstOrDefault();
+
+    string InitialOf(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value)) { return "?"; }
+        return value.Trim().Substring(0, 1).ToUpperInvariant();
+    }
+
+    string CategorySlug(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value)) { return "general"; }
+        return value.Trim().ToLowerInvariant().Replace(" ", "-");
+    }
 }
 
-<div class="container section">
-    <h1>Contact Submissions (Demo)</h1>
+@section Styles {
+    <style>
+        @@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,500&display=swap');
 
-    <table>
-        <thead>
-            <tr><th>Id</th><th>Name</th><th>Email</th><th>Category</th><th>Submitted</th></tr>
-        </thead>
-        <tbody>
-        @foreach (var s in Model)
-        {
-            <tr>
-                <td>@s.Id</td>
-                <td>@s.Name</td>
-                <td>@s.Email</td>
-                <td>@s.Category</td>
-                <td>@s.SubmittedAt.ToLocalTime()</td>
-            </tr>
+        /* ============================================================
+           GLOBAL
+        ============================================================ */
+        :root {
+            --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+            --inbox-y: clamp(64px, 8vw, 104px);
         }
-        </tbody>
-    </table>
-</div>
+
+        html { scroll-behavior: smooth; }
+
+        ::selection { background: var(--forest); color: var(--ivory); }
+
+        ::-webkit-scrollbar { width: 10px; }
+        ::-webkit-scrollbar-track { background: var(--ivory); }
+        ::-webkit-scrollbar-thumb {
+            background: var(--moss);
+            border-radius: 10px;
+            border: 2px solid var(--ivory);
+        }
+        ::-webkit-scrollbar-thumb:hover { background: var(--forest); }
+
+        /* ============================================================
+           SHARED ATOMS
+        ============================================================ */
+        .eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            margin: 0 0 16px;
+            font-family: var(--sans);
+            font-size: 0.66rem;
+            font-weight: 600;
+            letter-spacing: 0.24em;
+            text-transform: uppercase;
+            color: var(--moss);
+        }
+        .eyebrow::before {
+            content: '';
+            width: 28px;
+            height: 1px;
+            background: currentColor;
+            flex: 0 0 auto;
+            opacity: 0.85;
+        }
+
+        /* ============================================================
+           HERO / INBOX HEADER
+        ============================================================ */
+        .inbox-hero {
+            position: relative;
+            padding: calc(var(--header-h) + clamp(36px, 5vw, 64px)) 0 clamp(40px, 5vw, 64px);
+            background-color: var(--ivory);
+            background-image:
+                radial-gradient(ellipse 60% 50% at 92% 8%, rgba(143, 168, 136, 0.12), transparent 60%),
+                radial-gradient(ellipse 50% 60% at 8% 92%, rgba(232, 223, 201, 0.32), transparent 60%);
+            border-bottom: 1px solid var(--line);
+            overflow: hidden;
+            isolation: isolate;
+        }
+        .inbox-hero__grid {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            gap: clamp(20px, 4vw, 56px);
+            align-items: end;
+        }
+        .inbox-hero h1 {
+            max-width: 20ch;
+            margin: 0 0 14px;
+            font-size: clamp(2rem, 3.8vw, 3.1rem);
+            line-height: 1.03;
+            letter-spacing: -0.025em;
+            text-wrap: balance;
+        }
+        .inbox-hero__lede {
+            max-width: 54ch;
+            margin: 0;
+            color: var(--muted);
+            font-size: 0.98rem;
+            line-height: 1.7;
+        }
+        .inbox-hero__badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 7px 14px;
+            border: 1px solid var(--line);
+            border-radius: 999px;
+            background: var(--white);
+            color: var(--muted);
+            font-size: 0.6rem;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+            white-space: nowrap;
+        }
+        .inbox-hero__badge::before {
+            content: '';
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--sage);
+        }
+        .inbox-hero__actions {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+        .inbox-hero .btn--ghost-dark {
+            background: transparent;
+            color: var(--forest);
+            border: 1px solid rgba(20, 39, 31, 0.24);
+        }
+        .inbox-hero .btn--ghost-dark:hover { border-color: var(--forest); }
+
+        .btn {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            min-height: 46px;
+            padding: 0 22px;
+            overflow: hidden;
+            isolation: isolate;
+            border: 1px solid transparent;
+            border-radius: var(--radius);
+            background: var(--forest);
+            color: var(--ivory);
+            font-family: var(--sans);
+            font-size: 0.68rem;
+            font-weight: 600;
+            letter-spacing: 0.16em;
+            text-transform: uppercase;
+            text-decoration: none;
+            cursor: pointer;
+            transition:
+                transform 0.5s var(--ease-out),
+                box-shadow 0.5s var(--ease-out),
+                background 0.4s var(--ease),
+                color 0.4s var(--ease),
+                border-color 0.4s var(--ease);
+        }
+        .btn::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            z-index: 1;
+            background: linear-gradient(120deg,
+                transparent 20%,
+                rgba(255, 255, 255, 0.35) 50%,
+                transparent 80%);
+            transform: translateX(-120%);
+            transition: transform 0.85s var(--ease-out);
+            pointer-events: none;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 18px 32px -20px rgba(20, 39, 31, 0.55);
+        }
+        .btn:hover::after { transform: translateX(120%); }
+
+        /* ============================================================
+           STATS STRIP
+        ============================================================ */
+        .inbox-stats {
+            position: relative;
+            margin-top: calc(-1 * clamp(20px, 3vw, 34px));
+            z-index: 2;
+        }
+        .inbox-stats__inner {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            background: var(--white);
+            border: 1px solid var(--line);
+            border-radius: var(--radius-lg);
+            box-shadow:
+                0 40px 80px -50px rgba(20, 39, 31, 0.4),
+                0 2px 4px rgba(20, 39, 31, 0.04);
+            overflow: hidden;
+        }
+        .inbox-stat {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            padding: clamp(18px, 2.4vw, 26px) clamp(20px, 3vw, 34px);
+            border-right: 1px solid var(--line);
+        }
+        .inbox-stat:last-child { border-right: 0; }
+        .inbox-stat span {
+            font-size: 0.6rem;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            color: var(--muted);
+        }
+        .inbox-stat strong {
+            font-family: var(--serif);
+            font-weight: 500;
+            font-size: clamp(1.4rem, 2.2vw, 1.85rem);
+            line-height: 1;
+            letter-spacing: -0.01em;
+            color: var(--forest-deep);
+        }
+        .inbox-stat strong small {
+            font-family: var(--sans);
+            font-size: 0.6rem;
+            font-weight: 600;
+            letter-spacing: 0.16em;
+            text-transform: uppercase;
+            color: var(--muted);
+            margin-left: 8px;
+        }
+
+        /* ============================================================
+           TABLE SECTION
+        ============================================================ */
+        .inbox-section {
+            padding: clamp(56px, 7vw, 92px) 0 var(--inbox-y);
+        }
+        .inbox-head {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: baseline;
+            justify-content: space-between;
+            gap: 14px 24px;
+            margin-bottom: 20px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--line);
+        }
+        .inbox-head h2 {
+            margin: 0;
+            font-size: clamp(1.4rem, 2.2vw, 1.8rem);
+            letter-spacing: -0.015em;
+        }
+        .inbox-head span {
+            font-size: 0.6rem;
+            letter-spacing: 0.22em;
+            text-transform: uppercase;
+            color: var(--muted);
+        }
+
+        .inbox-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: var(--white);
+            border: 1px solid var(--line);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+        }
+        .inbox-table thead {
+            background: linear-gradient(180deg, var(--ivory), var(--white));
+        }
+        .inbox-table th {
+            padding: 14px 20px;
+            text-align: left;
+            font-size: 0.6rem;
+            font-weight: 600;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            color: var(--muted);
+            border-bottom: 1px solid var(--line);
+        }
+        .inbox-table td {
+            padding: 18px 20px;
+            vertical-align: middle;
+            border-bottom: 1px solid var(--line);
+            font-size: 0.94rem;
+            color: var(--charcoal);
+        }
+        .inbox-table tbody tr:last-child td { border-bottom: 0; }
+        .inbox-table tbody tr {
+            transition: background-color 0.35s var(--ease-out);
+        }
+        .inbox-table tbody tr:hover {
+            background-color: rgba(143, 168, 136, 0.06);
+        }
+
+        .inbox-cell-id {
+            font-family: var(--serif);
+            font-style: italic;
+            font-size: 0.96rem;
+            color: var(--sage);
+            white-space: nowrap;
+            width: 90px;
+        }
+
+        .inbox-cell-person {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            min-width: 0;
+        }
+        .inbox-avatar {
+            flex: 0 0 auto;
+            display: grid;
+            place-items: center;
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            background:
+                radial-gradient(circle at 30% 30%, rgba(143, 168, 136, 0.9), var(--forest) 90%);
+            color: var(--ivory);
+            font-family: var(--serif);
+            font-size: 0.95rem;
+            font-weight: 500;
+            letter-spacing: 0.02em;
+            border: 1px solid rgba(20, 39, 31, 0.2);
+        }
+        .inbox-cell-person__meta {
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        .inbox-cell-person__name {
+            font-family: var(--serif);
+            font-size: 1.02rem;
+            font-weight: 500;
+            letter-spacing: -0.005em;
+            color: var(--charcoal);
+            line-height: 1.2;
+            overflow-wrap: anywhere;
+        }
+        .inbox-cell-person__email {
+            font-size: 0.78rem;
+            color: var(--muted);
+            line-height: 1.35;
+            overflow-wrap: anywhere;
+        }
+
+        .category-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 5px 11px;
+            border: 1px solid var(--line);
+            border-radius: 999px;
+            background: var(--ivory);
+            color: var(--forest);
+            font-size: 0.62rem;
+            font-weight: 600;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            white-space: nowrap;
+        }
+        .category-chip::before {
+            content: '';
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            background: var(--sage);
+        }
+        .category-chip[data-category="general"] {
+            background: rgba(232, 223, 201, 0.55);
+            color: #5a4b27;
+        }
+        .category-chip[data-category="general"]::before { background: #b8a05a; }
+
+        .category-chip[data-category="destinations"] {
+            background: rgba(143, 168, 136, 0.2);
+            color: var(--forest);
+        }
+        .category-chip[data-category="destinations"]::before { background: var(--moss); }
+
+        .category-chip[data-category="transport"] {
+            background: rgba(20, 39, 31, 0.08);
+            color: var(--forest-deep);
+        }
+        .category-chip[data-category="transport"]::before { background: var(--forest); }
+
+        .category-chip[data-category="hotels"] {
+            background: rgba(232, 223, 201, 0.8);
+            color: #6b5322;
+        }
+        .category-chip[data-category="hotels"]::before { background: #c8a860; }
+
+        .category-chip[data-category="restaurants"] {
+            background: rgba(143, 168, 136, 0.16);
+            color: #3d5237;
+        }
+        .category-chip[data-category="restaurants"]::before { background: #7a926e; }
+
+        .category-chip[data-category="resorts"] {
+            background: rgba(83, 107, 80, 0.14);
+            color: var(--forest-deep);
+        }
+        .category-chip[data-category="resorts"]::before { background: #536b50; }
+
+        .inbox-cell-time {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            white-space: nowrap;
+        }
+        .inbox-cell-time__date {
+            font-size: 0.9rem;
+            color: var(--charcoal);
+            line-height: 1.25;
+        }
+        .inbox-cell-time__time {
+            font-size: 0.72rem;
+            letter-spacing: 0.06em;
+            color: var(--muted);
+        }
+
+        /* ============================================================
+           EMPTY STATE
+        ============================================================ */
+        .inbox-empty {
+            position: relative;
+            overflow: hidden;
+            padding: clamp(56px, 8vw, 96px) clamp(24px, 4vw, 56px);
+            border: 1px solid var(--line);
+            border-radius: var(--radius-lg);
+            background: var(--white);
+            text-align: center;
+        }
+        .inbox-empty::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background:
+                radial-gradient(ellipse 60% 60% at 50% 0%, rgba(143, 168, 136, 0.14), transparent 70%),
+                radial-gradient(ellipse 50% 50% at 50% 100%, rgba(232, 223, 201, 0.4), transparent 70%);
+            pointer-events: none;
+        }
+        .inbox-empty > * { position: relative; z-index: 1; }
+        .inbox-empty h2 {
+            margin: 0 0 12px;
+            font-size: clamp(1.7rem, 2.8vw, 2.3rem);
+            line-height: 1.08;
+            letter-spacing: -0.02em;
+        }
+        .inbox-empty p {
+            max-width: 46ch;
+            margin: 0 auto;
+            color: var(--muted);
+            line-height: 1.7;
+        }
+
+        /* ============================================================
+           RESPONSIVE — table becomes stacked cards
+        ============================================================ */
+        @@media (max-width: 900px) {
+            .inbox-hero__grid {
+                grid-template-columns: 1fr;
+                align-items: flex-start;
+            }
+            .inbox-hero__actions { justify-content: flex-start; }
+            .inbox-stats__inner { grid-template-columns: 1fr 1fr 1fr; }
+        }
+
+        @@media (max-width: 760px) {
+            .inbox-stats__inner {
+                grid-template-columns: 1fr;
+            }
+            .inbox-stat {
+                border-right: 0;
+                border-bottom: 1px solid var(--line);
+            }
+            .inbox-stat:last-child { border-bottom: 0; }
+
+            .inbox-table,
+            .inbox-table thead,
+            .inbox-table tbody,
+            .inbox-table tr,
+            .inbox-table td {
+                display: block;
+                width: 100%;
+            }
+            .inbox-table {
+                border: 0;
+                border-radius: 0;
+                background: transparent;
+                overflow: visible;
+            }
+            .inbox-table thead { display: none; }
+            .inbox-table tbody tr {
+                position: relative;
+                margin-bottom: 14px;
+                padding: 16px 18px;
+                background: var(--white);
+                border: 1px solid var(--line);
+                border-radius: var(--radius-lg);
+                box-shadow: 0 20px 40px -32px rgba(20, 39, 31, 0.3);
+            }
+            .inbox-table tbody tr:last-child { margin-bottom: 0; }
+            .inbox-table tbody tr:hover { background: var(--white); }
+            .inbox-table td {
+                padding: 6px 0;
+                border: 0;
+                display: grid;
+                grid-template-columns: 92px minmax(0, 1fr);
+                gap: 12px;
+                align-items: baseline;
+            }
+            .inbox-table td::before {
+                content: attr(data-label);
+                font-size: 0.58rem;
+                font-weight: 600;
+                letter-spacing: 0.18em;
+                text-transform: uppercase;
+                color: var(--muted);
+            }
+            .inbox-cell-id {
+                width: auto;
+            }
+            .inbox-cell-person__email { font-size: 0.76rem; }
+            .inbox-cell-time {
+                flex-direction: row;
+                align-items: baseline;
+                gap: 8px;
+                flex-wrap: wrap;
+            }
+        }
+
+        @@media (max-width: 480px) {
+            .inbox-table td {
+                grid-template-columns: 1fr;
+                gap: 4px;
+            }
+            .inbox-table td::before {
+                margin-bottom: 2px;
+            }
+            .inbox-avatar {
+                width: 32px;
+                height: 32px;
+                font-size: 0.85rem;
+            }
+        }
+
+        /* ============================================================
+           REDUCED MOTION
+        ============================================================ */
+        @@media (prefers-reduced-motion: reduce) {
+            html { scroll-behavior: auto; }
+            .btn,
+            .inbox-table tbody tr {
+                transition: none !important;
+            }
+            .btn:hover { transform: none !important; }
+        }
+    </style>
+}
+
+<!-- ==================== HERO ==================== -->
+<header class="inbox-hero">
+    <div class="container inbox-hero__grid">
+        <div>
+            <p class="eyebrow">Inbox · Demo Data</p>
+            <h1>Contact submissions</h1>
+            <p class="inbox-hero__lede">
+                A read-only view of the inquiries received through the Contact page. This
+                is sample data for the demo build — no editing or exporting is enabled on
+                this screen.
+            </p>
+        </div>
+        <div class="inbox-hero__actions">
+            <span class="inbox-hero__badge">View only</span>
+            <a class="btn btn--ghost-dark" href="@Url.Action("Index", "Contact")">Open inquiry form</a>
+        </div>
+    </div>
+</header>
+
+<!-- ==================== STATS STRIP ==================== -->
+@if (totalCount > 0)
+{
+    <section class="inbox-stats" aria-label="Submission summary">
+        <div class="container">
+            <div class="inbox-stats__inner">
+                <div class="inbox-stat">
+                    <span>Total submissions</span>
+                    <strong>@totalCount <small>inbox</small></strong>
+                </div>
+                <div class="inbox-stat">
+                    <span>Categories represented</span>
+                    <strong>@uniqueCategories <small>of 6</small></strong>
+                </div>
+                <div class="inbox-stat">
+                    <span>Most recent</span>
+                    <strong>
+                        @if (latestSubmission.HasValue)
+                        {
+                            @latestSubmission.Value.ToLocalTime().ToString("dd MMM yyyy")
+                        }
+                        else
+                        {
+                            <text>—</text>
+                        }
+                    </strong>
+                </div>
+            </div>
+        </div>
+    </section>
+}
+
+<!-- ==================== TABLE ==================== -->
+<section class="inbox-section" aria-labelledby="inbox-table-title">
+    <div class="container">
+
+        @if (totalCount == 0)
+        {
+            <div class="inbox-empty">
+                <p class="eyebrow" style="justify-content:center;">Nothing here yet</p>
+                <h2>No submissions received</h2>
+                <p>
+                    Once visitors send an inquiry through the Contact page, it will appear
+                    here. There is nothing to display right now.
+                </p>
+            </div>
+        }
+        else
+        {
+            <div class="inbox-head">
+                <h2 id="inbox-table-title">All submissions</h2>
+                <span>@totalCount record(s)</span>
+            </div>
+
+            <table class="inbox-table">
+                <thead>
+                    <tr>
+                        <th scope="col">#</th>
+                        <th scope="col">Contact</th>
+                        <th scope="col">Category</th>
+                        <th scope="col">Submitted</th>
+                    </tr>
+                </thead>
+                <tbody>
+                @foreach (var s in submissions)
+                {
+                    var localTime = s.SubmittedAt.ToLocalTime();
+                    <tr>
+                        <td class="inbox-cell-id" data-label="ID">
+                            #@s.Id.ToString("D3")
+                        </td>
+                        <td data-label="Contact">
+                            <div class="inbox-cell-person">
+                                <span class="inbox-avatar" aria-hidden="true">@InitialOf(s.Name)</span>
+                                <div class="inbox-cell-person__meta">
+                                    <span class="inbox-cell-person__name">@s.Name</span>
+                                    <span class="inbox-cell-person__email">@s.Email</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td data-label="Category">
+                            <span class="category-chip" data-category="@CategorySlug(s.Category)">
+                                @s.Category
+                            </span>
+                        </td>
+                        <td class="inbox-cell-time" data-label="Submitted">
+                            <span class="inbox-cell-time__date">@localTime.ToString("dd MMM yyyy")</span>
+                            <span class="inbox-cell-time__time">@localTime.ToString("HH:mm")</span>
+                        </td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        }
+    </div>
+</section>

@@ -48,7 +48,8 @@ public class BookingsController : Controller
             Children = 0,
             Rooms = 0,
             TripType = service.Type == "Transport" ? "OneWay" : null,
-            PreferredVisitTime = null
+            PreferredVisitTime = null,
+            TourBookingType = "Scheduled"
         };
 
         ViewBag.ServiceName = service.Name;
@@ -56,6 +57,11 @@ public class BookingsController : Controller
         if (service.Type == "Transport")
         {
             await LoadTransportRoutes(service.Id);
+        }
+
+        if (service.Type == "Tour")
+        {
+            await LoadTourDepartures(service.Id);
         }
 
         return View("~/Views/Bookings/Create.cshtml", model);
@@ -87,6 +93,89 @@ public class BookingsController : Controller
         decimal? discount = null;
         decimal? totalFare = null;
 
+        TourDeparture? selectedTourDeparture = null;
+
+        // =====================================================
+        // TOUR VALIDATION
+        // =====================================================
+
+        if (service.Type == "Tour")
+        {
+            model.TourBookingType = model.TourBookingType?.Trim();
+
+            int totalTourPassengers = model.Adults + model.Children;
+
+            if (model.Adults < 1 || model.Children < 0 ||
+                totalTourPassengers < 1)
+            {
+                ModelState.AddModelError(
+                    nameof(model.Adults),
+                    "At least one adult or child passenger is required.");
+            }
+
+            model.Rooms = 0;
+            model.PickupLocation = null;
+            model.DropoffLocation = null;
+            model.TripType = null;
+            model.PreferredVisitTime = null;
+
+            if (model.TourBookingType == "Scheduled")
+            {
+                if (!model.TourDepartureId.HasValue)
+                {
+                    ModelState.AddModelError(
+                        nameof(model.TourDepartureId),
+                        "Please select a scheduled departure.");
+                }
+                else
+                {
+                    selectedTourDeparture =
+                        await _context.TourDepartures
+                            .AsNoTracking()
+                            .FirstOrDefaultAsync(d =>
+                                d.Id == model.TourDepartureId.Value &&
+                                d.TourPackageId == service.Id &&
+                                d.IsActive &&
+                                d.DepartureDate.Date >= DateTime.Today);
+
+                    if (selectedTourDeparture == null)
+                    {
+                        ModelState.AddModelError(
+                            nameof(model.TourDepartureId),
+                            "This departure is unavailable. Please select another.");
+                    }
+                    else
+                    {
+                        model.BookingDate =
+                            selectedTourDeparture.DepartureDate.Date;
+
+                        model.ReturnDate =
+                            selectedTourDeparture.ReturnDate.Date;
+
+                        if (totalTourPassengers >
+                            selectedTourDeparture.AvailableSeats)
+                        {
+                            ModelState.AddModelError(
+                                nameof(model.Adults),
+                                $"Only {selectedTourDeparture.AvailableSeats} " +
+                                "seats are currently available for this departure.");
+                        }
+                    }
+                }
+            }
+            else if (model.TourBookingType == "Custom")
+            {
+                model.TourDepartureId = null;
+                model.ReturnDate = model.ReturnDate?.Date;
+            }
+            else
+            {
+                ModelState.AddModelError(
+                    nameof(model.TourBookingType),
+                    "Please select Scheduled or Custom booking.");
+            }
+        }
+
         // =====================================================
         // GENERAL BOOKING DATE VALIDATION
         // =====================================================
@@ -116,6 +205,62 @@ public class BookingsController : Controller
         }
 
         // =====================================================
+        // HOTEL VALIDATION
+        // =====================================================
+
+        if (service.Type == "Hotel")
+        {
+            if (!model.ReturnDate.HasValue)
+            {
+                ModelState.AddModelError(
+                    nameof(model.ReturnDate),
+                    "Please select your check-out date.");
+            }
+
+            if (model.Rooms < 1)
+            {
+                ModelState.AddModelError(
+                    nameof(model.Rooms),
+                    "Please select at least one room.");
+            }
+
+            if (model.Adults < 1 || model.Children < 0)
+            {
+                ModelState.AddModelError(
+                    nameof(model.Adults),
+                    "Please enter valid guest quantities.");
+            }
+        }
+
+        // =====================================================
+        // RESORT VALIDATION
+        // =====================================================
+
+        if (service.Type == "Resort")
+        {
+            if (!model.ReturnDate.HasValue)
+            {
+                ModelState.AddModelError(
+                    nameof(model.ReturnDate),
+                    "Please select your check-out date.");
+            }
+
+            if (model.Rooms < 1)
+            {
+                ModelState.AddModelError(
+                    nameof(model.Rooms),
+                    "Please select at least one room.");
+            }
+
+            if (model.Adults < 1 || model.Children < 0)
+            {
+                ModelState.AddModelError(
+                    nameof(model.Adults),
+                    "Please enter valid guest quantities.");
+            }
+        }
+
+        // =====================================================
         // RESTAURANT VALIDATION
         // =====================================================
 
@@ -140,7 +285,6 @@ public class BookingsController : Controller
             }
             else
             {
-                // Store the canonical value.
                 model.PreferredVisitTime =
                     RestaurantVisitPeriods.First(
                         x => string.Equals(
@@ -151,20 +295,14 @@ public class BookingsController : Controller
                     );
             }
 
-            // A restaurant booking does not use a return date.
             model.ReturnDate = null;
-
-            // Rooms are not relevant to restaurant bookings.
             model.Rooms = 0;
-
-            // Restaurant booking does not use transport fields.
             model.PickupLocation = null;
             model.DropoffLocation = null;
             model.TripType = null;
         }
         else
         {
-            // Do not retain restaurant-only data for other services.
             model.PreferredVisitTime = null;
         }
 
@@ -212,9 +350,7 @@ public class BookingsController : Controller
                 model.ReturnDate = null;
             }
 
-            // =================================================
             // CHECK VEHICLE
-            // =================================================
 
             var transportService = await _context.TransportServices
                 .AsNoTracking()
@@ -228,9 +364,7 @@ public class BookingsController : Controller
                     "The selected vehicle is unavailable.");
             }
 
-            // =================================================
             // PASSENGER CAPACITY
-            // =================================================
 
             int totalPassengers = model.Adults + model.Children;
 
@@ -257,9 +391,7 @@ public class BookingsController : Controller
                     $"{transportService.PassengerCapacity.Value} passengers.");
             }
 
-            // =================================================
             // VEHICLE AVAILABILITY CHECK
-            // =================================================
 
             bool validTravelDates =
                 model.BookingDate != default &&
@@ -311,9 +443,7 @@ public class BookingsController : Controller
                 }
             }
 
-            // =================================================
             // ROUTE VALIDATION AND FARE CALCULATION
-            // =================================================
 
             if (!string.IsNullOrWhiteSpace(pickupCity) &&
                 !string.IsNullOrWhiteSpace(dropoffCity))
@@ -372,6 +502,157 @@ public class BookingsController : Controller
         }
 
         // =====================================================
+        // HOTEL PRICE CALCULATION
+        // =====================================================
+
+        if (service.Type == "Hotel" &&
+            model.ReturnDate.HasValue &&
+            model.ReturnDate.Value.Date > model.BookingDate.Date &&
+            model.Rooms >= 1)
+        {
+            var hotel = await _context.Hotels
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x =>
+                    x.Id == service.Id &&
+                    x.IsPublished);
+
+            if (hotel?.StartingPricePerNight is > 0)
+            {
+                int nights = (
+                    model.ReturnDate.Value.Date -
+                    model.BookingDate.Date
+                ).Days;
+
+                totalFare =
+                    hotel.StartingPricePerNight.Value *
+                    model.Rooms *
+                    nights;
+            }
+            else
+            {
+                ModelState.AddModelError(
+                    string.Empty,
+                    "This hotel does not have a valid nightly price configured.");
+            }
+        }
+
+        // =====================================================
+        // RESORT PRICE CALCULATION
+        // =====================================================
+
+        if (service.Type == "Resort" &&
+            model.ReturnDate.HasValue &&
+            model.ReturnDate.Value.Date > model.BookingDate.Date &&
+            model.Rooms >= 1)
+        {
+            var resort = await _context.Resorts
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x =>
+                    x.Id == service.Id &&
+                    x.IsPublished);
+
+            if (resort?.StartingPricePerNight is > 0)
+            {
+                int nights = (
+                    model.ReturnDate.Value.Date -
+                    model.BookingDate.Date
+                ).Days;
+
+                totalFare =
+                    resort.StartingPricePerNight.Value *
+                    model.Rooms *
+                    nights;
+            }
+            else
+            {
+                ModelState.AddModelError(
+                    string.Empty,
+                    "This resort does not have a valid nightly price configured.");
+            }
+        }
+
+        // =====================================================
+        // RESTAURANT PRICE ESTIMATE
+        // =====================================================
+
+        if (service.Type == "Restaurant")
+        {
+            int totalGuests = model.Adults + model.Children;
+
+            if (totalGuests < 1)
+            {
+                ModelState.AddModelError(
+                    nameof(model.Adults),
+                    "At least one guest is required.");
+            }
+            else
+            {
+                var restaurant = await _context.Restaurants
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(x =>
+                        x.Id == service.Id &&
+                        x.IsPublished);
+
+                if (restaurant?.AverageMealPrice is > 0)
+                {
+                    totalFare =
+                        restaurant.AverageMealPrice.Value *
+                        totalGuests;
+                }
+                else
+                {
+                    ModelState.AddModelError(
+                        string.Empty,
+                        "This restaurant does not have a valid average meal price configured.");
+                }
+            }
+        }
+
+        // =====================================================
+        // TOUR PRICE CALCULATION
+        // =====================================================
+
+        if (service.Type == "Tour")
+        {
+            var tour = await _context.TourPackages
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x =>
+                    x.Id == service.Id &&
+                    x.IsPublished);
+
+            if (tour == null)
+            {
+                return NotFound(
+                    "The selected tour is unavailable.");
+            }
+
+            if (!tour.PricePerAdult.HasValue ||
+                tour.PricePerAdult.Value <= 0)
+            {
+                ModelState.AddModelError(
+                    string.Empty,
+                    "This tour does not have a valid adult price configured.");
+            }
+            else if (model.Children > 0 &&
+                     !tour.PricePerChild.HasValue)
+            {
+                ModelState.AddModelError(
+                    string.Empty,
+                    "Please configure the child price for this tour before accepting child bookings.");
+            }
+            else
+            {
+                decimal adultTotal =
+                    tour.PricePerAdult.Value * model.Adults;
+
+                decimal childTotal =
+                    (tour.PricePerChild ?? 0m) * model.Children;
+
+                totalFare = adultTotal + childTotal;
+            }
+        }
+
+        // =====================================================
         // RETURN FORM IF VALIDATION FAILS
         // =====================================================
 
@@ -380,6 +661,11 @@ public class BookingsController : Controller
             if (service.Type == "Transport")
             {
                 await LoadTransportRoutes(service.Id);
+            }
+
+            if (service.Type == "Tour")
+            {
+                await LoadTourDepartures(service.Id);
             }
 
             return View("~/Views/Bookings/Create.cshtml", model);
@@ -408,7 +694,6 @@ public class BookingsController : Controller
 
             BookingDate = model.BookingDate.Date,
 
-            // Restaurant preferred visit period.
             PreferredVisitTime = service.Type == "Restaurant"
                 ? model.PreferredVisitTime
                 : null,
@@ -420,7 +705,8 @@ public class BookingsController : Controller
             Children = model.Children,
 
             Rooms = service.Type == "Transport" ||
-                    service.Type == "Restaurant"
+                    service.Type == "Restaurant" ||
+                    service.Type == "Tour"
                 ? 0
                 : model.Rooms,
 
@@ -473,6 +759,12 @@ public class BookingsController : Controller
 
             case "Tour":
                 booking.TourPackageId = service.Id;
+
+                booking.TourDepartureId =
+                    model.TourBookingType == "Scheduled"
+                        ? selectedTourDeparture?.Id
+                        : null;
+
                 break;
 
             case "Transport":
@@ -538,6 +830,23 @@ public class BookingsController : Controller
                 .OrderBy(x => x.PickupCity)
                 .ThenBy(x => x.DropoffCity)
                 .ToListAsync();
+    }
+
+    // =========================================================
+    // LOAD AVAILABLE TOUR DEPARTURES
+    // =========================================================
+
+    private async Task LoadTourDepartures(int tourPackageId)
+    {
+        ViewBag.TourDepartures = await _context.TourDepartures
+            .AsNoTracking()
+            .Where(d =>
+                d.TourPackageId == tourPackageId &&
+                d.IsActive &&
+                d.DepartureDate.Date >= DateTime.Today &&
+                d.AvailableSeats > 0)
+            .OrderBy(d => d.DepartureDate)
+            .ToListAsync();
     }
 
     // =========================================================

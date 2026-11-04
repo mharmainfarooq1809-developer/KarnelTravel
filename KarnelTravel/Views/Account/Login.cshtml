@@ -15,6 +15,554 @@
     <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
 
     <link rel="stylesheet" href="~/css/admin.css" asp-append-version="true" />
+
+    <style>
+        /* ============================================================
+           PREMIUM POLISH — LAYERED ON TOP OF admin.css
+           Page-specific only. Does not modify shared stylesheets.
+        ============================================================ */
+
+        /* ---------- LEFT PANEL — CINEMATIC VISUAL ---------- */
+        .admin-body .login-visual {
+            position: relative;
+            overflow: hidden;
+            isolation: isolate;
+            background-color: #14271F;
+            background-image:
+                url('https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=1600&q=80');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            color: #F8F6F0;
+            animation: kVisualIn 1s ease-out both;
+        }
+
+        .admin-body .login-visual::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            z-index: -1;
+            background: linear-gradient(
+                160deg,
+                rgba(20, 39, 31, 0.72) 0%,
+                rgba(20, 39, 31, 0.55) 45%,
+                rgba(20, 39, 31, 0.9) 100%
+            );
+            pointer-events: none;
+        }
+
+        .admin-body .login-visual::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            z-index: -1;
+            background:
+                radial-gradient(ellipse 55% 45% at 12% 18%, rgba(143, 168, 136, 0.2), transparent 65%),
+                radial-gradient(ellipse 40% 40% at 88% 88%, rgba(232, 223, 201, 0.1), transparent 65%);
+            pointer-events: none;
+        }
+
+        .admin-body .login-visual .login-brand {
+            position: relative;
+            z-index: 1;
+        }
+
+        .admin-body .login-visual .brand-mark {
+            display: inline-grid;
+            place-items: center;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            border: 1px solid rgba(248, 246, 240, 0.4);
+            background: rgba(248, 246, 240, 0.1);
+            color: #F8F6F0;
+            font-family: 'DM Serif Display', Georgia, serif;
+            font-size: 1.3rem;
+            line-height: 1;
+            backdrop-filter: blur(4px);
+        }
+
+        .admin-body .login-visual .login-quote {
+            position: relative;
+            z-index: 1;
+        }
+
+        .admin-body .login-visual .login-quote .eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            margin: 0 0 20px;
+            font-size: 0.64rem;
+            font-weight: 600;
+            letter-spacing: 0.24em;
+            text-transform: uppercase;
+            color: #8FA888;
+            opacity: 0.92;
+        }
+
+        .admin-body .login-visual .login-quote .eyebrow::before {
+            content: '';
+            width: 28px;
+            height: 1px;
+            background: currentColor;
+            flex: 0 0 auto;
+            opacity: 0.85;
+        }
+
+        .admin-body .login-visual .login-quote h2 {
+            font-family: 'DM Serif Display', Georgia, serif;
+            font-weight: 400;
+            font-size: clamp(1.65rem, 2.7vw, 2.5rem);
+            line-height: 1.08;
+            letter-spacing: -0.012em;
+            color: #F8F6F0;
+            margin: 0 0 20px;
+            text-wrap: balance;
+        }
+
+        .admin-body .login-visual .login-quote > p {
+            max-width: 46ch;
+            margin: 0 0 30px;
+            color: rgba(248, 246, 240, 0.78);
+            font-size: 0.94rem;
+            line-height: 1.72;
+        }
+
+        .admin-body .login-visual .login-quote-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 14px 30px;
+            padding-top: 24px;
+            border-top: 1px solid rgba(248, 246, 240, 0.16);
+        }
+
+        .admin-body .login-visual .login-quote-meta span {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.6rem;
+            font-weight: 600;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            color: rgba(248, 246, 240, 0.72);
+        }
+
+        .admin-body .login-visual .login-quote-meta span::before {
+            content: '';
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            background: #E8DFC9;
+            flex: 0 0 auto;
+        }
+
+        /* ---------- RIGHT PANEL — FORM ---------- */
+        .admin-body .login-form-wrap {
+            background: #F8F6F0;
+            animation: kFormIn 0.85s cubic-bezier(0.16, 1, 0.3, 1) both;
+        }
+
+        .admin-body .login-form {
+            max-width: 440px;
+            width: 100%;
+            margin: 0 auto;
+        }
+
+        .admin-body .login-form .eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            margin: 0 0 16px;
+            font-size: 0.62rem;
+            font-weight: 600;
+            letter-spacing: 0.24em;
+            text-transform: uppercase;
+            color: #8FA888;
+        }
+
+        .admin-body .login-form .eyebrow::before {
+            content: '';
+            width: 26px;
+            height: 1px;
+            background: currentColor;
+            opacity: 0.85;
+        }
+
+        .admin-body .login-form h1 {
+            font-family: 'DM Serif Display', Georgia, serif;
+            font-weight: 400;
+            font-size: clamp(1.9rem, 3vw, 2.6rem);
+            line-height: 1.02;
+            letter-spacing: -0.02em;
+            color: #14271F;
+            margin: 0 0 12px;
+            text-wrap: balance;
+        }
+
+        .admin-body .login-form > p {
+            color: rgba(20, 39, 31, 0.7);
+            font-size: 0.94rem;
+            line-height: 1.65;
+            margin: 0 0 28px;
+        }
+
+        .admin-body .login-form .login-link {
+            color: #14271F;
+            font-weight: 600;
+            text-decoration: underline;
+            text-decoration-thickness: 1px;
+            text-decoration-color: rgba(143, 168, 136, 0.65);
+            text-underline-offset: 3px;
+            transition: color 0.3s ease, text-decoration-color 0.3s ease;
+        }
+
+        .admin-body .login-form .login-link:hover {
+            text-decoration-color: #8FA888;
+        }
+
+        /* ---------- ERROR STATE ---------- */
+        .admin-body .login-form .login-error {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            margin: 0 0 24px;
+            padding: 14px 16px;
+            border: 1px solid rgba(178, 59, 46, 0.28);
+            border-left: 3px solid #b23b2e;
+            border-radius: 6px;
+            background: rgba(178, 59, 46, 0.06);
+            color: #6b2018;
+            font-size: 0.86rem;
+            line-height: 1.55;
+        }
+
+        .admin-body .login-form .login-error svg {
+            flex: 0 0 auto;
+            margin-top: 1px;
+            color: #b23b2e;
+        }
+
+        .admin-body .login-form .login-error > div > div + div {
+            margin-top: 4px;
+        }
+
+        /* ---------- FIELDS ---------- */
+        .admin-body .login-form .login-field {
+            display: flex;
+            flex-direction: column;
+            gap: 7px;
+            margin-bottom: 18px;
+        }
+
+        .admin-body .login-form .login-field label {
+            font-size: 0.6rem;
+            font-weight: 600;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            color: rgba(20, 39, 31, 0.66);
+        }
+
+        .admin-body .login-form .input {
+            width: 100%;
+            height: 52px;
+            padding: 0 16px;
+            border: 1px solid rgba(20, 39, 31, 0.14);
+            border-radius: 8px;
+            background: #FFFFFF;
+            color: #14271F;
+            font: inherit;
+            font-size: 0.94rem;
+            transition:
+                border-color 0.3s ease,
+                box-shadow 0.3s ease,
+                background 0.3s ease;
+        }
+
+        .admin-body .login-form .input::placeholder {
+            color: rgba(20, 39, 31, 0.32);
+        }
+
+        .admin-body .login-form .input:hover {
+            border-color: rgba(20, 39, 31, 0.28);
+        }
+
+        .admin-body .login-form .input:focus {
+            outline: none;
+            border-color: #14271F;
+            background: #FFFFFF;
+            box-shadow: 0 0 0 4px rgba(20, 39, 31, 0.1);
+        }
+
+        /* ---------- PASSWORD TOGGLE ---------- */
+        .admin-body .login-password-wrap {
+            position: relative;
+        }
+
+        .admin-body .login-password-wrap .input {
+            padding-right: 52px;
+        }
+
+        .admin-body .login-password-toggle {
+            position: absolute;
+            top: 50%;
+            right: 8px;
+            transform: translateY(-50%);
+            display: grid;
+            place-items: center;
+            width: 38px;
+            height: 38px;
+            border: 0;
+            border-radius: 6px;
+            background: transparent;
+            color: rgba(20, 39, 31, 0.5);
+            cursor: pointer;
+            transition: color 0.25s ease, background 0.25s ease;
+        }
+
+        .admin-body .login-password-toggle:hover {
+            color: #14271F;
+            background: rgba(20, 39, 31, 0.06);
+        }
+
+        .admin-body .login-password-toggle:focus-visible {
+            outline: 2px solid #8FA888;
+            outline-offset: 1px;
+        }
+
+        /* ---------- REMEMBER ME + FORGOT ---------- */
+        .admin-body .login-form .login-row {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin: 6px 0 26px;
+        }
+
+        .admin-body .login-form .login-check {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.82rem;
+            color: rgba(20, 39, 31, 0.78);
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .admin-body .login-form .login-check input[type="checkbox"] {
+            appearance: none;
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            margin: 0;
+            border: 1px solid rgba(20, 39, 31, 0.3);
+            border-radius: 3px;
+            background: #FFFFFF;
+            cursor: pointer;
+            position: relative;
+            transition: border-color 0.25s ease, background 0.25s ease;
+        }
+
+        .admin-body .login-form .login-check input[type="checkbox"]:hover {
+            border-color: #14271F;
+        }
+
+        .admin-body .login-form .login-check input[type="checkbox"]:checked {
+            background: #14271F;
+            border-color: #14271F;
+        }
+
+        .admin-body .login-form .login-check input[type="checkbox"]:checked::after {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 5px;
+            width: 5px;
+            height: 9px;
+            border: solid #FFFFFF;
+            border-width: 0 2px 2px 0;
+            transform: rotate(45deg);
+        }
+
+        .admin-body .login-form .login-check input[type="checkbox"]:focus-visible {
+            outline: 2px solid #8FA888;
+            outline-offset: 2px;
+        }
+
+        .admin-body .login-form .login-row > a {
+            font-size: 0.82rem;
+            color: rgba(20, 39, 31, 0.78);
+            text-decoration: underline;
+            text-decoration-thickness: 1px;
+            text-decoration-color: rgba(143, 168, 136, 0.55);
+            text-underline-offset: 3px;
+            transition: color 0.3s ease, text-decoration-color 0.3s ease;
+        }
+
+        .admin-body .login-form .login-row > a:hover {
+            color: #14271F;
+            text-decoration-color: #8FA888;
+        }
+
+        /* ---------- SUBMIT ---------- */
+        .admin-body .login-form .login-submit {
+            position: relative;
+            width: 100%;
+            height: 52px;
+            padding: 0 26px;
+            overflow: hidden;
+            isolation: isolate;
+            border: 0;
+            border-radius: 8px;
+            background: #14271F;
+            color: #F8F6F0;
+            font-family: 'DM Sans', system-ui, sans-serif;
+            font-size: 0.72rem;
+            font-weight: 600;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition:
+                transform 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+                box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+                background 0.35s ease;
+        }
+
+        .admin-body .login-form .login-submit::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            z-index: 1;
+            background: linear-gradient(120deg,
+                transparent 20%,
+                rgba(255, 255, 255, 0.28) 50%,
+                transparent 80%);
+            transform: translateX(-120%);
+            transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+            pointer-events: none;
+        }
+
+        .admin-body .login-form .login-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 18px 30px -18px rgba(20, 39, 31, 0.55);
+        }
+
+        .admin-body .login-form .login-submit:hover::after {
+            transform: translateX(120%);
+        }
+
+        .admin-body .login-form .login-submit:active {
+            transform: translateY(0);
+        }
+
+        /* ---------- DEMO CREDENTIALS ---------- */
+        .admin-body .login-form .login-demo {
+            margin: 26px 0 0;
+            padding: 16px 18px;
+            border: 1px dashed rgba(20, 39, 31, 0.2);
+            border-radius: 8px;
+            background: rgba(232, 223, 201, 0.3);
+            color: rgba(20, 39, 31, 0.8);
+            font-size: 0.82rem;
+            line-height: 1.5;
+        }
+
+        .admin-body .login-form .login-demo strong {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 0.58rem;
+            font-weight: 600;
+            letter-spacing: 0.22em;
+            text-transform: uppercase;
+            color: rgba(20, 39, 31, 0.55);
+        }
+
+        .admin-body .login-form .login-demo p {
+            margin: 2px 0;
+            font-family: 'DM Sans', ui-monospace, SFMono-Regular, Menlo, monospace;
+            color: #14271F;
+        }
+
+        /* ---------- FOOTER ---------- */
+        .admin-body .login-form .login-foot {
+            margin: 26px 0 0;
+            padding-top: 22px;
+            border-top: 1px solid rgba(20, 39, 31, 0.1);
+            font-size: 0.72rem;
+            line-height: 1.6;
+            color: rgba(20, 39, 31, 0.5);
+        }
+
+        /* ---------- ANIMATIONS ---------- */
+        @@keyframes kVisualIn {
+            from {
+                opacity: 0;
+                transform: scale(1.04);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        @@keyframes kFormIn {
+            from {
+                opacity: 0;
+                transform: translateY(14px);
+            }
+            to {
+                opacity: 1;
+                transform: none;
+            }
+        }
+
+        /* ---------- RESPONSIVE ---------- */
+        @@media (max-width: 900px) {
+            .admin-body .login-visual .login-quote h2 {
+                font-size: clamp(1.45rem, 3.6vw, 2rem);
+            }
+            .admin-body .login-form h1 {
+                font-size: clamp(1.7rem, 4vw, 2.2rem);
+            }
+        }
+
+        @@media (max-width: 640px) {
+            .admin-body .login-visual .login-quote h2 {
+                font-size: 1.3rem;
+                margin-bottom: 14px;
+            }
+            .admin-body .login-visual .login-quote > p {
+                font-size: 0.85rem;
+                margin-bottom: 20px;
+            }
+            .admin-body .login-visual .login-quote-meta {
+                gap: 10px 18px;
+                padding-top: 16px;
+            }
+            .admin-body .login-visual .login-quote-meta span {
+                font-size: 0.56rem;
+            }
+            .admin-body .login-form .login-row {
+                margin-bottom: 22px;
+            }
+        }
+
+        /* ---------- REDUCED MOTION ---------- */
+        @@media (prefers-reduced-motion: reduce) {
+            .admin-body .login-visual,
+            .admin-body .login-form-wrap,
+            .admin-body .login-form .login-submit,
+            .admin-body .login-form .login-submit::after,
+            .admin-body .login-form .input,
+            .admin-body .login-password-toggle {
+                animation: none !important;
+                transition: none !important;
+            }
+            .admin-body .login-form .login-submit:hover {
+                transform: none !important;
+            }
+        }
+    </style>
 </head>
 <body class="admin-body">
 
@@ -31,9 +579,12 @@
             </div>
 
             <div class="login-quote">
-                <p class="eyebrow">Operations · Admin</p>
-                <h2>Every journey begins with a quiet room and a well-kept plan.</h2>
-                <p>Sign in to manage destinations, stays, experiences, and the travellers who bring them to life.</p>
+                <p class="eyebrow">Operations · Administration</p>
+                <h2>Every journey deserves a well-kept plan.</h2>
+                <p>
+                    Manage destinations, stays, experiences and the operations that bring
+                    every journey together.
+                </p>
                 <div class="login-quote-meta">
                     <span>24 regions</span>
                     <span>104 listings</span>
@@ -53,11 +604,14 @@
                 @Html.AntiForgeryToken()
                 <input type="hidden" name="returnUrl" value="@ViewData["ReturnUrl"]" />
 
-                <p class="eyebrow">Welcome back</p>
-                <h1>Sign in to Karnel.</h1>
+                <p class="eyebrow">Administration Portal</p>
+                <h1>Welcome back.</h1>
                 <p>
-                    Use your admin credentials to continue. Don't have an account?
-                    <a asp-controller="Account" asp-action="Register" style="color:var(--accent); font-weight:600; text-decoration: underline; text-underline-offset:3px;">Sign up</a>.
+                    Sign in with your administrator credentials to continue.
+                    Don't have an account?
+                    <a class="login-link"
+                       asp-controller="Account"
+                       asp-action="Register">Sign up</a>.
                 </p>
 
                 @if (!ViewData.ModelState.IsValid)
@@ -147,14 +701,37 @@
     </div>
 
     <script>
+        /* ============================================================
+           PASSWORD VISIBILITY TOGGLE
+           Preserves the original data-password-toggle hook, adds
+           focus management and a prototype-link guard.
+        ============================================================ */
+        (function () {
+            'use strict';
+
             document.querySelectorAll('[data-password-toggle]').forEach(function (btn) {
-                btn.addEventListener('click', function () {
-                    var input = btn.parentElement.querySelector('input');
+                btn.addEventListener('click', function (event) {
+                    event.preventDefault();
+
+                    var wrap = btn.closest('.login-password-wrap');
+                    var input = wrap ? wrap.querySelector('input') : btn.parentElement.querySelector('input');
+                    if (!input) return;
+
                     var show = input.type === 'password';
                     input.type = show ? 'text' : 'password';
                     btn.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
+                    btn.setAttribute('aria-pressed', show ? 'true' : 'false');
+                    input.focus();
                 });
             });
+
+            /* Prototype links must not pretend to work */
+            document.querySelectorAll('a[data-prototype]').forEach(function (link) {
+                link.addEventListener('click', function (event) {
+                    event.preventDefault();
+                });
+            });
+        })();
     </script>
 
 </body>

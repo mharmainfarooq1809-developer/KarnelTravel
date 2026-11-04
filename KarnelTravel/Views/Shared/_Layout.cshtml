@@ -10,7 +10,7 @@
         (ViewContext.RouteData.Values["controller"] as string ?? "Home");
 
     private static readonly string[] DiscoverMoreControllers =
-        { "Information", "Destinations", "Transport", "Hotels", "Restaurants", "Resorts", "Experiences" };
+        { "Information", "Destinations", "Transport", "Hotels", "Restaurants", "Resorts", "Experiences", "Tours" };
 
     private bool IsDiscoverMore =>
         Array.IndexOf(DiscoverMoreControllers, CurrentController) >= 0;
@@ -1942,6 +1942,12 @@
                                             </a>
                                         </li>
                                         <li>
+                                            <a class="@SubMenuLinkClass("Tours")" href="@Url.Action("Index", "Tours")">
+                                                <span class="menu__sub-title">Tour Packages</span>
+                                                <span class="menu__sub-note">Curated journeys</span>
+                                            </a>
+                                        </li>
+                                        <li>
                                             <a class="@SubMenuLinkClass("Information")" href="@Url.Action("Index", "Information")">
                                                 <span class="menu__sub-title">Overview</span>
                                                 <span class="menu__sub-note">Everything in one place</span>
@@ -2057,6 +2063,7 @@
                         <li><a href="@Url.Action("Index", "Restaurants")">Restaurants</a></li>
                         <li><a href="@Url.Action("Index", "Resorts")">Resorts</a></li>
                         <li><a href="@Url.Action("Index", "Experiences")">Experiences</a></li>
+                        <li><a href="@Url.Action("Index", "Tours")">Tour Packages</a></li>
                     </ul>
                 </nav>
 

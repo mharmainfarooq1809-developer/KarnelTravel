@@ -1,2 +1,691 @@
-@{ Layout = "_AdminLayout"; ViewData["Title"] = "Inquiries"; }
-<div class="page-heading"><div><div class="eyebrow">The correspondence room · 17 open</div><h1>People are asking.</h1><p>Make every first message feel like the beginning of a journey.</p></div><button class="btn btn-quiet" data-toast="Inbox refresh is simulated.">Refresh inbox ↻</button></div><div class="toolbar"><div class="filters"><input class="input search-input" placeholder="Search name, email or message…" data-filter-target="inquiry-list" /><select class="select" data-status-filter="inquiry-list"><option value="all">All follow-ups</option><option>New</option><option>In Progress</option><option>Resolved</option></select></div></div><div class="table-wrap"><table class="data-table" id="inquiry-list"><thead><tr><th>Customer</th><th>Requested service</th><th>Travel dates</th><th>Received</th><th>Assigned</th><th>Follow-up</th><th></th></tr></thead><tbody><tr class="filterable" data-status="New"><td><span class="record-name">Elena Rossi</span><span class="record-sub">elena@example.com</span></td><td>Private Hunza itinerary</td><td>Nov 10–18</td><td>12 min ago</td><td>Muhammad Harmain</td><td><span class="status status-pending"><i></i>New</span></td><td><button class="btn btn-quiet" data-drawer-open="message-details">Open</button></td></tr><tr class="filterable" data-status="In Progress"><td><span class="record-name">Bilal Ahmed</span><span class="record-sub">bilal@example.com</span></td><td>Family transport</td><td>Dec 02–06</td><td>Yesterday</td><td>Sameer</td><td><span class="status status-in-progress"><i></i>In progress</span></td><td><button class="btn btn-quiet" data-drawer-open="message-details">Open</button></td></tr></tbody></table></div><div class="drawer-backdrop"></div><aside class="drawer" id="message-details"><button class="drawer-close" data-drawer-close>×</button><div class="eyebrow">New inquiry · 12 minutes ago</div><h2>Elena Rossi</h2><p class="muted">elena@example.com · +39 333 456 789</p><div class="panel"><strong>Private Hunza itinerary</strong><p>“We would love a slower route with a sunrise viewpoint and time to meet local makers.”</p></div><div class="section-space"><label class="field"><strong>Assign to</strong><select class="select"><option>Muhammad Harmain</option><option>Sameer Ali</option></select></label><button class="btn btn-primary section-space" data-toast="Reply composer is coming in the next prototype pass.">Compose reply</button></div></aside>
+@model IEnumerable<KarnelTravel.Models.ContactInquiry>
+
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Inquiries";
+
+    var inquiries = Model?.ToList() ?? new List<KarnelTravel.Models.ContactInquiry>();
+    var totalCount = inquiries.Count;
+    var newCount = inquiries.Count(x => x.Status == "New");
+    var inProgressCount = inquiries.Count(x => x.Status == "In Progress");
+    var respondedCount = inquiries.Count(x => x.Status == "Responded");
+}
+
+<style>
+    /* ==========================================================================
+       KARNEL TRAVEL GUIDE — ADMIN INBOX
+       Scoped with .ki-inquiries so no other admin page is affected.
+       Inline <style> used because _AdminLayout does not render a Styles section.
+       ========================================================================== */
+
+    .ki-inquiries {
+        --ki-forest: var(--forest-deep, #14271F);
+        --ki-ivory: var(--ivory, #F8F6F0);
+        --ki-sage: var(--sage, #8FA888);
+        --ki-sand: var(--sand, #E8DFC9);
+        --ki-white: #FFFFFF;
+        --ki-muted: var(--muted, #5A6B60);
+        --ki-line: var(--line, rgba(20, 39, 31, .12));
+        --ki-serif: var(--serif, "Playfair Display", Georgia, "Times New Roman", serif);
+        --ki-sans: var(--sans, "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif);
+        --ki-ease: var(--ease, cubic-bezier(.22, .61, .36, 1));
+
+        animation: ki-fade .45s var(--ki-ease) both;
+    }
+
+    @@keyframes ki-fade {
+        from { opacity: 0; transform: translateY(6px); }
+        to   { opacity: 1; transform: none; }
+    }
+
+    .ki-inquiries .visually-hidden {
+        position: absolute !important;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+    }
+
+    /* ----------------------------------------------------- STAT CARDS ---- */
+    .ki-inquiries .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 14px;
+        margin-bottom: 22px;
+    }
+
+    .ki-inquiries .stat-card {
+        position: relative;
+        padding: 20px 22px 20px 26px;
+        background: var(--ki-white);
+        border: 1px solid var(--ki-line);
+        border-radius: 4px;
+        box-shadow: none;
+        overflow: hidden;
+        transition: border-color .3s var(--ki-ease);
+    }
+
+    .ki-inquiries .stat-card:hover {
+        border-color: rgba(20, 39, 31, .22);
+    }
+
+    .ki-inquiries .stat-card::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 3px;
+        background: var(--ki-sage);
+    }
+
+    .ki-inquiries .stat-card:nth-child(1)::before { background: var(--ki-forest); }
+    .ki-inquiries .stat-card:nth-child(2)::before { background: #c9a94b; }
+    .ki-inquiries .stat-card:nth-child(3)::before { background: #b8a882; }
+    .ki-inquiries .stat-card:nth-child(4)::before { background: var(--ki-sage); }
+
+    .ki-inquiries .stat-label {
+        display: block;
+        margin-bottom: 8px;
+        font-size: .62rem;
+        font-weight: 600;
+        letter-spacing: .22em;
+        text-transform: uppercase;
+        color: var(--ki-muted);
+    }
+
+    .ki-inquiries .stat-card strong {
+        display: block;
+        font-family: var(--ki-serif);
+        font-size: clamp(1.5rem, 2.4vw, 2.05rem);
+        font-weight: 500;
+        line-height: 1.05;
+        letter-spacing: -.01em;
+        color: var(--ki-forest);
+    }
+
+    /* -------------------------------------------------------- TOOLBAR ---- */
+    .ki-inquiries .toolbar {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 14px 16px;
+        background: var(--ki-white);
+        border: 1px solid var(--ki-line);
+        border-radius: 4px;
+        margin-bottom: 16px;
+    }
+
+    .ki-inquiries .filters {
+        display: flex;
+        flex: 1;
+        gap: 10px;
+        flex-wrap: wrap;
+        align-items: center;
+    }
+
+    .ki-inquiries .search-input {
+        flex: 1 1 260px;
+        min-width: 0;
+        padding: 10px 14px;
+        border: 1px solid var(--ki-line);
+        border-radius: 3px;
+        font-family: var(--ki-sans);
+        font-size: .88rem;
+        background: var(--ki-ivory);
+        color: var(--ki-forest);
+        transition: border-color .25s var(--ki-ease),
+                    background-color .25s var(--ki-ease),
+                    box-shadow .25s var(--ki-ease);
+    }
+
+    .ki-inquiries .search-input::placeholder {
+        color: rgba(90, 107, 96, .7);
+    }
+
+    .ki-inquiries .search-input:focus {
+        outline: none;
+        border-color: var(--ki-sage);
+        background: var(--ki-white);
+        box-shadow: 0 0 0 3px rgba(143, 168, 136, .18);
+    }
+
+    .ki-inquiries .select {
+        padding: 10px 34px 10px 14px;
+        border: 1px solid var(--ki-line);
+        border-radius: 3px;
+        font-family: var(--ki-sans);
+        font-size: .88rem;
+        color: var(--ki-forest);
+        background-color: var(--ki-ivory);
+        background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8' fill='none' stroke='%235A6B60' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'><path d='M1 1l5 5 5-5'/></svg>");
+        background-repeat: no-repeat;
+        background-position: right 12px center;
+        appearance: none;
+        -webkit-appearance: none;
+        cursor: pointer;
+        transition: border-color .25s var(--ki-ease),
+                    background-color .25s var(--ki-ease),
+                    box-shadow .25s var(--ki-ease);
+    }
+
+    .ki-inquiries .select:focus {
+        outline: none;
+        border-color: var(--ki-sage);
+        background-color: var(--ki-white);
+        box-shadow: 0 0 0 3px rgba(143, 168, 136, .18);
+    }
+
+    /* ---------------------------------------------------- TABLE SHELL ---- */
+    .ki-inquiries .table-wrap {
+        background: var(--ki-white);
+        border: 1px solid var(--ki-line);
+        border-radius: 4px;
+        overflow: hidden;
+    }
+
+    .ki-inquiries .data-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: .88rem;
+        color: var(--ki-forest);
+    }
+
+    .ki-inquiries .data-table thead {
+        background: var(--ki-ivory);
+        border-bottom: 1px solid var(--ki-line);
+    }
+
+    .ki-inquiries .data-table th {
+        padding: 14px 18px;
+        text-align: left;
+        font-family: var(--ki-sans);
+        font-size: .62rem;
+        font-weight: 700;
+        letter-spacing: .22em;
+        text-transform: uppercase;
+        color: var(--ki-muted);
+        white-space: nowrap;
+    }
+
+    .ki-inquiries .data-table th:last-child {
+        text-align: right;
+    }
+
+    .ki-inquiries .data-table td {
+        padding: 18px;
+        vertical-align: top;
+        border-bottom: 1px solid var(--ki-line);
+    }
+
+    .ki-inquiries .data-table tbody tr:last-child td {
+        border-bottom: none;
+    }
+
+    .ki-inquiries .inquiry-row {
+        transition: background-color .25s var(--ki-ease);
+    }
+
+    .ki-inquiries .inquiry-row:hover {
+        background: rgba(232, 223, 201, .18);
+    }
+
+    /* ----------------------------------------------------- CELL CONTENT ---- */
+    .ki-inquiries .record-name {
+        display: block;
+        margin-bottom: 4px;
+        font-family: var(--ki-serif);
+        font-weight: 500;
+        font-size: 1.05rem;
+        line-height: 1.25;
+        color: var(--ki-forest);
+    }
+
+    .ki-inquiries .record-sub {
+        display: block;
+        font-size: .78rem;
+        line-height: 1.5;
+        color: var(--ki-muted);
+        overflow-wrap: break-word;
+        word-break: break-word;
+    }
+
+    .ki-inquiries .message-preview {
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        max-width: 340px;
+        font-size: .85rem;
+        line-height: 1.55;
+        color: var(--ki-muted);
+    }
+
+    /* --------------------------------------------------------- STATUS ---- */
+    .ki-inquiries .status {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 12px;
+        border-radius: 999px;
+        font-family: var(--ki-sans);
+        font-size: .66rem;
+        font-weight: 600;
+        letter-spacing: .14em;
+        text-transform: uppercase;
+        white-space: nowrap;
+    }
+
+    .ki-inquiries .status i {
+        display: inline-block;
+        flex: none;
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: currentColor;
+    }
+
+    .ki-inquiries .status-pending {
+        background: rgba(232, 199, 107, .22);
+        color: #7a5a14;
+    }
+
+    .ki-inquiries .status-in-progress {
+        background: rgba(200, 175, 130, .25);
+        color: #6b5424;
+    }
+
+    .ki-inquiries .status-success {
+        background: rgba(143, 168, 136, .22);
+        color: #2e5238;
+    }
+
+    .ki-inquiries .status-neutral {
+        background: rgba(20, 39, 31, .06);
+        color: #5a6b60;
+    }
+
+    /* ------------------------------------------------------ OPEN LINK ---- */
+    .ki-inquiries .ki-open-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 14px;
+        font-family: var(--ki-sans);
+        font-size: .64rem;
+        font-weight: 600;
+        letter-spacing: .2em;
+        text-transform: uppercase;
+        white-space: nowrap;
+        border: 1px solid var(--ki-line);
+        border-radius: 2px;
+        background: transparent;
+        color: var(--ki-forest);
+        text-decoration: none;
+        transition: background-color .25s var(--ki-ease),
+                    border-color .25s var(--ki-ease),
+                    color .25s var(--ki-ease);
+    }
+
+    .ki-inquiries .ki-open-link svg {
+        flex: none;
+        transition: transform .25s var(--ki-ease);
+    }
+
+    .ki-inquiries .ki-open-link:hover {
+        background: var(--ki-forest);
+        border-color: var(--ki-forest);
+        color: var(--ki-ivory);
+    }
+
+    .ki-inquiries .ki-open-link:hover svg {
+        transform: translateX(3px);
+    }
+
+    .ki-inquiries .ki-open-link:focus-visible {
+        outline: 2px solid var(--ki-sand);
+        outline-offset: 2px;
+    }
+
+    /* --------------------------------------------------------- EMPTY ---- */
+    .ki-inquiries .empty-state {
+        padding: 64px 24px;
+        text-align: center;
+    }
+
+    .ki-inquiries .empty-illustration {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 72px;
+        height: 72px;
+        margin-bottom: 20px;
+        border-radius: 50%;
+        background: var(--ki-ivory);
+        color: var(--ki-sage);
+    }
+
+    .ki-inquiries .empty-state strong {
+        display: block;
+        margin-bottom: 8px;
+        font-family: var(--ki-serif);
+        font-size: clamp(1.3rem, 2vw, 1.6rem);
+        font-weight: 500;
+        color: var(--ki-forest);
+    }
+
+    .ki-inquiries .empty-state p {
+        margin: 0;
+        font-size: .9rem;
+        color: var(--ki-muted);
+    }
+
+    /* ------------------------------------------------------ RESPONSIVE ---- */
+    @@media (max-width: 900px) {
+        .ki-inquiries .stats-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .ki-inquiries .table-wrap {
+            background: transparent;
+            border: none;
+            overflow: visible;
+        }
+
+        .ki-inquiries .data-table,
+        .ki-inquiries .data-table tbody,
+        .ki-inquiries .data-table tr,
+        .ki-inquiries .data-table td {
+            display: block;
+            width: 100%;
+        }
+
+        .ki-inquiries .data-table thead {
+            display: none;
+        }
+
+        .ki-inquiries .inquiry-row {
+            background: var(--ki-white);
+            border: 1px solid var(--ki-line);
+            border-radius: 4px;
+            padding: 18px 20px;
+            margin-bottom: 14px;
+        }
+
+        .ki-inquiries .inquiry-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .ki-inquiries .data-table td {
+            padding: 8px 0;
+            border: none;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: baseline;
+            gap: 8px 14px;
+        }
+
+        .ki-inquiries .data-table td::before {
+            content: attr(data-label);
+            flex: 0 0 92px;
+            font-size: .6rem;
+            font-weight: 700;
+            letter-spacing: .22em;
+            text-transform: uppercase;
+            color: var(--ki-sage);
+        }
+
+        .ki-inquiries .data-table td:not([data-label])::before,
+        .ki-inquiries .data-table td.empty-state::before {
+            display: none;
+        }
+
+        .ki-inquiries .data-table td[data-label="Actions"] {
+            justify-content: flex-end;
+            padding-top: 14px;
+            margin-top: 8px;
+            border-top: 1px solid var(--ki-line);
+        }
+
+        .ki-inquiries .message-preview {
+            max-width: none;
+        }
+    }
+
+    @@media (max-width: 560px) {
+        .ki-inquiries .stats-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .ki-inquiries .toolbar {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .ki-inquiries .filters {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .ki-inquiries .search-input,
+        .ki-inquiries .select {
+            width: 100%;
+        }
+    }
+
+    /* --------------------------------------------- REDUCED MOTION ---- */
+    @@media (prefers-reduced-motion: reduce) {
+        .ki-inquiries {
+            animation: none;
+        }
+
+        .ki-inquiries *,
+        .ki-inquiries *::before,
+        .ki-inquiries *::after {
+            transition: none !important;
+            animation: none !important;
+        }
+    }
+</style>
+
+<div class="page-heading">
+    <div>
+        <div class="eyebrow">The correspondence room · @newCount new</div>
+        <h1>People are asking.</h1>
+        <p>Every message is an opportunity to begin a journey.</p>
+    </div>
+
+    <a asp-controller="Admin"
+       asp-action="Inquiries"
+       class="btn btn-quiet">
+        Refresh inbox ↻
+    </a>
+</div>
+
+<div class="ki-inquiries">
+
+    <div class="stats-grid">
+        <div class="stat-card">
+            <span class="stat-label">Total inquiries</span>
+            <strong>@totalCount</strong>
+        </div>
+
+        <div class="stat-card">
+            <span class="stat-label">New</span>
+            <strong>@newCount</strong>
+        </div>
+
+        <div class="stat-card">
+            <span class="stat-label">In progress</span>
+            <strong>@inProgressCount</strong>
+        </div>
+
+        <div class="stat-card">
+            <span class="stat-label">Responded</span>
+            <strong>@respondedCount</strong>
+        </div>
+    </div>
+
+    <div class="toolbar">
+        <div class="filters">
+            <input class="input search-input"
+                   type="search"
+                   placeholder="Search name, email or message..."
+                   id="inquirySearch"
+                   aria-label="Search inquiries" />
+
+            <select class="select"
+                    id="inquiryStatus"
+                    aria-label="Filter by status">
+                <option value="all">All inquiries</option>
+                <option value="New">New</option>
+                <option value="In Progress">In Progress</option>
+                <option value="Responded">Responded</option>
+                <option value="Closed">Closed</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="table-wrap">
+        <table class="data-table" id="inquiryTable">
+            <thead>
+                <tr>
+                    <th scope="col">Customer</th>
+                    <th scope="col">Category</th>
+                    <th scope="col">Message</th>
+                    <th scope="col">Received</th>
+                    <th scope="col">Status</th>
+                    <th scope="col"><span class="visually-hidden">Actions</span></th>
+                </tr>
+            </thead>
+
+            <tbody>
+                @if (inquiries.Count == 0)
+                {
+                    <tr>
+                        <td colspan="6" class="empty-state">
+                            <div class="empty-illustration" aria-hidden="true">
+                                <svg width="32" height="32" viewBox="0 0 24 24" fill="none"
+                                     stroke="currentColor" stroke-width="1.2"
+                                     stroke-linecap="round" stroke-linejoin="round"
+                                     focusable="false">
+                                    <rect x="3" y="5" width="18" height="14" rx="1" />
+                                    <path d="M3 7l9 6 9-6" />
+                                </svg>
+                            </div>
+                            <strong>No inquiries yet.</strong>
+                            <p>Contact form submissions will appear here.</p>
+                        </td>
+                    </tr>
+                }
+                else
+                {
+                    foreach (var inquiry in inquiries)
+                    {
+                        var statusClass = inquiry.Status switch
+                        {
+                            "New" => "status-pending",
+                            "In Progress" => "status-in-progress",
+                            "Responded" => "status-success",
+                            "Closed" => "status-neutral",
+                            _ => "status-neutral"
+                        };
+
+                        var message = inquiry.Message ?? string.Empty;
+                        var messagePreview = message.Length > 90
+                            ? message.Substring(0, 90) + "..."
+                            : message;
+                        var hasPhone = !string.IsNullOrWhiteSpace(inquiry.Phone);
+
+                        <tr class="inquiry-row" data-status="@inquiry.Status">
+
+                            <td data-label="Customer">
+                                <span class="record-name">@inquiry.Name</span>
+                                <span class="record-sub">@inquiry.Email</span>
+                                @if (hasPhone)
+                                {
+                                    <span class="record-sub">@inquiry.Phone</span>
+                                }
+                            </td>
+
+                            <td data-label="Category">
+                                <span class="record-sub">@inquiry.Category</span>
+                            </td>
+
+                            <td data-label="Message">
+                                <span class="record-sub message-preview">@messagePreview</span>
+                            </td>
+
+                            <td data-label="Received">
+                                <span class="record-sub">
+                                    @inquiry.SubmittedAt.ToLocalTime().ToString("dd MMM yyyy")
+                                </span>
+                                <span class="record-sub">
+                                    @inquiry.SubmittedAt.ToLocalTime().ToString("hh:mm tt")
+                                </span>
+                            </td>
+
+                            <td data-label="Status">
+                                <span class="status @statusClass">
+                                    <i aria-hidden="true"></i>
+                                    @inquiry.Status
+                                </span>
+                            </td>
+
+                            <td data-label="Actions">
+                                <a asp-controller="Admin"
+                                   asp-action="InquiryDetails"
+                                   asp-route-id="@inquiry.Id"
+                                   class="ki-open-link">
+                                    Open
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
+                                         stroke="currentColor" stroke-width="1.8"
+                                         stroke-linecap="round" stroke-linejoin="round"
+                                         aria-hidden="true" focusable="false">
+                                        <path d="M5 12h14M13 6l6 6-6 6" />
+                                    </svg>
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+
+</div>
+
+@section Scripts {
+    <script>
+        (() => {
+            const search = document.getElementById("inquirySearch");
+            const status = document.getElementById("inquiryStatus");
+            const rows = document.querySelectorAll(".inquiry-row");
+
+            function filterInquiries() {
+                const query = search.value.trim().toLowerCase();
+                const selectedStatus = status.value;
+
+                rows.forEach(row => {
+                    const text = row.textContent.toLowerCase();
+                    const rowStatus = row.dataset.status;
+
+                    const matchesSearch = text.includes(query);
+                    const matchesStatus =
+                        selectedStatus === "all" ||
+                        rowStatus === selectedStatus;
+
+                    row.style.display =
+                        matchesSearch && matchesStatus ? "" : "none";
+                });
+            }
+
+            search.addEventListener("input", filterInquiries);
+            status.addEventListener("change", filterInquiries);
+        })();
+    </script>
+}

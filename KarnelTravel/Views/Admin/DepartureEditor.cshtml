@@ -1,0 +1,369 @@
+﻿
+@model KarnelTravel.ViewModels.AdminTourDepartureFormViewModel
+
+@{
+     Layout = "_AdminLayout";
+    var isEdit = Model.Id > 0;
+    ViewData["Title"] = isEdit ? "Edit Departure" : "Create Departure";
+}
+
+<style>
+    .departure-editor-page {
+        padding: 28px;
+        color: #25372d;
+        max-width: 1050px;
+    }
+
+    .editor-heading {
+        margin-bottom: 25px;
+    }
+
+    .editor-eyebrow {
+        color: #819087;
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 1.8px;
+        text-transform: uppercase;
+        margin-bottom: 9px;
+    }
+
+    .editor-title {
+        font-size: 32px;
+        font-weight: 750;
+        letter-spacing: -1px;
+        color: #20372a;
+        margin: 0;
+    }
+
+    .editor-description {
+        color: #859188;
+        font-size: 13px;
+        margin-top: 8px;
+    }
+
+    .editor-card {
+        background: #fff;
+        border: 1px solid #e5ebe6;
+        border-radius: 12px;
+        overflow: hidden;
+    }
+
+    .editor-card-header {
+        padding: 20px 23px;
+        border-bottom: 1px solid #edf0ed;
+    }
+
+    .editor-card-header h2 {
+        color: #2b4034;
+        font-size: 16px;
+        font-weight: 750;
+        margin: 0;
+    }
+
+    .editor-card-header p {
+        color: #89958d;
+        font-size: 12px;
+        margin: 6px 0 0;
+    }
+
+    .editor-card-body {
+        padding: 25px;
+    }
+
+    .editor-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 21px;
+    }
+
+    .editor-field {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .editor-field.full {
+        grid-column: 1 / -1;
+    }
+
+    .editor-label {
+        color: #40564a;
+        font-size: 12px;
+        font-weight: 750;
+    }
+
+    .editor-input {
+        width: 100%;
+        min-height: 45px;
+        padding: 11px 13px;
+        color: #314539;
+        background: #fff;
+        border: 1px solid #dfe7e1;
+        border-radius: 7px;
+        outline: none;
+        font-size: 13px;
+        transition: border-color .2s, box-shadow .2s;
+    }
+
+    .editor-input:focus {
+        border-color: #6d9277;
+        box-shadow: 0 0 0 3px rgba(90, 130, 101, .10);
+    }
+
+    .editor-input[readonly] {
+        background: #f7f9f7;
+        color: #748278;
+    }
+
+    .editor-hint {
+        color: #929e95;
+        font-size: 11px;
+        line-height: 1.6;
+    }
+
+    .editor-validation {
+        color: #b64c46;
+        font-size: 11px;
+    }
+
+    .editor-validation-summary {
+        color: #a3433e;
+        background: #fff2f0;
+        border: 1px solid #f1d9d6;
+        border-radius: 7px;
+        padding: 12px 15px;
+        margin-bottom: 20px;
+        font-size: 12px;
+    }
+
+    .editor-toggle {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        padding: 15px;
+        border: 1px solid #e4ebe5;
+        background: #f9fbf9;
+        border-radius: 8px;
+    }
+
+    .editor-toggle input {
+        width: 17px;
+        height: 17px;
+        accent-color: #315c40;
+        margin-top: 2px;
+    }
+
+    .editor-toggle strong {
+        display: block;
+        color: #354b3c;
+        font-size: 12px;
+    }
+
+    .editor-toggle span {
+        display: block;
+        color: #89958d;
+        font-size: 11px;
+        margin-top: 4px;
+    }
+
+    .editor-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+        padding: 18px 25px;
+        border-top: 1px solid #edf0ed;
+        background: #fbfcfb;
+    }
+
+    .editor-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 11px 19px;
+        border-radius: 7px;
+        border: 1px solid #dfe7e1;
+        color: #41574a;
+        background: #fff;
+        text-decoration: none;
+        font-size: 12px;
+        font-weight: 750;
+        cursor: pointer;
+    }
+
+    .editor-btn:hover {
+        background: #f1f5f1;
+        color: #263d2e;
+    }
+
+    .editor-btn.primary {
+        background: #244b38;
+        border-color: #244b38;
+        color: #fff;
+    }
+
+    .editor-btn.primary:hover {
+        background: #183827;
+        color: #fff;
+    }
+
+    @@media (max-width: 650px) {
+        .departure-editor-page {
+            padding: 16px;
+        }
+
+        .editor-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .editor-field.full {
+            grid-column: auto;
+        }
+
+        .editor-card-body {
+            padding: 18px;
+        }
+
+        .editor-title {
+            font-size: 26px;
+        }
+    }
+</style>
+
+<div class="departure-editor-page">
+
+    <div class="editor-heading">
+        <div class="editor-eyebrow">Tour management / Departures</div>
+
+        <h1 class="editor-title">
+            @(isEdit ? "Edit departure" : "Create departure")
+        </h1>
+
+        <p class="editor-description">
+            @(isEdit
+                ? "Update the schedule and capacity of this departure."
+                : "Set up a scheduled departure for this tour package.")
+        </p>
+    </div>
+
+    <div class="editor-card">
+
+        <div class="editor-card-header">
+            <h2>Departure information</h2>
+            <p>Configure travel dates, group capacity and availability.</p>
+        </div>
+
+        <form asp-controller="Admin"
+              asp-action="@(isEdit ? "EditDeparture" : "CreateDeparture")"
+              asp-route-packageId="@Model.TourPackageId"
+              asp-route-id="@Model.Id"
+              method="post">
+
+            @Html.AntiForgeryToken()
+
+            <input asp-for="Id" type="hidden" />
+            <input asp-for="TourPackageId" type="hidden" />
+            <input asp-for="PackageName" type="hidden" />
+
+            <div class="editor-card-body">
+
+                <div asp-validation-summary="ModelOnly"
+                     class="editor-validation-summary"></div>
+
+                <div class="editor-grid">
+
+                    <div class="editor-field full">
+                        <label class="editor-label">Tour package</label>
+
+                        <input class="editor-input"
+                               value="@Model.PackageName"
+                               readonly />
+
+                        <span class="editor-hint">
+                            This departure belongs to the selected tour package.
+                        </span>
+                    </div>
+
+                    <div class="editor-field">
+                        <label asp-for="DepartureDate" class="editor-label"></label>
+
+                        <input asp-for="DepartureDate"
+                               type="date"
+                               asp-format="{0:yyyy-MM-dd}"
+                               class="editor-input" />
+
+                        <span asp-validation-for="DepartureDate"
+                              class="editor-validation"></span>
+                    </div>
+
+                    <div class="editor-field">
+                        <label asp-for="ReturnDate" class="editor-label"></label>
+
+                        <input asp-for="ReturnDate"
+                               type="date"
+                               asp-format="{0:yyyy-MM-dd}"
+                               class="editor-input" />
+
+                        <span asp-validation-for="ReturnDate"
+                              class="editor-validation"></span>
+                    </div>
+
+                    <div class="editor-field">
+                        <label asp-for="MaximumGroupSize" class="editor-label"></label>
+
+                        <input asp-for="MaximumGroupSize"
+                               type="number"
+                               min="1"
+                               max="500"
+                               class="editor-input" />
+
+                        <span class="editor-hint">
+                            Maximum number of travellers allowed for this departure.
+                        </span>
+
+                        <span asp-validation-for="MaximumGroupSize"
+                              class="editor-validation"></span>
+                    </div>
+
+                    <div class="editor-field">
+                        <label class="editor-label">Departure availability</label>
+
+                        <label class="editor-toggle">
+                            <input asp-for="IsActive" type="checkbox" />
+
+                            <span>
+                                <strong>Active departure</strong>
+                                <span>
+                                    Allow this departure to be displayed as available
+                                    when customers browse scheduled trips.
+                                </span>
+                            </span>
+                        </label>
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="editor-footer">
+                <a asp-controller="Admin"
+                   asp-action="Departures"
+                   asp-route-packageId="@Model.TourPackageId"
+                   class="editor-btn">
+                    Cancel
+                </a>
+
+                <button type="submit" class="editor-btn primary">
+                    @(isEdit ? "Save changes" : "Create departure")
+                </button>
+            </div>
+
+        </form>
+    </div>
+
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

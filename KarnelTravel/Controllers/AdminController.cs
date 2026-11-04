@@ -1,4 +1,4 @@
-
+using Microsoft.AspNetCore.Mvc.Rendering;
 using KarnelTravel.Data;
 using KarnelTravel.Models;
 using KarnelTravel.ViewModels;
@@ -12,6 +12,8 @@ using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using System.Data;
+
 
 namespace KarnelTravel.Controllers;
 
@@ -1017,39 +1019,712 @@ public class AdminController : Controller
     }
 
     // =========================================================
-    // TOURS - PLACEHOLDER
+    // TOURS - TOUR PACKAGE MANAGEMENT
     // =========================================================
 
     [HttpGet("Tours")]
-    public IActionResult Tours()
+    public async Task<IActionResult> Tours()
     {
-        ViewData["Title"] = "Experiences";
+        ViewData["Title"] = "Tour Packages";
         ViewData["Section"] = "Experiences";
 
-        return View("ComingSoon");
+        var packages = await _context.TourPackages
+            .AsNoTracking()
+            .Include(t => t.Destination)
+            .Include(t => t.Departures)
+            .OrderBy(t => t.DisplayOrder)
+            .ThenBy(t => t.Name)
+            .Select(t => new AdminTourPackageRowViewModel
+            {
+                Id = t.Id,
+                Name = t.Name,
+                Slug = t.Slug,
+                DestinationName = t.Destination != null
+                    ? t.Destination.Name
+                    : t.DestinationName,
+                ImageUrl = t.ImageUrl,
+                DurationDays = t.DurationDays,
+                PricePerAdult = t.PricePerAdult,
+                PricePerChild = t.PricePerChild,
+                IsPublished = t.IsPublished,
+                IsFeatured = t.IsFeatured,
+                DepartureCount = t.Departures.Count,
+                DisplayOrder = t.DisplayOrder
+            })
+            .ToListAsync();
+
+        return View("Tours", packages);
     }
+
+
+    // ---------------------------------------------------------
+    // CREATE TOUR - GET
+    // ---------------------------------------------------------
 
     [HttpGet("Tours/Create")]
-    public IActionResult CreateTour()
+    public async Task<IActionResult> CreateTour()
     {
-        ViewData["Title"] = "New tour package";
+        ViewData["Title"] = "Create Tour Package";
         ViewData["Section"] = "Experiences";
 
-        return View("TourEditor");
+        await PopulateTourDestinationsAsync();
+
+        return View("TourEditor", new AdminTourPackageFormViewModel
+        {
+            DurationDays = 1
+        });
     }
 
-    [HttpGet("Tours/Edit/{id?}")]
-    public IActionResult EditTour(string? id)
-    {
-        ViewData["Title"] = string.IsNullOrEmpty(id)
-            ? "Edit tour"
-            : $"Edit tour #{id}";
 
+    // ---------------------------------------------------------
+    // CREATE TOUR - POST
+    // ---------------------------------------------------------
+
+    [HttpPost("Tours/Create")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> CreateTour(
+        AdminTourPackageFormViewModel model)
+    {
+        ViewData["Title"] = "Create Tour Package";
         ViewData["Section"] = "Experiences";
 
-        return View("TourEditor");
+        model.Name = model.Name?.Trim() ?? string.Empty;
+        model.Slug = string.IsNullOrWhiteSpace(model.Slug)
+            ? CreateTourSlug(model.Name)
+            : CreateTourSlug(model.Slug);
+
+        if (await _context.TourPackages.AnyAsync(t => t.Slug == model.Slug))
+        {
+            ModelState.AddModelError(
+                nameof(model.Slug),
+                "This URL slug is already being used.");
+        }
+
+        var destination = await GetTourDestinationAsync(model.DestinationId);
+
+        if (model.DestinationId.HasValue && destination == null)
+        {
+            ModelState.AddModelError(
+                nameof(model.DestinationId),
+                "Please select a valid destination.");
+        }
+
+        if (!ModelState.IsValid)
+        {
+            await PopulateTourDestinationsAsync(model.DestinationId);
+            return View("TourEditor", model);
+        }
+
+        var imageUrl = await SaveTourImageAsync(model.ImageFile);
+
+        if (model.ImageFile != null && imageUrl == null)
+        {
+            ModelState.AddModelError(
+                nameof(model.ImageFile),
+                "The image could not be uploaded. Use a JPG, PNG or WebP image under 5 MB.");
+
+            await PopulateTourDestinationsAsync(model.DestinationId);
+            return View("TourEditor", model);
+        }
+
+        var package = new TourPackage
+        {
+            Name = model.Name,
+            Slug = model.Slug,
+            DestinationId = model.DestinationId,
+            DestinationName = destination?.Name,
+            ShortDescription = model.ShortDescription?.Trim(),
+            Description = model.Description?.Trim(),
+            DurationDays = model.DurationDays,
+            PricePerAdult = model.PricePerAdult,
+            PricePerChild = model.PricePerChild,
+            Inclusions = model.Inclusions?.Trim(),
+            Exclusions = model.Exclusions?.Trim(),
+            ImageUrl = imageUrl ?? model.ImageUrl?.Trim(),
+            IsPublished = model.IsPublished,
+            IsFeatured = model.IsFeatured,
+            DisplayOrder = model.DisplayOrder,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        _context.TourPackages.Add(package);
+        await _context.SaveChangesAsync();
+
+        TempData["Success"] = "Tour package created successfully.";
+
+        return RedirectToAction(nameof(Tours));
     }
 
+
+    // ---------------------------------------------------------
+    // EDIT TOUR - GET
+    // ---------------------------------------------------------
+
+    [HttpGet("Tours/Edit/{id:int}")]
+    public async Task<IActionResult> EditTour(int id)
+    {
+        var package = await _context.TourPackages
+            .AsNoTracking()
+            .FirstOrDefaultAsync(t => t.Id == id);
+
+        if (package == null)
+            return NotFound();
+
+        ViewData["Title"] = $"Edit {package.Name}";
+        ViewData["Section"] = "Experiences";
+
+        await PopulateTourDestinationsAsync(package.DestinationId);
+
+        var model = new AdminTourPackageFormViewModel
+        {
+            Id = package.Id,
+            Name = package.Name,
+            Slug = package.Slug,
+            DestinationId = package.DestinationId,
+            ShortDescription = package.ShortDescription,
+            Description = package.Description,
+            DurationDays = package.DurationDays,
+            PricePerAdult = package.PricePerAdult,
+            PricePerChild = package.PricePerChild,
+            Inclusions = package.Inclusions,
+            Exclusions = package.Exclusions,
+            ImageUrl = package.ImageUrl,
+            IsPublished = package.IsPublished,
+            IsFeatured = package.IsFeatured,
+            DisplayOrder = package.DisplayOrder
+        };
+
+        return View("TourEditor", model);
+    }
+
+
+    // ---------------------------------------------------------
+    // EDIT TOUR - POST
+    // ---------------------------------------------------------
+
+    [HttpPost("Tours/Edit/{id:int}")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> EditTour(
+        int id,
+        AdminTourPackageFormViewModel model)
+    {
+        if (id != model.Id)
+            return BadRequest();
+
+        var package = await _context.TourPackages
+            .FirstOrDefaultAsync(t => t.Id == id);
+
+        if (package == null)
+            return NotFound();
+
+        ViewData["Title"] = $"Edit {package.Name}";
+        ViewData["Section"] = "Experiences";
+
+        model.Name = model.Name?.Trim() ?? string.Empty;
+        model.Slug = string.IsNullOrWhiteSpace(model.Slug)
+            ? CreateTourSlug(model.Name)
+            : CreateTourSlug(model.Slug);
+
+        if (await _context.TourPackages.AnyAsync(
+            t => t.Slug == model.Slug && t.Id != id))
+        {
+            ModelState.AddModelError(
+                nameof(model.Slug),
+                "This URL slug is already being used.");
+        }
+
+        var destination = await GetTourDestinationAsync(model.DestinationId);
+
+        if (model.DestinationId.HasValue && destination == null)
+        {
+            ModelState.AddModelError(
+                nameof(model.DestinationId),
+                "Please select a valid destination.");
+        }
+
+        if (!ModelState.IsValid)
+        {
+            await PopulateTourDestinationsAsync(model.DestinationId);
+            return View("TourEditor", model);
+        }
+
+        string? newImageUrl = null;
+
+        if (model.ImageFile != null)
+        {
+            newImageUrl = await SaveTourImageAsync(model.ImageFile);
+
+            if (newImageUrl == null)
+            {
+                ModelState.AddModelError(
+                    nameof(model.ImageFile),
+                    "The image could not be uploaded. Use a JPG, PNG or WebP image under 5 MB.");
+
+                await PopulateTourDestinationsAsync(model.DestinationId);
+                return View("TourEditor", model);
+            }
+        }
+
+        package.Name = model.Name;
+        package.Slug = model.Slug;
+        package.DestinationId = model.DestinationId;
+        package.DestinationName = destination?.Name;
+        package.ShortDescription = model.ShortDescription?.Trim();
+        package.Description = model.Description?.Trim();
+        package.DurationDays = model.DurationDays;
+        package.PricePerAdult = model.PricePerAdult;
+        package.PricePerChild = model.PricePerChild;
+        package.Inclusions = model.Inclusions?.Trim();
+        package.Exclusions = model.Exclusions?.Trim();
+        package.IsPublished = model.IsPublished;
+        package.IsFeatured = model.IsFeatured;
+        package.DisplayOrder = model.DisplayOrder;
+        package.UpdatedAt = DateTime.UtcNow;
+
+        if (newImageUrl != null)
+            package.ImageUrl = newImageUrl;
+        else if (!string.IsNullOrWhiteSpace(model.ImageUrl))
+            package.ImageUrl = model.ImageUrl.Trim();
+
+        await _context.SaveChangesAsync();
+
+        TempData["Success"] = "Tour package updated successfully.";
+
+        return RedirectToAction(nameof(Tours));
+    }
+
+
+    // ---------------------------------------------------------
+    // DELETE TOUR - POST
+    // ---------------------------------------------------------
+
+    [HttpPost("Tours/Delete/{id:int}")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> DeleteTour(int id)
+    {
+        var package = await _context.TourPackages
+            .Include(t => t.Departures)
+            .FirstOrDefaultAsync(t => t.Id == id);
+
+        if (package == null)
+            return NotFound();
+
+        var hasBookings = await _context.Bookings.AnyAsync(
+            b => b.TourPackageId == id ||
+                 (b.TourDeparture != null &&
+                  b.TourDeparture.TourPackageId == id));
+
+        if (hasBookings)
+        {
+            TempData["Error"] =
+                "This package cannot be deleted because it has booking records. Unpublish it instead to preserve booking history.";
+
+            return RedirectToAction(nameof(Tours));
+        }
+
+        var oldImageUrl = package.ImageUrl;
+
+        _context.TourPackages.Remove(package);
+        await _context.SaveChangesAsync();
+
+        DeleteTourImage(oldImageUrl);
+
+        TempData["Success"] = "Tour package deleted successfully.";
+
+        return RedirectToAction(nameof(Tours));
+    }
+
+    // =========================================================
+    // TOUR DEPARTURE MANAGEMENT
+    // =========================================================
+
+    [HttpGet("Tours/{packageId:int}/Departures")]
+    public async Task<IActionResult> Departures(int packageId)
+    {
+        var package = await _context.TourPackages
+            .AsNoTracking()
+            .FirstOrDefaultAsync(t => t.Id == packageId);
+
+        if (package == null)
+            return NotFound();
+
+        var departures = await _context.TourDepartures
+            .AsNoTracking()
+            .Where(d => d.TourPackageId == packageId)
+            .OrderBy(d => d.DepartureDate)
+            .ToListAsync();
+
+        var departureIds = departures.Select(d => d.Id).ToList();
+
+        var bookingRows = await _context.Bookings
+            .AsNoTracking()
+            .Where(b =>
+                b.TourDepartureId.HasValue &&
+                departureIds.Contains(b.TourDepartureId.Value) &&
+                (b.Status == "Confirmed" || b.Status == "Completed"))
+            .Select(b => new
+            {
+                DepartureId = b.TourDepartureId!.Value,
+                b.Adults,
+                b.Children,
+                b.Status
+            })
+            .ToListAsync();
+
+        var bookingSummary = bookingRows
+            .GroupBy(b => b.DepartureId)
+            .ToDictionary(
+                g => g.Key,
+                g => new
+                {
+                    ReservedSeats = g.Sum(b => b.Adults + b.Children),
+                    ConfirmedBookings = g.Count(b => b.Status == "Confirmed")
+                });
+
+        var model = departures.Select(d =>
+        {
+            bookingSummary.TryGetValue(d.Id, out var summary);
+
+            return new AdminTourDepartureRowViewModel
+            {
+                Id = d.Id,
+                TourPackageId = d.TourPackageId,
+                PackageName = package.Name,
+                DepartureDate = d.DepartureDate,
+                ReturnDate = d.ReturnDate,
+                MaximumGroupSize = d.MaximumGroupSize,
+                ReservedSeats = summary?.ReservedSeats ?? 0,
+                AvailableSeats = d.MaximumGroupSize -
+                                 (summary?.ReservedSeats ?? 0),
+                ConfirmedBookings = summary?.ConfirmedBookings ?? 0,
+                IsActive = d.IsActive
+            };
+        }).ToList();
+
+        ViewData["Title"] = "Tour Departures";
+        ViewData["Section"] = "Experiences";
+        ViewData["PackageName"] = package.Name;
+        ViewData["PackageId"] = package.Id;
+
+        return View(model);
+    }
+
+
+    // ---------------------------------------------------------
+    // CREATE DEPARTURE
+    // ---------------------------------------------------------
+
+    [HttpGet("Tours/{packageId:int}/Departures/Create")]
+    public async Task<IActionResult> CreateDeparture(int packageId)
+    {
+        var package = await _context.TourPackages
+            .AsNoTracking()
+            .FirstOrDefaultAsync(t => t.Id == packageId);
+
+        if (package == null)
+            return NotFound();
+
+        ViewData["Title"] = "Create Tour Departure";
+        ViewData["Section"] = "Experiences";
+
+        return View("DepartureEditor", new AdminTourDepartureFormViewModel
+        {
+            TourPackageId = package.Id,
+            PackageName = package.Name,
+            DepartureDate = DateTime.Today.AddDays(7),
+            ReturnDate = DateTime.Today.AddDays(12),
+            MaximumGroupSize = 12,
+            IsActive = true
+        });
+    }
+
+
+    [HttpPost("Tours/{packageId:int}/Departures/Create")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> CreateDeparture(
+        int packageId,
+        AdminTourDepartureFormViewModel model)
+    {
+        var package = await _context.TourPackages
+            .FirstOrDefaultAsync(t => t.Id == packageId);
+
+        if (package == null)
+            return NotFound();
+
+        model.TourPackageId = packageId;
+        model.PackageName = package.Name;
+
+        if (model.ReturnDate.Date < model.DepartureDate.Date)
+        {
+            ModelState.AddModelError(
+                nameof(model.ReturnDate),
+                "Return date cannot be before the departure date.");
+        }
+
+        if (!ModelState.IsValid)
+        {
+            ViewData["Title"] = "Create Tour Departure";
+            ViewData["Section"] = "Experiences";
+            return View("DepartureEditor", model);
+        }
+
+        var departure = new TourDeparture
+        {
+            TourPackageId = packageId,
+            DepartureDate = model.DepartureDate.Date,
+            ReturnDate = model.ReturnDate.Date,
+            MaximumGroupSize = model.MaximumGroupSize,
+            AvailableSeats = model.MaximumGroupSize,
+            IsActive = model.IsActive,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        };
+
+        _context.TourDepartures.Add(departure);
+        await _context.SaveChangesAsync();
+
+        TempData["Success"] = "Tour departure created successfully.";
+
+        return RedirectToAction(nameof(Departures), new { packageId });
+    }
+
+
+    // ---------------------------------------------------------
+    // EDIT DEPARTURE
+    // ---------------------------------------------------------
+
+    [HttpGet("Tours/{packageId:int}/Departures/Edit/{id:int}")]
+    public async Task<IActionResult> EditDeparture(int packageId, int id)
+    {
+        var departure = await _context.TourDepartures
+            .Include(d => d.TourPackage)
+            .FirstOrDefaultAsync(d =>
+                d.Id == id && d.TourPackageId == packageId);
+
+        if (departure == null)
+            return NotFound();
+
+        var model = new AdminTourDepartureFormViewModel
+        {
+            Id = departure.Id,
+            TourPackageId = departure.TourPackageId,
+            PackageName = departure.TourPackage.Name,
+            DepartureDate = departure.DepartureDate,
+            ReturnDate = departure.ReturnDate,
+            MaximumGroupSize = departure.MaximumGroupSize,
+            IsActive = departure.IsActive
+        };
+
+        ViewData["Title"] = "Edit Tour Departure";
+        ViewData["Section"] = "Experiences";
+
+        return View("DepartureEditor", model);
+    }
+
+
+    [HttpPost("Tours/{packageId:int}/Departures/Edit/{id:int}")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> EditDeparture(
+        int packageId,
+        int id,
+        AdminTourDepartureFormViewModel model)
+    {
+        var departure = await _context.TourDepartures
+            .Include(d => d.TourPackage)
+            .FirstOrDefaultAsync(d =>
+                d.Id == id && d.TourPackageId == packageId);
+
+        if (departure == null)
+            return NotFound();
+
+        model.Id = id;
+        model.TourPackageId = packageId;
+        model.PackageName = departure.TourPackage.Name;
+
+        if (model.ReturnDate.Date < model.DepartureDate.Date)
+        {
+            ModelState.AddModelError(
+                nameof(model.ReturnDate),
+                "Return date cannot be before the departure date.");
+        }
+
+        var occupiedSeats = await _context.Bookings
+            .Where(b =>
+                b.TourDepartureId == id &&
+                (b.Status == "Confirmed" || b.Status == "Completed"))
+            .SumAsync(b => (int?)(b.Adults + b.Children)) ?? 0;
+
+        if (model.MaximumGroupSize < occupiedSeats)
+        {
+            ModelState.AddModelError(
+                nameof(model.MaximumGroupSize),
+                $"Group size cannot be lower than the {occupiedSeats} seats already reserved.");
+        }
+
+        if (!ModelState.IsValid)
+        {
+            ViewData["Title"] = "Edit Tour Departure";
+            ViewData["Section"] = "Experiences";
+            return View("DepartureEditor", model);
+        }
+
+        departure.DepartureDate = model.DepartureDate.Date;
+        departure.ReturnDate = model.ReturnDate.Date;
+        departure.MaximumGroupSize = model.MaximumGroupSize;
+        departure.AvailableSeats = model.MaximumGroupSize - occupiedSeats;
+        departure.IsActive = model.IsActive;
+        departure.UpdatedAt = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync();
+
+        TempData["Success"] = "Tour departure updated successfully.";
+
+        return RedirectToAction(nameof(Departures), new { packageId });
+    }
+
+
+    // ---------------------------------------------------------
+    // DELETE DEPARTURE
+    // ---------------------------------------------------------
+
+    [HttpPost("Tours/{packageId:int}/Departures/Delete/{id:int}")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> DeleteDeparture(int packageId, int id)
+    {
+        var departure = await _context.TourDepartures
+            .FirstOrDefaultAsync(d =>
+                d.Id == id && d.TourPackageId == packageId);
+
+        if (departure == null)
+            return NotFound();
+
+        var hasBookings = await _context.Bookings
+            .AnyAsync(b => b.TourDepartureId == id);
+
+        if (hasBookings)
+        {
+            TempData["Error"] =
+                "This departure cannot be deleted because booking records are linked to it.";
+
+            return RedirectToAction(nameof(Departures), new { packageId });
+        }
+
+        _context.TourDepartures.Remove(departure);
+        await _context.SaveChangesAsync();
+
+        TempData["Success"] = "Tour departure deleted successfully.";
+
+        return RedirectToAction(nameof(Departures), new { packageId });
+    }
+
+
+    // =========================================================
+    // TOUR PACKAGE HELPERS
+    // =========================================================
+
+    private async Task PopulateTourDestinationsAsync(int? selectedId = null)
+    {
+        var destinations = await _context.Destinations
+            .AsNoTracking()
+            .OrderBy(d => d.Name)
+            .Select(d => new SelectListItem
+            {
+                Value = d.Id.ToString(),
+                Text = d.Name,
+                Selected = selectedId == d.Id
+            })
+            .ToListAsync();
+
+        ViewBag.Destinations = destinations;
+    }
+
+
+    private async Task<Destination?> GetTourDestinationAsync(int? destinationId)
+    {
+        if (!destinationId.HasValue)
+            return null;
+
+        return await _context.Destinations
+            .FirstOrDefaultAsync(d => d.Id == destinationId.Value);
+    }
+
+
+    private static string CreateTourSlug(string value)
+    {
+        value = value.Trim().ToLowerInvariant();
+
+        value = Regex.Replace(value, @"[^a-z0-9]+", "-");
+
+        return value.Trim('-');
+    }
+
+
+    private async Task<string?> SaveTourImageAsync(IFormFile? file)
+    {
+        if (file == null || file.Length == 0)
+            return null;
+
+        if (file.Length > 5 * 1024 * 1024)
+            return null;
+
+        var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
+
+        var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".webp" };
+
+        if (!allowedExtensions.Contains(extension))
+            return null;
+
+        var allowedContentTypes = new[]
+        {
+        "image/jpeg",
+        "image/png",
+        "image/webp"
+    };
+
+        if (!allowedContentTypes.Contains(file.ContentType.ToLowerInvariant()))
+            return null;
+
+        var uploadDirectory = Path.Combine(
+            _environment.WebRootPath,
+            "uploads",
+            "tours");
+
+        Directory.CreateDirectory(uploadDirectory);
+
+        var fileName = $"{Guid.NewGuid():N}{extension}";
+        var filePath = Path.Combine(uploadDirectory, fileName);
+
+        await using (var stream = new FileStream(filePath, FileMode.Create))
+        {
+            await file.CopyToAsync(stream);
+        }
+
+        return $"/uploads/tours/{fileName}";
+    }
+
+
+    private void DeleteTourImage(string? imageUrl)
+    {
+        if (string.IsNullOrWhiteSpace(imageUrl) ||
+            !imageUrl.StartsWith("/uploads/tours/", StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
+        var fileName = Path.GetFileName(imageUrl);
+
+        if (string.IsNullOrWhiteSpace(fileName))
+            return;
+
+        var filePath = Path.Combine(
+            _environment.WebRootPath,
+            "uploads",
+            "tours",
+            fileName);
+
+        if (System.IO.File.Exists(filePath))
+            System.IO.File.Delete(filePath);
+    }
     // =========================================================
     // BOOKINGS
     // =========================================================
@@ -1143,16 +1818,17 @@ public class AdminController : Controller
     {
         var allowedStatuses = new[]
         {
-            "Pending",
-            "Confirmed",
-            "Completed",
-            "Cancelled"
-        };
+        "Pending",
+        "Confirmed",
+        "Completed",
+        "Cancelled"
+    };
 
         if (string.IsNullOrWhiteSpace(status) ||
             !allowedStatuses.Contains(status))
         {
             TempData["BookingError"] = "Invalid booking status.";
+
             return RedirectToAction(
                 nameof(BookingDetails),
                 new { id });
@@ -1168,31 +1844,146 @@ public class AdminController : Controller
                 new { id });
         }
 
-        var booking = await _context.Bookings
-            .FirstOrDefaultAsync(b => b.Id == id);
+        await using var transaction =
+            await _context.Database.BeginTransactionAsync(
+                IsolationLevel.Serializable);
 
-        if (booking == null)
+        try
         {
-            return NotFound();
+            var booking = await _context.Bookings
+                .FirstOrDefaultAsync(b => b.Id == id);
+
+            if (booking == null)
+            {
+                await transaction.RollbackAsync();
+                return NotFound();
+            }
+
+            // Only tour bookings linked to a scheduled departure
+            // participate in departure capacity management.
+            if (booking.ServiceType == "Tour" &&
+                booking.TourDepartureId.HasValue)
+            {
+                var departure = await _context.TourDepartures
+                    .FirstOrDefaultAsync(d =>
+                        d.Id == booking.TourDepartureId.Value);
+
+                if (departure == null ||
+                    !booking.TourPackageId.HasValue ||
+                    departure.TourPackageId != booking.TourPackageId.Value)
+                {
+                    await transaction.RollbackAsync();
+
+                    TempData["BookingError"] =
+                        "The linked tour departure is invalid. " +
+                        "Please review this booking.";
+
+                    return RedirectToAction(
+                        nameof(BookingDetails),
+                        new { id });
+                }
+
+                bool targetOccupiesSeats =
+                    status == "Confirmed" ||
+                    status == "Completed";
+
+                if (status == "Confirmed" && !departure.IsActive)
+                {
+                    await transaction.RollbackAsync();
+
+                    TempData["BookingError"] =
+                        "This departure is inactive and cannot receive " +
+                        "new confirmations.";
+
+                    return RedirectToAction(
+                        nameof(BookingDetails),
+                        new { id });
+                }
+
+                int requestedSeats =
+                    booking.Adults + booking.Children;
+
+                if (requestedSeats < 1)
+                {
+                    await transaction.RollbackAsync();
+
+                    TempData["BookingError"] =
+                        "This booking has an invalid passenger count.";
+
+                    return RedirectToAction(
+                        nameof(BookingDetails),
+                        new { id });
+                }
+
+                // Count reservations belonging to OTHER bookings.
+                int occupiedByOtherBookings =
+                    await _context.Bookings
+                        .Where(b =>
+                            b.Id != booking.Id &&
+                            b.TourDepartureId == departure.Id &&
+                            (
+                                b.Status == "Confirmed" ||
+                                b.Status == "Completed"
+                            ))
+                        .SumAsync(b =>
+                            (int?)(b.Adults + b.Children)) ?? 0;
+
+                int newOccupiedSeats =
+                    occupiedByOtherBookings +
+                    (targetOccupiesSeats ? requestedSeats : 0);
+
+                if (newOccupiedSeats > departure.MaximumGroupSize)
+                {
+                    await transaction.RollbackAsync();
+
+                    int remainingSeats =
+                        departure.MaximumGroupSize -
+                        occupiedByOtherBookings;
+
+                    TempData["BookingError"] =
+                        $"Cannot confirm this booking. Only " +
+                        $"{Math.Max(0, remainingSeats)} seats remain, " +
+                        $"but this booking requires {requestedSeats}.";
+
+                    return RedirectToAction(
+                        nameof(BookingDetails),
+                        new { id });
+                }
+
+                // Keep the stored availability synchronized.
+                departure.AvailableSeats =
+                    departure.MaximumGroupSize - newOccupiedSeats;
+
+                departure.UpdatedAt = DateTime.UtcNow;
+            }
+
+            booking.Status = status;
+            booking.AdminNotes = adminNotes?.Trim();
+            booking.UpdatedAt = DateTime.UtcNow;
+
+            await _context.SaveChangesAsync();
+
+            await transaction.CommitAsync();
+
+            TempData["BookingSuccess"] =
+                "Booking updated successfully.";
+
+            return RedirectToAction(
+                nameof(BookingDetails),
+                new { id });
         }
+        catch
+        {
+            await transaction.RollbackAsync();
 
-        booking.Status = status;
-        booking.AdminNotes = adminNotes?.Trim();
-        booking.UpdatedAt = DateTime.UtcNow;
+            TempData["BookingError"] =
+                "The booking could not be updated. Please try again.";
 
-        await _context.SaveChangesAsync();
-
-        TempData["BookingSuccess"] =
-            "Booking updated successfully.";
-
-        return RedirectToAction(
-            nameof(BookingDetails),
-            new { id });
+            return RedirectToAction(
+                nameof(BookingDetails),
+                new { id });
+        }
     }
-
-
-  
-
     // =========================================================
     // TRANSPORT - VEHICLE MANAGEMENT
     // =========================================================
@@ -1715,8 +2506,9 @@ public class AdminController : Controller
         return RedirectToAction(nameof(Transport));
     }
 
+
     // =========================================================
-    // OTHER ADMIN PAGES - PLACEHOLDERS
+    // OTHER ADMIN PAGES
     // =========================================================
 
     [HttpGet("Calendar")]
@@ -1729,14 +2521,36 @@ public class AdminController : Controller
     }
 
     [HttpGet("Inquiries")]
-    public IActionResult Inquiries()
+    public async Task<IActionResult> Inquiries()
     {
         ViewData["Title"] = "Inquiries";
         ViewData["Section"] = "Inquiries";
 
-        return View("ComingSoon");
+        var inquiries = await _context.ContactInquiries
+            .AsNoTracking()
+            .OrderByDescending(x => x.SubmittedAt)
+            .ToListAsync();
+
+        return View(inquiries);
     }
 
+    [HttpGet("InquiryDetails/{id:int}")]
+    public async Task<IActionResult> InquiryDetails(int id)
+    {
+        var inquiry = await _context.ContactInquiries
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.Id == id);
+
+        if (inquiry == null)
+        {
+            return NotFound();
+        }
+
+        ViewData["Title"] = "Inquiry Details";
+        ViewData["Section"] = "Inquiries";
+
+        return View(inquiry);
+    }
 
     // =========================================================
     // REVIEWS - MODERATION DASHBOARD

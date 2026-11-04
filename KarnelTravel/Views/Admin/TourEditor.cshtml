@@ -1,179 +1,978 @@
+
+@model KarnelTravel.ViewModels.AdminTourPackageFormViewModel
+
 @{
     Layout = "_AdminLayout";
-    ViewData["Title"] = "Experience editor";
+
+    bool isEdit = Model.Id > 0;
+
+    ViewData["Title"] = isEdit ? "Edit Tour Package" : "Create Tour Package";
+    ViewData["Section"] = "Experiences";
+
+    var destinations = ViewBag.Destinations as IEnumerable<SelectListItem>
+        ?? Enumerable.Empty<SelectListItem>();
 }
 
-<div class="page-heading">
-    <div>
-        <div class="eyebrow">Experiences / Package editor</div>
-        <h1>Compose the journey.</h1>
-        <p>Move through each layer of a package before it meets the world.</p>
+<style>
+    .tour-editor {
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+
+    .editor-heading {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 18px;
+    }
+
+    .editor-eyebrow {
+        margin-bottom: 9px;
+        color: var(--accent, #a7b99c);
+        font-size: 10px;
+        font-weight: 750;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+    }
+
+    .editor-heading h1 {
+        margin: 0;
+        font-size: clamp(27px, 4vw, 39px);
+        font-weight: 650;
+        letter-spacing: -1.3px;
+    }
+
+    .editor-heading p {
+        margin: 8px 0 0;
+        color: var(--text-muted, #888);
+        font-size: 13px;
+        line-height: 1.6;
+    }
+
+    .back-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 14px;
+        border: 1px solid var(--border, rgba(255,255,255,.12));
+        border-radius: 7px;
+        color: inherit;
+        text-decoration: none;
+        font-size: 12px;
+        transition: .2s ease;
+    }
+
+    .back-link:hover {
+        border-color: var(--accent, #a7b99c);
+        color: var(--accent, #a7b99c);
+    }
+
+    .editor-layout {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 320px;
+        align-items: start;
+        gap: 20px;
+    }
+
+    .editor-main,
+    .editor-sidebar {
+        display: flex;
+        flex-direction: column;
+        gap: 18px;
+        min-width: 0;
+    }
+
+    .editor-card {
+        overflow: hidden;
+        border: 1px solid var(--border, rgba(255,255,255,.09));
+        border-radius: 10px;
+        background: var(--surface, rgba(255,255,255,.025));
+    }
+
+    .card-heading {
+        padding: 19px 21px;
+        border-bottom: 1px solid var(--border, rgba(255,255,255,.08));
+    }
+
+    .card-heading h2 {
+        margin: 0;
+        font-size: 15px;
+        font-weight: 650;
+    }
+
+    .card-heading p {
+        margin: 6px 0 0;
+        color: var(--text-muted, #888);
+        font-size: 11px;
+        line-height: 1.6;
+    }
+
+    .card-body {
+        display: flex;
+        flex-direction: column;
+        gap: 17px;
+        padding: 21px;
+    }
+
+    .field-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 17px;
+    }
+
+    .field {
+        display: flex;
+        flex-direction: column;
+        gap: 7px;
+        min-width: 0;
+    }
+
+    .field.full {
+        grid-column: 1 / -1;
+    }
+
+    .field label,
+    .field-label {
+        color: var(--text, inherit);
+        font-size: 12px;
+        font-weight: 650;
+    }
+
+    .required {
+        color: #dc9292;
+    }
+
+    .field input,
+    .field select,
+    .field textarea {
+        width: 100%;
+        min-height: 43px;
+        padding: 11px 12px;
+        border: 1px solid var(--border, rgba(255,255,255,.13));
+        border-radius: 7px;
+        outline: none;
+        background: var(--input-bg, rgba(255,255,255,.035));
+        color: var(--text, inherit);
+        font: inherit;
+        font-size: 12px;
+        transition: border-color .2s ease;
+    }
+
+    .field textarea {
+        min-height: 110px;
+        resize: vertical;
+        line-height: 1.65;
+    }
+
+    .field input:focus,
+    .field select:focus,
+    .field textarea:focus {
+        border-color: var(--accent, #a7b99c);
+    }
+
+    .field input::placeholder,
+    .field textarea::placeholder {
+        color: var(--text-muted, #888);
+        opacity: .7;
+    }
+
+    .field select option {
+        color: #222;
+    }
+
+    .field-hint {
+        color: var(--text-muted, #888);
+        font-size: 10px;
+        line-height: 1.5;
+    }
+
+    .field-validation,
+    .validation-summary-errors {
+        color: #e49a9a;
+        font-size: 11px;
+    }
+
+    .field-validation ul,
+    .validation-summary-errors ul {
+        margin: 5px 0 0;
+        padding-left: 18px;
+    }
+
+    .input-validation-error {
+        border-color: #cf7777 !important;
+    }
+
+    .validation-summary-valid {
+        display: none;
+    }
+
+    .validation-summary-errors {
+        padding: 13px 15px;
+        border: 1px solid rgba(210,100,100,.25);
+        border-radius: 7px;
+        background: rgba(210,100,100,.08);
+    }
+
+    .slug-field {
+        position: relative;
+    }
+
+    .slug-prefix {
+        position: absolute;
+        top: 50%;
+        left: 12px;
+        color: var(--text-muted, #888);
+        font-size: 12px;
+        transform: translateY(-50%);
+        pointer-events: none;
+    }
+
+    .slug-field input {
+        padding-left: 31px;
+    }
+
+    .price-input {
+        position: relative;
+    }
+
+    .price-prefix {
+        position: absolute;
+        top: 50%;
+        left: 12px;
+        color: var(--text-muted, #888);
+        font-size: 11px;
+        transform: translateY(-50%);
+        pointer-events: none;
+    }
+
+    .price-input input {
+        padding-left: 48px;
+    }
+
+    .upload-zone {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 175px;
+        padding: 20px;
+        border: 1px dashed var(--border, rgba(255,255,255,.2));
+        border-radius: 8px;
+        background: rgba(255,255,255,.015);
+        text-align: center;
+        cursor: pointer;
+        transition: .2s ease;
+    }
+
+    .upload-zone:hover,
+    .upload-zone.drag-over {
+        border-color: var(--accent, #a7b99c);
+        background: rgba(167,185,156,.06);
+    }
+
+    .upload-icon {
+        margin-bottom: 10px;
+        color: var(--accent, #a7b99c);
+        font-size: 27px;
+    }
+
+    .upload-zone strong {
+        font-size: 12px;
+    }
+
+    .upload-zone span {
+        margin-top: 6px;
+        color: var(--text-muted, #888);
+        font-size: 10px;
+    }
+
+    .upload-zone input {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        opacity: 0;
+        cursor: pointer;
+    }
+
+    .image-preview {
+        display: none;
+        width: 100%;
+        max-height: 210px;
+        margin-top: 13px;
+        border-radius: 7px;
+        object-fit: cover;
+    }
+
+    .image-preview.visible {
+        display: block;
+    }
+
+    .current-image {
+        display: block;
+        width: 100%;
+        max-height: 190px;
+        margin-bottom: 12px;
+        border-radius: 7px;
+        object-fit: cover;
+    }
+
+    .checkbox-list {
+        display: flex;
+        flex-direction: column;
+        gap: 13px;
+    }
+
+    .check-option {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        cursor: pointer;
+    }
+
+    .check-option input {
+        width: 16px;
+        height: 16px;
+        min-height: 16px;
+        margin-top: 2px;
+        accent-color: var(--accent, #a7b99c);
+        cursor: pointer;
+    }
+
+    .check-option span {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .check-option strong {
+        font-size: 12px;
+        font-weight: 650;
+    }
+
+    .check-option small {
+        color: var(--text-muted, #888);
+        font-size: 10px;
+        line-height: 1.5;
+    }
+
+    .sidebar-note {
+        padding: 15px;
+        border-left: 2px solid var(--accent, #a7b99c);
+        border-radius: 5px;
+        background: rgba(167,185,156,.07);
+        color: var(--text-muted, #aaa);
+        font-size: 11px;
+        line-height: 1.7;
+    }
+
+    .editor-actions {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 10px;
+        padding: 17px 20px;
+        border-top: 1px solid var(--border, rgba(255,255,255,.08));
+    }
+
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 41px;
+        padding: 0 17px;
+        border: 1px solid var(--border, rgba(255,255,255,.13));
+        border-radius: 7px;
+        background: transparent;
+        color: inherit;
+        font: inherit;
+        font-size: 12px;
+        font-weight: 650;
+        text-decoration: none;
+        cursor: pointer;
+        transition: .2s ease;
+    }
+
+    .btn:hover {
+        border-color: var(--accent, #a7b99c);
+    }
+
+    .btn-primary {
+        border-color: var(--accent, #a7b99c);
+        background: var(--accent, #a7b99c);
+        color: #182019;
+    }
+
+    .btn-primary:hover {
+        filter: brightness(1.08);
+    }
+
+    .editor-footer-note {
+        color: var(--text-muted, #888);
+        font-size: 10px;
+        line-height: 1.6;
+    }
+
+    @@media(max-width: 900px) {
+        .editor-layout {
+            grid-template-columns: 1fr;
+        }
+
+        .editor-sidebar {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+
+    @@media(max-width: 600px) {
+        .field-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .field.full {
+            grid-column: auto;
+        }
+
+        .editor-sidebar {
+            display: flex;
+        }
+
+        .card-body {
+            padding: 16px;
+        }
+
+        .card-heading {
+            padding: 16px;
+        }
+
+        .editor-actions {
+            flex-direction: column-reverse;
+            align-items: stretch;
+        }
+
+        .editor-actions .btn {
+            width: 100%;
+        }
+    }
+</style>
+
+<div class="tour-editor">
+
+    <div class="editor-heading">
+        <div>
+            <div class="editor-eyebrow">Experiences / Tour management</div>
+
+            <h1>
+                @(isEdit ? "Refine this journey." : "Create a journey.")
+            </h1>
+
+            <p>
+                @(isEdit
+                    ? "Update package information and manage its presentation."
+                    : "Build a new travel experience for your customers.")
+            </p>
+        </div>
+
+        <a href="@Url.Action("Tours", "Admin")" class="back-link">
+            ← Back to packages
+        </a>
     </div>
-    <a class="btn btn-quiet" asp-controller="Admin" asp-action="Tours">← All packages</a>
+
+    <form
+        asp-controller="Admin"
+        asp-action="@(isEdit ? "EditTour" : "CreateTour")"
+        asp-route-id="@(isEdit ? Model.Id : (int?)null)"
+        method="post"
+        enctype="multipart/form-data"
+        id="tourEditorForm">
+
+        @Html.AntiForgeryToken()
+
+        @if (isEdit)
+        {
+            <input type="hidden" asp-for="Id" />
+        }
+
+        <div asp-validation-summary="ModelOnly"></div>
+
+        <div class="editor-layout">
+
+            <div class="editor-main">
+
+                <!-- BASIC INFORMATION -->
+                <section class="editor-card">
+
+                    <div class="card-heading">
+                        <h2>01. Package identity</h2>
+                        <p>Give this experience a clear name and destination.</p>
+                    </div>
+
+                    <div class="card-body">
+
+                        <div class="field">
+                            <label asp-for="Name">
+                                Package name <span class="required">*</span>
+                            </label>
+
+                            <input
+                                asp-for="Name"
+                                id="packageName"
+                                placeholder="e.g. Northern Pakistan Discovery"
+                                maxlength="150" />
+
+                            <span asp-validation-for="Name" class="field-validation"></span>
+                        </div>
+
+                        <div class="field">
+                            <label asp-for="Slug">
+                                URL slug <span class="required">*</span>
+                            </label>
+
+                            <div class="slug-field">
+                                <span class="slug-prefix">/</span>
+                                <input
+                                    asp-for="Slug"
+                                    id="packageSlug"
+                                    placeholder="northern-pakistan-discovery"
+                                    maxlength="150" />
+                            </div>
+
+                            <span class="field-hint">
+                                Used in the package URL. Use lowercase letters and hyphens.
+                            </span>
+
+                            <span asp-validation-for="Slug" class="field-validation"></span>
+                        </div>
+
+                        <div class="field-grid">
+
+                            <div class="field">
+                                <label asp-for="DestinationId">
+                                    Destination
+                                </label>
+
+                                <select asp-for="DestinationId" asp-items="destinations">
+                                    <option value="">Select a destination</option>
+                                </select>
+
+                                <span class="field-hint">
+                                    Select the destination associated with this package.
+                                </span>
+
+                                <span asp-validation-for="DestinationId" class="field-validation"></span>
+                            </div>
+
+                            <div class="field">
+                                <label asp-for="DurationDays">
+                                    Duration in days <span class="required">*</span>
+                                </label>
+
+                                <input
+                                    asp-for="DurationDays"
+                                    type="number"
+                                    min="1"
+                                    max="365"
+                                    placeholder="e.g. 5" />
+
+                                <span asp-validation-for="DurationDays" class="field-validation"></span>
+                            </div>
+
+                        </div>
+
+                        <div class="field">
+                            <label asp-for="ShortDescription">
+                                Short description <span class="required">*</span>
+                            </label>
+
+                            <textarea
+                                asp-for="ShortDescription"
+                                rows="3"
+                                maxlength="1000"
+                                placeholder="Write a concise introduction to this travel experience..."></textarea>
+
+                            <span class="field-hint">
+                                A short introduction suitable for package listings.
+                            </span>
+
+                            <span asp-validation-for="ShortDescription" class="field-validation"></span>
+                        </div>
+
+                        <div class="field">
+                            <label asp-for="Description">
+                                Full description
+                            </label>
+
+                            <textarea
+                                asp-for="Description"
+                                rows="7"
+                                maxlength="3000"
+                                placeholder="Describe the experience, highlights, activities and what makes this journey special..."></textarea>
+
+                            <span asp-validation-for="Description" class="field-validation"></span>
+                        </div>
+
+                    </div>
+                </section>
+
+                <!-- PRICING -->
+                <section class="editor-card">
+
+                    <div class="card-heading">
+                        <h2>02. Package pricing</h2>
+                        <p>Set the advertised package price for each passenger category.</p>
+                    </div>
+
+                    <div class="card-body">
+
+                        <div class="field-grid">
+
+                            <div class="field">
+                                <label asp-for="PricePerAdult">
+                                    Adult price (PKR)
+                                </label>
+
+                                <div class="price-input">
+                                    <span class="price-prefix">PKR</span>
+                                    <input
+                                        asp-for="PricePerAdult"
+                                        type="number"
+                                        min="0"
+                                        step="0.01"
+                                        placeholder="25000" />
+                                </div>
+
+                                <span class="field-hint">
+                                    Price per adult.
+                                </span>
+
+                                <span asp-validation-for="PricePerAdult" class="field-validation"></span>
+                            </div>
+
+                            <div class="field">
+                                <label asp-for="PricePerChild">
+                                    Child price (PKR)
+                                </label>
+
+                                <div class="price-input">
+                                    <span class="price-prefix">PKR</span>
+                                    <input
+                                        asp-for="PricePerChild"
+                                        type="number"
+                                        min="0"
+                                        step="0.01"
+                                        placeholder="18000" />
+                                </div>
+
+                                <span class="field-hint">
+                                    Price per child.
+                                </span>
+
+                                <span asp-validation-for="PricePerChild" class="field-validation"></span>
+                            </div>
+
+                        </div>
+
+                        <div class="sidebar-note">
+                            Prices entered here are package prices. Your departure
+                            management system will handle scheduled dates and seat availability separately.
+                        </div>
+
+                    </div>
+                </section>
+
+                <!-- INCLUSIONS AND EXCLUSIONS -->
+                <section class="editor-card">
+
+                    <div class="card-heading">
+                        <h2>03. What's included?</h2>
+                        <p>Make it clear what customers receive and what they must arrange themselves.</p>
+                    </div>
+
+                    <div class="card-body">
+
+                        <div class="field">
+                            <label asp-for="Inclusions">
+                                Package inclusions
+                            </label>
+
+                            <textarea
+                                asp-for="Inclusions"
+                                rows="5"
+                                maxlength="2000"
+                                placeholder="Accommodation&#10;Transport during the tour&#10;Breakfast&#10;Professional tour guide"></textarea>
+
+                            <span class="field-hint">
+                                Enter each inclusion on a separate line.
+                            </span>
+
+                            <span asp-validation-for="Inclusions" class="field-validation"></span>
+                        </div>
+
+                        <div class="field">
+                            <label asp-for="Exclusions">
+                                Package exclusions
+                            </label>
+
+                            <textarea
+                                asp-for="Exclusions"
+                                rows="5"
+                                maxlength="2000"
+                                placeholder="Personal expenses&#10;Lunch and dinner&#10;Travel insurance&#10;Optional activities"></textarea>
+
+                            <span class="field-hint">
+                                Enter each exclusion on a separate line.
+                            </span>
+
+                            <span asp-validation-for="Exclusions" class="field-validation"></span>
+                        </div>
+
+                    </div>
+                </section>
+
+            </div>
+
+            <aside class="editor-sidebar">
+
+                <!-- IMAGE -->
+                <section class="editor-card">
+
+                    <div class="card-heading">
+                        <h2>04. Cover image</h2>
+                        <p>Choose the main image customers will see.</p>
+                    </div>
+
+                    <div class="card-body">
+
+                        @if (isEdit && !string.IsNullOrWhiteSpace(Model.ImageUrl))
+                        {
+                            <div>
+                                <div class="field-label">Current image</div>
+                                <img
+                                    src="@Model.ImageUrl"
+                                    alt="Current package image"
+                                    class="current-image"
+                                    id="currentImage" />
+                            </div>
+                        }
+
+                        <div class="field">
+                            <label asp-for="ImageFile">
+                                @(isEdit ? "Replace image" : "Upload image")
+                            </label>
+
+                            <label class="upload-zone" id="uploadZone">
+                                <div class="upload-icon">＋</div>
+                                <strong>Choose an image</strong>
+                                <span>JPG, PNG or WebP · Maximum 5 MB</span>
+
+                                <input
+                                    asp-for="ImageFile"
+                                    type="file"
+                                    id="imageFile"
+                                    accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" />
+                            </label>
+
+                            <img
+                                id="imagePreview"
+                                class="image-preview"
+                                alt="Selected image preview" />
+
+                            <span asp-validation-for="ImageFile" class="field-validation"></span>
+                        </div>
+
+                        <input type="hidden" asp-for="ImageUrl" />
+
+                        <div class="field-hint">
+                            Use a high-quality landscape image. It will be stored in your
+                            website's tour uploads folder.
+                        </div>
+
+                    </div>
+                </section>
+
+                <!-- PUBLISHING -->
+                <section class="editor-card">
+
+                    <div class="card-heading">
+                        <h2>05. Publishing</h2>
+                        <p>Control how this package appears on your website.</p>
+                    </div>
+
+                    <div class="card-body">
+
+                        <div class="checkbox-list">
+
+                            <label class="check-option">
+                                <input asp-for="IsPublished" type="checkbox" />
+
+                                <span>
+                                    <strong>Publish package</strong>
+                                    <small>
+                                        Make this package available on the public website.
+                                    </small>
+                                </span>
+                            </label>
+
+                            <label class="check-option">
+                                <input asp-for="IsFeatured" type="checkbox" />
+
+                                <span>
+                                    <strong>Feature package</strong>
+                                    <small>
+                                        Mark this package as featured for homepage or listing placement.
+                                    </small>
+                                </span>
+                            </label>
+
+                        </div>
+
+                        <div class="field">
+                            <label asp-for="DisplayOrder">
+                                Display order
+                            </label>
+
+                            <input
+                                asp-for="DisplayOrder"
+                                type="number"
+                                min="0"
+                                placeholder="0" />
+
+                            <span class="field-hint">
+                                Lower numbers appear earlier when sorted by display order.
+                            </span>
+
+                            <span asp-validation-for="DisplayOrder" class="field-validation"></span>
+                        </div>
+
+                    </div>
+
+                    <div class="editor-actions">
+                        <a href="@Url.Action("Tours", "Admin")" class="btn">
+                            Cancel
+                        </a>
+
+                        <button type="submit" class="btn btn-primary">
+                            @(isEdit ? "Save changes" : "Create package")
+                        </button>
+                    </div>
+
+                </section>
+
+                <div class="editor-footer-note">
+                    <strong>Before publishing:</strong>
+                    Verify your package description, destination, pricing and cover image.
+                    Scheduled departures and itinerary days are managed separately.
+                </div>
+
+            </aside>
+
+        </div>
+    </form>
+
 </div>
 
-<form data-demo-submit novalidate>
+<script>
+    (() => {
+        const nameInput = document.getElementById("packageName");
+        const slugInput = document.getElementById("packageSlug");
+        const imageInput = document.getElementById("imageFile");
+        const preview = document.getElementById("imagePreview");
+        const uploadZone = document.getElementById("uploadZone");
+        const form = document.getElementById("tourEditorForm");
 
-    <!-- Step navigation (buttons only — panels live below) -->
-    <nav class="steps" data-tour-steps aria-label="Editor sections">
-        <button type="button" class="step is-active" data-step="0">01 Basic</button>
-        <button type="button" class="step" data-step="1">02 Itinerary</button>
-        <button type="button" class="step" data-step="2">03 Inclusions</button>
-        <button type="button" class="step" data-step="3">04 Pricing</button>
-        <button type="button" class="step" data-step="4">05 Dates</button>
-        <button type="button" class="step" data-step="5">06 Publish</button>
-    </nav>
+        // Generate a URL-friendly slug from the package name.
+        // Do not overwrite the slug after the administrator edits it manually.
+        let slugManuallyEdited = slugInput && slugInput.value.trim().length > 0;
 
-    <!-- Panels — one visible at a time -->
-    <div data-tour-panels>
+        if (slugInput) {
+            slugInput.addEventListener("input", () => {
+                slugManuallyEdited = true;
+            });
+        }
 
-        <!-- Step 1 — Basic -->
-        <section class="step-panel is-active" data-panel="0">
-            <div class="form-section">
-                <h2>The headline</h2>
-                <p>Give this journey a clear point of view.</p>
+        if (nameInput && slugInput) {
+            nameInput.addEventListener("input", () => {
+                if (slugManuallyEdited) return;
 
-                <div class="form-grid">
-                    <div class="field">
-                        <label for="tour-name">Package name</label>
-                        <input id="tour-name" class="input" value="Hunza in Autumn" required />
-                    </div>
-                    <div class="field">
-                        <label for="tour-destination">Destination</label>
-                        <select id="tour-destination" class="select">
-                            <option>Hunza Valley</option>
-                            <option>Skardu</option>
-                        </select>
-                    </div>
-                    <div class="field full">
-                        <label for="tour-intro">Intro</label>
-                        <textarea id="tour-intro" class="input" rows="3">A six-day journey through apricot orchards, ancient forts and the golden light of the Karakoram.</textarea>
-                    </div>
-                </div>
-            </div>
-        </section>
+                slugInput.value = nameInput.value
+                    .toLowerCase()
+                    .trim()
+                    .replace(/[^a-z0-9]+/g, "-")
+                    .replace(/^-+|-+$/g, "");
+            });
+        }
 
-        <!-- Step 2 — Itinerary -->
-        <section class="step-panel" data-panel="1">
-            <div class="form-section">
-                <h2>Shape the route</h2>
-                <p>Day-by-day details will appear here.</p>
+        // Image preview.
+        if (imageInput) {
+            imageInput.addEventListener("change", () => {
+                const file = imageInput.files && imageInput.files[0];
 
-                <div class="field">
-                    <label for="tour-itinerary">Itinerary</label>
-                    <textarea id="tour-itinerary" class="input" rows="8">Day 1 — Islamabad to Chilas
-Day 2 — Chilas to Hunza
-Day 3 — Baltit Fort &amp; Karimabad</textarea>
-                </div>
-            </div>
-        </section>
+                if (!file) {
+                    preview.removeAttribute("src");
+                    preview.classList.remove("visible");
+                    return;
+                }
 
-        <!-- Step 3 — Inclusions -->
-        <section class="step-panel" data-panel="2">
-            <div class="form-section">
-                <h2>What’s included</h2>
-                <p>Set expectations with clarity.</p>
+                const allowedTypes = [
+                    "image/jpeg",
+                    "image/png",
+                    "image/webp"
+                ];
 
-                <div class="form-grid">
-                    <div class="field">
-                        <label for="tour-inclusions">Inclusions</label>
-                        <textarea id="tour-inclusions" class="input" rows="6">Accommodation
-Daily breakfast
-Local guide</textarea>
-                    </div>
-                    <div class="field">
-                        <label for="tour-exclusions">Exclusions</label>
-                        <textarea id="tour-exclusions" class="input" rows="6">International flights
-Travel insurance</textarea>
-                    </div>
-                </div>
-            </div>
-        </section>
+                const maxSize = 5 * 1024 * 1024;
 
-        <!-- Step 4 — Pricing -->
-        <section class="step-panel" data-panel="3">
-            <div class="form-section">
-                <h2>Price &amp; group</h2>
+                if (!allowedTypes.includes(file.type)) {
+                    alert("Please select a JPG, PNG or WebP image.");
+                    imageInput.value = "";
+                    preview.classList.remove("visible");
+                    return;
+                }
 
-                <div class="form-grid">
-                    <div class="field">
-                        <label for="tour-price">Price per person</label>
-                        <input id="tour-price" class="input" value="$680" />
-                    </div>
-                    <div class="field">
-                        <label for="tour-max">Maximum group size</label>
-                        <input id="tour-max" class="input" value="12" />
-                    </div>
-                </div>
-            </div>
-        </section>
+                if (file.size > maxSize) {
+                    alert("Image size must not exceed 5 MB.");
+                    imageInput.value = "";
+                    preview.classList.remove("visible");
+                    return;
+                }
 
-        <!-- Step 5 — Dates -->
-        <section class="step-panel" data-panel="4">
-            <div class="form-section">
-                <h2>Departure dates</h2>
+                const imageUrl = URL.createObjectURL(file);
 
-                <div class="field">
-                    <label for="tour-departures">Upcoming departures</label>
-                    <input id="tour-departures" class="input"
-                           value="18 Oct 2025 · 22 Oct 2025 · 01 Nov 2025" />
-                </div>
-            </div>
-        </section>
+                preview.onload = () => URL.revokeObjectURL(imageUrl);
+                preview.src = imageUrl;
+                preview.classList.add("visible");
+            });
+        }
 
-        <!-- Step 6 — Publish -->
-        <section class="step-panel" data-panel="5">
-            <div class="form-section">
-                <h2>Ready when you are</h2>
-                <p>Review the preview, then choose a publication state.</p>
-
-                <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;">
-                    <button class="btn btn-primary" type="submit">Save prototype package</button>
-                    <button class="btn" type="button"
-                            data-prototype="Preview is design-only in this phase.">
-                        Preview package ↗
-                    </button>
-                </div>
-            </div>
-        </section>
-
-    </div>
-</form>
-
-@section Scripts {
-    <script>
-        /* Step switcher for the tour editor.
-           Only runs on this page; no effect on other admin routes. */
-        (function () {
-            var nav    = document.querySelector('[data-tour-steps]');
-            var wrap   = document.querySelector('[data-tour-panels]');
-            if (!nav || !wrap) return;
-
-            var steps  = nav.querySelectorAll('.step');
-            var panels = wrap.querySelectorAll('.step-panel');
-
-            function activate(index) {
-                steps.forEach(function (s) {
-                    var active = parseInt(s.dataset.step, 10) === index;
-                    s.classList.toggle('is-active', active);
-                    s.setAttribute('aria-selected', active ? 'true' : 'false');
-                });
-                panels.forEach(function (p) {
-                    var active = parseInt(p.dataset.panel, 10) === index;
-                    p.classList.toggle('is-active', active);
-                    if (active) p.removeAttribute('hidden');
-                    else p.setAttribute('hidden', '');
-                });
-            }
-
-            steps.forEach(function (btn) {
-                btn.setAttribute('role', 'tab');
-                btn.addEventListener('click', function () {
-                    activate(parseInt(btn.dataset.step, 10));
+        // Drag-and-drop visual feedback.
+        if (uploadZone) {
+            ["dragenter", "dragover"].forEach(eventName => {
+                uploadZone.addEventListener(eventName, event => {
+                    event.preventDefault();
+                    uploadZone.classList.add("drag-over");
                 });
             });
 
-            activate(0);
-        })();
-    </script>
-}
+            ["dragleave", "drop"].forEach(eventName => {
+                uploadZone.addEventListener(eventName, event => {
+                    event.preventDefault();
+                    uploadZone.classList.remove("drag-over");
+                });
+            });
+        }
+
+        // Prevent accidental double submission.
+        if (form) {
+            form.addEventListener("submit", event => {
+                if (!form.checkValidity()) {
+                    event.preventDefault();
+                    form.reportValidity();
+                }
+            });
+        }
+    })();
+</script>

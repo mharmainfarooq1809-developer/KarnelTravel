@@ -1,0 +1,73 @@
+﻿
+@model IEnumerable<KarnelTravel.Models.TourPackage>
+
+@{
+    ViewData["Title"] = "Tour Packages | Karnel Travel Guide";
+}
+
+<section style="padding:140px 6% 70px; background:#173b32; color:#f7f4eb;">
+    <p style="letter-spacing:3px; text-transform:uppercase;">Discover Pakistan</p>
+    <h1 style="font-size:clamp(42px,7vw,76px); margin:15px 0;">
+        Find Your Next Journey.
+    </h1>
+    <p style="max-width:650px; line-height:1.8;">
+        Explore carefully planned journeys across Pakistan's extraordinary landscapes.
+    </p>
+</section>
+
+<section style="padding:70px 6%; background:#f7f4eb; color:#243b32;">
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:15px; margin-bottom:35px;">
+        <div>
+            <p style="letter-spacing:2px; text-transform:uppercase;">Our collection</p>
+            <h2 style="font-size:36px;">Explore Tour Packages</h2>
+        </div>
+        <span>@Model.Count() packages available</span>
+    </div>
+
+    @if (!Model.Any())
+    {
+        <p>No tour packages are currently available. Please check back soon.</p>
+    }
+    else
+    {
+        <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:25px;">
+            @foreach (var package in Model)
+            {
+                <article style="background:white; border-radius:12px; overflow:hidden; box-shadow:0 8px 30px rgba(0,0,0,.07);">
+                    <img src="@(string.IsNullOrWhiteSpace(package.ImageUrl) ? "/images/placeholder-tour.jpg" : package.ImageUrl)"
+                         alt="@package.Name"
+                         style="width:100%; height:230px; object-fit:cover;"
+                         onerror="this.onerror=null;this.src='https://placehold.co/800x500/e8e4d8/33483b?text=Tour+Package';" />
+
+                    <div style="padding:24px;">
+                        <p style="font-size:13px; text-transform:uppercase; letter-spacing:1.5px; color:#718071;">
+                            @package.DestinationName
+                        </p>
+
+                        <h3 style="font-size:24px; margin:10px 0;">@package.Name</h3>
+
+                        <p style="color:#66736a; line-height:1.7;">
+                            @package.ShortDescription
+                        </p>
+
+                        <div style="display:flex; justify-content:space-between; margin:20px 0;">
+                            <span>@package.DurationDays Days</span>
+                            <strong>
+                                @(package.PricePerAdult.HasValue
+                                    ? "PKR " + package.PricePerAdult.Value.ToString("N0")
+                                    : "Price on request")
+                            </strong>
+                        </div>
+
+                        <a asp-controller="Tours"
+                           asp-action="Details"
+                           asp-route-slug="@package.Slug"
+                           style="display:block; text-align:center; padding:14px; background:#24483b; color:white; text-decoration:none; border-radius:5px;">
+                            Explore Package
+                        </a>
+                    </div>
+                </article>
+            }
+        </div>
+    }
+</section>

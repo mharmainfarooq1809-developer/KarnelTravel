@@ -151,6 +151,9 @@ namespace KarnelTravel.Migrations
                         .HasMaxLength(30)
                         .HasColumnType("nvarchar(30)");
 
+                    b.Property<int?>("TourDepartureId")
+                        .HasColumnType("int");
+
                     b.Property<int?>("TourPackageId")
                         .HasColumnType("int");
 
@@ -187,11 +190,68 @@ namespace KarnelTravel.Migrations
 
                     b.HasIndex("RestaurantId");
 
+                    b.HasIndex("TourDepartureId");
+
                     b.HasIndex("TourPackageId");
 
                     b.HasIndex("TransportServiceId");
 
                     b.ToTable("Bookings", (string)null);
+                });
+
+            modelBuilder.Entity("KarnelTravel.Models.ContactInquiry", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("AdminNotes")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.Property<string>("Message")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Phone")
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)")
+                        .HasDefaultValue("New");
+
+                    b.Property<DateTime>("SubmittedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETUTCDATE()");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Status", "SubmittedAt");
+
+                    b.ToTable("ContactInquiries", (string)null);
                 });
 
             modelBuilder.Entity("KarnelTravel.Models.Destination", b =>
@@ -584,6 +644,88 @@ namespace KarnelTravel.Migrations
                         });
                 });
 
+            modelBuilder.Entity("KarnelTravel.Models.TourDeparture", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("AvailableSeats")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("DepartureDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("MaximumGroupSize")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("ReturnDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("TourPackageId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TourPackageId", "DepartureDate");
+
+                    b.ToTable("TourDepartures", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_TourDepartures_DateRange", "[ReturnDate] >= [DepartureDate]");
+
+                            t.HasCheckConstraint("CK_TourDepartures_SeatCapacity", "[MaximumGroupSize] >= 1 AND [AvailableSeats] >= 0 AND [AvailableSeats] <= [MaximumGroupSize]");
+                        });
+                });
+
+            modelBuilder.Entity("KarnelTravel.Models.TourItineraryDay", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("DayNumber")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<int>("DisplayOrder")
+                        .HasColumnType("int");
+
+                    b.Property<string>("OvernightLocation")
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<int>("TourPackageId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TourPackageId", "DayNumber")
+                        .IsUnique();
+
+                    b.ToTable("TourItineraryDays", (string)null);
+                });
+
             modelBuilder.Entity("KarnelTravel.Models.TourPackage", b =>
                 {
                     b.Property<int>("Id")
@@ -596,7 +738,6 @@ namespace KarnelTravel.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<string>("Description")
-                        .IsRequired()
                         .HasMaxLength(3000)
                         .HasColumnType("nvarchar(3000)");
 
@@ -604,7 +745,6 @@ namespace KarnelTravel.Migrations
                         .HasColumnType("int");
 
                     b.Property<string>("DestinationName")
-                        .IsRequired()
                         .HasMaxLength(150)
                         .HasColumnType("nvarchar(150)");
 
@@ -615,17 +755,14 @@ namespace KarnelTravel.Migrations
                         .HasColumnType("int");
 
                     b.Property<string>("Exclusions")
-                        .IsRequired()
                         .HasMaxLength(2000)
                         .HasColumnType("nvarchar(2000)");
 
                     b.Property<string>("ImageUrl")
-                        .IsRequired()
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
 
                     b.Property<string>("Inclusions")
-                        .IsRequired()
                         .HasMaxLength(2000)
                         .HasColumnType("nvarchar(2000)");
 
@@ -649,7 +786,6 @@ namespace KarnelTravel.Migrations
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<string>("ShortDescription")
-                        .IsRequired()
                         .HasMaxLength(1000)
                         .HasColumnType("nvarchar(1000)");
 
@@ -890,6 +1026,11 @@ namespace KarnelTravel.Migrations
                         .HasForeignKey("RestaurantId")
                         .OnDelete(DeleteBehavior.Restrict);
 
+                    b.HasOne("KarnelTravel.Models.TourDeparture", "TourDeparture")
+                        .WithMany("Bookings")
+                        .HasForeignKey("TourDepartureId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("KarnelTravel.Models.TourPackage", null)
                         .WithMany()
                         .HasForeignKey("TourPackageId")
@@ -899,6 +1040,8 @@ namespace KarnelTravel.Migrations
                         .WithMany()
                         .HasForeignKey("TransportServiceId")
                         .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("TourDeparture");
                 });
 
             modelBuilder.Entity("KarnelTravel.Models.Hotel", b =>
@@ -973,11 +1116,34 @@ namespace KarnelTravel.Migrations
                     b.Navigation("TransportService");
                 });
 
+            modelBuilder.Entity("KarnelTravel.Models.TourDeparture", b =>
+                {
+                    b.HasOne("KarnelTravel.Models.TourPackage", "TourPackage")
+                        .WithMany("Departures")
+                        .HasForeignKey("TourPackageId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("TourPackage");
+                });
+
+            modelBuilder.Entity("KarnelTravel.Models.TourItineraryDay", b =>
+                {
+                    b.HasOne("KarnelTravel.Models.TourPackage", "TourPackage")
+                        .WithMany("ItineraryDays")
+                        .HasForeignKey("TourPackageId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("TourPackage");
+                });
+
             modelBuilder.Entity("KarnelTravel.Models.TourPackage", b =>
                 {
                     b.HasOne("KarnelTravel.Models.Destination", "Destination")
-                        .WithMany()
-                        .HasForeignKey("DestinationId");
+                        .WithMany("TourPackages")
+                        .HasForeignKey("DestinationId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Destination");
                 });
@@ -1000,6 +1166,23 @@ namespace KarnelTravel.Migrations
                         .HasForeignKey("DestinationId");
 
                     b.Navigation("Destination");
+                });
+
+            modelBuilder.Entity("KarnelTravel.Models.Destination", b =>
+                {
+                    b.Navigation("TourPackages");
+                });
+
+            modelBuilder.Entity("KarnelTravel.Models.TourDeparture", b =>
+                {
+                    b.Navigation("Bookings");
+                });
+
+            modelBuilder.Entity("KarnelTravel.Models.TourPackage", b =>
+                {
+                    b.Navigation("Departures");
+
+                    b.Navigation("ItineraryDays");
                 });
 #pragma warning restore 612, 618
         }

@@ -5,11 +5,29 @@ namespace KarnelTravel.ViewModels;
 
 public class BookingRequestViewModel
 {
+    // =========================================================
+    // SELECTED SERVICE
+    // =========================================================
+
     [Required, StringLength(30)]
     public string ServiceType { get; set; } = "";
 
     [Range(1, int.MaxValue)]
     public int ServiceId { get; set; }
+
+    // =========================================================
+    // TOUR BOOKING FIELDS
+    // =========================================================
+
+    [Display(Name = "Booking type")]
+    public string TourBookingType { get; set; } = "Scheduled";
+
+    [Display(Name = "Scheduled departure")]
+    public int? TourDepartureId { get; set; }
+
+    // =========================================================
+    // CUSTOMER DETAILS
+    // =========================================================
 
     [Required, StringLength(100)]
     [Display(Name = "Full name")]
@@ -21,24 +39,37 @@ public class BookingRequestViewModel
     [EmailAddress, StringLength(256)]
     public string? Email { get; set; }
 
+    // =========================================================
+    // BOOKING DATES
+    // =========================================================
+
     [Required]
     [DataType(DataType.Date)]
     [Display(Name = "Travel date")]
-    public DateTime BookingDate { get; set; } = DateTime.Today.AddDays(1);
+    public DateTime BookingDate { get; set; } =
+        DateTime.Today.AddDays(1);
 
     [DataType(DataType.Date)]
     [Display(Name = "Return date")]
     public DateTime? ReturnDate { get; set; }
+
+    // =========================================================
+    // GUEST / PASSENGER DETAILS
+    // =========================================================
 
     [Range(1, 100)]
     [Display(Name = "Adults / passengers")]
     public int Adults { get; set; } = 1;
 
     [Range(0, 100)]
-    public int Children { get; set; }
+    public int Children { get; set; } = 0;
 
     [Range(0, 100)]
-    public int Rooms { get; set; }
+    public int Rooms { get; set; } = 0;
+
+    // =========================================================
+    // TRANSPORT DETAILS
+    // =========================================================
 
     [StringLength(200)]
     [Display(Name = "Pickup location")]
@@ -52,9 +83,17 @@ public class BookingRequestViewModel
     [Display(Name = "Journey type")]
     public string? TripType { get; set; }
 
+    // =========================================================
+    // RESTAURANT DETAILS
+    // =========================================================
+
     [StringLength(20)]
     [Display(Name = "Preferred visit time")]
     public string? PreferredVisitTime { get; set; }
+
+    // =========================================================
+    // ADDITIONAL INFORMATION
+    // =========================================================
 
     [StringLength(1000)]
     [Display(Name = "Additional requests")]

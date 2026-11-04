@@ -18,9 +18,22 @@
         StringComparison.OrdinalIgnoreCase
     );
 
+    var isTour = string.Equals(
+        Model.ServiceType,
+        "Tour",
+        StringComparison.OrdinalIgnoreCase
+    );
+
+    var isScheduledTour =
+        isTour && Model.TourBookingType == "Scheduled";
+
     var transportRoutes =
         ViewBag.TransportRoutes as IEnumerable<KarnelTravel.Models.TransportRoutePricing>
         ?? Enumerable.Empty<KarnelTravel.Models.TransportRoutePricing>();
+
+    var tourDepartures =
+        ViewBag.TourDepartures as IEnumerable<KarnelTravel.Models.TourDeparture>
+        ?? Enumerable.Empty<KarnelTravel.Models.TourDeparture>();
 
     var pickupCities = transportRoutes
         .Select(x => x.PickupCity)
@@ -66,6 +79,7 @@
         display: flex;
         flex-direction: column;
         gap: 7px;
+        min-width: 0;
     }
 
     .booking-field.full {
@@ -115,6 +129,7 @@
 
     .booking-validation {
         color: #b42318;
+        font-size: 13px;
     }
 
     .booking-notice {
@@ -170,6 +185,85 @@
         font-size: 13px;
     }
 
+    .tour-choice {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+        grid-column: 1 / -1;
+    }
+
+    .tour-choice-option {
+        border: 1px solid #d6e0d9;
+        border-radius: 12px;
+        padding: 16px;
+        cursor: pointer;
+        background: #fff;
+        transition: border-color .2s, background .2s;
+    }
+
+    .tour-choice-option:has(input:checked) {
+        border-color: #4b8562;
+        background: #f1f6f2;
+    }
+
+    .tour-choice-option input {
+        accent-color: #214c39;
+        margin-right: 7px;
+    }
+
+    .tour-choice-option strong {
+        display: block;
+        margin-top: 8px;
+        color: #18352c;
+    }
+
+    .tour-choice-option small {
+        display: block;
+        color: #66766d;
+        line-height: 1.5;
+        margin-top: 5px;
+    }
+
+    .tour-info-panel {
+        grid-column: 1 / -1;
+        background: #f1f6f2;
+        border: 1px solid #dce8de;
+        border-radius: 12px;
+        padding: 16px;
+        line-height: 1.6;
+        color: #52645a;
+        font-size: 14px;
+    }
+
+    .tour-info-panel strong {
+        color: #18352c;
+    }
+
+    .tour-date-summary {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+        grid-column: 1 / -1;
+    }
+
+    .tour-date-card {
+        background: #f8faf8;
+        border: 1px solid #e2e9e4;
+        border-radius: 10px;
+        padding: 13px;
+    }
+
+    .tour-date-card span {
+        display: block;
+        font-size: 12px;
+        color: #66766d;
+        margin-bottom: 5px;
+    }
+
+    .tour-date-card strong {
+        color: #18352c;
+    }
+
     [hidden] {
         display: none !important;
     }
@@ -182,6 +276,11 @@
         .booking-panel {
             padding: 20px;
         }
+
+        .tour-choice,
+        .tour-date-summary {
+            grid-template-columns: 1fr;
+        }
     }
 </style>
 
@@ -191,6 +290,10 @@
     @if (isRestaurant)
     {
         <h1>Plan your dining experience.</h1>
+    }
+    else if (isTour)
+    {
+        <h1>Choose how you want to travel.</h1>
     }
     else
     {
@@ -220,6 +323,8 @@
 
             <div class="booking-grid">
 
+                @* CUSTOMER INFORMATION *@
+
                 <div class="booking-field">
                     <label asp-for="CustomerName"></label>
                     <input asp-for="CustomerName" autocomplete="name" />
@@ -240,6 +345,160 @@
                     <span asp-validation-for="Email"
                           class="booking-validation"></span>
                 </div>
+
+                @* TOUR BOOKING OPTIONS *@
+
+                @if (isTour)
+                {
+                    <div class="tour-choice">
+
+                        <label class="tour-choice-option">
+                            <input type="radio"
+                                   name="TourBookingType"
+                                   value="Scheduled"
+                                   checked="@(Model.TourBookingType == "Scheduled")" />
+
+                            <strong>Scheduled departure</strong>
+
+                            <small>
+                                Choose from the departure dates already
+                                published by Karnel Travel Guide.
+                            </small>
+                        </label>
+
+                        <label class="tour-choice-option">
+                            <input type="radio"
+                                   name="TourBookingType"
+                                   value="Custom"
+                                   checked="@(Model.TourBookingType == "Custom")" />
+
+                            <strong>Custom travel dates</strong>
+
+                            <small>
+                                Request your preferred dates and let
+                                our team review your travel plan.
+                            </small>
+                        </label>
+
+                    </div>
+
+                    <span asp-validation-for="TourBookingType"
+                          class="booking-validation full"></span>
+
+                    @* SCHEDULED TOUR *@
+
+                    <div class="booking-field full"
+                         id="scheduledDepartureField"
+                         hidden="@(Model.TourBookingType != "Scheduled")">
+
+                        <label asp-for="TourDepartureId">
+                            Select departure
+                        </label>
+
+                        <select asp-for="TourDepartureId"
+                                id="tourDepartureSelect">
+
+                            <option value="">Choose a departure</option>
+
+                            @foreach (var departure in tourDepartures)
+                            {
+                                <option value="@departure.Id"
+                                        data-start="@departure.DepartureDate.ToString("yyyy-MM-dd")"
+                                        data-end="@departure.ReturnDate.ToString("yyyy-MM-dd")"
+                                        data-seats="@departure.AvailableSeats">
+
+                                    @departure.DepartureDate.ToString("dd MMM yyyy")
+                                    –
+                                    @departure.ReturnDate.ToString("dd MMM yyyy")
+                                    |
+                                    @departure.AvailableSeats seats available
+                                </option>
+                            }
+                        </select>
+
+                        <span asp-validation-for="TourDepartureId"
+                              class="booking-validation"></span>
+                    </div>
+
+                    <div class="tour-date-summary"
+                         id="scheduledDateSummary"
+                         hidden="@(Model.TourBookingType != "Scheduled")">
+
+                        <div class="tour-date-card">
+                            <span>Departure date</span>
+                            <strong id="scheduledStartDate">Select a departure</strong>
+                        </div>
+
+                        <div class="tour-date-card">
+                            <span>Return date</span>
+                            <strong id="scheduledEndDate">Select a departure</strong>
+                        </div>
+
+                    </div>
+
+                    <div class="tour-info-panel"
+                         id="scheduledTourNotice"
+                         hidden="@(Model.TourBookingType != "Scheduled")">
+
+                        <strong>Scheduled tour request</strong>
+
+                        <br />
+
+                        Your request will remain Pending. Seats are reserved
+                        only after our team confirms your booking.
+                    </div>
+
+                    @* CUSTOM TOUR *@
+
+                    <div class="booking-field"
+                         id="customStartDateField"
+                         hidden="@(Model.TourBookingType != "Custom")">
+
+                        <label asp-for="BookingDate">
+                            Preferred departure date
+                        </label>
+
+                        <input asp-for="BookingDate"
+                               id="customBookingDate"
+                               type="date"
+                               min="@DateTime.Today.ToString("yyyy-MM-dd")" />
+
+                        <span asp-validation-for="BookingDate"
+                              class="booking-validation"></span>
+                    </div>
+
+                    <div class="booking-field"
+                         id="customReturnDateField"
+                         hidden="@(Model.TourBookingType != "Custom")">
+
+                        <label asp-for="ReturnDate">
+                            Preferred return date
+                        </label>
+
+                        <input asp-for="ReturnDate"
+                               id="customReturnDate"
+                               type="date"
+                               min="@DateTime.Today.ToString("yyyy-MM-dd")" />
+
+                        <span asp-validation-for="ReturnDate"
+                              class="booking-validation"></span>
+                    </div>
+
+                    <div class="tour-info-panel"
+                         id="customTourNotice"
+                         hidden="@(Model.TourBookingType != "Custom")">
+
+                        <strong>Custom-date request</strong>
+
+                        <br />
+
+                        You can request your preferred dates. Our team will
+                        review the dates and contact you about availability.
+                        This request does not reserve seats on a scheduled departure.
+                    </div>
+                }
+
+                @* TRANSPORT FIELDS *@
 
                 @if (isTransport)
                 {
@@ -313,18 +572,25 @@
                     </div>
                 }
 
-                <div class="booking-field">
-                    <label asp-for="BookingDate">
-                        @(isRestaurant ? "Preferred visit date" : "Booking date")
-                    </label>
+                @* NON-TOUR BOOKING DATE *@
 
-                    <input asp-for="BookingDate"
-                           type="date"
-                           min="@DateTime.Today.ToString("yyyy-MM-dd")" />
+                @if (!isTour)
+                {
+                    <div class="booking-field">
+                        <label asp-for="BookingDate">
+                            @(isRestaurant ? "Preferred visit date" : "Booking date")
+                        </label>
 
-                    <span asp-validation-for="BookingDate"
-                          class="booking-validation"></span>
-                </div>
+                        <input asp-for="BookingDate"
+                               type="date"
+                               min="@DateTime.Today.ToString("yyyy-MM-dd")" />
+
+                        <span asp-validation-for="BookingDate"
+                              class="booking-validation"></span>
+                    </div>
+                }
+
+                @* RESTAURANT VISIT PERIOD *@
 
                 @if (isRestaurant)
                 {
@@ -344,20 +610,37 @@
                     </div>
                 }
 
-                <div class="booking-field" id="returnDateField"
-                     hidden="@(isTransport && Model.TripType != "RoundTrip")">
-                    <label asp-for="ReturnDate"></label>
-                    <input asp-for="ReturnDate" id="returnDate" type="date" />
-                    <span asp-validation-for="ReturnDate"
-                          class="booking-validation"></span>
-                </div>
+                @* NON-TOUR RETURN DATE *@
+
+                @if (!isTour)
+                {
+                    <div class="booking-field"
+                         id="returnDateField"
+                         hidden="@(isTransport && Model.TripType != "RoundTrip")">
+
+                        <label asp-for="ReturnDate"></label>
+
+                        <input asp-for="ReturnDate"
+                               id="returnDate"
+                               type="date" />
+
+                        <span asp-validation-for="ReturnDate"
+                              class="booking-validation"></span>
+                    </div>
+                }
+
+                @* PASSENGER / GUEST COUNTS *@
 
                 <div class="booking-field">
                     <label asp-for="Adults">
-                        @(isRestaurant ? "Adults / guests" : "Adults / passengers")
+                        @(isRestaurant ? "Adults / guests" :
+                          isTour ? "Adults / travellers" : "Adults / passengers")
                     </label>
 
-                    <input asp-for="Adults" type="number" min="1" max="100" />
+                    <input asp-for="Adults"
+                           type="number"
+                           min="1"
+                           max="100" />
 
                     <span asp-validation-for="Adults"
                           class="booking-validation"></span>
@@ -365,28 +648,44 @@
 
                 <div class="booking-field">
                     <label asp-for="Children"></label>
-                    <input asp-for="Children" type="number" min="0" max="100" />
+
+                    <input asp-for="Children"
+                           type="number"
+                           min="0"
+                           max="100" />
+
                     <span asp-validation-for="Children"
                           class="booking-validation"></span>
                 </div>
 
-                @if (!isTransport && !isRestaurant)
+                @if (!isTransport && !isRestaurant && !isTour)
                 {
                     <div class="booking-field">
                         <label asp-for="Rooms"></label>
-                        <input asp-for="Rooms" type="number" min="0" max="100" />
+
+                        <input asp-for="Rooms"
+                               type="number"
+                               min="0"
+                               max="100" />
+
                         <span asp-validation-for="Rooms"
                               class="booking-validation"></span>
                     </div>
                 }
 
+                @* CUSTOMER NOTES *@
+
                 <div class="booking-field full">
                     <label asp-for="CustomerNotes"></label>
-                    <textarea asp-for="CustomerNotes" rows="4"
+
+                    <textarea asp-for="CustomerNotes"
+                              rows="4"
                               placeholder="Tell us about your plans or requirements"></textarea>
+
                     <span asp-validation-for="CustomerNotes"
                           class="booking-validation"></span>
                 </div>
+
             </div>
 
             <div class="booking-notice">
@@ -401,6 +700,127 @@
         </form>
     </section>
 </main>
+
+@if (isTour)
+{
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+
+            const bookingTypeInputs =
+                document.querySelectorAll('input[name="TourBookingType"]');
+
+            const departureField =
+                document.getElementById("scheduledDepartureField");
+
+            const dateSummary =
+                document.getElementById("scheduledDateSummary");
+
+            const scheduledNotice =
+                document.getElementById("scheduledTourNotice");
+
+            const customStartField =
+                document.getElementById("customStartDateField");
+
+            const customReturnField =
+                document.getElementById("customReturnDateField");
+
+            const customNotice =
+                document.getElementById("customTourNotice");
+
+            const departureSelect =
+                document.getElementById("tourDepartureSelect");
+
+            const customStartDate =
+                document.getElementById("customBookingDate");
+
+            const customReturnDate =
+                document.getElementById("customReturnDate");
+
+            const startDisplay =
+                document.getElementById("scheduledStartDate");
+
+            const endDisplay =
+                document.getElementById("scheduledEndDate");
+
+            function selectedBookingType() {
+                return document.querySelector(
+                    'input[name="TourBookingType"]:checked'
+                )?.value || "Scheduled";
+            }
+
+            function updateDepartureSummary() {
+                const option = departureSelect.selectedOptions[0];
+
+                if (!option || !option.value) {
+                    startDisplay.textContent = "Select a departure";
+                    endDisplay.textContent = "Select a departure";
+                    return;
+                }
+
+                startDisplay.textContent =
+                    new Date(option.dataset.start + "T00:00:00")
+                        .toLocaleDateString("en-GB", {
+                            day: "2-digit",
+                            month: "short",
+                            year: "numeric"
+                        });
+
+                endDisplay.textContent =
+                    new Date(option.dataset.end + "T00:00:00")
+                        .toLocaleDateString("en-GB", {
+                            day: "2-digit",
+                            month: "short",
+                            year: "numeric"
+                        });
+            }
+
+            function updateBookingType() {
+                const type = selectedBookingType();
+                const isScheduled = type === "Scheduled";
+
+                departureField.hidden = !isScheduled;
+                dateSummary.hidden = !isScheduled;
+                scheduledNotice.hidden = !isScheduled;
+
+                customStartField.hidden = isScheduled;
+                customReturnField.hidden = isScheduled;
+                customNotice.hidden = isScheduled;
+
+                departureSelect.required = isScheduled;
+                customStartDate.required = !isScheduled;
+                customReturnDate.required = false;
+
+                customStartDate.disabled = isScheduled;
+                customReturnDate.disabled = isScheduled;
+                departureSelect.disabled = !isScheduled;
+
+                updateDepartureSummary();
+            }
+
+            bookingTypeInputs.forEach(input => {
+                input.addEventListener("change", updateBookingType);
+            });
+
+            departureSelect.addEventListener(
+                "change",
+                updateDepartureSummary
+            );
+
+            if (customStartDate) {
+                customStartDate.addEventListener("change", function () {
+                    customReturnDate.min = customStartDate.value;
+
+                    if (customReturnDate.value &&
+                        customReturnDate.value < customStartDate.value) {
+                        customReturnDate.value = "";
+                    }
+                });
+            }
+
+            updateBookingType();
+        });
+    </script>
+}
 
 @if (isTransport)
 {
