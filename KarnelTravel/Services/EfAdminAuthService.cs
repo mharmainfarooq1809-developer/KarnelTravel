@@ -50,4 +50,15 @@ public class EfAdminAuthService : IAdminAuthService
 
         return user;
     }
+
+    public async Task<bool> ChangePasswordAsync(int userId, string currentPassword, string newPassword)
+    {
+        var user = await _db.AdminUsers.FindAsync(userId);
+        if (user is null || _hasher.VerifyHashedPassword(user, user.PasswordHash, currentPassword) == PasswordVerificationResult.Failed)
+            return false;
+
+        user.PasswordHash = _hasher.HashPassword(user, newPassword);
+        await _db.SaveChangesAsync();
+        return true;
+    }
 }

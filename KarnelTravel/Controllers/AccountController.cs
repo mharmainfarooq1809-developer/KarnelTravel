@@ -168,7 +168,7 @@ public class AccountController : Controller
         await HttpContext.SignOutAsync(
             CookieAuthenticationDefaults.AuthenticationScheme);
 
-        return RedirectToAction(nameof(Login));
+        return RedirectToAction("Index", "Landing");
     }
 
     [HttpGet("Denied")]

@@ -1,4 +1,5 @@
 ﻿@{
+    var websiteContent = ViewBag.WebsiteContent as KarnelTravel.Models.WebsiteContent ?? new KarnelTravel.Models.WebsiteContent();
     ViewData["Title"] = "Karnel Travel Guide | Discover Your Next Journey";
     ViewData["Description"] = "Discover destinations, transport, hotels, restaurants, resorts and travel packages across Pakistan with Karnel Travel Guide.";
     ViewData["BodyClass"] = "has-hero";
@@ -2395,7 +2396,7 @@
 <!-- ==================== SECTION 01 — CINEMATIC HERO ==================== -->
 <section class="hero">
     <div class="hero__media media" data-fallback-label="Northern Pakistan mountain landscape">
-        <img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=1920&q=80"
+        <img src="@(string.IsNullOrWhiteSpace(websiteContent.HomeHeroImageUrl) ? "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=1920&q=80" : websiteContent.HomeHeroImageUrl)"
              alt="Snow-capped mountains of northern Pakistan at golden hour"
              fetchpriority="high" />
         <div class="hero__overlay" aria-hidden="true"></div>
@@ -2403,14 +2404,10 @@
 
     <div class="container hero__content">
         <p class="eyebrow">Your Next Chapter Begins Here</p>
-        <h1>Find your way to <em>somewhere wonderful.</em></h1>
-        <p class="hero__lede">
-            Karnel Travel Guide brings destinations, transport, accommodation, dining and
-            travel packages together, so your next journey across Pakistan starts with
-            confidence.
-        </p>
+        <h1>@(string.IsNullOrWhiteSpace(websiteContent.HomeHeroHeading) ? "Find your way to somewhere wonderful." : websiteContent.HomeHeroHeading)</h1>
+        <p class="hero__lede">@(string.IsNullOrWhiteSpace(websiteContent.HomeHeroSubtitle) ? "Karnel Travel Guide brings destinations, transport, accommodation, dining and travel packages together, so your next journey across Pakistan starts with confidence." : websiteContent.HomeHeroSubtitle)</p>
         <div class="hero__cta">
-            <a class="btn btn--light" href="@Url.Action("Index", "Search")">Explore Destinations</a>
+            <a class="btn btn--light" href="@Url.Action("Index", "Search")">@(string.IsNullOrWhiteSpace(websiteContent.HomeHeroButtonText) ? "Explore destinations" : websiteContent.HomeHeroButtonText)</a>
             <a class="btn btn--ghost-light" href="@Url.Action("Index", "Contact")">Plan Your Journey</a>
         </div>
         <div class="hero__meta">

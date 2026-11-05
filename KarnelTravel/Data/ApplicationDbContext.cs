@@ -40,6 +40,14 @@ namespace KarnelTravel.Data
         public DbSet<Booking> Bookings => Set<Booking>();
         public DbSet<Review> Reviews => Set<Review>();
 
+        // WEBSITE CONTENT
+        public DbSet<WebsiteContent> WebsiteContents
+            => Set<WebsiteContent>();
+
+        public DbSet<ApplicationSettings> ApplicationSettings => Set<ApplicationSettings>();
+        public DbSet<AdminAuditLog> AdminAuditLogs => Set<AdminAuditLog>();
+
+
         // =====================================================
         // MODEL CONFIGURATION
         // =====================================================
@@ -48,7 +56,26 @@ namespace KarnelTravel.Data
         {
             base.OnModelCreating(model);
 
+            model.Entity<ApplicationSettings>(e =>
+            {
+                e.ToTable("ApplicationSettings");
+                e.HasKey(x => x.Id);
+                e.HasIndex(x => x.Id).IsUnique();
+            });
+
+            model.Entity<AdminAuditLog>(e =>
+            {
+                e.ToTable("AdminAuditLogs");
+                e.HasKey(x => x.Id);
+                e.HasIndex(x => x.CreatedAt);
+                e.HasIndex(x => x.Action);
+            });
+
+
+            // =================================================
             // ADMIN USERS
+            // =================================================
+
             model.Entity<AdminUser>(e =>
             {
                 e.ToTable("AdminUsers");
@@ -63,7 +90,11 @@ namespace KarnelTravel.Data
                 e.HasIndex(x => x.Email).IsUnique();
             });
 
+
+            // =================================================
             // DESTINATIONS
+            // =================================================
+
             model.Entity<Destination>(e =>
             {
                 e.ToTable("Destinations");
@@ -80,7 +111,11 @@ namespace KarnelTravel.Data
                 e.Property(x => x.BestTimeToVisit).HasMaxLength(100).IsRequired();
             });
 
+
+            // =================================================
             // HOTELS
+            // =================================================
+
             model.Entity<Hotel>(e =>
             {
                 e.ToTable("Hotels");
@@ -100,7 +135,11 @@ namespace KarnelTravel.Data
                 ConfigureDestinationRelationship<Hotel>(e);
             });
 
+
+            // =================================================
             // RESTAURANTS
+            // =================================================
+
             model.Entity<Restaurant>(e =>
             {
                 e.ToTable("Restaurants");
@@ -121,7 +160,11 @@ namespace KarnelTravel.Data
                 ConfigureDestinationRelationship<Restaurant>(e);
             });
 
+
+            // =================================================
             // RESORTS
+            // =================================================
+
             model.Entity<Resort>(e =>
             {
                 e.ToTable("Resorts");
@@ -141,7 +184,11 @@ namespace KarnelTravel.Data
                 ConfigureDestinationRelationship<Resort>(e);
             });
 
+
+            // =================================================
             // TOUR PACKAGES
+            // =================================================
+
             model.Entity<TourPackage>(e =>
             {
                 e.ToTable("TourPackages");
@@ -168,7 +215,11 @@ namespace KarnelTravel.Data
                     .OnDelete(DeleteBehavior.Restrict);
             });
 
+
+            // =================================================
             // TOUR ITINERARY DAYS
+            // =================================================
+
             model.Entity<TourItineraryDay>(e =>
             {
                 e.ToTable("TourItineraryDays");
@@ -196,7 +247,11 @@ namespace KarnelTravel.Data
                     .OnDelete(DeleteBehavior.Cascade);
             });
 
+
+            // =================================================
             // TOUR DEPARTURES
+            // =================================================
+
             model.Entity<TourDeparture>(e =>
             {
                 e.ToTable("TourDepartures", table =>
@@ -229,7 +284,11 @@ namespace KarnelTravel.Data
                     .OnDelete(DeleteBehavior.Cascade);
             });
 
+
+            // =================================================
             // TRANSPORT SERVICES
+            // =================================================
+
             model.Entity<TransportService>(e =>
             {
                 e.ToTable("TransportServices");
@@ -248,7 +307,11 @@ namespace KarnelTravel.Data
                 ConfigureDestinationRelationship<TransportService>(e);
             });
 
+
+            // =================================================
             // TRANSPORT ROUTE PRICING
+            // =================================================
+
             model.Entity<TransportRoutePricing>(e =>
             {
                 e.ToTable("TransportRoutePricings");
@@ -278,7 +341,11 @@ namespace KarnelTravel.Data
                     .OnDelete(DeleteBehavior.Restrict);
             });
 
+
+            // =================================================
             // BOOKINGS
+            // =================================================
+
             model.Entity<Booking>(e =>
             {
                 e.ToTable("Bookings");
@@ -333,7 +400,11 @@ namespace KarnelTravel.Data
                     .OnDelete(DeleteBehavior.Restrict);
             });
 
+
+            // =================================================
             // TRIP INQUIRIES
+            // =================================================
+
             model.Entity<TripInquiry>(e =>
             {
                 e.ToTable("TripInquiries");
@@ -351,7 +422,11 @@ namespace KarnelTravel.Data
                 e.Property(x => x.Status).HasMaxLength(30).IsRequired();
             });
 
+
+            // =================================================
             // CONTACT INQUIRIES
+            // =================================================
+
             model.Entity<ContactInquiry>(e =>
             {
                 e.ToTable("ContactInquiries");
@@ -376,7 +451,11 @@ namespace KarnelTravel.Data
                 e.HasIndex(x => new { x.Status, x.SubmittedAt });
             });
 
+
+            // =================================================
             // REVIEWS
+            // =================================================
+
             model.Entity<Review>(e =>
             {
                 e.ToTable("Reviews", table =>
@@ -450,7 +529,83 @@ namespace KarnelTravel.Data
                     .HasForeignKey(x => x.TourPackageId)
                     .OnDelete(DeleteBehavior.Restrict);
             });
+
+
+            // =================================================
+            // WEBSITE CONTENT
+            // =================================================
+
+            model.Entity<WebsiteContent>(e =>
+            {
+                e.ToTable("WebsiteContents");
+                e.HasKey(x => x.Id);
+
+                e.Property(x => x.SiteName)
+                    .HasMaxLength(150)
+                    .IsRequired();
+
+                e.Property(x => x.Tagline)
+                    .HasMaxLength(300);
+
+                e.Property(x => x.LogoUrl)
+                    .HasMaxLength(500);
+
+                e.Property(x => x.HomeHeroHeading)
+                    .HasMaxLength(200);
+
+                e.Property(x => x.HomeHeroSubtitle)
+                    .HasMaxLength(500);
+
+                e.Property(x => x.HomeHeroImageUrl)
+                    .HasMaxLength(500);
+
+                e.Property(x => x.HomeHeroButtonText)
+                    .HasMaxLength(100);
+
+                e.Property(x => x.AboutHeading)
+                    .HasMaxLength(200);
+
+                e.Property(x => x.AboutDescription)
+                    .HasMaxLength(3000);
+
+                e.Property(x => x.Mission)
+                    .HasMaxLength(2000);
+
+                e.Property(x => x.Vision)
+                    .HasMaxLength(2000);
+
+                e.Property(x => x.ContactAddress)
+                    .HasMaxLength(300);
+
+                e.Property(x => x.ContactPhone)
+                    .HasMaxLength(100);
+
+                e.Property(x => x.ContactEmail)
+                    .HasMaxLength(256);
+
+                e.Property(x => x.FooterDescription)
+                    .HasMaxLength(1000);
+
+                e.Property(x => x.FacebookUrl)
+                    .HasMaxLength(500);
+
+                e.Property(x => x.InstagramUrl)
+                    .HasMaxLength(500);
+
+                e.Property(x => x.YouTubeUrl)
+                    .HasMaxLength(500);
+
+                e.Property(x => x.DefaultMetaTitle)
+                    .HasMaxLength(200);
+
+                e.Property(x => x.DefaultMetaDescription)
+                    .HasMaxLength(500);
+
+                e.Property(x => x.UpdatedAt)
+                    .HasDefaultValueSql("GETUTCDATE()");
+            });
         }
+
 
         // =====================================================
         // DESTINATION RELATIONSHIP CONFIGURATION

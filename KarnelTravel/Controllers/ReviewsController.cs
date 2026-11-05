@@ -1,5 +1,6 @@
 ﻿using KarnelTravel.Data;
 using KarnelTravel.Models;
+using KarnelTravel.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -8,16 +9,22 @@ namespace KarnelTravel.Controllers
     public class ReviewsController : Controller
     {
         private readonly ApplicationDbContext _context;
+        private readonly ISettingsService _settingsService;
 
-        public ReviewsController(ApplicationDbContext context)
+        public ReviewsController(ApplicationDbContext context, ISettingsService settingsService)
         {
             _context = context;
+            _settingsService = settingsService;
         }
 
         // GET: /Reviews/Create?type=hotel&id=1
         [HttpGet]
         public async Task<IActionResult> Create(string type, int id)
         {
+            var settings = await _settingsService.GetAsync();
+            if (!settings.AllowFeedbackSubmissions)
+                return NotFound();
+
             if (id <= 0)
                 return NotFound();
 
@@ -44,6 +51,10 @@ namespace KarnelTravel.Controllers
         public async Task<IActionResult> Create(
             ReviewSubmissionViewModel model)
         {
+            var settings = await _settingsService.GetAsync();
+            if (!settings.AllowFeedbackSubmissions)
+                return BadRequest("Feedback submissions are currently unavailable.");
+
             var type = NormalizeType(model.ListingType);
 
             var listingName = await GetPublishedListingName(

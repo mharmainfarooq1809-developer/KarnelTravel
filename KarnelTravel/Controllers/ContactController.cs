@@ -1,6 +1,7 @@
 
 using KarnelTravel.Data;
 using KarnelTravel.Models;
+using KarnelTravel.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -9,16 +10,28 @@ namespace KarnelTravel.Controllers
     public class ContactController : Controller
     {
         private readonly ApplicationDbContext _db;
+        private readonly IWebsiteContentService _websiteContentService;
+        private readonly ISettingsService _settingsService;
 
-        public ContactController(ApplicationDbContext db)
+        public ContactController(
+            ApplicationDbContext db,
+            IWebsiteContentService websiteContentService,
+            ISettingsService settingsService)
         {
             _db = db;
+            _websiteContentService = websiteContentService;
+            _settingsService = settingsService;
         }
 
         // Display contact form
         [HttpGet]
-        public IActionResult Index()
+        public async Task<IActionResult> Index()
         {
+            var settings = await _settingsService.GetAsync();
+            if (!settings.AllowContactSubmissions)
+                return NotFound();
+
+            ViewBag.WebsiteContent = await _websiteContentService.GetAsync();
             return View(new ContactInquiry());
         }
 
@@ -27,8 +40,13 @@ namespace KarnelTravel.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Index(ContactInquiry model)
         {
+            var settings = await _settingsService.GetAsync();
+            if (!settings.AllowContactSubmissions)
+                return BadRequest("Contact submissions are currently unavailable.");
+
             if (!ModelState.IsValid)
             {
+                ViewBag.WebsiteContent = await _websiteContentService.GetAsync();
                 return View(model);
             }
 

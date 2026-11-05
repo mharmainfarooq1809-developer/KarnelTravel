@@ -1,213 +1,735 @@
+
+@* Views/Admin/Dashboard.cshtml *@
+@model KarnelTravel.Models.AdminDashboardViewModel
+
 @{
     Layout = "_AdminLayout";
-    ViewData["Title"] = "Overview";
+    ViewData["Title"] = "Dashboard";
+    ViewData["Section"] = "Dashboard";
+
+    var totalInquiries = Model.TotalInquiries;
 }
 
+<div class="admin-dashboard">
+
+    <!-- PAGE INTRO -->
+    <section class="hero-panel">
+        <div class="hero-copy">
+            <span class="eyebrow">KARNEL TRAVEL GUIDE / ADMINISTRATION</span>
+            <h1>Dashboard</h1>
+            <p>
+                Your operations overview. Monitor reservations, inquiries,
+                listings and customer activity from one place.
+            </p>
+        </div>
+
+        <div class="hero-note">
+            <span class="hero-note-label">PLATFORM STATUS</span>
+            <strong><i class="status-indicator"></i> Dashboard connected</strong>
+            <small>Live figures from your database</small>
+        </div>
+    </section>
+
+    <!-- METRICS -->
+    <section class="metric-row">
+
+        <article class="metric">
+            <div class="metric-top">
+                <span>Total bookings</span>
+                <span class="metric-icon">01</span>
+            </div>
+            <strong>@Model.TotalBookings.ToString("N0")</strong>
+            <small>All customer reservations</small>
+        </article>
+
+        <article class="metric">
+            <div class="metric-top">
+                <span>Total inquiries</span>
+                <span class="metric-icon">02</span>
+            </div>
+            <strong>@totalInquiries.ToString("N0")</strong>
+            <small>Trip and contact inquiries</small>
+        </article>
+
+        <article class="metric">
+            <div class="metric-top">
+                <span>Total listings</span>
+                <span class="metric-icon">03</span>
+            </div>
+            <strong>@Model.TotalListings.ToString("N0")</strong>
+            <small>Destinations, stays, dining and tours</small>
+        </article>
+
+        <article class="metric">
+            <div class="metric-top">
+                <span>Customer reviews</span>
+                <span class="metric-icon">04</span>
+            </div>
+            <strong>@Model.TotalReviews.ToString("N0")</strong>
+            <small>Reviews submitted by customers</small>
+        </article>
+
+    </section>
+
+    <!-- MAIN DASHBOARD GRID -->
+    <section class="dashboard-grid">
+
+        <!-- RECENT BOOKINGS -->
+        <div class="panel">
+            <div class="panel-title">
+                <div>
+                    <h2>Recent bookings</h2>
+                    <p class="panel-subtitle">
+                        The five latest customer reservations.
+                    </p>
+                </div>
+
+                <a href="/Admin/Bookings">See all <span>→</span></a>
+            </div>
+
+            <div class="booking-list">
+
+                @if (Model.RecentBookings != null && Model.RecentBookings.Any())
+                {
+                    @foreach (var booking in Model.RecentBookings)
+                    {
+                        var statusClass = (booking.Status ?? string.Empty)
+                            .Trim()
+                            .ToLowerInvariant() switch
+                            {
+                                "confirmed" => "status-confirmed",
+                                "pending" => "status-pending",
+                                "in progress" => "status-in-progress",
+                                "in-progress" => "status-in-progress",
+                                "cancelled" => "status-cancelled",
+                                "completed" => "status-confirmed",
+                                _ => ""
+                            };
+
+                        <div class="list-item">
+                            <div class="booking-information">
+                                <strong>
+                                    @booking.ReferenceNumber
+                                    <span class="booking-separator">·</span>
+                                    @booking.CustomerName
+                                </strong>
+
+                                <small>
+                                    @booking.ServiceName
+                                    <span>·</span>
+                                    @booking.BookingDate.ToString("dd MMM yyyy")
+                                    <span>·</span>
+                                    @(booking.Adults + booking.Children) guests
+                                </small>
+                            </div>
+
+                            <span class="status @statusClass">
+                                <i></i>
+                                @booking.Status
+                            </span>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div class="dashboard-empty">
+                        <span class="empty-icon">↗</span>
+                        <strong>No bookings yet</strong>
+                        <p>
+                            Customer reservations will appear here
+                            when they are submitted through your website.
+                        </p>
+                    </div>
+                }
+
+            </div>
+        </div>
+
+        <!-- OPERATIONS OVERVIEW -->
+        <div class="panel">
+            <div class="panel-title">
+                <div>
+                    <h2>Operations overview</h2>
+                    <p class="panel-subtitle">
+                        Your current platform records.
+                    </p>
+                </div>
+            </div>
+
+            <div class="operation-list">
+
+                <div class="operation-item">
+                    <div>
+                        <strong>Bookings</strong>
+                        <small>Customer reservations</small>
+                    </div>
+                    <span>@Model.TotalBookings</span>
+                </div>
+
+                <div class="operation-item">
+                    <div>
+                        <strong>Trip inquiries</strong>
+                        <small>Custom travel requests</small>
+                    </div>
+                    <span>@Model.TotalTripInquiries</span>
+                </div>
+
+                <div class="operation-item">
+                    <div>
+                        <strong>Contact inquiries</strong>
+                        <small>General customer messages</small>
+                    </div>
+                    <span>@Model.TotalContactInquiries</span>
+                </div>
+
+                <div class="operation-item">
+                    <div>
+                        <strong>Reviews</strong>
+                        <small>Customer feedback</small>
+                    </div>
+                    <span>@Model.TotalReviews</span>
+                </div>
+
+            </div>
+        </div>
+
+    </section>
+
+    <!-- QUICK ACTIONS -->
+    <section class="panel section-space">
+        <div class="panel-title">
+            <div>
+                <h2>Quick actions</h2>
+                <p class="panel-subtitle">
+                    Jump directly to the areas you manage most.
+                </p>
+            </div>
+        </div>
+
+        <div class="quick-actions">
+
+            <a href="/Admin/Bookings" class="quick-action">
+                <span class="quick-action-number">01</span>
+                <strong>Manage bookings</strong>
+                <small>View and manage customer reservations</small>
+                <span class="quick-arrow">↗</span>
+            </a>
+
+            <a href="/Admin/Inquiries" class="quick-action">
+                <span class="quick-action-number">02</span>
+                <strong>View inquiries</strong>
+                <small>Respond to customer messages</small>
+                <span class="quick-arrow">↗</span>
+            </a>
+
+            <a href="/Admin/Destinations" class="quick-action">
+                <span class="quick-action-number">03</span>
+                <strong>Destinations</strong>
+                <small>Manage travel destinations</small>
+                <span class="quick-arrow">↗</span>
+            </a>
+
+            <a href="/Admin/TourPackages" class="quick-action">
+                <span class="quick-action-number">04</span>
+                <strong>Tour packages</strong>
+                <small>Manage packages and departures</small>
+                <span class="quick-arrow">↗</span>
+            </a>
+
+        </div>
+    </section>
+
+    <!-- PLATFORM INFORMATION -->
+    <section class="dashboard-grid section-space">
+
+        <div class="panel">
+            <div class="panel-title">
+                <div>
+                    <h2>Platform structure</h2>
+                    <p class="panel-subtitle">
+                        The main areas of Karnel Travel Guide.
+                    </p>
+                </div>
+            </div>
+
+            <div class="platform-tags">
+                <span>Destinations</span>
+                <span>Hotels</span>
+                <span>Restaurants</span>
+                <span>Resorts</span>
+                <span>Tour packages</span>
+                <span>Transport</span>
+                <span>Bookings</span>
+                <span>Customer inquiries</span>
+            </div>
+        </div>
+
+        <div class="panel">
+            <div class="panel-title">
+                <div>
+                    <h2>Administration</h2>
+                    <p class="panel-subtitle">
+                        Keep your travel platform organized.
+                    </p>
+                </div>
+            </div>
+
+            <p class="admin-description">
+                Use the administration area to manage travel listings,
+                monitor customer requests, review reservations and maintain
+                the information displayed on your public website.
+            </p>
+        </div>
+
+    </section>
+
+</div>
+
 <style>
-    /* ============================================================
-       Dashboard refinements — scoped to this view only.
-       Complements the shared wwwroot/css/admin.css without
-       overriding it. Class names match the shared stylesheet.
-       ============================================================ */
+    .admin-dashboard {
+        width: 100%;
+        color: var(--admin-text, #20252d);
+    }
 
-    /* Utility: muted body text (not defined in admin.css) */
-    .muted {
-        color: var(--muted, #758078);
-        font-size: 13px;
-        line-height: 1.55;
+    .hero-panel {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 30px;
+        padding: 34px;
+        margin-bottom: 24px;
+        border: 1px solid var(--admin-border, #e8e9ed);
+        border-radius: 16px;
+        background: var(--admin-surface, #fff);
+    }
+
+    .hero-copy {
+        max-width: 650px;
+    }
+
+    .eyebrow {
+        display: block;
+        margin-bottom: 13px;
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 2px;
+        color: var(--admin-muted, #858b96);
+    }
+
+    .hero-copy h1 {
+        margin: 0 0 10px;
+        font-size: clamp(28px, 4vw, 38px);
+        font-weight: 700;
+        letter-spacing: -1.5px;
+    }
+
+    .hero-copy p {
+        max-width: 570px;
         margin: 0;
+        color: var(--admin-muted, #858b96);
+        font-size: 14px;
+        line-height: 1.8;
     }
 
-    /* Panel titles can carry a subtitle without breaking the flex row */
-    .panel-title > div { min-width: 0; }
-    .panel-title > div h2 {
-        margin: 0;
-        line-height: 1.15;
-    }
-    .panel-subtitle {
-        margin: 5px 0 0;
-        color: var(--muted, #758078);
-        font-size: 12.5px;
-        line-height: 1.5;
-        letter-spacing: 0;
-        font-family: var(--sans, 'DM Sans', system-ui, sans-serif);
-        font-weight: 400;
+    .hero-note {
+        min-width: 215px;
+        padding: 19px;
+        border: 1px solid var(--admin-border, #e8e9ed);
+        border-radius: 12px;
     }
 
-    /* Hero panel: give the CTA breathing room */
-    .hero-copy .btn { margin-top: 20px; }
+    .hero-note-label {
+        display: block;
+        margin-bottom: 12px;
+        color: var(--admin-muted, #858b96);
+        font-size: 9px;
+        font-weight: 700;
+        letter-spacing: 1.5px;
+    }
 
-    /* Metric deltas — default neutral, opt-in per class.
-       Replaces the shared rule that prefixed EVERY .metric small with ▲. */
-    .metric small {
-        color: var(--muted, #758078);
+    .hero-note strong {
+        display: flex;
+        align-items: center;
+        gap: 8px;
         font-size: 12px;
+    }
+
+    .hero-note small {
+        display: block;
+        margin-top: 8px;
+        color: var(--admin-muted, #858b96);
+        font-size: 11px;
+    }
+
+    .status-indicator,
+    .status i {
+        width: 7px;
+        height: 7px;
+        display: inline-block;
+        border-radius: 50%;
+        background: #239b69;
+    }
+
+    .metric-row {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 16px;
+        margin-bottom: 24px;
+    }
+
+    .metric {
+        min-width: 0;
+        padding: 22px;
+        border: 1px solid var(--admin-border, #e8e9ed);
+        border-radius: 14px;
+        background: var(--admin-surface, #fff);
+    }
+
+    .metric-top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        color: var(--admin-muted, #858b96);
+        font-size: 12px;
+    }
+
+    .metric-icon {
+        color: var(--admin-muted, #858b96);
+        font-size: 10px;
+        font-weight: 700;
+    }
+
+    .metric > strong {
+        display: block;
+        margin: 18px 0 6px;
+        font-size: 32px;
+        font-weight: 700;
+        letter-spacing: -1px;
+    }
+
+    .metric > small {
+        color: var(--admin-muted, #858b96);
+        font-size: 11px;
+    }
+
+    .dashboard-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1.5fr) minmax(280px, 0.9fr);
+        gap: 20px;
+    }
+
+    .panel {
+        min-width: 0;
+        padding: 24px;
+        border: 1px solid var(--admin-border, #e8e9ed);
+        border-radius: 14px;
+        background: var(--admin-surface, #fff);
+    }
+
+    .panel-title {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 15px;
+        margin-bottom: 22px;
+    }
+
+    .panel-title h2 {
+        margin: 0;
+        font-size: 16px;
+        font-weight: 700;
+        letter-spacing: -0.3px;
+    }
+
+    .panel-subtitle {
+        margin: 6px 0 0;
+        color: var(--admin-muted, #858b96);
+        font-size: 11px;
+        line-height: 1.6;
+    }
+
+    .panel-title > a {
+        flex-shrink: 0;
+        color: var(--admin-accent, #2563eb);
+        font-size: 11px;
         font-weight: 600;
-    }
-    .metric small::before { content: ""; }
-
-    .metric small.metric-up { color: var(--accent, #3c9169); }
-    .metric small.metric-up::before {
-        content: "▲ ";
-        font-size: 9px;
-        opacity: .8;
+        text-decoration: none;
     }
 
-    .metric small.metric-warn { color: var(--amber, #b9853c); }
-    .metric small.metric-warn::before {
-        content: "● ";
-        font-size: 9px;
-        opacity: .85;
+    .booking-list {
+        display: flex;
+        flex-direction: column;
     }
 
-    .metric small.metric-down { color: var(--red, #ae5d50); }
-    .metric small.metric-down::before {
-        content: "▼ ";
-        font-size: 9px;
-        opacity: .8;
+    .list-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 15px;
+        padding: 16px 0;
+        border-top: 1px solid var(--admin-border, #e8e9ed);
+    }
+
+    .booking-information {
+        min-width: 0;
+    }
+
+    .booking-information strong {
+        display: block;
+        overflow-wrap: anywhere;
+        font-size: 12px;
+        font-weight: 650;
+    }
+
+    .booking-separator {
+        color: var(--admin-muted, #858b96);
+    }
+
+    .booking-information small {
+        display: block;
+        margin-top: 7px;
+        color: var(--admin-muted, #858b96);
+        font-size: 10px;
+        line-height: 1.6;
+    }
+
+    .booking-information small span {
+        margin: 0 3px;
+    }
+
+    .status {
+        display: inline-flex;
+        flex-shrink: 0;
+        align-items: center;
+        gap: 7px;
+        padding: 7px 10px;
+        border-radius: 30px;
+        background: #f1f2f4;
+        color: #626b78;
+        font-size: 10px;
+        font-weight: 600;
+        white-space: nowrap;
+    }
+
+    .status i {
+        width: 6px;
+        height: 6px;
+        background: currentColor;
+    }
+
+    .status-confirmed {
+        background: #eaf6ef;
+        color: #238452;
+    }
+
+    .status-pending {
+        background: #fff5df;
+        color: #a56d12;
+    }
+
+    .status-in-progress {
+        background: #eaf1ff;
+        color: #3569bb;
+    }
+
+    .status-cancelled {
+        background: #fceeee;
+        color: #b54848;
+    }
+
+    .dashboard-empty {
+        padding: 35px 15px;
+        text-align: center;
+    }
+
+    .empty-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 42px;
+        height: 42px;
+        margin-bottom: 14px;
+        border-radius: 50%;
+        background: var(--admin-soft, #f2f4f7);
+        font-size: 20px;
+    }
+
+    .dashboard-empty strong {
+        display: block;
+        font-size: 13px;
+    }
+
+    .dashboard-empty p {
+        max-width: 300px;
+        margin: 8px auto 0;
+        color: var(--admin-muted, #858b96);
+        font-size: 11px;
+        line-height: 1.7;
+    }
+
+    .operation-list {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .operation-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 15px 0;
+        border-top: 1px solid var(--admin-border, #e8e9ed);
+    }
+
+    .operation-item strong {
+        display: block;
+        font-size: 12px;
+    }
+
+    .operation-item small {
+        display: block;
+        margin-top: 5px;
+        color: var(--admin-muted, #858b96);
+        font-size: 10px;
+    }
+
+    .operation-item > span {
+        font-size: 15px;
+        font-weight: 700;
+    }
+
+    .section-space {
+        margin-top: 22px;
+    }
+
+    .quick-actions {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 12px;
+    }
+
+    .quick-action {
+        position: relative;
+        display: flex;
+        min-height: 145px;
+        flex-direction: column;
+        padding: 18px;
+        border: 1px solid var(--admin-border, #e8e9ed);
+        border-radius: 11px;
+        color: inherit;
+        text-decoration: none;
+        transition: border-color .2s ease, transform .2s ease;
+    }
+
+    .quick-action:hover {
+        border-color: var(--admin-accent, #2563eb);
+        transform: translateY(-3px);
+    }
+
+    .quick-action-number {
+        margin-bottom: 20px;
+        color: var(--admin-muted, #858b96);
+        font-size: 10px;
+        font-weight: 700;
+    }
+
+    .quick-action strong {
+        font-size: 12px;
+    }
+
+    .quick-action small {
+        max-width: 190px;
+        margin-top: 7px;
+        color: var(--admin-muted, #858b96);
+        font-size: 10px;
+        line-height: 1.6;
+    }
+
+    .quick-arrow {
+        position: absolute;
+        top: 16px;
+        right: 17px;
+        color: var(--admin-muted, #858b96);
+        font-size: 15px;
+    }
+
+    .platform-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 9px;
+    }
+
+    .platform-tags span {
+        padding: 9px 12px;
+        border: 1px solid var(--admin-border, #e8e9ed);
+        border-radius: 7px;
+        color: var(--admin-muted, #626b78);
+        font-size: 10px;
+    }
+
+    .admin-description {
+        margin: 0;
+        color: var(--admin-muted, #858b96);
+        font-size: 12px;
+        line-height: 1.9;
+    }
+
+    @@media (max-width: 1100px) {
+        .metric-row {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .quick-actions {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+
+    @@media (max-width: 760px) {
+        .hero-panel {
+            align-items: flex-start;
+            flex-direction: column;
+            padding: 24px;
+        }
+
+        .hero-note {
+            width: 100%;
+        }
+
+        .dashboard-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @@media (max-width: 480px) {
+        .metric-row {
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .metric {
+            padding: 15px;
+        }
+
+        .metric > strong {
+            font-size: 25px;
+        }
+
+        .metric > small {
+            font-size: 9px;
+        }
+
+        .panel {
+            padding: 17px;
+        }
+
+        .quick-actions {
+            grid-template-columns: 1fr;
+        }
+
+        .list-item {
+            align-items: flex-start;
+            flex-direction: column;
+        }
     }
 </style>
-
-<section class="hero-panel">
-    <div class="hero-copy">
-        <div class="eyebrow">Tuesday · 14 October 2025</div>
-        <h1>Good morning,<br />Muhammad Harmain.</h1>
-        <p>Your guide to the week ahead: 18 departures are being prepared and three new journeys are ready for review.</p>
-        <a class="btn btn-primary" href="/Admin/Tours">Open operations view →</a>
-    </div>
-    <span class="hero-note">Prototype data · October</span>
-</section>
-
-<div class="metric-row">
-    <div class="metric">
-        <label>Total bookings</label>
-        <strong>284</strong>
-        <small class="metric-up">18% this month</small>
-    </div>
-    <div class="metric">
-        <label>Pending inquiries</label>
-        <strong>17</strong>
-        <small class="metric-warn">Needs your attention</small>
-    </div>
-    <div class="metric">
-        <label>Live listings</label>
-        <strong>64</strong>
-        <small>Across 12 regions</small>
-    </div>
-    <div class="metric">
-        <label>Recorded revenue</label>
-        <strong>$42.8k</strong>
-        <small class="metric-up">9.4% vs September</small>
-    </div>
-</div>
-
-<div class="dashboard-grid">
-    <div class="panel">
-        <div class="panel-title">
-            <div>
-                <h2>Booking rhythm</h2>
-                <p class="panel-subtitle">Confirmed reservations over the last eight weeks</p>
-            </div>
-            <a href="/Admin/Reports">View report ↗</a>
-        </div>
-        <div class="activity">
-            <div class="bar" style="height:38%" data-value="32 bookings"><span>Aug 25</span></div>
-            <div class="bar" style="height:54%" data-value="45 bookings"><span>Sep 1</span></div>
-            <div class="bar" style="height:42%" data-value="35 bookings"><span>Sep 8</span></div>
-            <div class="bar" style="height:66%" data-value="55 bookings"><span>Sep 15</span></div>
-            <div class="bar" style="height:59%" data-value="49 bookings"><span>Sep 22</span></div>
-            <div class="bar" style="height:78%" data-value="65 bookings"><span>Sep 29</span></div>
-            <div class="bar" style="height:71%" data-value="59 bookings"><span>Oct 6</span></div>
-            <div class="bar" style="height:90%" data-value="75 bookings"><span>Oct 13</span></div>
-        </div>
-    </div>
-
-    <div class="panel">
-        <div class="panel-title">
-            <div>
-                <h2>Quick studio</h2>
-                <p class="panel-subtitle">Jump into the workflow that needs you.</p>
-            </div>
-        </div>
-        <div class="quick-actions">
-            <a class="quick-action" href="/Admin/Destinations/Create">Destination</a>
-            <a class="quick-action" href="/Admin/Tours/Create">Experience</a>
-            <a class="quick-action" href="/Admin/Properties">Property</a>
-            <a class="quick-action" href="/Admin/WebsiteContent">Edit homepage</a>
-        </div>
-        <div class="section-space">
-            <div class="eyebrow">Public website</div>
-            <p class="muted">Keep the next chapter of Pakistan's story looking fresh.</p>
-            <a class="btn btn-quiet" href="/" target="_blank">Visit live guide ↗</a>
-        </div>
-    </div>
-</div>
-
-<div class="dashboard-grid section-space">
-    <div class="panel">
-        <div class="panel-title">
-            <h2>Recent bookings</h2>
-            <a href="/Admin/Bookings">See all</a>
-        </div>
-        <div class="booking-list">
-            <div class="list-item">
-                <div>
-                    <strong>BK-10482 · Hamza Qureshi</strong>
-                    <small>Hunza Valley escape · 4 guests</small>
-                </div>
-                <span class="status status-confirmed"><i></i>Confirmed</span>
-            </div>
-            <div class="list-item">
-                <div>
-                    <strong>BK-10481 · Clara Morgan</strong>
-                    <small>Skardu by road · 2 guests</small>
-                </div>
-                <span class="status status-pending"><i></i>Pending</span>
-            </div>
-            <div class="list-item">
-                <div>
-                    <strong>BK-10479 · Omar Shah</strong>
-                    <small>Lahore heritage walk · 6 guests</small>
-                </div>
-                <span class="status status-confirmed"><i></i>Confirmed</span>
-            </div>
-        </div>
-    </div>
-
-    <div class="panel">
-        <div class="panel-title">
-            <h2>Next departures</h2>
-            <a href="/Admin/Calendar">Calendar</a>
-        </div>
-        <div class="departure-list">
-            <div class="list-item">
-                <div>
-                    <strong>Hunza in Autumn</strong>
-                    <small>18 Oct · 08:00 · 8 guests</small>
-                </div>
-                <span class="status status-confirmed"><i></i>Ready</span>
-            </div>
-            <div class="list-item">
-                <div>
-                    <strong>Deosai Wild Week</strong>
-                    <small>22 Oct · 06:30 · 5 guests</small>
-                </div>
-                <span class="status status-pending"><i></i>Briefing</span>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="panel section-space">
-    <div class="panel-title">
-        <h2>Customer notes</h2>
-        <a href="/Admin/Inquiries">Open inbox</a>
-    </div>
-    <div class="list-item">
-        <div>
-            <strong>“Can we add a sunrise viewpoint to our Hunza route?”</strong>
-            <small>Elena Rossi · 12 minutes ago · Assigned to Muhammad Harmain</small>
-        </div>
-        <span class="status status-in-progress"><i></i>In progress</span>
-    </div>
-</div>

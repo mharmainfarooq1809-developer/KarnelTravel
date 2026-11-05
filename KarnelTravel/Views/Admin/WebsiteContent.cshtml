@@ -1,2 +1,1245 @@
-@{ Layout = "_AdminLayout"; ViewData["Title"] = "Website content"; }
-<div class="page-heading"><div><div class="eyebrow">The public story</div><h1>Curate the front door.</h1><p>Preview the moments guests meet before they start planning.</p></div><button class="btn btn-primary" data-demo-submit>Save visual draft</button></div><div class="review-layout"><div><section class="form-section"><h2>Home hero</h2><p>Lead with a point of view and a place worth going.</p><div class="field"><label>Headline</label><input class="input" value="Go where the light feels different." /></div><div class="field section-space"><label>Supporting copy</label><textarea class="input">Thoughtful journeys across Pakistan, shaped by people who know the way.</textarea></div><button class="btn btn-quiet section-space" data-toast="Image picker is visual only.">Change banner image</button></section><section class="form-section"><h2>Featured collections</h2><p>Choose which stories deserve the spotlight.</p><div class="quick-actions"><button class="quick-action">＋ Featured destinations</button><button class="quick-action">＋ Featured tours</button><button class="quick-action">＋ Promotional section</button></div></section></div><aside><div class="eyebrow">Live preview · Home</div><div class="content-preview"><img src="https://images.unsplash.com/photo-1530789253388-582c481c54b0?auto=format&fit=crop&w=900&q=80" alt="Travel landscape preview" /><div class="content-preview-body"><div class="eyebrow">Karnel Travel Guide</div><h2>Go where the light feels different.</h2><p class="muted">Thoughtful journeys across Pakistan, shaped by people who know the way.</p><button class="btn btn-primary">Explore the guide</button></div></div></aside></div>
+
+@model KarnelTravel.Models.WebsiteContent
+
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Website content";
+    ViewData["Section"] = "Website content";
+}
+
+<style>
+    .wc-page {
+        --wc-ink: #17252d;
+        --wc-muted: #78868d;
+        --wc-border: #e4e9e9;
+        --wc-accent: #087f8c;
+        --wc-soft: #eff7f7;
+        color: var(--wc-ink);
+        padding-bottom: 40px;
+    }
+
+    .wc-heading {
+        margin-bottom: 28px;
+    }
+
+    .wc-eyebrow {
+        color: var(--wc-accent);
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        margin-bottom: 10px;
+    }
+
+    .wc-heading h1 {
+        font-size: clamp(28px, 4vw, 42px);
+        font-weight: 700;
+        letter-spacing: -1.5px;
+        margin: 0 0 10px;
+    }
+
+    .wc-heading p {
+        color: var(--wc-muted);
+        font-size: 14px;
+        line-height: 1.7;
+        max-width: 650px;
+        margin: 0;
+    }
+
+    .wc-alert {
+        padding: 14px 17px;
+        border-radius: 10px;
+        margin-bottom: 20px;
+        font-size: 13px;
+    }
+
+    .wc-success {
+        background: #eaf7ef;
+        color: #246b42;
+        border: 1px solid #ccebd7;
+    }
+
+    .wc-error {
+        background: #fff1f0;
+        color: #a33131;
+        border: 1px solid #f3d0ce;
+    }
+
+    .wc-layout {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 310px;
+        gap: 22px;
+        align-items: start;
+    }
+
+    .wc-main {
+        min-width: 0;
+    }
+
+    .wc-card {
+        background: #fff;
+        border: 1px solid var(--wc-border);
+        border-radius: 15px;
+        padding: 25px;
+        margin-bottom: 19px;
+        box-shadow: 0 5px 22px rgba(25, 45, 50, .025);
+    }
+
+    .wc-section-heading {
+        display: flex;
+        gap: 13px;
+        align-items: flex-start;
+        margin-bottom: 23px;
+    }
+
+    .wc-number {
+        width: 36px;
+        height: 36px;
+        flex: 0 0 36px;
+        border-radius: 10px;
+        background: var(--wc-soft);
+        color: var(--wc-accent);
+        display: grid;
+        place-items: center;
+        font-size: 12px;
+        font-weight: 800;
+    }
+
+    .wc-section-heading h2 {
+        font-size: 19px;
+        font-weight: 700;
+        margin: 0 0 5px;
+    }
+
+    .wc-section-heading p {
+        color: var(--wc-muted);
+        font-size: 12px;
+        line-height: 1.6;
+        margin: 0;
+    }
+
+    .wc-field {
+        margin-bottom: 19px;
+    }
+
+    .wc-field:last-child {
+        margin-bottom: 0;
+    }
+
+    .wc-field label {
+        display: block;
+        font-size: 12px;
+        font-weight: 700;
+        margin-bottom: 8px;
+    }
+
+    .wc-input,
+    .wc-textarea {
+        display: block;
+        width: 100%;
+        padding: 12px 14px;
+        border: 1px solid #dfe6e7;
+        border-radius: 9px;
+        outline: none;
+        background: #fff;
+        color: var(--wc-ink);
+        font-size: 13px;
+        transition: border-color .2s, box-shadow .2s;
+    }
+
+    .wc-input:focus,
+    .wc-textarea:focus {
+        border-color: var(--wc-accent);
+        box-shadow: 0 0 0 3px rgba(8, 127, 140, .09);
+    }
+
+    .wc-textarea {
+        min-height: 110px;
+        resize: vertical;
+        line-height: 1.65;
+    }
+
+    .wc-help {
+        display: block;
+        color: var(--wc-muted);
+        font-size: 11px;
+        line-height: 1.6;
+        margin-top: 7px;
+    }
+
+    .wc-validation {
+        display: block;
+        color: #b42318;
+        font-size: 11px;
+        margin-top: 6px;
+    }
+
+    .wc-validation-summary {
+        margin: 8px 0 0;
+        padding-left: 18px;
+    }
+
+    .wc-counter {
+        display: flex;
+        justify-content: flex-end;
+        color: var(--wc-muted);
+        font-size: 11px;
+        margin-top: 6px;
+    }
+
+    .wc-counter.is-near-limit {
+        color: #9a6416;
+        font-weight: 700;
+    }
+
+    .wc-counter.is-at-limit {
+        color: #b42318;
+        font-weight: 700;
+    }
+
+    .wc-field.has-error .wc-input,
+    .wc-field.has-error .wc-textarea {
+        border-color: #d26b5f;
+        box-shadow: 0 0 0 3px rgba(210, 107, 95, .08);
+    }
+
+    .wc-upload {
+        border: 1px dashed #b9cccc;
+        border-radius: 12px;
+        background: #f8fbfb;
+        padding: 17px;
+        margin-bottom: 13px;
+    }
+
+    .wc-upload-top {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        margin-bottom: 13px;
+    }
+
+    .wc-upload-icon {
+        width: 38px;
+        height: 38px;
+        border-radius: 10px;
+        background: #e7f2f2;
+        color: var(--wc-accent);
+        display: grid;
+        place-items: center;
+        font-size: 19px;
+        flex: 0 0 38px;
+    }
+
+    .wc-upload-top strong {
+        display: block;
+        font-size: 12px;
+    }
+
+    .wc-upload-top span {
+        display: block;
+        color: var(--wc-muted);
+        font-size: 11px;
+        margin-top: 4px;
+    }
+
+    .wc-file {
+        width: 100%;
+        font-size: 12px;
+        color: var(--wc-muted);
+    }
+
+    .wc-upload-status {
+        min-height: 18px;
+        margin-top: 9px;
+        color: var(--wc-muted);
+        font-size: 11px;
+        line-height: 1.5;
+    }
+
+    .wc-upload-status.is-success { color: #246b42; }
+    .wc-upload-status.is-error { color: #b42318; font-weight: 700; }
+
+    .wc-file-meta {
+        display: block;
+        color: var(--wc-muted);
+        font-size: 11px;
+        margin-top: 5px;
+    }
+
+    .wc-file::file-selector-button {
+        border: 0;
+        background: #e8f2f2;
+        color: #176d76;
+        padding: 9px 12px;
+        border-radius: 7px;
+        font-weight: 700;
+        margin-right: 10px;
+        cursor: pointer;
+    }
+
+    .wc-scope-card {
+        background: linear-gradient(135deg, #f8fbfb, #fff);
+        border: 1px solid var(--wc-border);
+        border-radius: 15px;
+        padding: 18px 20px;
+        margin-bottom: 19px;
+    }
+
+    .wc-scope-card h2 {
+        margin: 0 0 5px;
+        font-size: 16px;
+    }
+
+    .wc-scope-card p {
+        margin: 0 0 14px;
+        color: var(--wc-muted);
+        font-size: 12px;
+    }
+
+    .wc-scope-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 8px;
+    }
+
+    .wc-scope-item {
+        min-height: 58px;
+        padding: 10px 11px;
+        border: 1px solid var(--wc-border);
+        border-radius: 9px;
+        background: #fff;
+    }
+
+    .wc-scope-item strong {
+        display: block;
+        font-size: 11px;
+    }
+
+    .wc-scope-item span {
+        display: block;
+        color: var(--wc-muted);
+        font-size: 10px;
+        line-height: 1.4;
+        margin-top: 3px;
+    }
+
+    .wc-preview-brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 15px;
+        padding-bottom: 14px;
+        border-bottom: 1px solid var(--wc-border);
+    }
+
+    .wc-preview-brand img,
+    .wc-preview-brand-mark {
+        width: 42px;
+        height: 42px;
+        flex: 0 0 42px;
+        border-radius: 9px;
+        object-fit: contain;
+        background: var(--wc-soft);
+    }
+
+    .wc-preview-brand-mark {
+        display: grid;
+        place-items: center;
+        color: var(--wc-accent);
+        font-weight: 800;
+    }
+
+    .wc-preview-brand strong,
+    .wc-preview-brand span {
+        display: block;
+    }
+
+    .wc-preview-brand strong { font-size: 13px; }
+    .wc-preview-brand span { color: var(--wc-muted); font-size: 11px; margin-top: 2px; }
+
+    .wc-preview-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 13px;
+    }
+
+    .wc-preview-link {
+        display: inline-flex;
+        align-items: center;
+        min-height: 32px;
+        padding: 0 10px;
+        border: 1px solid var(--wc-border);
+        border-radius: 7px;
+        color: var(--wc-accent);
+        font-size: 11px;
+        font-weight: 700;
+    }
+
+    .wc-preview-link:hover { border-color: var(--wc-accent); }
+
+    .wc-preview-image {
+        display: none;
+        max-width: 100%;
+        max-height: 190px;
+        object-fit: contain;
+        border-radius: 9px;
+        margin-top: 14px;
+        border: 1px solid var(--wc-border);
+        background: #f5f7f7;
+    }
+
+    .wc-current-image {
+        max-width: 100%;
+        max-height: 170px;
+        object-fit: contain;
+        display: block;
+        border-radius: 9px;
+        border: 1px solid var(--wc-border);
+        background: #f6f8f8;
+        margin-top: 12px;
+    }
+
+    .wc-current-label {
+        color: var(--wc-muted);
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-top: 13px;
+    }
+
+    .wc-divider {
+        border: 0;
+        border-top: 1px solid var(--wc-border);
+        margin: 19px 0;
+    }
+
+    .wc-save-area {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 15px;
+        flex-wrap: wrap;
+    }
+
+    .wc-save-area p {
+        font-size: 11px;
+        color: var(--wc-muted);
+        margin: 0;
+    }
+
+    .wc-save {
+        border: 0;
+        border-radius: 9px;
+        background: #087f8c;
+        color: #fff;
+        padding: 13px 22px;
+        font-size: 12px;
+        font-weight: 800;
+        cursor: pointer;
+        transition: background .2s, transform .2s;
+    }
+
+    .wc-save:hover {
+        background: #066a75;
+        transform: translateY(-1px);
+    }
+
+    .wc-side-card {
+        background: #fff;
+        border: 1px solid var(--wc-border);
+        border-radius: 15px;
+        padding: 19px;
+        margin-bottom: 17px;
+    }
+
+    .wc-side-card h3 {
+        font-size: 14px;
+        font-weight: 800;
+        margin: 0 0 14px;
+    }
+
+    .wc-hero-preview {
+        height: 175px;
+        border-radius: 10px;
+        background: #e8eeee;
+        background-size: cover;
+        background-position: center;
+        position: relative;
+        overflow: hidden;
+        display: flex;
+        align-items: end;
+        padding: 15px;
+        margin-bottom: 15px;
+    }
+
+    .wc-hero-preview::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(transparent, rgba(0,0,0,.7));
+    }
+
+    .wc-hero-preview-content {
+        position: relative;
+        color: white;
+        z-index: 1;
+    }
+
+    .wc-hero-preview-content strong {
+        display: block;
+        font-size: 16px;
+        line-height: 1.3;
+        margin-bottom: 5px;
+    }
+
+    .wc-hero-preview-content span {
+        font-size: 10px;
+        line-height: 1.5;
+        display: block;
+    }
+
+    .wc-side-muted {
+        color: var(--wc-muted);
+        font-size: 11px;
+        line-height: 1.7;
+    }
+
+    .wc-record-row {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 10px 0;
+        border-bottom: 1px solid #edf0f0;
+        font-size: 11px;
+    }
+
+    .wc-record-row:last-child {
+        border-bottom: 0;
+    }
+
+    .wc-record-row span {
+        color: var(--wc-muted);
+    }
+
+    .wc-record-row strong {
+        text-align: right;
+        overflow-wrap: anywhere;
+    }
+
+    .wc-sidebar {
+        position: sticky;
+        top: 20px;
+    }
+
+    @@media (max-width: 1050px) {
+        .wc-layout {
+            grid-template-columns: minmax(0, 1fr);
+        }
+
+        .wc-sidebar {
+            position: static;
+        }
+    }
+
+    @@media (max-width: 600px) {
+        .wc-card {
+            padding: 18px;
+        }
+
+        .wc-heading h1 {
+            font-size: 29px;
+        }
+
+        .wc-save-area {
+            align-items: stretch;
+            flex-direction: column;
+        }
+
+        .wc-save {
+            width: 100%;
+        }
+    }
+</style>
+
+<div class="wc-page">
+
+    <div class="wc-heading">
+        <div class="wc-eyebrow">The public story</div>
+        <h1>Curate the front door.</h1>
+        <p>
+            Manage the identity, images and messaging visitors see
+            across Karnel Travel Guide.
+        </p>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="wc-alert wc-success">
+            @TempData["SuccessMessage"]
+        </div>
+    }
+
+    @if (!ViewData.ModelState.IsValid)
+    {
+        <div class="wc-alert wc-error">
+            Please correct the highlighted fields before saving. Required fields, character limits, image types and email format are checked below.
+            <div asp-validation-summary="All" class="wc-validation wc-validation-summary"></div>
+        </div>
+    }
+
+    <form asp-controller="Admin"
+          asp-action="WebsiteContent"
+          method="post"
+          enctype="multipart/form-data">
+
+        @Html.AntiForgeryToken()
+
+        <input type="hidden" asp-for="Id" />
+
+        <div class="wc-layout">
+
+            <main class="wc-main">
+
+                <section class="wc-scope-card" aria-labelledby="content-scope-title">
+                    <h2 id="content-scope-title">Where these settings appear</h2>
+                    <p>One content record powers both the public landing experience and the authenticated website.</p>
+                    <div class="wc-scope-grid">
+                        <div class="wc-scope-item"><strong>Global branding</strong><span>Site name, tagline and logo across the website</span></div>
+                        <div class="wc-scope-item"><strong>Landing Page</strong><span>Branding, footer messaging and SEO defaults</span></div>
+                        <div class="wc-scope-item"><strong>Home Page</strong><span>Authenticated hero heading, image and CTA</span></div>
+                        <div class="wc-scope-item"><strong>About Page</strong><span>Story, mission and vision content</span></div>
+                        <div class="wc-scope-item"><strong>Contact Page</strong><span>Address, phone and email details</span></div>
+                        <div class="wc-scope-item"><strong>Website footer</strong><span>Description and configured social destinations</span></div>
+                    </div>
+                </section>
+
+                <!-- BRAND IDENTITY -->
+
+                <section class="wc-card">
+
+                    <div class="wc-section-heading">
+                        <div class="wc-number">01</div>
+                        <div>
+                            <h2>Website identity</h2>
+                            <p>Establish the identity representing your travel company.</p>
+                        </div>
+                    </div>
+
+                    <div class="wc-field">
+                        <label asp-for="SiteName">Website name</label>
+                        <input asp-for="SiteName" class="wc-input" data-counter-input="true" />
+                        <span class="wc-counter" data-counter-for="SiteName"></span>
+                        <span asp-validation-for="SiteName" class="wc-validation"></span>
+                    </div>
+
+                    <div class="wc-field">
+                        <label asp-for="Tagline">Brand tagline</label>
+                        <input asp-for="Tagline" class="wc-input" data-counter-input="true" />
+                        <span class="wc-counter" data-counter-for="Tagline"></span>
+                        <span asp-validation-for="Tagline" class="wc-validation"></span>
+                    </div>
+
+                    <div class="wc-field">
+                        <label asp-for="LogoUrl">Logo image URL</label>
+                        <input asp-for="LogoUrl"
+                               class="wc-input"
+                               id="LogoUrl"
+                               placeholder="https://example.com/logo.png" />
+                        <span asp-validation-for="LogoUrl" class="wc-validation"></span>
+                    </div>
+
+                    <div class="wc-upload">
+                        <div class="wc-upload-top">
+                            <div class="wc-upload-icon">↑</div>
+                            <div>
+                                <strong>Upload logo from your computer</strong>
+                                <span>Select JPG, PNG or WEBP · Maximum 5 MB</span>
+                            </div>
+                        </div>
+
+                        <input asp-for="LogoImageFile"
+                               type="file"
+                               class="wc-file"
+                               id="LogoImageFile"
+                               accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" />
+
+                        <span asp-validation-for="LogoImageFile" class="wc-validation"></span>
+                        <span id="LogoUploadStatus" class="wc-upload-status" role="status" aria-live="polite"></span>
+
+                        <img id="LogoPreview"
+                             class="wc-preview-image"
+                             alt="Selected logo preview" />
+
+                        @if (!string.IsNullOrWhiteSpace(Model.LogoUrl))
+                        {
+                            <div id="CurrentLogoLabel" class="wc-current-label">Currently saved logo</div>
+                            <img id="CurrentLogoImage"
+                                 src="@Model.LogoUrl"
+                                 class="wc-current-image"
+                                 alt="Current website logo"
+                                 onerror="this.style.display='none'" />
+                        }
+                    </div>
+
+                </section>
+
+
+                <!-- HOMEPAGE -->
+
+                <section class="wc-card">
+
+                    <div class="wc-section-heading">
+                        <div class="wc-number">02</div>
+                        <div>
+                            <h2>Home hero</h2>
+                            <p>Lead with a strong message and an image that communicates the travel experience.</p>
+                        </div>
+                    </div>
+
+                    <div class="wc-field">
+                        <label asp-for="HomeHeroHeading">Hero headline</label>
+                        <input asp-for="HomeHeroHeading"
+                               class="wc-input"
+                               id="HomeHeroHeading"
+                               data-counter-input="true" />
+                        <span class="wc-counter" data-counter-for="HomeHeroHeading"></span>
+                        <span asp-validation-for="HomeHeroHeading" class="wc-validation"></span>
+                    </div>
+
+                    <div class="wc-field">
+                        <label asp-for="HomeHeroSubtitle">Supporting copy</label>
+                        <textarea asp-for="HomeHeroSubtitle"
+                                  class="wc-textarea"
+                                  id="HomeHeroSubtitle"
+                                  data-counter-input="true"></textarea>
+                        <span class="wc-counter" data-counter-for="HomeHeroSubtitle"></span>
+                        <span asp-validation-for="HomeHeroSubtitle" class="wc-validation"></span>
+                    </div>
+
+                    <div class="wc-field">
+                        <label asp-for="HomeHeroImageUrl">Hero image URL</label>
+                        <input asp-for="HomeHeroImageUrl"
+                               class="wc-input"
+                               id="HomeHeroImageUrl"
+                               placeholder="https://example.com/hero.jpg" />
+                        <span asp-validation-for="HomeHeroImageUrl" class="wc-validation"></span>
+                    </div>
+
+                    <div class="wc-upload">
+                        <div class="wc-upload-top">
+                            <div class="wc-upload-icon">↑</div>
+                            <div>
+                                <strong>Upload homepage hero image</strong>
+                                <span>Choose a landscape image · JPG, PNG or WEBP · Maximum 5 MB</span>
+                            </div>
+                        </div>
+
+                        <input asp-for="HomeHeroImageFile"
+                               type="file"
+                               class="wc-file"
+                               id="HomeHeroImageFile"
+                               accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" />
+
+                        <span asp-validation-for="HomeHeroImageFile" class="wc-validation"></span>
+                        <span id="HeroUploadStatus" class="wc-upload-status" role="status" aria-live="polite"></span>
+
+                        <img id="HeroImagePreview"
+                             class="wc-preview-image"
+                             alt="Selected homepage hero preview" />
+
+                        @if (!string.IsNullOrWhiteSpace(Model.HomeHeroImageUrl))
+                        {
+                            <div class="wc-current-label">Currently saved hero image</div>
+                            <img src="@Model.HomeHeroImageUrl"
+                                 class="wc-current-image"
+                                 alt="Current homepage hero"
+                                 onerror="this.style.display='none'" />
+                        }
+                    </div>
+
+                    <div class="wc-field">
+                        <label asp-for="HomeHeroButtonText">Call-to-action button</label>
+                        <input asp-for="HomeHeroButtonText"
+                               class="wc-input"
+                               id="HomeHeroButtonText"
+                               data-counter-input="true" />
+                        <span class="wc-counter" data-counter-for="HomeHeroButtonText"></span>
+                        <span asp-validation-for="HomeHeroButtonText" class="wc-validation"></span>
+                    </div>
+
+                </section>
+
+
+                <!-- ABOUT -->
+
+                <section class="wc-card">
+
+                    <div class="wc-section-heading">
+                        <div class="wc-number">03</div>
+                        <div>
+                            <h2>Your story</h2>
+                            <p>Introduce your company, its purpose and its vision for travel in Pakistan.</p>
+                        </div>
+                    </div>
+
+                    <div class="wc-field">
+                        <label asp-for="AboutHeading">About heading</label>
+                        <input asp-for="AboutHeading" class="wc-input" data-counter-input="true" />
+                        <span class="wc-counter" data-counter-for="AboutHeading"></span>
+                        <span asp-validation-for="AboutHeading" class="wc-validation"></span>
+                    </div>
+
+                    <div class="wc-field">
+                        <label asp-for="AboutDescription">About description</label>
+                        <textarea asp-for="AboutDescription" class="wc-textarea" data-counter-input="true"></textarea>
+                        <span class="wc-counter" data-counter-for="AboutDescription"></span>
+                        <span asp-validation-for="AboutDescription" class="wc-validation"></span>
+                    </div>
+
+                    <div class="wc-field">
+                        <label asp-for="Mission">Our mission</label>
+                        <textarea asp-for="Mission" class="wc-textarea" data-counter-input="true"></textarea>
+                        <span class="wc-counter" data-counter-for="Mission"></span>
+                        <span asp-validation-for="Mission" class="wc-validation"></span>
+                    </div>
+
+                    <div class="wc-field">
+                        <label asp-for="Vision">Our vision</label>
+                        <textarea asp-for="Vision" class="wc-textarea" data-counter-input="true"></textarea>
+                        <span class="wc-counter" data-counter-for="Vision"></span>
+                        <span asp-validation-for="Vision" class="wc-validation"></span>
+                    </div>
+
+                </section>
+
+
+                <!-- CONTACT -->
+
+                <section class="wc-card">
+
+                    <div class="wc-section-heading">
+                        <div class="wc-number">04</div>
+                        <div>
+                            <h2>Contact information</h2>
+                            <p>Make it easy for travellers to contact your team.</p>
+                        </div>
+                    </div>
+
+                    <div class="wc-field">
+                        <label asp-for="ContactAddress">Business address</label>
+                        <input asp-for="ContactAddress" class="wc-input" />
+                        <span asp-validation-for="ContactAddress" class="wc-validation"></span>
+                    </div>
+
+                    <div class="wc-field">
+                        <label asp-for="ContactPhone">Phone number</label>
+                        <input asp-for="ContactPhone" class="wc-input" />
+                        <span asp-validation-for="ContactPhone" class="wc-validation"></span>
+                    </div>
+
+                    <div class="wc-field">
+                        <label asp-for="ContactEmail">Email address</label>
+                        <input asp-for="ContactEmail"
+                               type="email"
+                               class="wc-input" />
+                        <span asp-validation-for="ContactEmail" class="wc-validation"></span>
+                    </div>
+
+                </section>
+
+
+                <!-- FOOTER -->
+
+                <section class="wc-card">
+
+                    <div class="wc-section-heading">
+                        <div class="wc-number">05</div>
+                        <div>
+                            <h2>Website footer</h2>
+                            <p>Control your footer description and social media destinations.</p>
+                        </div>
+                    </div>
+
+                    <div class="wc-field">
+                        <label asp-for="FooterDescription">Footer description</label>
+                        <textarea asp-for="FooterDescription" class="wc-textarea" data-counter-input="true"></textarea>
+                        <span class="wc-counter" data-counter-for="FooterDescription"></span>
+                        <span asp-validation-for="FooterDescription" class="wc-validation"></span>
+                    </div>
+
+                    <hr class="wc-divider" />
+
+                    <div class="wc-field">
+                        <label asp-for="FacebookUrl">Facebook URL</label>
+                        <input asp-for="FacebookUrl" class="wc-input" placeholder="https://facebook.com/..." />
+                        <span asp-validation-for="FacebookUrl" class="wc-validation"></span>
+                    </div>
+
+                    <div class="wc-field">
+                        <label asp-for="InstagramUrl">Instagram URL</label>
+                        <input asp-for="InstagramUrl" class="wc-input" placeholder="https://instagram.com/..." />
+                        <span asp-validation-for="InstagramUrl" class="wc-validation"></span>
+                    </div>
+
+                    <div class="wc-field">
+                        <label asp-for="YouTubeUrl">YouTube URL</label>
+                        <input asp-for="YouTubeUrl" class="wc-input" placeholder="https://youtube.com/..." />
+                        <span asp-validation-for="YouTubeUrl" class="wc-validation"></span>
+                    </div>
+
+                </section>
+
+
+                <!-- SEO -->
+
+                <section class="wc-card">
+
+                    <div class="wc-section-heading">
+                        <div class="wc-number">06</div>
+                        <div>
+                            <h2>SEO settings</h2>
+                            <p>Define the default search title and description for your website.</p>
+                        </div>
+                    </div>
+
+                    <div class="wc-field">
+                        <label asp-for="DefaultMetaTitle">Default meta title</label>
+                        <input asp-for="DefaultMetaTitle" class="wc-input" data-counter-input="true" />
+                        <span class="wc-counter" data-counter-for="DefaultMetaTitle"></span>
+                        <span class="wc-help">Keep the title clear and relevant to your website.</span>
+                        <span asp-validation-for="DefaultMetaTitle" class="wc-validation"></span>
+                    </div>
+
+                    <div class="wc-field">
+                        <label asp-for="DefaultMetaDescription">Default meta description</label>
+                        <textarea asp-for="DefaultMetaDescription" class="wc-textarea" data-counter-input="true"></textarea>
+                        <span class="wc-counter" data-counter-for="DefaultMetaDescription"></span>
+                        <span asp-validation-for="DefaultMetaDescription" class="wc-validation"></span>
+                    </div>
+
+                </section>
+
+
+                <!-- SAVE -->
+
+                <section class="wc-card">
+                    <div class="wc-save-area">
+                        <p>Your changes will be stored in the WebsiteContents table.</p>
+                        <div class="wc-preview-actions">
+                            <button type="submit"
+                                    class="wc-preview-link"
+                                    formaction="@Url.Action("PreviewWebsiteContent", "Admin")"
+                                    formtarget="_blank"
+                                    name="previewPage"
+                                    value="landing">
+                                Preview landing with edits ↗
+                            </button>
+                            <button type="submit"
+                                    class="wc-preview-link"
+                                    formaction="@Url.Action("PreviewWebsiteContent", "Admin")"
+                                    formtarget="_blank"
+                                    name="previewPage"
+                                    value="home">
+                                Preview Home with edits ↗
+                            </button>
+                        </div>
+                        <button type="submit" class="wc-save">
+                            Save website content →
+                        </button>
+                    </div>
+                </section>
+
+            </main>
+
+
+            <!-- SIDEBAR -->
+
+            <aside class="wc-sidebar">
+
+                <section class="wc-side-card">
+                    <h3>Live preview · Branding</h3>
+                    <div class="wc-preview-brand">
+                        <img id="PreviewLogo"
+                             src="@(string.IsNullOrWhiteSpace(Model.LogoUrl) ? string.Empty : Model.LogoUrl)"
+                             alt="Current logo preview"
+                             style="@(string.IsNullOrWhiteSpace(Model.LogoUrl) ? "display:none;" : string.Empty)" />
+                        @if (string.IsNullOrWhiteSpace(Model.LogoUrl))
+                        {
+                            <div id="PreviewLogoFallback" class="wc-preview-brand-mark" aria-hidden="true">K</div>
+                        }
+                        <div>
+                            <strong id="PreviewSiteName">@(string.IsNullOrWhiteSpace(Model.SiteName) ? "Karnel Travel Guide" : Model.SiteName)</strong>
+                            <span id="PreviewTagline">@(string.IsNullOrWhiteSpace(Model.Tagline) ? "Your brand tagline" : Model.Tagline)</span>
+                        </div>
+                    </div>
+                    <p class="wc-side-muted">This preview updates as you edit the branding fields. It does not save changes.</p>
+                    <div class="wc-preview-actions">
+                        <span class="wc-side-muted">Preview buttons below render your unsaved edits.</span>
+                    </div>
+                </section>
+
+                <section class="wc-side-card">
+                    <h3>Live preview · Home hero</h3>
+
+                    <div class="wc-hero-preview"
+                         id="HeroPreview"
+                         style="background-image: url('@Model.HomeHeroImageUrl');">
+
+                        <div class="wc-hero-preview-content">
+                            <strong id="PreviewHeading">
+                                @(string.IsNullOrWhiteSpace(Model.HomeHeroHeading)
+                                    ? "Your homepage headline"
+                                    : Model.HomeHeroHeading)
+                            </strong>
+
+                            <span id="PreviewSubtitle">
+                                @(string.IsNullOrWhiteSpace(Model.HomeHeroSubtitle)
+                                    ? "Your supporting message appears here."
+                                    : Model.HomeHeroSubtitle)
+                            </span>
+                        </div>
+                    </div>
+
+                    <p class="wc-side-muted">
+                        This preview reflects the homepage hero fields.
+                        It is not a full rendering of your public website.
+                    </p>
+                </section>
+
+
+                <section class="wc-side-card">
+                    <h3>Publishing information</h3>
+
+                    <div class="wc-record-row">
+                        <span>Content record</span>
+                        <strong>#@Model.Id</strong>
+                    </div>
+
+                    <div class="wc-record-row">
+                        <span>Last updated</span>
+                        <strong>@Model.UpdatedAt.ToLocalTime().ToString("dd MMM yyyy, hh:mm tt")</strong>
+                    </div>
+
+                    <div class="wc-record-row">
+                        <span>Storage</span>
+                        <strong>SQL Server</strong>
+                    </div>
+
+                    <div class="wc-record-row">
+                        <span>Image uploads</span>
+                        <strong>Local storage</strong>
+                    </div>
+                </section>
+
+
+                <section class="wc-side-card">
+                    <h3>Content management</h3>
+                    <p class="wc-side-muted">
+                        Changes submitted here are saved to your database.
+                        Your public pages must read from the saved WebsiteContent
+                        record before visitors can see those changes.
+                    </p>
+                </section>
+
+            </aside>
+
+        </div>
+
+    </form>
+
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+
+    <script>
+        (() => {
+            const siteName = document.getElementById("SiteName");
+            const tagline = document.getElementById("Tagline");
+            const heading = document.getElementById("HomeHeroHeading");
+            const subtitle = document.getElementById("HomeHeroSubtitle");
+            const imageUrl = document.getElementById("HomeHeroImageUrl");
+
+            const previewHeading = document.getElementById("PreviewHeading");
+            const previewSubtitle = document.getElementById("PreviewSubtitle");
+            const heroPreview = document.getElementById("HeroPreview");
+
+            const logoInput = document.getElementById("LogoImageFile");
+            const heroInput = document.getElementById("HomeHeroImageFile");
+
+            const logoPreview = document.getElementById("LogoPreview");
+            const heroImagePreview = document.getElementById("HeroImagePreview");
+            const currentLogoLabel = document.getElementById("CurrentLogoLabel");
+            const currentLogoImage = document.getElementById("CurrentLogoImage");
+            const previewSiteName = document.getElementById("PreviewSiteName");
+            const previewTagline = document.getElementById("PreviewTagline");
+            const previewLogo = document.getElementById("PreviewLogo");
+            const previewLogoFallback = document.getElementById("PreviewLogoFallback");
+            const logoUrl = document.getElementById("LogoUrl");
+            const logoStatus = document.getElementById("LogoUploadStatus");
+            const heroStatus = document.getElementById("HeroUploadStatus");
+
+            let logoObjectUrl = null;
+            let heroObjectUrl = null;
+
+            function updateText(input, target, fallback) {
+                if (!input || !target) return;
+
+                target.textContent = input.value.trim() || fallback;
+            }
+
+            function updateCounter(input) {
+                if (!input) return;
+
+                const counter = document.querySelector(`[data-counter-for="${input.id}"]`);
+                if (!counter) return;
+
+                const max = Number(input.getAttribute("maxlength")) || 0;
+                const length = input.value.length;
+                counter.textContent = max ? `${length} / ${max}` : `${length}`;
+                counter.classList.toggle("is-near-limit", max > 0 && length >= max * .9 && length < max);
+                counter.classList.toggle("is-at-limit", max > 0 && length >= max);
+            }
+
+            function updateBrandPreview() {
+                updateText(siteName, previewSiteName, "Karnel Travel Guide");
+                updateText(tagline, previewTagline, "Your brand tagline");
+            }
+
+            function setStatus(element, message, isError = false) {
+                if (!element) return;
+                element.textContent = message;
+                element.classList.toggle("is-error", isError);
+                element.classList.toggle("is-success", !isError && Boolean(message));
+            }
+
+            function updateHeroFromUrl() {
+                if (!imageUrl || !heroPreview) return;
+
+                const value = imageUrl.value.trim();
+
+                if (value) {
+                    heroPreview.style.backgroundImage =
+                        `url("${value.replace(/"/g, '\\"')}")`;
+                }
+            }
+
+            function previewSelectedFile(input, preview, isHero, status) {
+                if (!input || !preview) return;
+
+                input.addEventListener("click", () => {
+                    input.value = "";
+                });
+
+                input.addEventListener("change", () => {
+                    const file = input.files && input.files[0];
+
+                    if (!file) {
+                        preview.style.display = "none";
+                        if (!isHero && currentLogoLabel && currentLogoImage) {
+                            currentLogoLabel.style.display = "block";
+                            currentLogoImage.style.display = "block";
+                        }
+                        setStatus(status, "");
+                        return;
+                    }
+
+                    const allowedTypes = [
+                        "image/jpeg",
+                        "image/png",
+                        "image/webp"
+                    ];
+
+                    if (!allowedTypes.includes(file.type)) {
+                        setStatus(status, "Invalid file type. Choose a JPG, PNG or WEBP image.", true);
+                        input.value = "";
+                        preview.style.display = "none";
+                        return;
+                    }
+
+                    if (file.size > 5 * 1024 * 1024) {
+                        setStatus(status, "This file is too large. The maximum size is 5 MB.", true);
+                        input.value = "";
+                        preview.style.display = "none";
+                        return;
+                    }
+
+                    const objectUrl = URL.createObjectURL(file);
+
+                    if (isHero) {
+                        if (heroObjectUrl) URL.revokeObjectURL(heroObjectUrl);
+                        heroObjectUrl = objectUrl;
+
+                        heroPreview.style.backgroundImage =
+                            `url("${objectUrl}")`;
+                    } else {
+                        if (logoObjectUrl) URL.revokeObjectURL(logoObjectUrl);
+                        logoObjectUrl = objectUrl;
+                    }
+
+                    preview.src = objectUrl;
+                    preview.style.display = "block";
+                    setStatus(status, `${file.name} selected · ${(file.size / 1024 / 1024).toFixed(2)} MB · Preview only — save to publish`, false);
+
+                    if (!isHero && previewLogo) {
+                        if (currentLogoLabel) currentLogoLabel.style.display = "none";
+                        if (currentLogoImage) currentLogoImage.style.display = "none";
+                        previewLogo.src = objectUrl;
+                        previewLogo.style.display = "block";
+                        if (previewLogoFallback) {
+                            previewLogoFallback.style.display = "none";
+                        }
+                    }
+                });
+            }
+
+            if (heading) {
+                heading.addEventListener("input", () => {
+                    updateText(heading, previewHeading, "Your homepage headline");
+                    updateCounter(heading);
+                });
+            }
+
+            if (subtitle) {
+                subtitle.addEventListener("input", () => {
+                    updateText(subtitle, previewSubtitle, "Your supporting message appears here.");
+                    updateCounter(subtitle);
+                });
+            }
+
+            if (imageUrl) {
+                imageUrl.addEventListener("input", updateHeroFromUrl);
+            }
+
+            if (siteName) siteName.addEventListener("input", updateBrandPreview);
+            if (tagline) tagline.addEventListener("input", updateBrandPreview);
+
+            if (logoUrl) {
+                logoUrl.addEventListener("input", () => {
+                    const value = logoUrl.value.trim();
+                    if (previewLogo) {
+                        previewLogo.src = value;
+                        previewLogo.style.display = value ? "block" : "none";
+                    }
+                    if (previewLogoFallback) {
+                        previewLogoFallback.style.display = value ? "none" : "grid";
+                    }
+                });
+            }
+
+            previewSelectedFile(logoInput, logoPreview, false, logoStatus);
+            previewSelectedFile(heroInput, heroImagePreview, true, heroStatus);
+
+            document.querySelectorAll("[data-counter-input]").forEach(input => {
+                input.addEventListener("input", () => updateCounter(input));
+                updateCounter(input);
+            });
+
+            updateText(heading, previewHeading, "Your homepage headline");
+            updateText(subtitle, previewSubtitle, "Your supporting message appears here.");
+            updateBrandPreview();
+        })();
+    </script>
+}

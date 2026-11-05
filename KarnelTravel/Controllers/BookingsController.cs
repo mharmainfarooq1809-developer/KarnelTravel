@@ -1,6 +1,7 @@
 ﻿
 using KarnelTravel.Data;
 using KarnelTravel.Models;
+using KarnelTravel.Services;
 using KarnelTravel.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -10,6 +11,7 @@ namespace KarnelTravel.Controllers;
 public class BookingsController : Controller
 {
     private readonly ApplicationDbContext _context;
+    private readonly ISettingsService _settingsService;
 
     private static readonly string[] RestaurantVisitPeriods =
     {
@@ -19,9 +21,10 @@ public class BookingsController : Controller
         "Dinner"
     };
 
-    public BookingsController(ApplicationDbContext context)
+    public BookingsController(ApplicationDbContext context, ISettingsService settingsService)
     {
         _context = context;
+        _settingsService = settingsService;
     }
 
     // =========================================================
@@ -85,6 +88,24 @@ public class BookingsController : Controller
             return NotFound(
                 "The selected service was not found or is not published.");
         }
+
+        var settings = await _settingsService.GetAsync();
+        if (!settings.BookingEnabled || !settings.AllowBookingInquiries)
+            return BadRequest("New booking inquiries are currently unavailable.");
+
+        var daysAhead = (model.BookingDate.Date - DateTime.Today).Days;
+        if (daysAhead < settings.MinimumAdvanceBookingDays || daysAhead > settings.MaximumAdvanceBookingDays)
+            ModelState.AddModelError(nameof(model.BookingDate), "The selected date is outside the configured booking window.");
+        if (settings.RequirePhone && string.IsNullOrWhiteSpace(model.Phone))
+            ModelState.AddModelError(nameof(model.Phone), "A phone number is required.");
+        if (settings.RequireEmail && string.IsNullOrWhiteSpace(model.Email))
+            ModelState.AddModelError(nameof(model.Email), "An email address is required.");
+        if (!settings.AllowGuestBookings && User.Identity?.IsAuthenticated != true)
+            return Challenge();
+        if (model.Adults > settings.MaximumAdults)
+            ModelState.AddModelError(nameof(model.Adults), $"A maximum of {settings.MaximumAdults} adults is allowed.");
+        if (model.Children > settings.MaximumChildren)
+            ModelState.AddModelError(nameof(model.Children), $"A maximum of {settings.MaximumChildren} children is allowed.");
 
         ViewBag.ServiceName = service.Name;
 
@@ -678,7 +699,7 @@ public class BookingsController : Controller
         var booking = new Booking
         {
             ReferenceNumber =
-                $"KTL-{Guid.NewGuid():N}"[..16].ToUpperInvariant(),
+                $"{settings.BookingReferencePrefix}-{Guid.NewGuid():N}"[..Math.Min(settings.BookingReferencePrefix.Length + 13, 30)].ToUpperInvariant(),
 
             CustomerName = model.CustomerName.Trim(),
 
@@ -734,7 +755,7 @@ public class BookingsController : Controller
                 ? null
                 : model.CustomerNotes.Trim(),
 
-            Status = "Pending",
+            Status = settings.DefaultBookingStatus,
 
             CreatedAt = DateTime.UtcNow
         };

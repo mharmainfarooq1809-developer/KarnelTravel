@@ -1,4 +1,5 @@
 ﻿@{
+    var websiteContent = ViewBag.WebsiteContent as KarnelTravel.Models.WebsiteContent ?? new KarnelTravel.Models.WebsiteContent();
     ViewData["Title"] = "Our Story | Karnel Travel Guide";
     ViewData["Description"] = "Learn about Karnel Travel Guide — a travel and tourism guide for destinations, transport, accommodation and packages across Pakistan.";
 }
@@ -920,13 +921,8 @@
         <div class="intro__grid">
             <div class="intro__content" data-reveal>
                 <p class="about-eyebrow">About Karnel</p>
-                <h1>A travel guide for the <em>questions that come before the journey.</em></h1>
-                <p class="intro__lede">
-                    Karnel Travels is a travel and tourism company. Karnel Travel Guide is
-                    the front door — a single place to explore destinations, compare
-                    transport options, read about accommodation and send an inquiry about a
-                    package.
-                </p>
+                <h1>@(string.IsNullOrWhiteSpace(websiteContent.AboutHeading) ? "A travel guide for the questions that come before the journey." : websiteContent.AboutHeading)</h1>
+                <p class="intro__lede">@(string.IsNullOrWhiteSpace(websiteContent.AboutDescription) ? "Explore the landscapes, destinations and experiences that make Pakistan extraordinary." : websiteContent.AboutDescription)</p>
                 <div class="intro__actions">
                     <a class="btn btn--forest" href="@Url.Action("Index", "Destinations")">Explore Destinations</a>
                     <a class="btn btn--ghost-dark" href="@Url.Action("Index", "Contact")">Get in Touch</a>
@@ -1156,21 +1152,13 @@
             <article class="mission__block" data-reveal>
                 <span class="mission__block-tag">Mission</span>
                 <h3>Make the early stages easier.</h3>
-                <p>
-                    To make the first steps of travel planning easier through clear
-                    information, transparent options and straightforward inquiries — so
-                    that a traveller can move forward with confidence rather than guesswork.
-                </p>
+                <p>@(string.IsNullOrWhiteSpace(websiteContent.Mission) ? "Clear information, transparent options and straightforward inquiries make the first steps of travel planning easier." : websiteContent.Mission)</p>
             </article>
 
             <article class="mission__block" data-reveal>
                 <span class="mission__block-tag">Vision</span>
                 <h3>Build a connected travel experience.</h3>
-                <p>
-                    To build a connected travel-planning experience that helps people
-                    explore destinations and understand their travel options — across
-                    accommodation, transportation, dining and packages — in one place.
-                </p>
+                <p>@(string.IsNullOrWhiteSpace(websiteContent.Vision) ? "Build a connected travel-planning experience that helps people explore destinations and understand their travel options in one place." : websiteContent.Vision)</p>
             </article>
         </div>
 

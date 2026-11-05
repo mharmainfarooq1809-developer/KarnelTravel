@@ -1,4 +1,5 @@
 using KarnelTravel.Data;
+using KarnelTravel.Middleware;
 using KarnelTravel.Models;
 using KarnelTravel.Services;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -25,6 +26,9 @@ builder.Services.AddSingleton<IPasswordHasher<AdminUser>, PasswordHasher<AdminUs
 
 // ✅ CHANGED: Now using the SQL Server database service instead of In-Memory
 builder.Services.AddScoped<IAdminAuthService, EfAdminAuthService>();
+builder.Services.AddScoped<IWebsiteContentService, WebsiteContentService>();
+builder.Services.AddScoped<ISettingsService, SettingsService>();
+builder.Services.AddScoped<IAuditLogService, AuditLogService>();
 
 builder.Services
     .AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
@@ -63,6 +67,7 @@ app.UseRouting();
 
 // IMPORTANT: UseAuthentication must come BEFORE UseAuthorization.
 app.UseAuthentication();
+app.UseMiddleware<WebsiteAvailabilityMiddleware>();
 app.UseAuthorization();
 
 app.MapStaticAssets();

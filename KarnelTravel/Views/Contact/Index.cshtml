@@ -1,5 +1,6 @@
 @model KarnelTravel.Models.ContactInquiry
 @{
+    var websiteContent = ViewBag.WebsiteContent as KarnelTravel.Models.WebsiteContent ?? new KarnelTravel.Models.WebsiteContent();
     ViewData["Title"] = "Contact Us";
     ViewData["Description"] = "Get in touch with Karnel Travel Guide — ask about destinations, transport, hotels, restaurants, resorts or a complete journey.";
 }
@@ -679,6 +680,26 @@
              alt="Mountain landscape across northern Pakistan"
              fetchpriority="high" decoding="async" />
     </div>
+
+                <div class="inquiry__note" aria-label="Contact details">
+                    <b>Contact details</b>
+                    @if (!string.IsNullOrWhiteSpace(websiteContent.ContactAddress))
+                    {
+                        <div>@websiteContent.ContactAddress</div>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(websiteContent.ContactPhone))
+                    {
+                        <div><a href="tel:@websiteContent.ContactPhone">@websiteContent.ContactPhone</a></div>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(websiteContent.ContactEmail))
+                    {
+                        <div><a href="mailto:@websiteContent.ContactEmail">@websiteContent.ContactEmail</a></div>
+                    }
+                    @if (string.IsNullOrWhiteSpace(websiteContent.ContactAddress) && string.IsNullOrWhiteSpace(websiteContent.ContactPhone) && string.IsNullOrWhiteSpace(websiteContent.ContactEmail))
+                    {
+                        <div>Contact details available on request.</div>
+                    }
+                </div>
 
     <div class="container contact-hero__inner">
         <p class="eyebrow eyebrow--light">Contact Karnel</p>

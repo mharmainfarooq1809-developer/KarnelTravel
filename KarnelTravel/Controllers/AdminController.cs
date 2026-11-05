@@ -1,18 +1,20 @@
-using Microsoft.AspNetCore.Mvc.Rendering;
 using KarnelTravel.Data;
 using KarnelTravel.Models;
+using KarnelTravel.Services;
 using KarnelTravel.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using System;
+using System.Data;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using System.Data;
 
 
 namespace KarnelTravel.Controllers;
@@ -23,14 +25,24 @@ public class AdminController : Controller
 {
     private readonly ApplicationDbContext _context;
     private readonly IWebHostEnvironment _environment;
+    private readonly IWebsiteContentService _websiteContentService;
+    private readonly ISettingsService _settingsService;
+    private readonly IAuditLogService _auditLogService;
 
     public AdminController(
         ApplicationDbContext context,
-        IWebHostEnvironment environment)
+        IWebHostEnvironment environment,
+        IWebsiteContentService websiteContentService,
+        ISettingsService settingsService,
+        IAuditLogService auditLogService)
     {
         _context = context;
         _environment = environment;
+        _websiteContentService = websiteContentService;
+        _settingsService = settingsService;
+        _auditLogService = auditLogService;
     }
+
 
     // =========================================================
     // DASHBOARD
@@ -38,9 +50,51 @@ public class AdminController : Controller
 
     [HttpGet("")]
     [HttpGet("Dashboard")]
-    public IActionResult Dashboard()
+    public async Task<IActionResult> Dashboard()
     {
-        return View();
+        var model = new AdminDashboardViewModel
+        {
+            TotalBookings = await _context.Bookings
+                .AsNoTracking()
+                .CountAsync(),
+
+            TotalTripInquiries = await _context.TripInquiries
+                .AsNoTracking()
+                .CountAsync(),
+
+            TotalContactInquiries = await _context.ContactInquiries
+                .AsNoTracking()
+                .CountAsync(),
+
+            TotalListings =
+                await _context.Destinations.AsNoTracking().CountAsync()
+                + await _context.Hotels.AsNoTracking().CountAsync()
+                + await _context.Restaurants.AsNoTracking().CountAsync()
+                + await _context.Resorts.AsNoTracking().CountAsync()
+                + await _context.TourPackages.AsNoTracking().CountAsync(),
+
+            TotalReviews = await _context.Reviews
+                .AsNoTracking()
+                .CountAsync(),
+
+            RecentBookings = await _context.Bookings
+                .AsNoTracking()
+                .OrderByDescending(x => x.CreatedAt)
+                .Take(5)
+                .Select(x => new RecentBookingViewModel
+                {
+                    ReferenceNumber = x.ReferenceNumber,
+                    CustomerName = x.CustomerName,
+                    ServiceName = x.ServiceName,
+                    BookingDate = x.BookingDate,
+                    Adults = x.Adults,
+                    Children = x.Children,
+                    Status = x.Status
+                })
+                .ToListAsync()
+        };
+
+        return View(model);
     }
 
     // =========================================================
@@ -148,6 +202,7 @@ public class AdminController : Controller
 
         _context.Destinations.Add(model);
         await _context.SaveChangesAsync();
+        await _auditLogService.RecordAsync(User.Identity?.Name, "Listing created", $"Destination {model.Name} was created.", "Destination", model.Id.ToString());
 
         TempData["SuccessMessage"] =
             "Destination created successfully.";
@@ -288,6 +343,7 @@ public class AdminController : Controller
         destination.UpdatedAt = DateTime.UtcNow;
 
         await _context.SaveChangesAsync();
+        await _auditLogService.RecordAsync(User.Identity?.Name, "Listing updated", $"Destination {destination.Name} was updated.", "Destination", destination.Id.ToString());
 
         TempData["SuccessMessage"] =
             "Destination updated successfully.";
@@ -1963,6 +2019,13 @@ public class AdminController : Controller
 
             await _context.SaveChangesAsync();
 
+            await _auditLogService.RecordAsync(
+                User.Identity?.Name,
+                "Booking status changed",
+                $"Booking {booking.ReferenceNumber} changed to {booking.Status}.",
+                "Booking",
+                booking.Id.ToString());
+
             await transaction.CommitAsync();
 
             TempData["BookingSuccess"] =
@@ -2675,30 +2738,686 @@ public class AdminController : Controller
     }
 
 
+
+
+    // ============================================================
+    // WEBSITE CONTENT MANAGEMENT
+    // ============================================================
+
     [HttpGet("WebsiteContent")]
-    public IActionResult WebsiteContent()
+    public async Task<IActionResult> WebsiteContent()
     {
         ViewData["Title"] = "Website content";
         ViewData["Section"] = "Website content";
 
-        return View("ComingSoon");
+        var content = await _websiteContentService.GetAsync();
+
+        return View(content);
     }
+
+    [HttpPost("WebsiteContent/Preview")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> PreviewWebsiteContent(
+        WebsiteContent model,
+        string previewPage = "landing")
+    {
+        ViewData["Title"] = "Website content preview";
+        ViewData["Section"] = "Website content";
+
+        model.LogoUrl = await PreparePreviewImageAsync(
+            model.LogoImageFile,
+            model.LogoUrl,
+            nameof(model.LogoImageFile));
+
+        model.HomeHeroImageUrl = await PreparePreviewImageAsync(
+            model.HomeHeroImageFile,
+            model.HomeHeroImageUrl,
+            nameof(model.HomeHeroImageFile));
+
+        if (!ModelState.IsValid)
+        {
+            return View("WebsiteContent", model);
+        }
+
+        ViewBag.WebsiteContent = model;
+
+        if (string.Equals(previewPage, "home", StringComparison.OrdinalIgnoreCase))
+        {
+            ViewBag.FeaturedDestinations = await _context.Destinations
+                .Where(d => d.IsPublished && d.IsFeatured)
+                .OrderBy(d => d.Name)
+                .Take(3)
+                .AsNoTracking()
+                .ToListAsync();
+
+            return View("~/Views/Home/Index.cshtml");
+        }
+
+        return View("~/Views/Landing/Index.cshtml");
+    }
+
+
+    // ============================================================
+    // WEBSITE CONTENT POST
+    // ============================================================
+
+    [HttpPost("WebsiteContent")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> WebsiteContent(WebsiteContent model)
+    {
+        ViewData["Title"] = "Website content";
+        ViewData["Section"] = "Website content";
+
+        // --------------------------------------------------------
+        // VALIDATE LOGO IMAGE
+        // --------------------------------------------------------
+
+        if (model.LogoImageFile != null &&
+            model.LogoImageFile.Length > 0)
+        {
+            var error = await GetWebsiteImageErrorAsync(model.LogoImageFile);
+
+            if (error != null)
+            {
+                ModelState.AddModelError(
+                    nameof(model.LogoImageFile),
+                    error
+                );
+            }
+
+        }
+
+        // --------------------------------------------------------
+        // VALIDATE HERO IMAGE
+        // --------------------------------------------------------
+
+        if (model.HomeHeroImageFile != null &&
+            model.HomeHeroImageFile.Length > 0)
+        {
+            var error = await GetWebsiteImageErrorAsync(model.HomeHeroImageFile);
+
+            if (error != null)
+            {
+                ModelState.AddModelError(
+                    nameof(model.HomeHeroImageFile),
+                    error
+                );
+            }
+        }
+
+        // --------------------------------------------------------
+        // MODEL VALIDATION
+        // --------------------------------------------------------
+
+        if (!ModelState.IsValid)
+        {
+            return View(model);
+        }
+
+        // --------------------------------------------------------
+        // LOAD EXISTING RECORD
+        // --------------------------------------------------------
+
+        var content = await _context.WebsiteContents
+            .OrderBy(x => x.Id)
+            .FirstOrDefaultAsync();
+
+        if (content == null)
+        {
+            content = new WebsiteContent();
+            _context.WebsiteContents.Add(content);
+        }
+
+        // --------------------------------------------------------
+        // BRAND IDENTITY
+        // --------------------------------------------------------
+
+        content.SiteName = model.SiteName ?? "Karnel Travel Guide";
+        content.Tagline = model.Tagline ?? "";
+
+        // Upload takes priority.
+        // Otherwise, retain the existing image if the URL is empty.
+
+        if (model.LogoImageFile != null &&
+            model.LogoImageFile.Length > 0)
+        {
+            content.LogoUrl =
+                await SaveWebsiteImageAsync(model.LogoImageFile);
+        }
+        else if (!string.IsNullOrWhiteSpace(model.LogoUrl))
+        {
+            content.LogoUrl = model.LogoUrl;
+        }
+        else
+        {
+            content.LogoUrl ??= "";
+        }
+
+        // --------------------------------------------------------
+        // HOMEPAGE
+        // --------------------------------------------------------
+
+        content.HomeHeroHeading = model.HomeHeroHeading ?? "";
+        content.HomeHeroSubtitle = model.HomeHeroSubtitle ?? "";
+        content.HomeHeroButtonText = model.HomeHeroButtonText ?? "";
+
+        if (model.HomeHeroImageFile != null &&
+            model.HomeHeroImageFile.Length > 0)
+        {
+            content.HomeHeroImageUrl =
+                await SaveWebsiteImageAsync(model.HomeHeroImageFile);
+        }
+        else if (!string.IsNullOrWhiteSpace(model.HomeHeroImageUrl))
+        {
+            content.HomeHeroImageUrl = model.HomeHeroImageUrl;
+        }
+        else
+        {
+            content.HomeHeroImageUrl ??= "";
+        }
+
+        // --------------------------------------------------------
+        // ABOUT PAGE
+        // --------------------------------------------------------
+
+        content.AboutHeading = model.AboutHeading ?? "";
+        content.AboutDescription = model.AboutDescription ?? "";
+        content.Mission = model.Mission ?? "";
+        content.Vision = model.Vision ?? "";
+
+        // --------------------------------------------------------
+        // CONTACT PAGE
+        // --------------------------------------------------------
+
+        content.ContactAddress = model.ContactAddress ?? "";
+        content.ContactPhone = model.ContactPhone ?? "";
+        content.ContactEmail = model.ContactEmail ?? "";
+
+        // --------------------------------------------------------
+        // FOOTER
+        // --------------------------------------------------------
+
+        content.FooterDescription = model.FooterDescription ?? "";
+        content.FacebookUrl = model.FacebookUrl ?? "";
+        content.InstagramUrl = model.InstagramUrl ?? "";
+        content.YouTubeUrl = model.YouTubeUrl ?? "";
+
+        // --------------------------------------------------------
+        // SEO
+        // --------------------------------------------------------
+
+        content.DefaultMetaTitle = model.DefaultMetaTitle ?? "";
+        content.DefaultMetaDescription = model.DefaultMetaDescription ?? "";
+
+        // --------------------------------------------------------
+        // UPDATE INFORMATION
+        // --------------------------------------------------------
+
+        content.UpdatedAt = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync();
+
+        TempData["SuccessMessage"] =
+            "Website content and images have been saved successfully.";
+
+        return RedirectToAction(nameof(WebsiteContent));
+    }
+
+    private async Task<string?> PreparePreviewImageAsync(
+        IFormFile? file,
+        string? existingUrl,
+        string fieldName)
+    {
+        if (file == null || file.Length == 0)
+        {
+            return existingUrl;
+        }
+
+        var error = await GetWebsiteImageErrorAsync(file);
+        if (error != null)
+        {
+            ModelState.AddModelError(fieldName, error);
+            return existingUrl;
+        }
+
+        await using var input = file.OpenReadStream();
+        await using var output = new MemoryStream();
+        await input.CopyToAsync(output);
+
+        var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
+        var contentType = extension switch
+        {
+            ".jpg" or ".jpeg" => "image/jpeg",
+            ".png" => "image/png",
+            ".webp" => "image/webp",
+            _ => "application/octet-stream"
+        };
+
+        return $"data:{contentType};base64,{Convert.ToBase64String(output.ToArray())}";
+    }
+
+
+    // ============================================================
+    // WEBSITE IMAGE VALIDATION
+    // ============================================================
+
+    private async Task<string?> GetWebsiteImageErrorAsync(IFormFile file)
+    {
+        const long maxFileSize = 5 * 1024 * 1024;
+
+        if (file.Length <= 0)
+            return "Please select a valid image.";
+
+        if (file.Length > maxFileSize)
+            return "Image size cannot exceed 5 MB.";
+
+        var extension = Path.GetExtension(file.FileName)
+            .ToLowerInvariant();
+
+        var allowedExtensions = new[]
+        {
+        ".jpg",
+        ".jpeg",
+        ".png",
+        ".webp"
+    };
+
+        if (!allowedExtensions.Contains(extension))
+        {
+            return "Only JPG, JPEG, PNG and WEBP images are allowed.";
+        }
+
+        // Verify actual file signature.
+
+        await using var stream = file.OpenReadStream();
+
+        var header = new byte[12];
+
+        var bytesRead = await stream.ReadAsync(
+            header,
+            0,
+            header.Length
+        );
+
+        bool validImage = extension switch
+        {
+            ".jpg" or ".jpeg" =>
+                bytesRead >= 3 &&
+                header[0] == 0xFF &&
+                header[1] == 0xD8 &&
+                header[2] == 0xFF,
+
+            ".png" =>
+                bytesRead >= 8 &&
+                header[0] == 0x89 &&
+                header[1] == 0x50 &&
+                header[2] == 0x4E &&
+                header[3] == 0x47 &&
+                header[4] == 0x0D &&
+                header[5] == 0x0A &&
+                header[6] == 0x1A &&
+                header[7] == 0x0A,
+
+            ".webp" =>
+                bytesRead >= 12 &&
+                header[0] == (byte)'R' &&
+                header[1] == (byte)'I' &&
+                header[2] == (byte)'F' &&
+                header[3] == (byte)'F' &&
+                header[8] == (byte)'W' &&
+                header[9] == (byte)'E' &&
+                header[10] == (byte)'B' &&
+                header[11] == (byte)'P',
+
+            _ => false
+        };
+
+        return validImage
+            ? null
+            : "The selected file does not contain a valid image signature.";
+    }
+
+
+    // ============================================================
+    // SAVE WEBSITE IMAGE
+    // ============================================================
+
+    private async Task<string> SaveWebsiteImageAsync(IFormFile file)
+    {
+        var webRoot = _environment.WebRootPath
+            ?? Path.Combine(_environment.ContentRootPath, "wwwroot");
+
+        var uploadFolder = Path.Combine(
+            webRoot,
+            "uploads",
+            "website"
+        );
+
+        Directory.CreateDirectory(uploadFolder);
+
+        var extension = Path.GetExtension(file.FileName)
+            .ToLowerInvariant();
+
+        var fileName = $"{Guid.NewGuid():N}{extension}";
+
+        var filePath = Path.Combine(
+            uploadFolder,
+            fileName
+        );
+
+        await using (var stream = new FileStream(
+            filePath,
+            FileMode.CreateNew,
+            FileAccess.Write))
+        {
+            await file.CopyToAsync(stream);
+        }
+
+        return $"/uploads/website/{fileName}";
+    }
+
+
+    // =========================================================
+    // REPORTS - GENERATE REPORTS
+    // =========================================================
 
     [HttpGet("Reports")]
-    public IActionResult Reports()
+    public async Task<IActionResult> Reports(DateTime? from, DateTime? to)
     {
-        ViewData["Title"] = "Reports & analytics";
+        ViewData["Title"] = "Reports & Analytics";
         ViewData["Section"] = "Reports";
 
-        return View("ComingSoon");
+        var query = _context.Bookings.AsNoTracking();
+
+        // Filter by booking submission date.
+        if (from.HasValue)
+        {
+            query = query.Where(x => x.CreatedAt >= from.Value.Date);
+        }
+
+        if (to.HasValue)
+        {
+            var endExclusive = to.Value.Date.AddDays(1);
+            query = query.Where(x => x.CreatedAt < endExclusive);
+        }
+
+        // Retrieve only the fields needed for reporting.
+        var bookings = await query
+            .Select(x => new
+            {
+                x.CreatedAt,
+                x.Status,
+                x.ServiceType,
+                x.EstimatedTotalPKR
+            })
+            .ToListAsync();
+
+        var model = new ReportsViewModel
+        {
+            FromDate = from,
+            ToDate = to,
+
+            TotalBookings = bookings.Count,
+
+            PendingBookings = bookings.Count(x =>
+                string.Equals(
+                    x.Status,
+                    "Pending",
+                    StringComparison.OrdinalIgnoreCase)),
+
+            ConfirmedBookings = bookings.Count(x =>
+                string.Equals(
+                    x.Status,
+                    "Confirmed",
+                    StringComparison.OrdinalIgnoreCase)),
+
+            CompletedBookings = bookings.Count(x =>
+                string.Equals(
+                    x.Status,
+                    "Completed",
+                    StringComparison.OrdinalIgnoreCase)),
+
+            CancelledBookings = bookings.Count(x =>
+                string.Equals(
+                    x.Status,
+                    "Cancelled",
+                    StringComparison.OrdinalIgnoreCase)),
+
+            // Only bookings with calculated estimates contribute.
+            EstimatedBookingValue = bookings
+                .Where(x => x.EstimatedTotalPKR.HasValue)
+                .Sum(x => x.EstimatedTotalPKR ?? 0m),
+
+            // Historical bookings without calculated amounts.
+            UncalculatedBookings = bookings.Count(x =>
+                !x.EstimatedTotalPKR.HasValue),
+
+            // Monthly booking trends.
+            MonthlyBookings = bookings
+                .GroupBy(x => new
+                {
+                    x.CreatedAt.Year,
+                    x.CreatedAt.Month
+                })
+                .OrderBy(x => x.Key.Year)
+                .ThenBy(x => x.Key.Month)
+                .Select(x => new MonthlyBookingReport
+                {
+                    Month = new DateTime(
+                        x.Key.Year,
+                        x.Key.Month,
+                        1
+                    ).ToString("MMM yyyy"),
+
+                    BookingCount = x.Count()
+                })
+                .ToList(),
+
+            // Booking demand and estimated value by service.
+            ServicePerformance = bookings
+                .GroupBy(x =>
+                    string.IsNullOrWhiteSpace(x.ServiceType)
+                        ? "Other"
+                        : x.ServiceType.Trim())
+                .OrderByDescending(x => x.Count())
+                .Select(x => new ServiceBookingReport
+                {
+                    ServiceType = x.Key,
+                    BookingCount = x.Count(),
+
+                    EstimatedValue = x
+                        .Where(b => b.EstimatedTotalPKR.HasValue)
+                        .Sum(b => b.EstimatedTotalPKR ?? 0m)
+                })
+                .ToList()
+        };
+
+        return View(model);
     }
 
+
+    // ==========================================
+    // EXPORT REPORTS TO EXCEL-COMPATIBLE CSV
+    // ==========================================
+
+    [HttpGet("Reports/ExportCsv")]
+    public async Task<IActionResult> ExportReportsCsv(
+        DateTime? from,
+        DateTime? to)
+    {
+        var query = _context.Bookings.AsNoTracking();
+
+        // Apply the same date filters as the Reports page.
+        if (from.HasValue)
+        {
+            query = query.Where(x =>
+                x.CreatedAt >= from.Value.Date);
+        }
+
+        if (to.HasValue)
+        {
+            var endExclusive = to.Value.Date.AddDays(1);
+
+            query = query.Where(x =>
+                x.CreatedAt < endExclusive);
+        }
+
+        // Retrieve booking records for export.
+        var bookings = await query
+            .OrderByDescending(x => x.CreatedAt)
+            .Select(x => new
+            {
+                x.ReferenceNumber,
+                x.CustomerName,
+                x.Phone,
+                x.Email,
+                x.ServiceType,
+                x.ServiceName,
+                x.BookingDate,
+                x.CreatedAt,
+                x.Adults,
+                x.Children,
+                x.Rooms,
+                x.Status,
+                x.EstimatedTotalPKR
+            })
+            .ToListAsync();
+
+        // Escape values correctly for CSV.
+        static string Csv(string? value)
+        {
+            value ??= "";
+
+            return "\"" +
+                value.Replace("\"", "\"\"") +
+                "\"";
+        }
+
+        var csv = new StringBuilder();
+
+        // Column headings.
+        csv.AppendLine(
+            "Reference Number,Customer Name,Phone,Email,Service Type,Service Name,Booking Date,Submitted At,Adults,Children,Rooms,Status,Estimated Amount (PKR)");
+
+        // Booking rows.
+        foreach (var booking in bookings)
+        {
+            csv.AppendLine(string.Join(",",
+                Csv(booking.ReferenceNumber),
+                Csv(booking.CustomerName),
+                Csv(booking.Phone),
+                Csv(booking.Email),
+                Csv(booking.ServiceType),
+                Csv(booking.ServiceName),
+                Csv(booking.BookingDate.ToString("yyyy-MM-dd")),
+                Csv(booking.CreatedAt.ToString("yyyy-MM-dd HH:mm")),
+                booking.Adults,
+                booking.Children,
+                booking.Rooms,
+                Csv(booking.Status),
+                booking.EstimatedTotalPKR?.ToString(
+                    "0.00",
+                    System.Globalization.CultureInfo.InvariantCulture) ?? ""
+            ));
+        }
+
+        // UTF-8 BOM for better Excel compatibility.
+        var encoding = new System.Text.UTF8Encoding(true);
+
+        var fileBytes = encoding.GetPreamble()
+            .Concat(encoding.GetBytes(csv.ToString()))
+            .ToArray();
+
+        var filename =
+            $"KarnelTravel_Bookings_{DateTime.Now:yyyyMMdd_HHmm}.csv";
+
+        return File(
+            fileBytes,
+            "text/csv; charset=utf-8",
+            filename);
+    }
+
+    // =========================================================
+    // SETTING- CHANGE MODERATION STATUS
+    // =========================================================
+
     [HttpGet("Settings")]
-    public IActionResult Settings()
+    public async Task<IActionResult> Settings(string? search = null, string? action = null)
     {
         ViewData["Title"] = "Settings";
         ViewData["Section"] = "Settings";
+        return View("Settings", new SettingsViewModel
+        {
+            Settings = await _settingsService.GetAsync(),
+            AuditLogs = await _auditLogService.RecentAsync(search, action),
+            EmailDeliveryConfigured = false,
+            Search = search,
+            ActionFilter = action
+        });
+    }
 
-        return View("ComingSoon");
+    [HttpPost("Settings")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> SaveSettings(SettingsViewModel model)
+    {
+        if (!ModelState.IsValid)
+        {
+            model.AuditLogs = await _auditLogService.RecentAsync();
+            model.EmailDeliveryConfigured = false;
+            return View("Settings", model);
+        }
+
+        var administrator = User.Identity?.Name;
+        await _settingsService.SaveAsync(model.Settings, administrator);
+        await _auditLogService.RecordAsync(administrator, "Settings updated", "Application, website, booking, notification, and appearance settings were updated.", "ApplicationSettings", "1");
+        TempData["SettingsSuccess"] = "Settings saved successfully.";
+        return RedirectToAction(nameof(Settings));
+    }
+
+    [HttpGet("Settings/Account")]
+    public async Task<IActionResult> AccountSettings([FromServices] IAdminAuthService authService)
+    {
+        var user = await authService.FindByIdAsync(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "");
+        if (user is null) return Challenge();
+        return View("AccountSettings", new AccountSettingsViewModel { DisplayName = user.DisplayName, Email = user.Email, Role = user.Role });
+    }
+
+    [HttpPost("Settings/Account")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> AccountSettings(AccountSettingsViewModel model, [FromServices] IAdminAuthService authService)
+    {
+        var user = await authService.FindByIdAsync(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "");
+        if (user is null) return Challenge();
+        if (!string.IsNullOrWhiteSpace(model.NewPassword))
+        {
+            if (string.IsNullOrWhiteSpace(model.CurrentPassword) || !await authService.ChangePasswordAsync(user.Id, model.CurrentPassword, model.NewPassword))
+                ModelState.AddModelError(nameof(model.CurrentPassword), "The current password is incorrect.");
+        }
+        if (!ModelState.IsValid) return View("AccountSettings", model);
+        user.DisplayName = model.DisplayName.Trim();
+        user.Email = model.Email.Trim();
+        await _context.SaveChangesAsync();
+        await _auditLogService.RecordAsync(User.Identity?.Name, "Account updated", "Administrator profile or password was updated.", "AdminUser", user.Id.ToString());
+        TempData["SettingsSuccess"] = "Account settings saved.";
+        return RedirectToAction(nameof(AccountSettings));
+    }
+
+    [HttpGet("Settings/System")]
+    public async Task<IActionResult> SystemInformation()
+    {
+        ViewData["Title"] = "System information";
+        var settings = await _settingsService.GetAsync();
+        ViewBag.ApplicationName = settings.ApplicationName;
+        ViewBag.TimeZone = settings.TimeZone;
+        ViewBag.CurrentAdministrator = User.Identity?.Name;
+        ViewBag.DatabaseConnected = await _context.Database.CanConnectAsync();
+        ViewBag.Provider = _context.Database.ProviderName;
+        ViewBag.Bookings = await _context.Bookings.CountAsync();
+        ViewBag.Destinations = await _context.Destinations.CountAsync();
+        ViewBag.Hotels = await _context.Hotels.CountAsync();
+        ViewBag.Restaurants = await _context.Restaurants.CountAsync();
+        ViewBag.Resorts = await _context.Resorts.CountAsync();
+        ViewBag.Transport = await _context.TransportServices.CountAsync();
+        return View("SystemInformation");
     }
 }

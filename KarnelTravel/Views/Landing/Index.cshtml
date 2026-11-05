@@ -1,6 +1,12 @@
 ﻿@{
+    var websiteContent = ViewBag.WebsiteContent as KarnelTravel.Models.WebsiteContent ?? new KarnelTravel.Models.WebsiteContent();
+    var landingSiteName = string.IsNullOrWhiteSpace(websiteContent.SiteName) ? "Karnel Travel Guide" : websiteContent.SiteName;
+    var landingMetaTitle = string.IsNullOrWhiteSpace(websiteContent.DefaultMetaTitle) ? landingSiteName : websiteContent.DefaultMetaTitle;
+    var landingMetaDescription = string.IsNullOrWhiteSpace(websiteContent.DefaultMetaDescription)
+        ? "A cinematic journey through Hunza Valley, Pakistan, exploring its dramatic mountains, historic forts, turquoise lakes, and mountain villages."
+        : websiteContent.DefaultMetaDescription;
     Layout = null;
-    ViewData["Title"] = "Hunza Valley, Pakistan";
+    ViewData["Title"] = landingMetaTitle;
 }
 <!DOCTYPE html>
 <html lang="en">
@@ -8,7 +14,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"]</title>
-    <meta name="description" content="A cinematic journey through Hunza Valley, Pakistan, exploring its dramatic mountains, historic forts, turquoise lakes, and mountain villages." />
+    <meta name="description" content="@landingMetaDescription" />
     <link rel="icon" href="data:," />
     <style>
         /* ---------- Intro loader styles (inserted) ---------- */
@@ -158,8 +164,16 @@
             color:rgba(253,241,225,0.86); pointer-events:auto;
         }
         .site-logo {
-            justify-self:start; font-family: "Ogg Medium", serif; font-size:24px; line-height:1;
+            justify-self:start; display:inline-flex; align-items:center; min-height:44px;
+            font-family: "Ogg Medium", serif; font-size:24px; line-height:1;
             font-weight:500; color:rgba(253,241,225,0.92); text-decoration:none; white-space:nowrap;
+        }
+        .landing-site-logo-image {
+            display:block;
+            width:clamp(110px, 10vw, 156px);
+            height:44px;
+            object-fit:contain;
+            object-position:left center;
         }
         .site-nav { display:flex; justify-content:center; gap: clamp(24px, 2.2vw, 44px) }
         .site-nav a, .language-switcher {
@@ -535,6 +549,14 @@
             box-shadow: 0 calc(1 * var(--u)) calc(2 * var(--u)) rgb(0 0 0 / .25);
             color: #fff;
             flex: 0 0 auto;
+        }
+        .landing-footer-logo-image {
+            display:block;
+            width:60%;
+            height:60%;
+            max-width:100%;
+            max-height:100%;
+            object-fit:contain;
         }
         .mf-brand__mark svg { width: 60%; height: 60%; display: block; }
 
@@ -982,7 +1004,16 @@
                      alt="" />
 
                 <header class="site-header" aria-label="Primary navigation">
-                    <a class="site-logo" href="#discover">Karnel Travel</a>
+                    <a class="site-logo" href="#discover" aria-label="@landingSiteName">
+                        @if (!string.IsNullOrWhiteSpace(websiteContent.LogoUrl))
+                        {
+                            <img class="landing-site-logo-image" src="@websiteContent.LogoUrl" alt="@landingSiteName" />
+                        }
+                        else
+                        {
+                            @landingSiteName
+                        }
+                    </a>
                     <nav class="site-nav" aria-label="Main menu">
                         <a href="#discover">Discover</a>
                         <a href="#mountains">Mountains</a>
@@ -990,7 +1021,7 @@
                         <a href="#destinations">Destinations</a>
                     </nav>
                     <button class="language-switcher" type="button" aria-label="Change language">
-                       <a href = "~/Account/Register">Login</a>
+                       <a href="~/Account/Login">Login</a>
                     </button>
                 </header>
 
@@ -1124,23 +1155,26 @@
     <div class="mf__content">
         <!-- Brand Block -->
         <div class="mf__brand">
-            <a class="mf-brand__logo" href="@Url.Action("Index", "Home")" aria-label="Karnel Travel Guide — home">
+            <a class="mf-brand__logo" href="@Url.Action("Index", "Home")" aria-label="@landingSiteName — home">
                 <span class="mf-brand__mark" aria-hidden="true">
-                    <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.6">
-                        <circle cx="16" cy="16" r="13" />
-                        <path d="M21 11 18.4 18.4 11 21l2.6-7.4z" stroke-linejoin="round" />
-                    </svg>
+                    @if (!string.IsNullOrWhiteSpace(websiteContent.LogoUrl))
+                    {
+                        <img class="landing-footer-logo-image" src="@websiteContent.LogoUrl" alt="" />
+                    }
+                    else
+                    {
+                        <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.6">
+                            <circle cx="16" cy="16" r="13" />
+                            <path d="M21 11 18.4 18.4 11 21l2.6-7.4z" stroke-linejoin="round" />
+                        </svg>
+                    }
                 </span>
-                Karnel
+                @landingSiteName
             </a>
 
-            <h2 class="mf-brand__title">Your guide to somewhere wonderful</h2>
+            <h2 class="mf-brand__title">@(string.IsNullOrWhiteSpace(websiteContent.Tagline) ? "Your guide to somewhere wonderful" : websiteContent.Tagline)</h2>
 
-            <p class="mf-brand__text">
-                Karnel Travel Guide gathers destinations, transport, hotels,
-                restaurants, resorts and travel packages into one calm place
-                to plan your next journey across Pakistan.
-            </p>
+            <p class="mf-brand__text">@(string.IsNullOrWhiteSpace(websiteContent.FooterDescription) ? "Karnel Travel Guide gathers destinations, transport, hotels, restaurants, resorts and travel packages into one calm place to plan your next journey across Pakistan." : websiteContent.FooterDescription)</p>
 
             <a class="mf-brand__cta" href="@Url.Action("Index", "Search")">
                 <svg class="mf-brand__cta-icon" viewBox="0 0 24 24" fill="none"
@@ -1148,11 +1182,11 @@
                     <circle cx="12" cy="12" r="9" />
                     <path d="M16 8 14 14 8 16l2-6z" />
                 </svg>
-                Explore destinations
+                @(string.IsNullOrWhiteSpace(websiteContent.HomeHeroButtonText) ? "Explore destinations" : websiteContent.HomeHeroButtonText)
             </a>
 
             <p class="mf-brand__copy">
-                &copy; @DateTime.Now.Year Karnel Travel Guide — Made in Pakistan.
+                &copy; @DateTime.Now.Year @landingSiteName — Made in Pakistan.
             </p>
         </div>
 

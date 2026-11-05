@@ -66,4 +66,32 @@ public class InMemoryAdminAuthService : IAdminAuthService
         _users.Add(user);
         return Task.FromResult<AdminUser?>(user);
     }
+
+    public Task<bool> ChangePasswordAsync(int userId, string currentPassword, string newPassword)
+    {
+        if (string.IsNullOrWhiteSpace(currentPassword) ||
+            string.IsNullOrWhiteSpace(newPassword) ||
+            newPassword.Length < 6)
+        {
+            return Task.FromResult(false);
+        }
+
+        var user = _users.FirstOrDefault(u => u.Id == userId);
+        if (user is null)
+            return Task.FromResult(false);
+
+        var verification = _hasher.VerifyHashedPassword(
+            user,
+            user.PasswordHash,
+            currentPassword);
+
+        if (verification is not PasswordVerificationResult.Success and
+            not PasswordVerificationResult.SuccessRehashNeeded)
+        {
+            return Task.FromResult(false);
+        }
+
+        user.PasswordHash = _hasher.HashPassword(user, newPassword);
+        return Task.FromResult(true);
+    }
 }

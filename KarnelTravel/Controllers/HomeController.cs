@@ -2,12 +2,22 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using KarnelTravel.Data; // adjust to your namespace
 using KarnelTravel.Models;
+using KarnelTravel.Services;
+using Microsoft.AspNetCore.Authorization;
 
+[Authorize]
 public class HomeController : Controller
 {
     private readonly ApplicationDbContext _db;
+    private readonly IWebsiteContentService _websiteContentService;
 
-    public HomeController(ApplicationDbContext db) => _db = db;
+    public HomeController(
+        ApplicationDbContext db,
+        IWebsiteContentService websiteContentService)
+    {
+        _db = db;
+        _websiteContentService = websiteContentService;
+    }
 
     public async Task<IActionResult> Index()
     {
@@ -17,6 +27,8 @@ public class HomeController : Controller
             .Take(3)                                     // matches the 3-card feature grid
             .AsNoTracking()
             .ToListAsync();
+
+        ViewBag.WebsiteContent = await _websiteContentService.GetAsync();
 
         return View();
     }

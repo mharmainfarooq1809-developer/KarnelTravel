@@ -1,2 +1,902 @@
-@{ Layout = "_AdminLayout"; ViewData["Title"] = "Reports"; }
-<div class="page-heading"><div><div class="eyebrow">Signals & patterns · Sample data</div><h1>Read the season.</h1><p>Understand what guests are choosing, asking for and returning to.</p></div><div class="filters"><select class="select"><option>Last 30 days</option><option>Last 90 days</option></select><button class="btn btn-quiet" data-toast="Report export is a prototype action.">Export ↓</button></div></div><div class="metric-row"><div class="metric"><label>Booking conversion</label><strong>8.4%</strong><small>↑ 1.2 points</small></div><div class="metric"><label>Average order</label><strong>$612</strong><small>Across 284 bookings</small></div><div class="metric"><label>Inquiry response</label><strong>2h 18m</strong><small>↓ 34 minutes</small></div><div class="metric"><label>Repeat guests</label><strong>21%</strong><small>↑ 4.8%</small></div></div><div class="dashboard-grid section-space"><div class="panel"><div class="panel-title"><h2>Revenue & bookings</h2><span class="muted">Aug–Oct 2025</span></div><div class="chart-large"><div class="bar" style="height:42%"></div><div class="bar" style="height:56%"></div><div class="bar" style="height:49%"></div><div class="bar" style="height:72%"></div><div class="bar" style="height:66%"></div><div class="bar" style="height:88%"></div><div class="bar" style="height:79%"></div><div class="bar" style="height:96%"></div></div></div><div class="panel"><div class="panel-title"><h2>Popular places</h2></div><div class="list-item"><span>1 · Hunza Valley</span><strong>38%</strong></div><div class="list-item"><span>2 · Skardu</span><strong>27%</strong></div><div class="list-item"><span>3 · Lahore</span><strong>18%</strong></div><div class="list-item"><span>4 · Islamabad</span><strong>11%</strong></div></div></div><div class="panel section-space"><div class="panel-title"><h2>Service mix</h2></div><div class="quick-actions"><div class="quick-action">Tours · 54%</div><div class="quick-action">Stays · 28%</div><div class="quick-action">Transport · 12%</div><div class="quick-action">Dining · 6%</div></div><p class="muted section-space">All values on this page are sample data until connected to SQL Server.</p></div>
+
+@model KarnelTravel.Models.ReportsViewModel
+
+@using System.Text.Json
+
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Reports";
+
+    var monthlyLabels = JsonSerializer.Serialize(
+        Model.MonthlyBookings.Select(x => x.Month));
+
+    var monthlyValues = JsonSerializer.Serialize(
+        Model.MonthlyBookings.Select(x => x.BookingCount));
+
+    var total = Math.Max(Model.TotalBookings, 1);
+
+    var exportUrl = Url.Action(
+        "ExportReportsCsv",
+        "Admin",
+        new
+        {
+            from = Model.FromDate?.ToString("yyyy-MM-dd"),
+            to = Model.ToDate?.ToString("yyyy-MM-dd")
+        });
+}
+
+<div class="reports-page">
+
+    <!-- PAGE HEADING -->
+    <div class="page-heading reports-heading">
+        <div>
+            <div class="eyebrow">Analytics · Live booking data</div>
+            <h1>Read the season.</h1>
+            <p>Understand booking activity, service demand and estimated booking value.</p>
+        </div>
+
+        <!-- FILTERS AND CSV EXPORT -->
+        <div class="reports-actions">
+
+            <form method="get"
+                  action="@Url.Action("Reports", "Admin")"
+                  class="report-filter">
+
+                <input type="date"
+                       name="from"
+                       class="select"
+                       value="@Model.FromDate?.ToString("yyyy-MM-dd")"
+                       aria-label="Start date" />
+
+                <span class="date-separator">to</span>
+
+                <input type="date"
+                       name="to"
+                       class="select"
+                       value="@Model.ToDate?.ToString("yyyy-MM-dd")"
+                       aria-label="End date" />
+
+                <button type="submit" class="btn btn-primary">
+                    Apply filters
+                </button>
+
+                <a href="@Url.Action("Reports", "Admin")"
+                   class="btn btn-quiet">
+                    Reset
+                </a>
+
+            </form>
+
+            <!-- CSV BUTTON IS OUTSIDE THE FORM -->
+            <a href="@exportUrl"
+               class="btn btn-quiet export-btn"
+               title="Download filtered booking records as CSV">
+
+                <svg width="17" height="17"
+                     viewBox="0 0 24 24"
+                     fill="none"
+                     stroke="currentColor"
+                     stroke-width="1.8"
+                     stroke-linecap="round"
+                     stroke-linejoin="round">
+                    <path d="M12 3v12" />
+                    <path d="m7 10 5 5 5-5" />
+                    <path d="M5 17v4h14v-4" />
+                </svg>
+
+                Download CSV
+            </a>
+
+        </div>
+    </div>
+
+
+    <!-- PRIMARY METRICS -->
+    <div class="metric-row reports-metrics">
+
+        <div class="metric report-metric">
+            <div class="metric-icon blue-icon">
+                <svg viewBox="0 0 24 24" fill="none"
+                     stroke="currentColor" stroke-width="1.8">
+                    <rect x="3" y="4" width="18" height="17" rx="2" />
+                    <path d="M16 2v4M8 2v4M3 10h18" />
+                </svg>
+            </div>
+            <label>Total bookings</label>
+            <strong>@Model.TotalBookings.ToString("N0")</strong>
+            <small>Bookings in selected period</small>
+        </div>
+
+        <div class="metric report-metric">
+            <div class="metric-icon green-icon">
+                <svg viewBox="0 0 24 24" fill="none"
+                     stroke="currentColor" stroke-width="1.8">
+                    <path d="m5 12 4 4L19 6" />
+                    <circle cx="12" cy="12" r="10" />
+                </svg>
+            </div>
+            <label>Confirmed bookings</label>
+            <strong>@Model.ConfirmedBookings.ToString("N0")</strong>
+            <small>Currently confirmed</small>
+        </div>
+
+        <div class="metric report-metric">
+            <div class="metric-icon purple-icon">
+                <svg viewBox="0 0 24 24" fill="none"
+                     stroke="currentColor" stroke-width="1.8">
+                    <path d="M4 12.5 9 17l11-11" />
+                    <path d="M12 22a10 10 0 1 0-10-10" />
+                </svg>
+            </div>
+            <label>Completed bookings</label>
+            <strong>@Model.CompletedBookings.ToString("N0")</strong>
+            <small>Marked as completed</small>
+        </div>
+
+        <div class="metric report-metric">
+            <div class="metric-icon gold-icon">
+                <svg viewBox="0 0 24 24" fill="none"
+                     stroke="currentColor" stroke-width="1.8">
+                    <rect x="2" y="5" width="20" height="14" rx="2" />
+                    <path d="M2 10h20M7 15h3" />
+                </svg>
+            </div>
+            <label>Estimated booking value</label>
+            <strong class="money-value">
+                PKR @Model.EstimatedBookingValue.ToString("N0")
+            </strong>
+            <small>Calculated booking estimates</small>
+        </div>
+
+    </div>
+
+
+    <!-- SECONDARY METRICS -->
+    <div class="metric-row reports-secondary">
+
+        <div class="metric secondary-metric">
+            <label>
+                <span class="status-dot pending-dot"></span>
+                Pending bookings
+            </label>
+            <strong>@Model.PendingBookings.ToString("N0")</strong>
+            <small>Awaiting action</small>
+        </div>
+
+        <div class="metric secondary-metric">
+            <label>
+                <span class="status-dot cancelled-dot"></span>
+                Cancelled bookings
+            </label>
+            <strong>@Model.CancelledBookings.ToString("N0")</strong>
+            <small>Cancelled in selected period</small>
+        </div>
+
+        <div class="metric secondary-metric">
+            <label>
+                <span class="status-dot uncalculated-dot"></span>
+                Uncalculated bookings
+            </label>
+            <strong>@Model.UncalculatedBookings.ToString("N0")</strong>
+            <small>Without an estimated amount</small>
+        </div>
+
+    </div>
+
+
+    <!-- CHARTS -->
+    <div class="dashboard-grid section-space reports-grid">
+
+        <!-- MONTHLY BOOKINGS -->
+        <div class="panel report-panel">
+
+            <div class="panel-title">
+                <div>
+                    <h2>Monthly booking trends</h2>
+                    <span class="muted">
+                        Bookings grouped by submission date
+                    </span>
+                </div>
+
+                <span class="chart-total">
+                    @Model.TotalBookings bookings
+                </span>
+            </div>
+
+            @if (Model.MonthlyBookings.Any())
+            {
+                <div class="report-chart">
+                    <canvas id="monthlyBookingsChart"></canvas>
+                </div>
+            }
+            else
+            {
+                <div class="report-empty">
+                    <div class="empty-icon">↗</div>
+                    <strong>No booking activity found</strong>
+                    <span>Try selecting a different date range.</span>
+                </div>
+            }
+
+        </div>
+
+
+        <!-- BOOKING STATUS -->
+        <div class="panel report-panel">
+
+            <div class="panel-title">
+                <div>
+                    <h2>Booking status</h2>
+                    <span class="muted">Current status distribution</span>
+                </div>
+            </div>
+
+            <div class="status-report-list">
+
+                <div class="status-report-item">
+                    <div class="status-report-heading">
+                        <span>Pending</span>
+                        <strong>@Model.PendingBookings</strong>
+                    </div>
+                    <div class="report-progress">
+                        <span class="pending-bar"
+                              style="width:@((double)Model.PendingBookings / total * 100)%"></span>
+                    </div>
+                </div>
+
+                <div class="status-report-item">
+                    <div class="status-report-heading">
+                        <span>Confirmed</span>
+                        <strong>@Model.ConfirmedBookings</strong>
+                    </div>
+                    <div class="report-progress">
+                        <span class="confirmed-bar"
+                              style="width:@((double)Model.ConfirmedBookings / total * 100)%"></span>
+                    </div>
+                </div>
+
+                <div class="status-report-item">
+                    <div class="status-report-heading">
+                        <span>Completed</span>
+                        <strong>@Model.CompletedBookings</strong>
+                    </div>
+                    <div class="report-progress">
+                        <span class="completed-bar"
+                              style="width:@((double)Model.CompletedBookings / total * 100)%"></span>
+                    </div>
+                </div>
+
+                <div class="status-report-item">
+                    <div class="status-report-heading">
+                        <span>Cancelled</span>
+                        <strong>@Model.CancelledBookings</strong>
+                    </div>
+                    <div class="report-progress">
+                        <span class="cancelled-bar"
+                              style="width:@((double)Model.CancelledBookings / total * 100)%"></span>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="status-total">
+                <span>Total bookings</span>
+                <strong>@Model.TotalBookings</strong>
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- SERVICE PERFORMANCE -->
+    <div class="panel section-space report-panel service-panel">
+
+        <div class="panel-title">
+            <div>
+                <h2>Service performance</h2>
+                <span class="muted">
+                    Booking demand and estimated value by service type
+                </span>
+            </div>
+
+            <span class="chart-total">
+                @Model.ServicePerformance.Count categories
+            </span>
+        </div>
+
+        @if (Model.ServicePerformance.Any())
+        {
+            <div class="table-responsive">
+                <table class="report-table">
+                    <thead>
+                        <tr>
+                            <th>Service category</th>
+                            <th>Bookings</th>
+                            <th>Share of bookings</th>
+                            <th>Estimated value</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        @foreach (var service in Model.ServicePerformance)
+                        {
+                            var share = Model.TotalBookings > 0
+                                ? (double)service.BookingCount / Model.TotalBookings * 100
+                                : 0;
+
+                            <tr>
+                                <td>
+                                    <strong>@service.ServiceType</strong>
+                                </td>
+
+                                <td>@service.BookingCount</td>
+
+                                <td>
+                                    <div class="service-share">
+                                        <div class="report-progress">
+                                            <span style="width:@share%"></span>
+                                        </div>
+                                        <small>@share.ToString("0.0")%</small>
+                                    </div>
+                                </td>
+
+                                <td class="value-cell">
+                                    PKR @service.EstimatedValue.ToString("N0")
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <div class="report-empty">
+                <strong>No service data available</strong>
+                <span>Service performance will appear when bookings are available.</span>
+            </div>
+        }
+
+    </div>
+
+
+    <!-- REPORTING NOTES -->
+    <div class="report-note section-space">
+        <div class="note-icon">i</div>
+        <div>
+            <strong>About these reports</strong>
+            <p>
+                Reports use actual booking records from the database.
+                Date filters apply to booking submission dates.
+                Estimated booking value includes only bookings with a calculated
+                amount. It does not represent collected revenue or confirmed payments.
+                Historical bookings without calculated amounts are preserved.
+            </p>
+        </div>
+    </div>
+
+</div>
+
+
+<style>
+    .reports-page {
+        width: 100%;
+    }
+
+    .reports-heading {
+        align-items: flex-start;
+        gap: 25px;
+    }
+
+    .reports-actions {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        flex-wrap: wrap;
+        gap: 9px;
+    }
+
+    .report-filter {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .report-filter input {
+        min-width: 140px;
+        max-width: 165px;
+    }
+
+    .date-separator {
+        color: #929ba8;
+        font-size: 12px;
+    }
+
+    .export-btn {
+        display: inline-flex !important;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 10px 15px;
+        border: 1px solid #dce2e9;
+        border-radius: 9px;
+        background: #fff;
+        color: #344052;
+        font-size: 13px;
+        font-weight: 600;
+        text-decoration: none !important;
+        white-space: nowrap;
+        cursor: pointer;
+        transition: background .2s ease, border-color .2s ease;
+    }
+
+    .export-btn:hover {
+        background: #f3f7fc;
+        border-color: #b9c9dd;
+        color: #185ba8;
+    }
+
+    .export-btn svg {
+        flex-shrink: 0;
+    }
+
+    .reports-metrics {
+        margin-top: 28px;
+    }
+
+    .report-metric {
+        position: relative;
+        min-width: 0;
+    }
+
+    .report-metric label {
+        display: block;
+        margin-top: 13px;
+    }
+
+    .report-metric strong {
+        display: block;
+        margin-top: 8px;
+        overflow-wrap: anywhere;
+    }
+
+    .money-value {
+        font-size: clamp(18px, 2vw, 25px) !important;
+    }
+
+    .metric-icon {
+        width: 36px;
+        height: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 10px;
+    }
+
+    .metric-icon svg {
+        width: 19px;
+        height: 19px;
+    }
+
+    .blue-icon {
+        color: #2675d8;
+        background: #eaf2ff;
+    }
+
+    .green-icon {
+        color: #21845d;
+        background: #e8f7ef;
+    }
+
+    .purple-icon {
+        color: #7861bd;
+        background: #f0edfc;
+    }
+
+    .gold-icon {
+        color: #a67b28;
+        background: #fbf3df;
+    }
+
+    .reports-secondary {
+        margin-top: 13px;
+    }
+
+    .secondary-metric {
+        padding: 17px 20px;
+    }
+
+    .secondary-metric label {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+    }
+
+    .secondary-metric strong {
+        display: block;
+        margin: 9px 0 4px;
+    }
+
+    .status-dot {
+        width: 8px;
+        height: 8px;
+        display: inline-block;
+        border-radius: 50%;
+    }
+
+    .pending-dot {
+        background: #d49b36;
+    }
+
+    .cancelled-dot {
+        background: #d65c65;
+    }
+
+    .uncalculated-dot {
+        background: #8993a3;
+    }
+
+    .reports-grid {
+        grid-template-columns: minmax(0, 1.55fr) minmax(280px, .85fr);
+    }
+
+    .report-panel {
+        min-width: 0;
+    }
+
+    .chart-total {
+        font-size: 12px;
+        color: #818b99;
+        white-space: nowrap;
+    }
+
+    .report-chart {
+        position: relative;
+        width: 100%;
+        height: 285px;
+        margin-top: 24px;
+    }
+
+    .status-report-list {
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+        margin-top: 30px;
+    }
+
+    .status-report-heading {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 15px;
+        margin-bottom: 10px;
+        font-size: 13px;
+    }
+
+    .status-report-heading span {
+        color: #687384;
+    }
+
+    .status-report-heading strong {
+        color: #202a38;
+        font-weight: 650;
+    }
+
+    .report-progress {
+        width: 100%;
+        height: 7px;
+        background: #edf0f4;
+        border-radius: 20px;
+        overflow: hidden;
+    }
+
+    .report-progress span {
+        display: block;
+        height: 100%;
+        border-radius: inherit;
+        background: #2675d8;
+    }
+
+    .pending-bar {
+        background: #d49b36 !important;
+    }
+
+    .confirmed-bar {
+        background: #2675d8 !important;
+    }
+
+    .completed-bar {
+        background: #21845d !important;
+    }
+
+    .cancelled-bar {
+        background: #d65c65 !important;
+    }
+
+    .status-total {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-top: 28px;
+        padding-top: 18px;
+        border-top: 1px solid #edf0f3;
+        color: #778191;
+        font-size: 13px;
+    }
+
+    .status-total strong {
+        color: #202a38;
+    }
+
+    .table-responsive {
+        width: 100%;
+        overflow-x: auto;
+    }
+
+    .report-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 18px;
+        min-width: 580px;
+    }
+
+    .report-table th,
+    .report-table td {
+        padding: 16px 13px;
+        text-align: left;
+        border-bottom: 1px solid #edf0f3;
+        font-size: 13px;
+    }
+
+    .report-table th {
+        color: #7c8796;
+        font-weight: 600;
+        white-space: nowrap;
+    }
+
+    .report-table td {
+        color: #465163;
+    }
+
+    .report-table td strong {
+        color: #202a38;
+        font-weight: 650;
+    }
+
+    .report-table tbody tr:last-child td {
+        border-bottom: none;
+    }
+
+    .value-cell {
+        font-weight: 600;
+        white-space: nowrap;
+    }
+
+    .service-share {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        min-width: 145px;
+    }
+
+    .service-share .report-progress {
+        max-width: 120px;
+    }
+
+    .service-share small {
+        min-width: 42px;
+        color: #778191;
+    }
+
+    .report-empty {
+        min-height: 190px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 9px;
+        color: #8993a3;
+        text-align: center;
+    }
+
+    .report-empty strong {
+        color: #344052;
+        font-size: 14px;
+    }
+
+    .empty-icon {
+        width: 42px;
+        height: 42px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 12px;
+        background: #eef4fc;
+        color: #2675d8;
+        font-size: 23px;
+    }
+
+    .report-note {
+        display: flex;
+        align-items: flex-start;
+        gap: 13px;
+        padding: 19px 21px;
+        border: 1px solid #e7ebf0;
+        border-radius: 12px;
+        background: #fafbfd;
+    }
+
+    .note-icon {
+        width: 23px;
+        height: 23px;
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        background: #eaf2ff;
+        color: #2675d8;
+        font-weight: 700;
+        font-size: 12px;
+    }
+
+    .report-note strong {
+        color: #344052;
+        font-size: 13px;
+    }
+
+    .report-note p {
+        margin: 7px 0 0;
+        color: #778191;
+        font-size: 12px;
+        line-height: 1.8;
+    }
+
+    @@media (max-width: 1100px) {
+        .reports-heading {
+            flex-direction: column;
+        }
+
+        .reports-actions {
+            justify-content: flex-start;
+            width: 100%;
+        }
+    }
+
+    @@media (max-width: 800px) {
+        .reports-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .reports-metrics {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .reports-secondary {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+
+    @@media (max-width: 560px) {
+        .reports-actions {
+            align-items: stretch;
+            flex-direction: column;
+        }
+
+        .report-filter {
+            width: 100%;
+        }
+
+        .report-filter input {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .reports-metrics,
+        .reports-secondary {
+            grid-template-columns: 1fr;
+        }
+
+        .export-btn {
+            width: 100%;
+        }
+
+        .report-chart {
+            height: 235px;
+        }
+    }
+</style>
+
+
+@section Scripts {
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script>
+        (() => {
+            const labels = @Html.Raw(monthlyLabels);
+            const values = @Html.Raw(monthlyValues);
+
+            const canvas = document.getElementById("monthlyBookingsChart");
+
+            if (!canvas || !labels.length || typeof Chart === "undefined") {
+                return;
+            }
+
+            new Chart(canvas, {
+                type: "bar",
+
+                data: {
+                    labels: labels,
+
+                    datasets: [{
+                        label: "Bookings",
+                        data: values,
+                        backgroundColor: "#2675d8",
+                        hoverBackgroundColor: "#155bb2",
+                        borderRadius: 6,
+                        maxBarThickness: 42
+                    }]
+                },
+
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+
+                        tooltip: {
+                            backgroundColor: "#202a38",
+                            padding: 12,
+
+                            callbacks: {
+                                label: function (context) {
+                                    return " " + context.parsed.y + " bookings";
+                                }
+                            }
+                        }
+                    },
+
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+
+                            ticks: {
+                                precision: 0,
+                                color: "#8792a2"
+                            },
+
+                            grid: {
+                                color: "#edf0f4"
+                            },
+
+                            border: {
+                                display: false
+                            }
+                        },
+
+                        x: {
+                            ticks: {
+                                color: "#8792a2"
+                            },
+
+                            grid: {
+                                display: false
+                            },
+
+                            border: {
+                                display: false
+                            }
+                        }
+                    }
+                }
+            });
+        })();
+    </script>
+
+}
