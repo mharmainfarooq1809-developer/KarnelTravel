@@ -57,12 +57,20 @@ namespace KarnelTravel.Controllers
                 .OrderByDescending(r => r.CreatedAt)
                 .ToListAsync();
 
+            var routes = await _context.TransportRoutePricings
+                .AsNoTracking()
+                .Where(route => route.TransportServiceId == transport.Id && route.IsActive)
+                .OrderBy(route => route.PickupCity)
+                .ThenBy(route => route.DropoffCity)
+                .ToListAsync();
+
             ViewBag.Reviews = reviews;
             ViewBag.TotalReviews = reviews.Count;
 
             ViewBag.AverageRating = reviews.Count > 0
                 ? Math.Round(reviews.Average(r => r.Rating), 1)
                 : 0;
+            ViewBag.Routes = routes;
 
             return View(
                 "~/Views/Transport/Details.cshtml",

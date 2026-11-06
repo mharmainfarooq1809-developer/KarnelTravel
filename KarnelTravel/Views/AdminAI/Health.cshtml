@@ -1,0 +1,571 @@
+@model KarnelTravel.Controllers.AIHealthViewModel
+
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "AI System Health";
+
+    var engineOk  = Model?.EngineAvailable ?? false;
+    var dbOk      = Model?.DatabaseAvailable ?? false;
+    var configOk  = Model?.ConfigurationAvailable ?? false;
+
+    var okCount   = (engineOk ? 1 : 0) + (dbOk ? 1 : 0) + (configOk ? 1 : 0);
+    var totalSub  = 3;
+    var allOk     = okCount == totalSub;
+    var anyOk     = okCount > 0;
+
+    var overallLabel = allOk ? "All systems operational"
+                     : anyOk ? "Partially available"
+                     : "System unavailable";
+
+    var overallClass = allOk ? "khs-banner--ok"
+                     : anyOk ? "khs-banner--warn"
+                     : "khs-banner--down";
+}
+
+<style>
+    /* ==========================================================================
+       KARNEL TRAVEL GUIDE — ADMIN · AI SYSTEM HEALTH
+       Scoped with .khs- prefix. Inline <style> because _AdminLayout does not
+       render a Styles section (matching the rest of the admin suite).
+       ========================================================================== */
+
+    .khs-page {
+        --khs-forest: var(--forest-deep, #14271F);
+        --khs-ivory: var(--ivory, #F8F6F0);
+        --khs-sage: var(--sage, #8FA888);
+        --khs-sand: var(--sand, #E8DFC9);
+        --khs-white: #FFFFFF;
+        --khs-muted: var(--muted, #5A6B60);
+        --khs-line: var(--line, rgba(20, 39, 31, .12));
+        --khs-ok: #2e5238;
+        --khs-ok-bg: rgba(143, 168, 136, .22);
+        --khs-warn: #7a5a14;
+        --khs-warn-bg: rgba(232, 199, 107, .22);
+        --khs-down: #7a3325;
+        --khs-down-bg: rgba(196, 96, 74, .18);
+        --khs-serif: var(--serif, "Playfair Display", Georgia, "Times New Roman", serif);
+        --khs-sans: var(--sans, "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif);
+        --khs-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+        --khs-ease: var(--ease, cubic-bezier(.22, .61, .36, 1));
+
+        animation: khs-fade .45s var(--khs-ease) both;
+    }
+
+    @@keyframes khs-fade {
+        from { opacity: 0; transform: translateY(6px); }
+        to   { opacity: 1; transform: none; }
+    }
+
+    .khs-page .visually-hidden {
+        position: absolute !important;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+    }
+
+    /* ------------------------------------------------ OVERALL BANNER ---- */
+    .khs-page .khs-banner {
+        position: relative;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 20px;
+        padding: 26px 30px;
+        border-radius: 4px;
+        border: 1px solid var(--khs-line);
+        margin-bottom: 22px;
+        overflow: hidden;
+        background: var(--khs-white);
+    }
+
+    .khs-page .khs-banner::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 4px;
+        background: var(--khs-forest);
+    }
+
+    .khs-page .khs-banner--ok::before   { background: var(--khs-sage); }
+    .khs-page .khs-banner--warn::before { background: #c9a94b; }
+    .khs-page .khs-banner--down::before { background: #b86550; }
+
+    .khs-page .khs-banner__icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex: none;
+        width: 52px;
+        height: 52px;
+        border-radius: 50%;
+        color: var(--khs-ok);
+        background: var(--khs-ok-bg);
+    }
+
+    .khs-page .khs-banner--ok   .khs-banner__icon { color: var(--khs-ok);   background: var(--khs-ok-bg); }
+    .khs-page .khs-banner--warn .khs-banner__icon { color: var(--khs-warn); background: var(--khs-warn-bg); }
+    .khs-page .khs-banner--down .khs-banner__icon { color: var(--khs-down); background: var(--khs-down-bg); }
+
+    .khs-page .khs-banner__body {
+        flex: 1 1 240px;
+        min-width: 0;
+    }
+
+    .khs-page .khs-banner__eyebrow {
+        display: block;
+        margin-bottom: 6px;
+        font-family: var(--khs-sans);
+        font-size: .62rem;
+        font-weight: 700;
+        letter-spacing: .24em;
+        text-transform: uppercase;
+        color: var(--khs-muted);
+    }
+
+    .khs-page .khs-banner__title {
+        margin: 0;
+        font-family: var(--khs-serif);
+        font-weight: 500;
+        font-size: clamp(1.4rem, 2.3vw, 1.85rem);
+        line-height: 1.15;
+        letter-spacing: -.01em;
+        color: var(--khs-forest);
+    }
+
+    .khs-page .khs-banner__meta {
+        display: block;
+        margin-top: 6px;
+        font-family: var(--khs-sans);
+        font-size: .82rem;
+        line-height: 1.55;
+        color: var(--khs-muted);
+    }
+
+    .khs-page .khs-banner__score {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 2px;
+        padding-left: 24px;
+        margin-left: auto;
+        border-left: 1px solid var(--khs-line);
+    }
+
+    .khs-page .khs-banner__score-value {
+        font-family: var(--khs-serif);
+        font-weight: 500;
+        font-size: clamp(1.6rem, 2.6vw, 2.2rem);
+        line-height: 1;
+        letter-spacing: -.02em;
+        color: var(--khs-forest);
+    }
+
+    .khs-page .khs-banner__score-label {
+        font-family: var(--khs-sans);
+        font-size: .62rem;
+        font-weight: 600;
+        letter-spacing: .22em;
+        text-transform: uppercase;
+        color: var(--khs-muted);
+    }
+
+    /* --------------------------------------------------- SUBSYSTEMS ---- */
+    .khs-page .khs-subsystems {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 14px;
+        margin-bottom: 22px;
+    }
+
+    .khs-page .khs-card {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        padding: 22px 24px;
+        background: var(--khs-white);
+        border: 1px solid var(--khs-line);
+        border-radius: 4px;
+        overflow: hidden;
+        transition: border-color .3s var(--khs-ease);
+    }
+
+    .khs-page .khs-card:hover {
+        border-color: rgba(20, 39, 31, .22);
+    }
+
+    .khs-page .khs-card::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 3px;
+        background: var(--khs-forest);
+    }
+
+    .khs-page .khs-card--ok::before   { background: var(--khs-sage); }
+    .khs-page .khs-card--down::before { background: #b86550; }
+
+    .khs-page .khs-card__top {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 12px;
+    }
+
+    .khs-page .khs-card__icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 40px;
+        height: 40px;
+        border-radius: 3px;
+        color: var(--khs-forest);
+        background: var(--khs-ivory);
+        border: 1px solid var(--khs-line);
+    }
+
+    .khs-page .khs-card--ok   .khs-card__icon { color: var(--khs-ok);   background: var(--khs-ok-bg);   border-color: transparent; }
+    .khs-page .khs-card--down .khs-card__icon { color: var(--khs-down); background: var(--khs-down-bg); border-color: transparent; }
+
+    .khs-page .khs-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 12px;
+        border-radius: 999px;
+        font-family: var(--khs-sans);
+        font-size: .62rem;
+        font-weight: 600;
+        letter-spacing: .14em;
+        text-transform: uppercase;
+        white-space: nowrap;
+    }
+
+    .khs-page .khs-pill i {
+        display: inline-block;
+        flex: none;
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: currentColor;
+    }
+
+    .khs-page .khs-pill--ok {
+        background: var(--khs-ok-bg);
+        color: var(--khs-ok);
+    }
+
+    .khs-page .khs-pill--down {
+        background: var(--khs-down-bg);
+        color: var(--khs-down);
+    }
+
+    .khs-page .khs-card__title {
+        margin: 0;
+        font-family: var(--khs-serif);
+        font-weight: 500;
+        font-size: 1.15rem;
+        line-height: 1.25;
+        letter-spacing: -.005em;
+        color: var(--khs-forest);
+    }
+
+    .khs-page .khs-card__desc {
+        margin: 0;
+        font-family: var(--khs-sans);
+        font-size: .85rem;
+        line-height: 1.6;
+        color: var(--khs-muted);
+    }
+
+    /* ---------------------------------------------------- META PANEL ---- */
+    .khs-page .khs-meta {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        gap: 22px;
+        padding: 22px 26px;
+        background: var(--khs-white);
+        border: 1px solid var(--khs-line);
+        border-radius: 4px;
+    }
+
+    .khs-page .khs-meta__row {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        min-width: 0;
+    }
+
+    .khs-page .khs-meta__label {
+        font-family: var(--khs-sans);
+        font-size: .6rem;
+        font-weight: 700;
+        letter-spacing: .22em;
+        text-transform: uppercase;
+        color: var(--khs-sage);
+    }
+
+    .khs-page .khs-meta__value {
+        font-family: var(--khs-sans);
+        font-size: .92rem;
+        line-height: 1.55;
+        color: var(--khs-forest);
+        overflow-wrap: break-word;
+        word-break: break-word;
+    }
+
+    .khs-page .khs-meta__value--mono {
+        font-family: var(--khs-mono);
+        font-size: .84rem;
+        letter-spacing: .01em;
+    }
+
+    .khs-page .khs-meta__value--empty {
+        font-style: italic;
+        color: var(--khs-muted);
+    }
+
+    /* ------------------------------------------------------ RESPONSIVE ---- */
+    @@media (max-width: 900px) {
+        .khs-page .khs-subsystems {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .khs-page .khs-banner__score {
+            padding-left: 0;
+            margin-left: 0;
+            border-left: none;
+            border-top: 1px solid var(--khs-line);
+            padding-top: 14px;
+            align-items: flex-start;
+            width: 100%;
+        }
+    }
+
+    @@media (max-width: 560px) {
+        .khs-page .khs-banner {
+            padding: 20px;
+        }
+
+        .khs-page .khs-subsystems {
+            grid-template-columns: 1fr;
+        }
+
+        .khs-page .khs-meta {
+            grid-template-columns: 1fr;
+            padding: 20px;
+        }
+
+        .khs-page .khs-card {
+            padding: 20px;
+        }
+    }
+
+    /* --------------------------------------------- REDUCED MOTION ---- */
+    @@media (prefers-reduced-motion: reduce) {
+        .khs-page {
+            animation: none;
+        }
+
+        .khs-page *,
+        .khs-page *::before,
+        .khs-page *::after {
+            transition: none !important;
+            animation: none !important;
+        }
+    }
+</style>
+
+<div class="page-heading">
+    <div>
+        <div class="eyebrow">Karnel AI · System health · @okCount of @totalSub available</div>
+        <h1>Is everything running?</h1>
+        <p>A live snapshot of the subsystems Karnel AI depends on.</p>
+    </div>
+
+    <a href="@Context.Request.Path"
+       class="btn btn-quiet">
+        Refresh ↻
+    </a>
+</div>
+
+<div class="khs-page">
+
+    <!-- ================================================================
+         OVERALL STATUS BANNER
+         ================================================================ -->
+    <section class="khs-banner @overallClass"
+             role="status"
+             aria-live="polite"
+             aria-label="Overall system status">
+
+        <span class="khs-banner__icon" aria-hidden="true">
+            @if (allOk)
+            {
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none"
+                     stroke="currentColor" stroke-width="1.8"
+                     stroke-linecap="round" stroke-linejoin="round"
+                     focusable="false">
+                    <path d="M20 6L9 17l-5-5" />
+                </svg>
+            }
+            else if (anyOk)
+            {
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none"
+                     stroke="currentColor" stroke-width="1.8"
+                     stroke-linecap="round" stroke-linejoin="round"
+                     focusable="false">
+                    <path d="M12 9v4M12 17h.01" />
+                    <path d="M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h16.9a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z" />
+                </svg>
+            }
+            else
+            {
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none"
+                     stroke="currentColor" stroke-width="1.8"
+                     stroke-linecap="round" stroke-linejoin="round"
+                     focusable="false">
+                    <circle cx="12" cy="12" r="9" />
+                    <path d="M12 8v4M12 16h.01" />
+                </svg>
+            }
+        </span>
+
+        <div class="khs-banner__body">
+            <span class="khs-banner__eyebrow">Overall status</span>
+            <h2 class="khs-banner__title">@overallLabel</h2>
+            <span class="khs-banner__meta">
+                @okCount of @totalSub subsystems reported as available.
+            </span>
+        </div>
+
+        <div class="khs-banner__score">
+            <span class="khs-banner__score-value">@okCount/@totalSub</span>
+            <span class="khs-banner__score-label">Available</span>
+        </div>
+
+    </section>
+
+    <!-- ================================================================
+         SUBSYSTEM CARDS
+         ================================================================ -->
+    <section class="khs-subsystems" aria-label="Subsystem status">
+
+        <article class="khs-card @(engineOk ? "khs-card--ok" : "khs-card--down")">
+            <div class="khs-card__top">
+                <span class="khs-card__icon" aria-hidden="true">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="1.6"
+                         stroke-linecap="round" stroke-linejoin="round"
+                         focusable="false">
+                        <rect x="4" y="4" width="16" height="16" rx="2" />
+                        <rect x="9" y="9" width="6" height="6" rx="1" />
+                        <path d="M9 2v2M15 2v2M9 20v2M15 20v2M2 9h2M2 15h2M20 9h2M20 15h2" />
+                    </svg>
+                </span>
+                <span class="khs-pill @(engineOk ? "khs-pill--ok" : "khs-pill--down")">
+                    <i aria-hidden="true"></i>
+                    @(engineOk ? "Available" : "Unavailable")
+                </span>
+            </div>
+
+            <h3 class="khs-card__title">Rule-based engine</h3>
+            <p class="khs-card__desc">
+                The engine that composes Karnel AI's responses and matches capabilities.
+            </p>
+        </article>
+
+        <article class="khs-card @(dbOk ? "khs-card--ok" : "khs-card--down")">
+            <div class="khs-card__top">
+                <span class="khs-card__icon" aria-hidden="true">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="1.6"
+                         stroke-linecap="round" stroke-linejoin="round"
+                         focusable="false">
+                        <ellipse cx="12" cy="5" rx="8" ry="3" />
+                        <path d="M4 5v6c0 1.7 3.6 3 8 3s8-1.3 8-3V5" />
+                        <path d="M4 11v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6" />
+                    </svg>
+                </span>
+                <span class="khs-pill @(dbOk ? "khs-pill--ok" : "khs-pill--down")">
+                    <i aria-hidden="true"></i>
+                    @(dbOk ? "Available" : "Unavailable")
+                </span>
+            </div>
+
+            <h3 class="khs-card__title">Database connectivity</h3>
+            <p class="khs-card__desc">
+                The connection used to store conversations, feedback and configuration.
+            </p>
+        </article>
+
+        <article class="khs-card @(configOk ? "khs-card--ok" : "khs-card--down")">
+            <div class="khs-card__top">
+                <span class="khs-card__icon" aria-hidden="true">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="1.6"
+                         stroke-linecap="round" stroke-linejoin="round"
+                         focusable="false">
+                        <path d="M4 6h16M4 12h16M4 18h16" />
+                        <circle cx="9" cy="6" r="2" />
+                        <circle cx="15" cy="12" r="2" />
+                        <circle cx="9" cy="18" r="2" />
+                    </svg>
+                </span>
+                <span class="khs-pill @(configOk ? "khs-pill--ok" : "khs-pill--down")">
+                    <i aria-hidden="true"></i>
+                    @(configOk ? "Available" : "Unavailable")
+                </span>
+            </div>
+
+            <h3 class="khs-card__title">Configuration</h3>
+            <p class="khs-card__desc">
+                Confirms that the assistant's saved configuration can be loaded.
+            </p>
+        </article>
+
+    </section>
+
+    <!-- ================================================================
+         META PANEL
+         ================================================================ -->
+    <section class="khs-meta" aria-label="Check details">
+
+        <div class="khs-meta__row">
+            <span class="khs-meta__label">Last checked</span>
+            @if (Model != null)
+            {
+                <span class="khs-meta__value">
+                    @Model.LastChecked.ToLocalTime().ToString("dd MMM yyyy")
+                </span>
+                <span class="khs-meta__value khs-meta__value--mono">
+                    @Model.LastChecked.ToLocalTime().ToString("HH:mm:ss")
+                </span>
+            }
+            else
+            {
+                <span class="khs-meta__value khs-meta__value--empty">Never</span>
+            }
+        </div>
+
+        <div class="khs-meta__row">
+            <span class="khs-meta__label">How to interpret this</span>
+            <span class="khs-meta__value">
+                Each subsystem is checked independently. When a check fails, the
+                corresponding Karnel AI feature may be unavailable until it is
+                restored.
+            </span>
+        </div>
+
+    </section>
+
+</div>

@@ -2,6 +2,7 @@ using KarnelTravel.Data;
 using KarnelTravel.Middleware;
 using KarnelTravel.Models;
 using KarnelTravel.Services;
+using KarnelTravel.Services.AI;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -29,6 +30,16 @@ builder.Services.AddScoped<IAdminAuthService, EfAdminAuthService>();
 builder.Services.AddScoped<IWebsiteContentService, WebsiteContentService>();
 builder.Services.AddScoped<ISettingsService, SettingsService>();
 builder.Services.AddScoped<IAuditLogService, AuditLogService>();
+builder.Services.AddScoped<ILanguageModelProvider, RuleBasedLanguageProvider>();
+builder.Services.AddScoped<IAIEngine, AIEngine>();
+builder.Services.AddScoped<ITravelSearchService, TravelSearchService>();
+builder.Services.AddScoped<IRecommendationService, RecommendationService>();
+builder.Services.AddScoped<ITripPlannerService, TripPlannerService>();
+builder.Services.AddScoped<IBudgetEstimatorService, BudgetEstimatorService>();
+builder.Services.AddScoped<IAIActionService, AIActionService>();
+builder.Services.AddScoped<IAIAdministrationService, AIAdministrationService>();
+builder.Services.AddScoped<IAICapabilityService>(sp => (IAICapabilityService)sp.GetRequiredService<IAIAdministrationService>());
+builder.Services.AddScoped<IAIControlledActionService, AIControlledActionService>();
 
 builder.Services
     .AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
@@ -37,10 +48,11 @@ builder.Services
         options.LoginPath = "/Account/Login";
         options.LogoutPath = "/Account/Logout";
         options.AccessDeniedPath = "/Account/Denied";
-        options.Cookie.Name = "Karnel.Admin.Auth";
+        options.Cookie.Name = "Karnel.Auth";
         options.Cookie.HttpOnly = true;
-        options.Cookie.SameSite = SameSiteMode.Lax;
-        options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+        options.Cookie.IsEssential = true;
+        options.Cookie.SameSite = SameSiteMode.Strict;
+        options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
         options.ExpireTimeSpan = TimeSpan.FromHours(8);
         options.SlidingExpiration = true;
     });
@@ -48,6 +60,9 @@ builder.Services
 builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy("AdminOnly", p => p.RequireRole("Admin"));
+    options.FallbackPolicy = new Microsoft.AspNetCore.Authorization.AuthorizationPolicyBuilder()
+        .RequireAuthenticatedUser()
+        .Build();
 });
 
 var app = builder.Build();

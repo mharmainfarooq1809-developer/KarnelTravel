@@ -1,0 +1,678 @@
+@model KarnelTravel.Models.AIQuickPrompt
+
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = Model.Id == 0 ? "New AI Quick Prompt" : "Edit AI Quick Prompt";
+    var isNew = Model.Id == 0;
+}
+
+<style>
+    /* ==========================================================================
+       KARNEL TRAVEL GUIDE — ADMIN · AI QUICK PROMPT (NEW / EDIT)
+       Scoped with .kkq- prefix. Inline <style> because _AdminLayout does not
+       render a Styles section (matching the rest of the admin suite).
+       ========================================================================== */
+
+    .kkq-page {
+        --kkq-forest: var(--forest-deep, #14271F);
+        --kkq-ivory: var(--ivory, #F8F6F0);
+        --kkq-sage: var(--sage, #8FA888);
+        --kkq-sand: var(--sand, #E8DFC9);
+        --kkq-white: #FFFFFF;
+        --kkq-muted: var(--muted, #5A6B60);
+        --kkq-line: var(--line, rgba(20, 39, 31, .12));
+        --kkq-danger: #a8442e;
+        --kkq-serif: var(--serif, "Playfair Display", Georgia, "Times New Roman", serif);
+        --kkq-sans: var(--sans, "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif);
+        --kkq-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+        --kkq-ease: var(--ease, cubic-bezier(.22, .61, .36, 1));
+
+        animation: kkq-fade .45s var(--kkq-ease) both;
+    }
+
+    @@keyframes kkq-fade {
+        from { opacity: 0; transform: translateY(6px); }
+        to   { opacity: 1; transform: none; }
+    }
+
+    .kkq-page .visually-hidden {
+        position: absolute !important;
+        width: 1px; height: 1px;
+        padding: 0; margin: -1px;
+        overflow: hidden; clip: rect(0, 0, 0, 0);
+        white-space: nowrap; border: 0;
+    }
+
+    /* -------------------------------------------------------- BACK LINK ---- */
+    .kkq-page .kkq-back {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 14px;
+        border: 1px solid var(--kkq-line);
+        border-radius: 2px;
+        background: transparent;
+        color: var(--kkq-forest);
+        font-family: var(--kkq-sans);
+        font-size: .64rem;
+        font-weight: 600;
+        letter-spacing: .2em;
+        text-transform: uppercase;
+        text-decoration: none;
+        transition:
+            background-color .25s var(--kkq-ease),
+            border-color .25s var(--kkq-ease),
+            color .25s var(--kkq-ease);
+    }
+
+    .kkq-page .kkq-back svg {
+        flex: none;
+        transition: transform .25s var(--kkq-ease);
+    }
+
+    .kkq-page .kkq-back:hover {
+        background: var(--kkq-forest);
+        border-color: var(--kkq-forest);
+        color: var(--kkq-ivory);
+    }
+
+    .kkq-page .kkq-back:hover svg {
+        transform: translateX(-3px);
+    }
+
+    .kkq-page .kkq-back:focus-visible {
+        outline: 2px solid var(--kkq-sand);
+        outline-offset: 2px;
+    }
+
+    /* --------------------------------------------------------- LAYOUT ---- */
+    .kkq-page .kkq-form {
+        display: grid;
+        grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr);
+        gap: 22px;
+        align-items: start;
+        margin: 0;
+    }
+
+    .kkq-page .kkq-main,
+    .kkq-page .kkq-side {
+        display: flex;
+        flex-direction: column;
+        gap: 22px;
+        min-width: 0;
+    }
+
+    /* ---------------------------------------------------------- CARDS ---- */
+    .kkq-page .kkq-card {
+        position: relative;
+        background: var(--kkq-white);
+        border: 1px solid var(--kkq-line);
+        border-radius: 4px;
+        padding: 24px 26px;
+    }
+
+    .kkq-page .kkq-card__head {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 12px;
+        padding-bottom: 14px;
+        margin-bottom: 20px;
+        border-bottom: 1px solid var(--kkq-line);
+    }
+
+    .kkq-page .kkq-card__title {
+        margin: 0;
+        font-family: var(--kkq-serif);
+        font-weight: 500;
+        font-size: 1.2rem;
+        line-height: 1.2;
+        letter-spacing: -.005em;
+        color: var(--kkq-forest);
+    }
+
+    .kkq-page .kkq-card__meta {
+        margin: 0;
+        font-family: var(--kkq-sans);
+        font-size: .62rem;
+        font-weight: 600;
+        letter-spacing: .2em;
+        text-transform: uppercase;
+        color: var(--kkq-sage);
+        white-space: nowrap;
+    }
+
+    /* --------------------------------------------------------- FIELDS ---- */
+    .kkq-page .kkq-field {
+        display: block;
+        margin-bottom: 22px;
+    }
+
+    .kkq-page .kkq-field:last-child {
+        margin-bottom: 0;
+    }
+
+    .kkq-page .kkq-field__head {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 8px;
+    }
+
+    .kkq-page .kkq-field__head label,
+    .kkq-page .kkq-field > label:first-child {
+        display: block;
+        margin: 0;
+        font-family: var(--kkq-sans);
+        font-size: .64rem;
+        font-weight: 700;
+        letter-spacing: .22em;
+        text-transform: uppercase;
+        color: var(--kkq-muted);
+    }
+
+    .kkq-page .kkq-counter {
+        font-family: var(--kkq-mono);
+        font-size: .72rem;
+        letter-spacing: .02em;
+        color: var(--kkq-muted);
+        white-space: nowrap;
+    }
+
+    .kkq-page .kkq-counter--near {
+        color: #7a5a14;
+    }
+
+    .kkq-page .kkq-counter--at {
+        color: var(--kkq-danger);
+        font-weight: 600;
+    }
+
+    .kkq-page .kkq-field input[type="text"],
+    .kkq-page .kkq-field input[type="number"],
+    .kkq-page .kkq-field textarea {
+        width: 100%;
+        box-sizing: border-box;
+        padding: 12px 14px;
+        font-family: var(--kkq-sans);
+        font-size: .95rem;
+        line-height: 1.55;
+        color: var(--kkq-forest);
+        background: var(--kkq-ivory);
+        border: 1px solid var(--kkq-line);
+        border-radius: 3px;
+        transition: border-color .25s var(--kkq-ease),
+                    background-color .25s var(--kkq-ease),
+                    box-shadow .25s var(--kkq-ease);
+    }
+
+    .kkq-page .kkq-field input[type="number"] {
+        font-family: var(--kkq-mono);
+        font-size: .92rem;
+        max-width: 160px;
+    }
+
+    .kkq-page .kkq-field textarea {
+        min-height: 180px;
+        resize: vertical;
+        line-height: 1.7;
+    }
+
+    .kkq-page .kkq-field input:focus,
+    .kkq-page .kkq-field textarea:focus {
+        outline: none;
+        border-color: var(--kkq-sage);
+        background: var(--kkq-white);
+        box-shadow: 0 0 0 3px rgba(143, 168, 136, .18);
+    }
+
+    .kkq-page .kkq-hint {
+        display: block;
+        margin-top: 8px;
+        font-family: var(--kkq-sans);
+        font-size: .78rem;
+        line-height: 1.55;
+        color: var(--kkq-muted);
+        font-style: italic;
+    }
+
+    /* ASP.NET validation output */
+    .kkq-page .kkq-field .field-validation-error,
+    .kkq-page .kkq-field .field-validation-valid {
+        display: block;
+        margin-top: 8px;
+        font-family: var(--kkq-sans);
+        font-size: .78rem;
+        line-height: 1.5;
+    }
+
+    .kkq-page .kkq-field .field-validation-error,
+    .kkq-page .kkq-field .text-danger {
+        color: var(--kkq-danger);
+        font-weight: 500;
+    }
+
+    .kkq-page .kkq-field .field-validation-valid {
+        display: none;
+    }
+
+    .kkq-page .kkq-field input.input-validation-error,
+    .kkq-page .kkq-field textarea.input-validation-error {
+        border-color: var(--kkq-danger);
+        background: rgba(168, 68, 46, .05);
+    }
+
+    .kkq-page .kkq-field input.input-validation-error:focus,
+    .kkq-page .kkq-field textarea.input-validation-error:focus {
+        box-shadow: 0 0 0 3px rgba(168, 68, 46, .15);
+    }
+
+    /* ------------------------------------------------------ VALIDATION ---- */
+    .kkq-page .validation-summary-errors {
+        margin: 0 0 22px;
+        padding: 14px 18px;
+        background: rgba(168, 68, 46, .06);
+        border: 1px solid rgba(168, 68, 46, .25);
+        border-left: 3px solid var(--kkq-danger);
+        border-radius: 3px;
+        font-family: var(--kkq-sans);
+        font-size: .88rem;
+        line-height: 1.6;
+        color: var(--kkq-danger);
+    }
+
+    .kkq-page .validation-summary-errors ul {
+        margin: 0;
+        padding-left: 20px;
+    }
+
+    .kkq-page .validation-summary-errors li + li {
+        margin-top: 4px;
+    }
+
+    .kkq-page .validation-summary-valid {
+        display: none;
+    }
+
+    /* --------------------------------------------------------- TOGGLE ---- */
+    .kkq-page .kkq-toggle {
+        display: flex;
+        align-items: flex-start;
+        gap: 14px;
+        padding: 16px 18px;
+        background: var(--kkq-ivory);
+        border: 1px solid var(--kkq-line);
+        border-radius: 3px;
+        cursor: pointer;
+        transition: border-color .25s var(--kkq-ease),
+                    background-color .25s var(--kkq-ease);
+    }
+
+    .kkq-page .kkq-toggle:hover {
+        border-color: rgba(20, 39, 31, .22);
+    }
+
+    .kkq-page .kkq-toggle input[type="checkbox"] {
+        flex: none;
+        width: 18px;
+        height: 18px;
+        margin: 2px 0 0;
+        accent-color: var(--kkq-forest);
+        cursor: pointer;
+    }
+
+    .kkq-page .kkq-toggle__body {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .kkq-page .kkq-toggle__title {
+        display: block;
+        font-family: var(--kkq-sans);
+        font-size: .92rem;
+        font-weight: 600;
+        line-height: 1.4;
+        color: var(--kkq-forest);
+    }
+
+    .kkq-page .kkq-toggle__desc {
+        display: block;
+        margin-top: 4px;
+        font-family: var(--kkq-sans);
+        font-size: .8rem;
+        line-height: 1.55;
+        color: var(--kkq-muted);
+    }
+
+    /* -------------------------------------------------------- ACTIONS ---- */
+    .kkq-page .kkq-actions {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 12px;
+        padding-top: 20px;
+        margin-top: 4px;
+        border-top: 1px solid var(--kkq-line);
+    }
+
+    .kkq-page .kkq-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        padding: 13px 22px;
+        border-radius: 2px;
+        font-family: var(--kkq-sans);
+        font-size: .68rem;
+        font-weight: 600;
+        letter-spacing: .22em;
+        text-transform: uppercase;
+        text-decoration: none;
+        cursor: pointer;
+        border: 1px solid transparent;
+        white-space: nowrap;
+        transition:
+            background-color .25s var(--kkq-ease),
+            border-color .25s var(--kkq-ease),
+            color .25s var(--kkq-ease),
+            transform .25s var(--kkq-ease);
+    }
+
+    .kkq-page .kkq-btn svg {
+        flex: none;
+        transition: transform .25s var(--kkq-ease);
+    }
+
+    .kkq-page .kkq-btn--primary {
+        background: var(--kkq-forest);
+        border-color: var(--kkq-forest);
+        color: var(--kkq-ivory);
+    }
+
+    .kkq-page .kkq-btn--primary:hover {
+        background: var(--kkq-sand);
+        border-color: var(--kkq-sand);
+        color: var(--kkq-forest);
+        transform: translateY(-1px);
+    }
+
+    .kkq-page .kkq-btn--primary:hover svg {
+        transform: translateX(3px);
+    }
+
+    .kkq-page .kkq-btn--quiet {
+        background: transparent;
+        border-color: var(--kkq-line);
+        color: var(--kkq-forest);
+    }
+
+    .kkq-page .kkq-btn--quiet:hover {
+        border-color: var(--kkq-forest);
+        background: var(--kkq-ivory);
+    }
+
+    .kkq-page .kkq-btn:focus-visible {
+        outline: 2px solid var(--kkq-sand);
+        outline-offset: 2px;
+    }
+
+    /* -------------------------------------------------------- ASIDE ---- */
+    .kkq-page .kkq-aside-note {
+        margin: 0;
+        font-family: var(--kkq-sans);
+        font-size: .85rem;
+        line-height: 1.65;
+        color: var(--kkq-muted);
+    }
+
+    .kkq-page .kkq-aside-note + .kkq-aside-note {
+        margin-top: 12px;
+    }
+
+    .kkq-page .kkq-aside-note strong {
+        color: var(--kkq-forest);
+        font-weight: 600;
+    }
+
+    .kkq-page .kkq-aside-list {
+        margin: 12px 0 0;
+        padding-left: 18px;
+        font-family: var(--kkq-sans);
+        font-size: .85rem;
+        line-height: 1.7;
+        color: var(--kkq-muted);
+    }
+
+    .kkq-page .kkq-aside-list li + li {
+        margin-top: 4px;
+    }
+
+    /* ------------------------------------------------------ RESPONSIVE ---- */
+    @@media (max-width: 900px) {
+        .kkq-page .kkq-form {
+            grid-template-columns: minmax(0, 1fr);
+        }
+
+        .kkq-page .kkq-field input[type="number"] {
+            max-width: none;
+        }
+    }
+
+    @@media (max-width: 560px) {
+        .kkq-page .kkq-card {
+            padding: 20px;
+        }
+
+        .kkq-page .kkq-actions {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .kkq-page .kkq-btn {
+            width: 100%;
+        }
+    }
+
+    /* --------------------------------------------- REDUCED MOTION ---- */
+    @@media (prefers-reduced-motion: reduce) {
+        .kkq-page {
+            animation: none;
+        }
+
+        .kkq-page *,
+        .kkq-page *::before,
+        .kkq-page *::after {
+            transition: none !important;
+            animation: none !important;
+        }
+    }
+</style>
+
+<div class="page-heading">
+    <div>
+        <a class="kkq-back" href="/Admin/AI/Prompts">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="1.8"
+                 stroke-linecap="round" stroke-linejoin="round"
+                 aria-hidden="true" focusable="false">
+                <path d="M19 12H5M11 6l-6 6 6 6" />
+            </svg>
+            Back to quick prompts
+        </a>
+
+        <div class="eyebrow" style="margin-top:16px;">Karnel AI · @(isNew ? "New prompt" : "Edit prompt")</div>
+        <h1>@ViewData["Title"]</h1>
+        <p>
+            @(isNew
+                ? "Add a short suggestion travellers can tap to start a conversation."
+                : "Update this prompt's wording, ordering or availability. Changes apply to new conversations once saved.")
+        </p>
+    </div>
+</div>
+
+<div class="kkq-page">
+
+    <form method="post" action="/Admin/AI/Prompts/Save" class="kkq-form" novalidate>
+
+        <div class="kkq-main">
+
+            <div asp-validation-summary="ModelOnly"
+                 class="validation-summary-errors"
+                 role="alert"></div>
+
+            <input asp-for="Id" type="hidden" />
+
+            <section class="kkq-card" aria-labelledby="kkq-wording-heading">
+                <div class="kkq-card__head">
+                    <h2 class="kkq-card__title" id="kkq-wording-heading">Prompt wording</h2>
+                    <p class="kkq-card__meta">How travellers see it</p>
+                </div>
+
+                <div class="kkq-field">
+                    <div class="kkq-field__head">
+                        <label asp-for="Label"></label>
+                        <span class="kkq-counter"
+                              data-counter-for="Label"
+                              aria-hidden="true"></span>
+                    </div>
+                    <input asp-for="Label" maxlength="160" required autocomplete="off" />
+                    <span asp-validation-for="Label" class="field-validation-error"></span>
+                    <span class="kkq-hint">
+                        The short button text a traveller taps — for example
+                        <em>“Best time to visit the north”</em>.
+                    </span>
+                </div>
+
+                <div class="kkq-field">
+                    <div class="kkq-field__head">
+                        <label asp-for="Prompt"></label>
+                        <span class="kkq-counter"
+                              data-counter-for="Prompt"
+                              aria-hidden="true"></span>
+                    </div>
+                    <textarea asp-for="Prompt" maxlength="500" required></textarea>
+                    <span asp-validation-for="Prompt" class="field-validation-error"></span>
+                    <span class="kkq-hint">
+                        The actual question or request sent to Karnel AI when the
+                        prompt is tapped. Line breaks are preserved.
+                    </span>
+                </div>
+            </section>
+
+        </div>
+
+        <div class="kkq-side">
+
+            <section class="kkq-card" aria-labelledby="kkq-order-heading">
+                <div class="kkq-card__head">
+                    <h2 class="kkq-card__title" id="kkq-order-heading">Ordering</h2>
+                    <p class="kkq-card__meta">List position</p>
+                </div>
+
+                <div class="kkq-field">
+                    <label asp-for="DisplayOrder"></label>
+                    <input asp-for="DisplayOrder" type="number" min="0" required />
+                    <span asp-validation-for="DisplayOrder" class="field-validation-error"></span>
+                    <span class="kkq-hint">
+                        Lower numbers appear first. Use 0 for the topmost prompt.
+                    </span>
+                </div>
+            </section>
+
+            <section class="kkq-card" aria-labelledby="kkq-status-heading">
+                <div class="kkq-card__head">
+                    <h2 class="kkq-card__title" id="kkq-status-heading">Visibility</h2>
+                    <p class="kkq-card__meta">Toggle</p>
+                </div>
+
+                <label class="kkq-toggle" for="IsEnabled">
+                    <input asp-for="IsEnabled" />
+                    <span class="kkq-toggle__body">
+                        <span class="kkq-toggle__title">Active</span>
+                        <span class="kkq-toggle__desc">
+                            When active, this prompt appears to travellers
+                            as a suggested starting point.
+                        </span>
+                    </span>
+                </label>
+
+                <span asp-validation-for="IsEnabled" class="field-validation-error"></span>
+            </section>
+
+            <section class="kkq-card" aria-labelledby="kkq-save-heading">
+                <div class="kkq-card__head">
+                    <h2 class="kkq-card__title" id="kkq-save-heading">@(isNew ? "Create prompt" : "Save changes")</h2>
+                </div>
+
+                <p class="kkq-aside-note">
+                    <strong>Before you save.</strong> Quick prompts are the first
+                    thing travellers see — keep them short, clear and grounded in
+                    real travel questions.
+                </p>
+                <ul class="kkq-aside-list">
+                    <li>Use natural, conversational wording.</li>
+                    <li>Keep the label short enough to fit on a single button.</li>
+                    <li>Deactivate prompts instead of deleting them if they may return.</li>
+                </ul>
+
+                <div class="kkq-actions">
+                    <button class="kkq-btn kkq-btn--primary" type="submit">
+                        Save prompt
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                             stroke="currentColor" stroke-width="1.8"
+                             stroke-linecap="round" stroke-linejoin="round"
+                             aria-hidden="true" focusable="false">
+                            <path d="M5 12h14M13 6l6 6-6 6" />
+                        </svg>
+                    </button>
+
+                    <a class="kkq-btn kkq-btn--quiet" href="/Admin/AI/Prompts">
+                        Cancel
+                    </a>
+                </div>
+            </section>
+
+        </div>
+
+    </form>
+
+</div>
+
+@section Scripts {
+    <script>
+        (() => {
+            const fields = document.querySelectorAll(
+                ".kkq-page input[maxlength], .kkq-page textarea[maxlength]"
+            );
+
+            fields.forEach(field => {
+                const max = parseInt(field.getAttribute("maxlength"), 10);
+                if (!max || Number.isNaN(max)) { return; }
+
+                const container = field.closest(".kkq-field");
+                const counter = container
+                    ? container.querySelector(".kkq-counter")
+                    : null;
+                if (!counter) { return; }
+
+                function update() {
+                    const len = field.value.length;
+                    counter.textContent = `${len} / ${max}`;
+
+                    counter.classList.remove("kkq-counter--near", "kkq-counter--at");
+
+                    const ratio = len / max;
+                    if (len >= max) {
+                        counter.classList.add("kkq-counter--at");
+                    } else if (ratio >= 0.8) {
+                        counter.classList.add("kkq-counter--near");
+                    }
+                }
+
+                field.addEventListener("input", update);
+                update();
+            });
+        })();
+    </script>
+}

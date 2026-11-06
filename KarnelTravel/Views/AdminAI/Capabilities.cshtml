@@ -1,0 +1,704 @@
+@model IReadOnlyList<KarnelTravel.Models.AICapability>
+
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "AI Capabilities";
+
+    var capabilities = Model ?? Array.Empty<KarnelTravel.Models.AICapability>();
+    var totalCount = capabilities.Count;
+    var enabledCount = capabilities.Count(x => x.IsEnabled);
+    var disabledCount = totalCount - enabledCount;
+}
+
+<style>
+    /* ==========================================================================
+       KARNEL TRAVEL GUIDE — ADMIN · AI CAPABILITIES
+       Scoped with .kac- prefix. Inline <style> because _AdminLayout does not
+       render a Styles section (matching the rest of the admin suite).
+       ========================================================================== */
+
+    .kac-page {
+        --kac-forest: var(--forest-deep, #14271F);
+        --kac-ivory: var(--ivory, #F8F6F0);
+        --kac-sage: var(--sage, #8FA888);
+        --kac-sand: var(--sand, #E8DFC9);
+        --kac-white: #FFFFFF;
+        --kac-muted: var(--muted, #5A6B60);
+        --kac-line: var(--line, rgba(20, 39, 31, .12));
+        --kac-serif: var(--serif, "Playfair Display", Georgia, "Times New Roman", serif);
+        --kac-sans: var(--sans, "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif);
+        --kac-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+        --kac-ease: var(--ease, cubic-bezier(.22, .61, .36, 1));
+
+        animation: kac-fade .45s var(--kac-ease) both;
+    }
+
+    @@keyframes kac-fade {
+        from { opacity: 0; transform: translateY(6px); }
+        to   { opacity: 1; transform: none; }
+    }
+
+    .kac-page .visually-hidden {
+        position: absolute !important;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+    }
+
+    /* ----------------------------------------------------- STAT CARDS ---- */
+    .kac-page .kac-stats {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 14px;
+        margin-bottom: 22px;
+    }
+
+    .kac-page .kac-stat {
+        position: relative;
+        padding: 20px 22px 20px 26px;
+        background: var(--kac-white);
+        border: 1px solid var(--kac-line);
+        border-radius: 4px;
+        overflow: hidden;
+        transition: border-color .3s var(--kac-ease);
+    }
+
+    .kac-page .kac-stat:hover {
+        border-color: rgba(20, 39, 31, .22);
+    }
+
+    .kac-page .kac-stat::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 3px;
+        background: var(--kac-forest);
+    }
+
+    .kac-page .kac-stat--enabled::before  { background: var(--kac-sage); }
+    .kac-page .kac-stat--disabled::before { background: #b8a882; }
+
+    .kac-page .kac-stat__label {
+        display: block;
+        margin-bottom: 8px;
+        font-size: .62rem;
+        font-weight: 600;
+        letter-spacing: .22em;
+        text-transform: uppercase;
+        color: var(--kac-muted);
+    }
+
+    .kac-page .kac-stat strong {
+        display: block;
+        font-family: var(--kac-serif);
+        font-size: clamp(1.5rem, 2.4vw, 2.05rem);
+        font-weight: 500;
+        line-height: 1.05;
+        letter-spacing: -.01em;
+        color: var(--kac-forest);
+    }
+
+    /* -------------------------------------------------------- TOOLBAR ---- */
+    .kac-page .kac-toolbar {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+        padding: 14px 16px;
+        background: var(--kac-white);
+        border: 1px solid var(--kac-line);
+        border-radius: 4px;
+        margin-bottom: 16px;
+    }
+
+    .kac-page .kac-search {
+        flex: 1 1 260px;
+        min-width: 0;
+        padding: 10px 14px;
+        border: 1px solid var(--kac-line);
+        border-radius: 3px;
+        font-family: var(--kac-sans);
+        font-size: .88rem;
+        background: var(--kac-ivory);
+        color: var(--kac-forest);
+        transition: border-color .25s var(--kac-ease),
+                    background-color .25s var(--kac-ease),
+                    box-shadow .25s var(--kac-ease);
+    }
+
+    .kac-page .kac-search::placeholder {
+        color: rgba(90, 107, 96, .7);
+    }
+
+    .kac-page .kac-search:focus {
+        outline: none;
+        border-color: var(--kac-sage);
+        background: var(--kac-white);
+        box-shadow: 0 0 0 3px rgba(143, 168, 136, .18);
+    }
+
+    .kac-page .kac-select {
+        padding: 10px 34px 10px 14px;
+        border: 1px solid var(--kac-line);
+        border-radius: 3px;
+        font-family: var(--kac-sans);
+        font-size: .88rem;
+        color: var(--kac-forest);
+        background-color: var(--kac-ivory);
+        background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8' fill='none' stroke='%235A6B60' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'><path d='M1 1l5 5 5-5'/></svg>");
+        background-repeat: no-repeat;
+        background-position: right 12px center;
+        appearance: none;
+        -webkit-appearance: none;
+        cursor: pointer;
+        transition: border-color .25s var(--kac-ease),
+                    background-color .25s var(--kac-ease),
+                    box-shadow .25s var(--kac-ease);
+    }
+
+    .kac-page .kac-select:focus {
+        outline: none;
+        border-color: var(--kac-sage);
+        background-color: var(--kac-white);
+        box-shadow: 0 0 0 3px rgba(143, 168, 136, .18);
+    }
+
+    /* ---------------------------------------------------- TABLE SHELL ---- */
+    .kac-page .kac-table-wrap {
+        background: var(--kac-white);
+        border: 1px solid var(--kac-line);
+        border-radius: 4px;
+        overflow: hidden;
+    }
+
+    .kac-page .kac-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: .88rem;
+        color: var(--kac-forest);
+    }
+
+    .kac-page .kac-table thead {
+        background: var(--kac-ivory);
+        border-bottom: 1px solid var(--kac-line);
+    }
+
+    .kac-page .kac-table th {
+        padding: 14px 18px;
+        text-align: left;
+        font-family: var(--kac-sans);
+        font-size: .62rem;
+        font-weight: 700;
+        letter-spacing: .22em;
+        text-transform: uppercase;
+        color: var(--kac-muted);
+        white-space: nowrap;
+    }
+
+    .kac-page .kac-table th:last-child {
+        text-align: right;
+    }
+
+    .kac-page .kac-table td {
+        padding: 18px;
+        vertical-align: middle;
+        border-bottom: 1px solid var(--kac-line);
+    }
+
+    .kac-page .kac-table tbody tr:last-child td {
+        border-bottom: none;
+    }
+
+    .kac-page .kac-row {
+        transition: background-color .25s var(--kac-ease);
+    }
+
+    .kac-page .kac-row:hover {
+        background: rgba(232, 223, 201, .18);
+    }
+
+    /* --------------------------------------------------- CAPABILITY ---- */
+    .kac-page .kac-capability {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        min-width: 0;
+    }
+
+    .kac-page .kac-capability__name {
+        font-family: var(--kac-serif);
+        font-weight: 500;
+        font-size: 1.08rem;
+        line-height: 1.25;
+        color: var(--kac-forest);
+        overflow-wrap: break-word;
+        word-break: break-word;
+    }
+
+    .kac-page .kac-capability__key {
+        font-family: var(--kac-mono);
+        font-size: .72rem;
+        letter-spacing: .02em;
+        color: var(--kac-muted);
+        overflow-wrap: break-word;
+        word-break: break-all;
+    }
+
+    .kac-page .kac-capability__key--empty {
+        font-family: var(--kac-sans);
+        font-style: italic;
+        opacity: .85;
+    }
+
+    /* --------------------------------------------------------- STATUS ---- */
+    .kac-page .kac-status {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 12px;
+        border-radius: 999px;
+        font-family: var(--kac-sans);
+        font-size: .64rem;
+        font-weight: 600;
+        letter-spacing: .14em;
+        text-transform: uppercase;
+        white-space: nowrap;
+    }
+
+    .kac-page .kac-status i {
+        display: inline-block;
+        flex: none;
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: currentColor;
+    }
+
+    .kac-page .kac-status--on {
+        background: rgba(143, 168, 136, .22);
+        color: #2e5238;
+    }
+
+    .kac-page .kac-status--off {
+        background: rgba(20, 39, 31, .06);
+        color: #5a6b60;
+    }
+
+    /* --------------------------------------------------------- ACTION ---- */
+    .kac-page .kac-action-cell {
+        text-align: right;
+    }
+
+    .kac-page .kac-form {
+        display: inline-flex;
+        margin: 0;
+    }
+
+    .kac-page .kac-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 16px;
+        border-radius: 2px;
+        font-family: var(--kac-sans);
+        font-size: .66rem;
+        font-weight: 600;
+        letter-spacing: .2em;
+        text-transform: uppercase;
+        cursor: pointer;
+        border: 1px solid transparent;
+        transition:
+            background-color .25s var(--kac-ease),
+            border-color .25s var(--kac-ease),
+            color .25s var(--kac-ease),
+            transform .25s var(--kac-ease);
+    }
+
+    .kac-page .kac-btn svg {
+        flex: none;
+        transition: transform .25s var(--kac-ease);
+    }
+
+    /* Enable — primary forest action */
+    .kac-page .kac-btn--enable {
+        background: var(--kac-forest);
+        border-color: var(--kac-forest);
+        color: var(--kac-ivory);
+    }
+
+    .kac-page .kac-btn--enable:hover {
+        background: var(--kac-sand);
+        border-color: var(--kac-sand);
+        color: var(--kac-forest);
+        transform: translateY(-1px);
+    }
+
+    .kac-page .kac-btn--enable:hover svg {
+        transform: translateX(2px);
+    }
+
+    /* Disable — quiet outline action */
+    .kac-page .kac-btn--disable {
+        background: transparent;
+        border-color: var(--kac-line);
+        color: var(--kac-forest);
+    }
+
+    .kac-page .kac-btn--disable:hover {
+        border-color: var(--kac-forest);
+        background: var(--kac-ivory);
+    }
+
+    .kac-page .kac-btn:focus-visible {
+        outline: 2px solid var(--kac-sand);
+        outline-offset: 2px;
+    }
+
+    /* --------------------------------------------------------- EMPTY ---- */
+    .kac-page .kac-empty {
+        padding: 64px 24px;
+        text-align: center;
+    }
+
+    .kac-page .kac-empty__icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 72px;
+        height: 72px;
+        margin-bottom: 20px;
+        border-radius: 50%;
+        background: var(--kac-ivory);
+        color: var(--kac-sage);
+    }
+
+    .kac-page .kac-empty strong {
+        display: block;
+        margin-bottom: 8px;
+        font-family: var(--kac-serif);
+        font-size: clamp(1.3rem, 2vw, 1.6rem);
+        font-weight: 500;
+        color: var(--kac-forest);
+    }
+
+    .kac-page .kac-empty p {
+        margin: 0;
+        font-size: .9rem;
+        color: var(--kac-muted);
+    }
+
+    /* -------------------------------------- FILTER-HIDDEN-ALL-ROWS ---- */
+    .kac-page .kac-all-hidden td {
+        padding: 48px 24px;
+        text-align: center;
+        font-size: .9rem;
+        color: var(--kac-muted);
+        font-style: italic;
+    }
+
+    /* ------------------------------------------------------ RESPONSIVE ---- */
+    @@media (max-width: 900px) {
+        .kac-page .kac-table-wrap {
+            background: transparent;
+            border: none;
+            overflow: visible;
+        }
+
+        .kac-page .kac-table,
+        .kac-page .kac-table tbody,
+        .kac-page .kac-table tr,
+        .kac-page .kac-table td {
+            display: block;
+            width: 100%;
+        }
+
+        .kac-page .kac-table thead {
+            display: none;
+        }
+
+        .kac-page .kac-row {
+            background: var(--kac-white);
+            border: 1px solid var(--kac-line);
+            border-radius: 4px;
+            padding: 16px 18px;
+            margin-bottom: 12px;
+        }
+
+        .kac-page .kac-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .kac-page .kac-table td {
+            padding: 8px 0;
+            border: none;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: baseline;
+            gap: 8px 14px;
+        }
+
+        .kac-page .kac-table td::before {
+            content: attr(data-label);
+            flex: 0 0 100px;
+            font-size: .6rem;
+            font-weight: 700;
+            letter-spacing: .22em;
+            text-transform: uppercase;
+            color: var(--kac-sage);
+        }
+
+        .kac-page .kac-table td.kac-empty::before,
+        .kac-page .kac-table td.kac-all-hidden::before {
+            display: none;
+        }
+
+        .kac-page .kac-action-cell {
+            justify-content: flex-end;
+            padding-top: 14px;
+            margin-top: 6px;
+            border-top: 1px solid var(--kac-line);
+        }
+    }
+
+    @@media (max-width: 560px) {
+        .kac-page .kac-stats {
+            grid-template-columns: 1fr;
+        }
+
+        .kac-page .kac-toolbar {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .kac-page .kac-search,
+        .kac-page .kac-select {
+            width: 100%;
+        }
+
+        .kac-page .kac-btn {
+            width: 100%;
+            justify-content: center;
+        }
+    }
+
+    /* --------------------------------------------- REDUCED MOTION ---- */
+    @@media (prefers-reduced-motion: reduce) {
+        .kac-page {
+            animation: none;
+        }
+
+        .kac-page *,
+        .kac-page *::before,
+        .kac-page *::after {
+            transition: none !important;
+            animation: none !important;
+        }
+    }
+</style>
+
+<div class="page-heading">
+    <div>
+        <div class="eyebrow">Karnel AI · Capabilities · @enabledCount enabled</div>
+        <h1>What the assistant can do.</h1>
+        <p>Enable or disable individual AI capabilities. Changes take effect immediately.</p>
+    </div>
+
+    <a href="@Context.Request.Path"
+       class="btn btn-quiet">
+        Refresh ↻
+    </a>
+</div>
+
+<div class="kac-page">
+
+    <div class="kac-stats">
+        <div class="kac-stat">
+            <span class="kac-stat__label">Total capabilities</span>
+            <strong>@totalCount</strong>
+        </div>
+
+        <div class="kac-stat kac-stat--enabled">
+            <span class="kac-stat__label">Enabled</span>
+            <strong>@enabledCount</strong>
+        </div>
+
+        <div class="kac-stat kac-stat--disabled">
+            <span class="kac-stat__label">Disabled</span>
+            <strong>@disabledCount</strong>
+        </div>
+    </div>
+
+    <div class="kac-toolbar">
+        <input class="kac-search"
+               type="search"
+               id="kacSearch"
+               placeholder="Search capabilities..."
+               aria-label="Search capabilities" />
+
+        <select class="kac-select"
+                id="kacStatus"
+                aria-label="Filter by status">
+            <option value="all">All statuses</option>
+            <option value="on">Enabled</option>
+            <option value="off">Disabled</option>
+        </select>
+    </div>
+
+    <div class="kac-table-wrap">
+        <table class="kac-table" id="kacTable">
+            <thead>
+                <tr>
+                    <th scope="col">Capability</th>
+                    <th scope="col">Status</th>
+                    <th scope="col"><span class="visually-hidden">Action</span></th>
+                </tr>
+            </thead>
+
+            <tbody>
+                @if (totalCount == 0)
+                {
+                    <tr>
+                        <td colspan="3" class="kac-empty">
+                            <div class="kac-empty__icon" aria-hidden="true">
+                                <svg width="32" height="32" viewBox="0 0 24 24" fill="none"
+                                     stroke="currentColor" stroke-width="1.2"
+                                     stroke-linecap="round" stroke-linejoin="round"
+                                     focusable="false">
+                                    <path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1" />
+                                    <circle cx="12" cy="12" r="4" />
+                                </svg>
+                            </div>
+                            <strong>No capabilities registered.</strong>
+                            <p>AI capabilities will appear here once they are defined.</p>
+                        </td>
+                    </tr>
+                }
+                else
+                {
+                    foreach (var item in capabilities)
+                    {
+                        var hasName = !string.IsNullOrWhiteSpace(item.Name);
+                        var hasKey = !string.IsNullOrWhiteSpace(item.Key);
+                        var statusClass = item.IsEnabled ? "kac-status--on" : "kac-status--off";
+                        var statusText = item.IsEnabled ? "Enabled" : "Disabled";
+                        var statusValue = item.IsEnabled ? "on" : "off";
+                        var actionClass = item.IsEnabled ? "kac-btn--disable" : "kac-btn--enable";
+                        var actionLabel = item.IsEnabled ? "Disable" : "Enable";
+
+                        <tr class="kac-row" data-status="@statusValue">
+
+                            <td data-label="Capability">
+                                <div class="kac-capability">
+                                    <span class="kac-capability__name">
+                                        @(hasName ? item.Name : "Unnamed capability")
+                                    </span>
+                                    @if (hasKey)
+                                    {
+                                        <span class="kac-capability__key">@item.Key</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="kac-capability__key kac-capability__key--empty">
+                                            No key defined
+                                        </span>
+                                    }
+                                </div>
+                            </td>
+
+                            <td data-label="Status">
+                                <span class="kac-status @statusClass">
+                                    <i aria-hidden="true"></i>
+                                    @statusText
+                                </span>
+                            </td>
+
+                            <td data-label="Action" class="kac-action-cell">
+                                <form class="kac-form"
+                                      method="post"
+                                      action="/Admin/AI/Capabilities/@item.Key">
+                                    <input type="hidden" name="enabled" value="@(!item.IsEnabled)" />
+                                    @Html.AntiForgeryToken()
+                                    <button class="kac-btn @actionClass" type="submit">
+                                        @actionLabel
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
+                                             stroke="currentColor" stroke-width="1.8"
+                                             stroke-linecap="round" stroke-linejoin="round"
+                                             aria-hidden="true" focusable="false">
+                                            @if (item.IsEnabled)
+                                            {
+                                                <path d="M6 6l12 12M18 6L6 18" />
+                                            }
+                                            else
+                                            {
+                                                <path d="M5 12h14M13 6l6 6-6 6" />
+                                            }
+                                        </svg>
+                                    </button>
+                                </form>
+                            </td>
+
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+
+</div>
+
+@section Scripts {
+    <script>
+        (() => {
+            const search = document.getElementById("kacSearch");
+            const status = document.getElementById("kacStatus");
+            const table = document.getElementById("kacTable");
+            if (!search || !status || !table) { return; }
+
+            const tbody = table.querySelector("tbody");
+            const rows = Array.from(tbody.querySelectorAll(".kac-row"));
+
+            let noMatchRow = tbody.querySelector(".kac-all-hidden");
+            if (!noMatchRow) {
+                noMatchRow = document.createElement("tr");
+                noMatchRow.className = "kac-all-hidden";
+                noMatchRow.style.display = "none";
+                const cell = document.createElement("td");
+                cell.colSpan = 3;
+                cell.textContent = "No capabilities match your filters.";
+                noMatchRow.appendChild(cell);
+                tbody.appendChild(noMatchRow);
+            }
+
+            function applyFilters() {
+                const query = search.value.trim().toLowerCase();
+                const selected = status.value;
+                let visibleCount = 0;
+
+                rows.forEach(row => {
+                    const text = row.textContent.toLowerCase();
+                    const rowStatus = row.dataset.status;
+
+                    const matchesSearch = !query || text.includes(query);
+                    const matchesStatus =
+                        selected === "all" || rowStatus === selected;
+
+                    const visible = matchesSearch && matchesStatus;
+                    row.style.display = visible ? "" : "none";
+                    if (visible) { visibleCount++; }
+                });
+
+                noMatchRow.style.display = visibleCount === 0 ? "" : "none";
+            }
+
+            search.addEventListener("input", applyFilters);
+            status.addEventListener("change", applyFilters);
+        })();
+    </script>
+}

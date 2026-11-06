@@ -1,0 +1,995 @@
+@model KarnelTravel.Services.AI.AIDashboardData
+
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "AI Overview";
+
+    var conversations        = Model?.Conversations ?? 0;
+    var messages             = Model?.Messages ?? 0;
+    var supportedMessages    = Model?.SupportedMessages ?? 0;
+    var unsupportedMessages  = Model?.UnsupportedMessages ?? 0;
+    var enabledCapabilities  = Model?.EnabledCapabilities ?? 0;
+
+    // PopularIntents is List<(string Intent, int Count)> — fall back to an empty tuple list
+    var popularIntents = Model?.PopularIntents != null
+        ? Model.PopularIntents
+        : new List<(string Intent, int Count)>();
+
+    var recentConversations = Model?.RecentConversations != null
+        ? Model.RecentConversations
+        : new List<KarnelTravel.Models.AIConversation>();
+
+    var totalIntentMessages = popularIntents.Sum(x => x.Count);
+    var maxIntentCount = popularIntents.Count > 0
+        ? popularIntents.Max(x => x.Count)
+        : 0;
+
+    var supportRate = messages > 0
+        ? (int)System.Math.Round((double)supportedMessages / messages * 100)
+        : 0;
+}
+
+<style>
+    /* ==========================================================================
+       KARNEL TRAVEL GUIDE — ADMIN · AI OVERVIEW
+       Scoped with .kad- prefix. Inline <style> because _AdminLayout does not
+       render a Styles section (matching the rest of the AI admin suite).
+       ========================================================================== */
+
+    .kad-page {
+        --kad-forest: var(--forest-deep, #14271F);
+        --kad-ivory: var(--ivory, #F8F6F0);
+        --kad-sage: var(--sage, #8FA888);
+        --kad-sand: var(--sand, #E8DFC9);
+        --kad-white: #FFFFFF;
+        --kad-muted: var(--muted, #5A6B60);
+        --kad-line: var(--line, rgba(20, 39, 31, .12));
+        --kad-serif: var(--serif, "Playfair Display", Georgia, "Times New Roman", serif);
+        --kad-sans: var(--sans, "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif);
+        --kad-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+        --kad-ease: var(--ease, cubic-bezier(.22, .61, .36, 1));
+
+        animation: kad-fade .45s var(--kad-ease) both;
+    }
+
+    @@keyframes kad-fade {
+        from { opacity: 0; transform: translateY(6px); }
+        to   { opacity: 1; transform: none; }
+    }
+
+    .kad-page .visually-hidden {
+        position: absolute !important;
+        width: 1px; height: 1px;
+        padding: 0; margin: -1px;
+        overflow: hidden; clip: rect(0, 0, 0, 0);
+        white-space: nowrap; border: 0;
+    }
+
+    /* ------------------------------------------------------ HERO PANEL ---- */
+    .kad-page .kad-hero {
+        position: relative;
+        padding: clamp(28px, 3.2vw, 44px) clamp(24px, 3.2vw, 40px);
+        margin-bottom: 22px;
+        background: var(--kad-forest);
+        color: var(--kad-ivory);
+        border-radius: 4px;
+        overflow: hidden;
+        isolation: isolate;
+    }
+
+    .kad-page .kad-hero::before {
+        content: "";
+        position: absolute;
+        top: -40%;
+        right: -10%;
+        width: 55%;
+        height: 180%;
+        background: radial-gradient(circle at center, rgba(143, 168, 136, .22), transparent 62%);
+        pointer-events: none;
+        z-index: 0;
+    }
+
+    .kad-page .kad-hero__grid {
+        position: relative;
+        z-index: 1;
+        display: grid;
+        grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+        align-items: end;
+        gap: clamp(20px, 4vw, 56px);
+    }
+
+    .kad-page .kad-hero__eyebrow {
+        margin: 0 0 12px;
+        font-family: var(--kad-sans);
+        font-size: .64rem;
+        font-weight: 700;
+        letter-spacing: .3em;
+        text-transform: uppercase;
+        color: var(--kad-sand);
+    }
+
+    .kad-page .kad-hero h1 {
+        margin: 0 0 12px;
+        font-family: var(--kad-serif);
+        font-weight: 500;
+        font-size: clamp(1.9rem, 3.6vw, 2.75rem);
+        line-height: 1.08;
+        letter-spacing: -.015em;
+        color: var(--kad-ivory);
+    }
+
+    .kad-page .kad-hero__lede {
+        margin: 0;
+        max-width: 52ch;
+        font-family: var(--kad-sans);
+        font-size: .95rem;
+        line-height: 1.7;
+        color: rgba(248, 246, 240, .78);
+    }
+
+    .kad-page .kad-hero__support {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        padding: 18px 22px;
+        background: rgba(232, 223, 201, .1);
+        border: 1px solid rgba(232, 223, 201, .22);
+        border-radius: 3px;
+    }
+
+    .kad-page .kad-hero__support-label {
+        font-family: var(--kad-sans);
+        font-size: .62rem;
+        font-weight: 700;
+        letter-spacing: .22em;
+        text-transform: uppercase;
+        color: var(--kad-sand);
+    }
+
+    .kad-page .kad-hero__support-value {
+        font-family: var(--kad-serif);
+        font-weight: 500;
+        font-size: clamp(1.6rem, 2.4vw, 2.05rem);
+        line-height: 1.05;
+        color: var(--kad-ivory);
+    }
+
+    .kad-page .kad-hero__support-meta {
+        font-family: var(--kad-sans);
+        font-size: .78rem;
+        line-height: 1.5;
+        color: rgba(248, 246, 240, .7);
+    }
+
+    /* -------------------------------------------------- METRIC ROW ---- */
+    .kad-page .kad-metrics {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 14px;
+        margin-bottom: 22px;
+    }
+
+    .kad-page .kad-metric {
+        position: relative;
+        padding: 20px 22px 20px 26px;
+        background: var(--kad-white);
+        border: 1px solid var(--kad-line);
+        border-radius: 4px;
+        overflow: hidden;
+        transition: border-color .3s var(--kad-ease);
+    }
+
+    .kad-page .kad-metric:hover {
+        border-color: rgba(20, 39, 31, .22);
+    }
+
+    .kad-page .kad-metric::before {
+        content: "";
+        position: absolute;
+        left: 0; top: 0; bottom: 0;
+        width: 3px;
+        background: var(--kad-forest);
+    }
+
+    .kad-page .kad-metric--sage::before   { background: var(--kad-sage); }
+    .kad-page .kad-metric--sand::before   { background: var(--kad-sand); }
+    .kad-page .kad-metric--muted::before  { background: #b8a882; }
+
+    .kad-page .kad-metric__label {
+        display: block;
+        margin-bottom: 8px;
+        font-family: var(--kad-sans);
+        font-size: .62rem;
+        font-weight: 600;
+        letter-spacing: .22em;
+        text-transform: uppercase;
+        color: var(--kad-muted);
+    }
+
+    .kad-page .kad-metric__value {
+        display: block;
+        font-family: var(--kad-serif);
+        font-weight: 500;
+        font-size: clamp(1.5rem, 2.4vw, 2.05rem);
+        line-height: 1.05;
+        letter-spacing: -.01em;
+        color: var(--kad-forest);
+    }
+
+    .kad-page .kad-metric__sub {
+        display: block;
+        margin-top: 6px;
+        font-family: var(--kad-sans);
+        font-size: .74rem;
+        line-height: 1.5;
+        color: var(--kad-muted);
+    }
+
+    /* -------------------------------------------------- SECTIONS ---- */
+    .kad-page .kad-section {
+        background: var(--kad-white);
+        border: 1px solid var(--kad-line);
+        border-radius: 4px;
+        margin-bottom: 22px;
+        overflow: hidden;
+    }
+
+    .kad-page .kad-section:last-child {
+        margin-bottom: 0;
+    }
+
+    .kad-page .kad-section__head {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 18px 22px;
+        background: var(--kad-ivory);
+        border-bottom: 1px solid var(--kad-line);
+    }
+
+    .kad-page .kad-section__title {
+        margin: 0;
+        font-family: var(--kad-serif);
+        font-weight: 500;
+        font-size: 1.2rem;
+        line-height: 1.2;
+        letter-spacing: -.005em;
+        color: var(--kad-forest);
+    }
+
+    .kad-page .kad-section__meta {
+        margin: 0;
+        font-family: var(--kad-sans);
+        font-size: .62rem;
+        font-weight: 600;
+        letter-spacing: .2em;
+        text-transform: uppercase;
+        color: var(--kad-sage);
+        white-space: nowrap;
+    }
+
+    /* -------------------------------------------------- INTENTS LIST ---- */
+    .kad-page .kad-intents {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .kad-page .kad-intent {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(120px, 2fr) auto;
+        align-items: center;
+        gap: 20px;
+        padding: 16px 22px;
+        border-bottom: 1px solid var(--kad-line);
+        transition: background-color .25s var(--kad-ease);
+    }
+
+    .kad-page .kad-intent:last-child {
+        border-bottom: none;
+    }
+
+    .kad-page .kad-intent:hover {
+        background: rgba(232, 223, 201, .18);
+    }
+
+    .kad-page .kad-intent__label {
+        font-family: var(--kad-serif);
+        font-weight: 500;
+        font-size: 1rem;
+        line-height: 1.3;
+        color: var(--kad-forest);
+        overflow-wrap: break-word;
+        word-break: break-word;
+    }
+
+    .kad-page .kad-intent__label--empty {
+        font-family: var(--kad-sans);
+        font-style: italic;
+        font-size: .88rem;
+        color: var(--kad-muted);
+    }
+
+    .kad-page .kad-intent__bar {
+        position: relative;
+        height: 6px;
+        background: rgba(20, 39, 31, .06);
+        border-radius: 999px;
+        overflow: hidden;
+    }
+
+    .kad-page .kad-intent__fill {
+        position: absolute;
+        left: 0; top: 0; bottom: 0;
+        background: var(--kad-sage);
+        border-radius: 999px;
+        transition: width .8s var(--kad-ease);
+    }
+
+    .kad-page .kad-intent__count {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 2px;
+        text-align: right;
+        white-space: nowrap;
+    }
+
+    .kad-page .kad-intent__value {
+        font-family: var(--kad-serif);
+        font-weight: 500;
+        font-size: 1.05rem;
+        line-height: 1.1;
+        color: var(--kad-forest);
+    }
+
+    .kad-page .kad-intent__pct {
+        font-family: var(--kad-mono);
+        font-size: .68rem;
+        letter-spacing: .02em;
+        color: var(--kad-muted);
+    }
+
+    /* --------------------------------------------- RECENT CONVERSATIONS ---- */
+    .kad-page .kad-table-wrap {
+        overflow: hidden;
+    }
+
+    .kad-page .kad-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: .88rem;
+        color: var(--kad-forest);
+    }
+
+    .kad-page .kad-table thead {
+        background: transparent;
+        border-bottom: 1px solid var(--kad-line);
+    }
+
+    .kad-page .kad-table th {
+        padding: 12px 22px;
+        text-align: left;
+        font-family: var(--kad-sans);
+        font-size: .62rem;
+        font-weight: 700;
+        letter-spacing: .22em;
+        text-transform: uppercase;
+        color: var(--kad-muted);
+        white-space: nowrap;
+    }
+
+    .kad-page .kad-table td {
+        padding: 16px 22px;
+        vertical-align: middle;
+        border-bottom: 1px solid var(--kad-line);
+    }
+
+    .kad-page .kad-table tbody tr:last-child td {
+        border-bottom: none;
+    }
+
+    .kad-page .kad-table tbody tr {
+        transition: background-color .25s var(--kad-ease);
+    }
+
+    .kad-page .kad-table tbody tr:hover {
+        background: rgba(232, 223, 201, .18);
+    }
+
+    .kad-page .kad-key {
+        display: inline-block;
+        padding: 5px 10px;
+        font-family: var(--kad-mono);
+        font-size: .74rem;
+        font-weight: 500;
+        line-height: 1.4;
+        color: var(--kad-forest);
+        background: var(--kad-ivory);
+        border: 1px solid var(--kad-line);
+        border-radius: 2px;
+        white-space: nowrap;
+        max-width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        vertical-align: middle;
+    }
+
+    .kad-page .kad-key--empty {
+        font-family: var(--kad-sans);
+        font-style: italic;
+        color: var(--kad-muted);
+        background: transparent;
+        border: none;
+        padding: 0;
+    }
+
+    .kad-page .kad-count {
+        display: inline-flex;
+        align-items: baseline;
+        gap: 6px;
+        font-family: var(--kad-serif);
+        font-size: 1.05rem;
+        font-weight: 500;
+        color: var(--kad-forest);
+    }
+
+    .kad-page .kad-count small {
+        font-family: var(--kad-sans);
+        font-size: .64rem;
+        font-weight: 600;
+        letter-spacing: .14em;
+        text-transform: uppercase;
+        color: var(--kad-muted);
+    }
+
+    .kad-page .kad-status {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 12px;
+        border-radius: 999px;
+        font-family: var(--kad-sans);
+        font-size: .64rem;
+        font-weight: 600;
+        letter-spacing: .14em;
+        text-transform: uppercase;
+        white-space: nowrap;
+    }
+
+    .kad-page .kad-status i {
+        display: inline-block;
+        flex: none;
+        width: 6px; height: 6px;
+        border-radius: 50%;
+        background: currentColor;
+    }
+
+    .kad-page .kad-status--active { background: rgba(143, 168, 136, .22); color: #2e5238; }
+    .kad-page .kad-status--closed { background: rgba(20, 39, 31, .06); color: #5a6b60; }
+    .kad-page .kad-status--pending { background: rgba(232, 199, 107, .22); color: #7a5a14; }
+
+    .kad-page .kad-date {
+        display: block;
+        font-family: var(--kad-sans);
+        font-size: .82rem;
+        line-height: 1.5;
+        color: var(--kad-forest);
+        white-space: nowrap;
+    }
+
+    .kad-page .kad-time {
+        display: block;
+        font-family: var(--kad-mono);
+        font-size: .72rem;
+        line-height: 1.5;
+        letter-spacing: .02em;
+        color: var(--kad-muted);
+        white-space: nowrap;
+    }
+
+    /* -------------------------------------------------- EMPTY STATES ---- */
+    .kad-page .kad-empty {
+        padding: 56px 24px;
+        text-align: center;
+    }
+
+    .kad-page .kad-empty__icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 64px;
+        height: 64px;
+        margin-bottom: 16px;
+        border-radius: 50%;
+        background: var(--kad-ivory);
+        color: var(--kad-sage);
+    }
+
+    .kad-page .kad-empty strong {
+        display: block;
+        margin-bottom: 6px;
+        font-family: var(--kad-serif);
+        font-size: clamp(1.15rem, 1.8vw, 1.4rem);
+        font-weight: 500;
+        color: var(--kad-forest);
+    }
+
+    .kad-page .kad-empty p {
+        margin: 0 auto;
+        max-width: 44ch;
+        font-family: var(--kad-sans);
+        font-size: .88rem;
+        line-height: 1.6;
+        color: var(--kad-muted);
+    }
+
+    /* ------------------------------------------- QUICK-LINKS FOOTER ---- */
+    .kad-page .kad-quick {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 22px;
+    }
+
+    .kad-page .kad-quick a {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 16px;
+        border: 1px solid var(--kad-line);
+        border-radius: 2px;
+        font-family: var(--kad-sans);
+        font-size: .64rem;
+        font-weight: 600;
+        letter-spacing: .2em;
+        text-transform: uppercase;
+        text-decoration: none;
+        color: var(--kad-forest);
+        background: var(--kad-white);
+        transition:
+            background-color .25s var(--kad-ease),
+            border-color .25s var(--kad-ease),
+            color .25s var(--kad-ease);
+    }
+
+    .kad-page .kad-quick a:hover {
+        background: var(--kad-forest);
+        border-color: var(--kad-forest);
+        color: var(--kad-ivory);
+    }
+
+    .kad-page .kad-quick a svg {
+        flex: none;
+        transition: transform .25s var(--kad-ease);
+    }
+
+    .kad-page .kad-quick a:hover svg {
+        transform: translateX(3px);
+    }
+
+    /* ------------------------------------------------------ RESPONSIVE ---- */
+    @@media (max-width: 1100px) {
+        .kad-page .kad-metrics {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+    }
+
+    @@media (max-width: 900px) {
+        .kad-page .kad-hero__grid {
+            grid-template-columns: minmax(0, 1fr);
+            align-items: flex-start;
+        }
+
+        .kad-page .kad-intent {
+            grid-template-columns: minmax(0, 1fr) auto;
+            gap: 10px 18px;
+        }
+
+        .kad-page .kad-intent__bar {
+            grid-column: 1 / -1;
+            order: 3;
+            height: 4px;
+        }
+    }
+
+    @@media (max-width: 720px) {
+        .kad-page .kad-metrics {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .kad-page .kad-table-wrap {
+            overflow: visible;
+        }
+
+        .kad-page .kad-table,
+        .kad-page .kad-table tbody,
+        .kad-page .kad-table tr,
+        .kad-page .kad-table td {
+            display: block;
+            width: 100%;
+        }
+
+        .kad-page .kad-table thead {
+            display: none;
+        }
+
+        .kad-page .kad-table tbody tr {
+            border-bottom: 1px solid var(--kad-line);
+            padding: 14px 22px;
+        }
+
+        .kad-page .kad-table tbody tr:last-child {
+            border-bottom: none;
+        }
+
+        .kad-page .kad-table td {
+            padding: 5px 0;
+            border: none;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: baseline;
+            gap: 8px 14px;
+        }
+
+        .kad-page .kad-table td::before {
+            content: attr(data-label);
+            flex: 0 0 96px;
+            font-size: .6rem;
+            font-weight: 700;
+            letter-spacing: .22em;
+            text-transform: uppercase;
+            color: var(--kad-sage);
+        }
+
+        .kad-page .kad-key {
+            white-space: normal;
+            word-break: break-all;
+        }
+    }
+
+    @@media (max-width: 480px) {
+        .kad-page .kad-metrics {
+            grid-template-columns: 1fr;
+        }
+
+        .kad-page .kad-date,
+        .kad-page .kad-time {
+            white-space: normal;
+        }
+    }
+
+    /* --------------------------------------------- REDUCED MOTION ---- */
+    @@media (prefers-reduced-motion: reduce) {
+        .kad-page {
+            animation: none;
+        }
+
+        .kad-page *,
+        .kad-page *::before,
+        .kad-page *::after {
+            transition: none !important;
+            animation: none !important;
+        }
+    }
+</style>
+
+<div class="kad-page">
+
+    <!-- ================================================================
+         HERO
+         ================================================================ -->
+    <section class="kad-hero" aria-labelledby="kad-hero-title">
+        <div class="kad-hero__grid">
+
+            <div>
+                <p class="kad-hero__eyebrow">Karnel AI · Overview</p>
+                <h1 id="kad-hero-title">Operational metrics from the travel assistant.</h1>
+                <p class="kad-hero__lede">
+                    A snapshot of conversations, messages and capability availability
+                    for the persisted rule-based assistant.
+                </p>
+            </div>
+
+            <div class="kad-hero__support" role="status" aria-live="polite">
+                <span class="kad-hero__support-label">Support rate</span>
+                <span class="kad-hero__support-value">@supportRate%</span>
+                <span class="kad-hero__support-meta">
+                    @supportedMessages of @messages
+                    @(messages == 1 ? "message" : "messages") handled
+                </span>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- ================================================================
+         METRIC ROW
+         ================================================================ -->
+    <section class="kad-metrics" aria-label="Key metrics">
+
+        <div class="kad-metric">
+            <span class="kad-metric__label">Conversations</span>
+            <strong class="kad-metric__value">@conversations</strong>
+            <span class="kad-metric__sub">
+                @(conversations == 1 ? "session recorded" : "sessions recorded")
+            </span>
+        </div>
+
+        <div class="kad-metric kad-metric--sand">
+            <span class="kad-metric__label">Messages</span>
+            <strong class="kad-metric__value">@messages</strong>
+            <span class="kad-metric__sub">
+                @if (conversations > 0)
+                {
+                    var avg = (double)messages / conversations;
+                    <text>~@System.Math.Round(avg, 1) per conversation</text>
+                }
+                else
+                {
+                    <text>no conversations yet</text>
+                }
+            </span>
+        </div>
+
+        <div class="kad-metric kad-metric--sage">
+            <span class="kad-metric__label">Supported</span>
+            <strong class="kad-metric__value">@supportedMessages</strong>
+            <span class="kad-metric__sub">handled by capabilities</span>
+        </div>
+
+        <div class="kad-metric kad-metric--muted">
+            <span class="kad-metric__label">Unsupported</span>
+            <strong class="kad-metric__value">@unsupportedMessages</strong>
+            <span class="kad-metric__sub">fell back to default reply</span>
+        </div>
+
+        <div class="kad-metric">
+            <span class="kad-metric__label">Active capabilities</span>
+            <strong class="kad-metric__value">@enabledCapabilities</strong>
+            <span class="kad-metric__sub">currently enabled</span>
+        </div>
+
+    </section>
+
+    <!-- ================================================================
+         POPULAR INTENTS
+         ================================================================ -->
+    <section class="kad-section" aria-labelledby="kad-intents-title">
+
+        <div class="kad-section__head">
+            <h2 class="kad-section__title" id="kad-intents-title">Popular intents</h2>
+            <p class="kad-section__meta">
+                @if (popularIntents.Count > 0)
+                {
+                    <text>@popularIntents.Count @(popularIntents.Count == 1 ? "intent" : "intents")</text>
+                }
+                else
+                {
+                    <text>No data yet</text>
+                }
+            </p>
+        </div>
+
+        @if (popularIntents.Count == 0)
+        {
+            <div class="kad-empty">
+                <div class="kad-empty__icon" aria-hidden="true">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="1.2"
+                         stroke-linecap="round" stroke-linejoin="round"
+                         focusable="false">
+                        <path d="M3 3v18h18" />
+                        <path d="M7 13l4-4 4 4 5-5" />
+                    </svg>
+                </div>
+                <strong>No intents recorded yet.</strong>
+                <p>Intent breakdown will populate as travellers start asking questions.</p>
+            </div>
+        }
+        else
+        {
+            <div class="kad-intents">
+                @foreach (var intent in popularIntents)
+                {
+                    var hasLabel = !string.IsNullOrWhiteSpace(intent.Intent);
+                    var pct = maxIntentCount > 0
+                        ? (int)System.Math.Round((double)intent.Count / maxIntentCount * 100)
+                        : 0;
+                    var shareOfTotal = totalIntentMessages > 0
+                        ? (int)System.Math.Round((double)intent.Count / totalIntentMessages * 100)
+                        : 0;
+
+                    <div class="kad-intent">
+                        <div class="kad-intent__label @(hasLabel ? "" : "kad-intent__label--empty")">
+                            @(hasLabel ? intent.Intent : "Unnamed intent")
+                        </div>
+
+                        <div class="kad-intent__bar"
+                             role="img"
+                             aria-label="@(hasLabel ? intent.Intent : "Unnamed intent") accounts for @shareOfTotal% of intents">
+                            <span class="kad-intent__fill" style="width:@(pct)%;"></span>
+                        </div>
+
+                        <div class="kad-intent__count">
+                            <span class="kad-intent__value">@intent.Count</span>
+                            <span class="kad-intent__pct">@shareOfTotal%</span>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+
+    </section>
+
+    <!-- ================================================================
+         RECENT CONVERSATIONS
+         ================================================================ -->
+    <section class="kad-section" aria-labelledby="kad-recent-title">
+
+        <div class="kad-section__head">
+            <h2 class="kad-section__title" id="kad-recent-title">Recent conversations</h2>
+            <p class="kad-section__meta">
+                @if (recentConversations.Count > 0)
+                {
+                    <text>Latest @recentConversations.Count</text>
+                }
+                else
+                {
+                    <text>None yet</text>
+                }
+            </p>
+        </div>
+
+        @if (recentConversations.Count == 0)
+        {
+            <div class="kad-empty">
+                <div class="kad-empty__icon" aria-hidden="true">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="1.2"
+                         stroke-linecap="round" stroke-linejoin="round"
+                         focusable="false">
+                        <path d="M21 15a2 2 0 0 1-2 2H8l-5 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                    </svg>
+                </div>
+                <strong>No conversations yet.</strong>
+                <p>Recent traveller sessions will appear here once they start talking to Karnel AI.</p>
+            </div>
+        }
+        else
+        {
+            <div class="kad-table-wrap">
+                <table class="kad-table">
+                    <thead>
+                        <tr>
+                            <th scope="col">Identifier</th>
+                            <th scope="col">Messages</th>
+                            <th scope="col">Status</th>
+                            <th scope="col">Updated</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in recentConversations)
+                        {
+                            var hasKey = !string.IsNullOrWhiteSpace(item.ConversationKey);
+                            var hasStatus = !string.IsNullOrWhiteSpace(item.Status);
+                            var rawStatus = hasStatus ? item.Status : string.Empty;
+
+                            var isActive = hasStatus &&
+                                (rawStatus.Equals("Active", System.StringComparison.OrdinalIgnoreCase) ||
+                                 rawStatus.Equals("Open", System.StringComparison.OrdinalIgnoreCase) ||
+                                 rawStatus.Equals("In Progress", System.StringComparison.OrdinalIgnoreCase));
+
+                            var isClosed = hasStatus &&
+                                (rawStatus.Equals("Closed", System.StringComparison.OrdinalIgnoreCase) ||
+                                 rawStatus.Equals("Archived", System.StringComparison.OrdinalIgnoreCase) ||
+                                 rawStatus.Equals("Completed", System.StringComparison.OrdinalIgnoreCase) ||
+                                 rawStatus.Equals("Ended", System.StringComparison.OrdinalIgnoreCase));
+
+                            var isPending = hasStatus &&
+                                (rawStatus.Equals("Pending", System.StringComparison.OrdinalIgnoreCase) ||
+                                 rawStatus.Equals("New", System.StringComparison.OrdinalIgnoreCase));
+
+                            string statusClass = isActive ? "kad-status--active"
+                                              : isClosed ? "kad-status--closed"
+                                              : isPending ? "kad-status--pending"
+                                              : "kad-status--closed";
+
+                            var displayStatus = hasStatus ? rawStatus : "Unknown";
+                            var messageLabel = item.MessageCount == 1 ? "message" : "messages";
+
+                            <tr>
+                                <td data-label="Identifier">
+                                    @if (hasKey)
+                                    {
+                                        <span class="kad-key" title="@item.ConversationKey">@item.ConversationKey</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="kad-key kad-key--empty">Not assigned</span>
+                                    }
+                                </td>
+
+                                <td data-label="Messages">
+                                    <span class="kad-count">
+                                        @item.MessageCount
+                                        <small>@messageLabel</small>
+                                    </span>
+                                </td>
+
+                                <td data-label="Status">
+                                    <span class="kad-status @statusClass">
+                                        <i aria-hidden="true"></i>
+                                        @displayStatus
+                                    </span>
+                                </td>
+
+                                <td data-label="Updated">
+                                    <span class="kad-date">
+                                        @item.UpdatedAt.ToLocalTime().ToString("dd MMM yyyy")
+                                    </span>
+                                    <span class="kad-time">
+                                        @item.UpdatedAt.ToLocalTime().ToString("HH:mm")
+                                    </span>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+
+    </section>
+
+    <!-- ================================================================
+         QUICK LINKS
+         ================================================================ -->
+    <nav class="kad-quick" aria-label="AI administration shortcuts">
+        <a href="/Admin/AI/Conversations">
+            All conversations
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="1.8"
+                 stroke-linecap="round" stroke-linejoin="round"
+                 aria-hidden="true" focusable="false">
+                <path d="M5 12h14M13 6l6 6-6 6" />
+            </svg>
+        </a>
+        <a href="/Admin/AI/Capabilities">
+            Capabilities
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="1.8"
+                 stroke-linecap="round" stroke-linejoin="round"
+                 aria-hidden="true" focusable="false">
+                <path d="M5 12h14M13 6l6 6-6 6" />
+            </svg>
+        </a>
+        <a href="/Admin/AI/Knowledge">
+            Knowledge base
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="1.8"
+                 stroke-linecap="round" stroke-linejoin="round"
+                 aria-hidden="true" focusable="false">
+                <path d="M5 12h14M13 6l6 6-6 6" />
+            </svg>
+        </a>
+        <a href="/Admin/AI/Feedback">
+            Feedback
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="1.8"
+                 stroke-linecap="round" stroke-linejoin="round"
+                 aria-hidden="true" focusable="false">
+                <path d="M5 12h14M13 6l6 6-6 6" />
+            </svg>
+        </a>
+        <a href="/Admin/AI/Health">
+            System health
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="1.8"
+                 stroke-linecap="round" stroke-linejoin="round"
+                 aria-hidden="true" focusable="false">
+                <path d="M5 12h14M13 6l6 6-6 6" />
+            </svg>
+        </a>
+    </nav>
+
+</div>

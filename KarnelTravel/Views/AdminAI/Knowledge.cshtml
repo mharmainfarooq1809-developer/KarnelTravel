@@ -1,0 +1,851 @@
+@model IReadOnlyList<KarnelTravel.Models.AIKnowledgeEntry>
+
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "AI Knowledge Base";
+
+    var entries = Model ?? Array.Empty<KarnelTravel.Models.AIKnowledgeEntry>();
+    var totalCount = entries.Count;
+    var activeCount = entries.Count(x => x.IsEnabled);
+    var inactiveCount = totalCount - activeCount;
+    var currentSearch = Context.Request.Query["search"].ToString();
+}
+
+<style>
+    /* ==========================================================================
+       KARNEL TRAVEL GUIDE — ADMIN · AI KNOWLEDGE BASE
+       Scoped with .kkb- prefix. Inline <style> because _AdminLayout does not
+       render a Styles section (matching the rest of the admin suite).
+       ========================================================================== */
+
+    .kkb-page {
+        --kkb-forest: var(--forest-deep, #14271F);
+        --kkb-ivory: var(--ivory, #F8F6F0);
+        --kkb-sage: var(--sage, #8FA888);
+        --kkb-sand: var(--sand, #E8DFC9);
+        --kkb-white: #FFFFFF;
+        --kkb-muted: var(--muted, #5A6B60);
+        --kkb-line: var(--line, rgba(20, 39, 31, .12));
+        --kkb-danger: #a8442e;
+        --kkb-serif: var(--serif, "Playfair Display", Georgia, "Times New Roman", serif);
+        --kkb-sans: var(--sans, "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif);
+        --kkb-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+        --kkb-ease: var(--ease, cubic-bezier(.22, .61, .36, 1));
+
+        animation: kkb-fade .45s var(--kkb-ease) both;
+    }
+
+    @@keyframes kkb-fade {
+        from { opacity: 0; transform: translateY(6px); }
+        to   { opacity: 1; transform: none; }
+    }
+
+    .kkb-page .visually-hidden {
+        position: absolute !important;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+    }
+
+    /* ----------------------------------------------------- STAT CARDS ---- */
+    .kkb-page .kkb-stats {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 14px;
+        margin-bottom: 22px;
+    }
+
+    .kkb-page .kkb-stat {
+        position: relative;
+        padding: 20px 22px 20px 26px;
+        background: var(--kkb-white);
+        border: 1px solid var(--kkb-line);
+        border-radius: 4px;
+        overflow: hidden;
+        transition: border-color .3s var(--kkb-ease);
+    }
+
+    .kkb-page .kkb-stat:hover {
+        border-color: rgba(20, 39, 31, .22);
+    }
+
+    .kkb-page .kkb-stat::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 3px;
+        background: var(--kkb-forest);
+    }
+
+    .kkb-page .kkb-stat--active::before   { background: var(--kkb-sage); }
+    .kkb-page .kkb-stat--inactive::before { background: #b8a882; }
+
+    .kkb-page .kkb-stat__label {
+        display: block;
+        margin-bottom: 8px;
+        font-size: .62rem;
+        font-weight: 600;
+        letter-spacing: .22em;
+        text-transform: uppercase;
+        color: var(--kkb-muted);
+    }
+
+    .kkb-page .kkb-stat strong {
+        display: block;
+        font-family: var(--kkb-serif);
+        font-size: clamp(1.5rem, 2.4vw, 2.05rem);
+        font-weight: 500;
+        line-height: 1.05;
+        letter-spacing: -.01em;
+        color: var(--kkb-forest);
+    }
+
+    /* -------------------------------------------------------- TOOLBAR ---- */
+    .kkb-page .kkb-toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 12px;
+        padding: 14px 16px;
+        background: var(--kkb-white);
+        border: 1px solid var(--kkb-line);
+        border-radius: 4px;
+        margin-bottom: 16px;
+    }
+
+    .kkb-page .kkb-search-form {
+        display: flex;
+        flex: 1 1 320px;
+        gap: 10px;
+        margin: 0;
+        min-width: 0;
+    }
+
+    .kkb-page .kkb-search {
+        flex: 1 1 200px;
+        min-width: 0;
+        padding: 10px 14px;
+        border: 1px solid var(--kkb-line);
+        border-radius: 3px;
+        font-family: var(--kkb-sans);
+        font-size: .88rem;
+        background: var(--kkb-ivory);
+        color: var(--kkb-forest);
+        transition: border-color .25s var(--kkb-ease),
+                    background-color .25s var(--kkb-ease),
+                    box-shadow .25s var(--kkb-ease);
+    }
+
+    .kkb-page .kkb-search::placeholder {
+        color: rgba(90, 107, 96, .7);
+    }
+
+    .kkb-page .kkb-search:focus {
+        outline: none;
+        border-color: var(--kkb-sage);
+        background: var(--kkb-white);
+        box-shadow: 0 0 0 3px rgba(143, 168, 136, .18);
+    }
+
+    .kkb-page .kkb-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 10px 16px;
+        border-radius: 2px;
+        font-family: var(--kkb-sans);
+        font-size: .66rem;
+        font-weight: 600;
+        letter-spacing: .2em;
+        text-transform: uppercase;
+        text-decoration: none;
+        cursor: pointer;
+        border: 1px solid transparent;
+        white-space: nowrap;
+        transition:
+            background-color .25s var(--kkb-ease),
+            border-color .25s var(--kkb-ease),
+            color .25s var(--kkb-ease),
+            transform .25s var(--kkb-ease);
+    }
+
+    .kkb-page .kkb-btn svg {
+        flex: none;
+        transition: transform .25s var(--kkb-ease);
+    }
+
+    .kkb-page .kkb-btn--primary {
+        background: var(--kkb-forest);
+        border-color: var(--kkb-forest);
+        color: var(--kkb-ivory);
+    }
+
+    .kkb-page .kkb-btn--primary:hover {
+        background: var(--kkb-sand);
+        border-color: var(--kkb-sand);
+        color: var(--kkb-forest);
+        transform: translateY(-1px);
+    }
+
+    .kkb-page .kkb-btn--primary:hover svg {
+        transform: translateX(2px);
+    }
+
+    .kkb-page .kkb-btn--quiet {
+        background: transparent;
+        border-color: var(--kkb-line);
+        color: var(--kkb-forest);
+    }
+
+    .kkb-page .kkb-btn--quiet:hover {
+        border-color: var(--kkb-forest);
+        background: var(--kkb-ivory);
+    }
+
+    .kkb-page .kkb-btn--danger {
+        background: transparent;
+        border-color: rgba(168, 68, 46, .3);
+        color: var(--kkb-danger);
+    }
+
+    .kkb-page .kkb-btn--danger:hover {
+        background: rgba(168, 68, 46, .08);
+        border-color: var(--kkb-danger);
+    }
+
+    .kkb-page .kkb-btn:focus-visible {
+        outline: 2px solid var(--kkb-sand);
+        outline-offset: 2px;
+    }
+
+    .kkb-page .kkb-btn--sm {
+        padding: 8px 12px;
+        font-size: .62rem;
+        letter-spacing: .16em;
+    }
+
+    .kkb-page .kkb-select {
+        padding: 10px 34px 10px 14px;
+        border: 1px solid var(--kkb-line);
+        border-radius: 3px;
+        font-family: var(--kkb-sans);
+        font-size: .88rem;
+        color: var(--kkb-forest);
+        background-color: var(--kkb-ivory);
+        background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8' fill='none' stroke='%235A6B60' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'><path d='M1 1l5 5 5-5'/></svg>");
+        background-repeat: no-repeat;
+        background-position: right 12px center;
+        appearance: none;
+        -webkit-appearance: none;
+        cursor: pointer;
+        transition: border-color .25s var(--kkb-ease),
+                    background-color .25s var(--kkb-ease),
+                    box-shadow .25s var(--kkb-ease);
+    }
+
+    .kkb-page .kkb-select:focus {
+        outline: none;
+        border-color: var(--kkb-sage);
+        background-color: var(--kkb-white);
+        box-shadow: 0 0 0 3px rgba(143, 168, 136, .18);
+    }
+
+    /* ---------------------------------------------------- TABLE SHELL ---- */
+    .kkb-page .kkb-table-wrap {
+        background: var(--kkb-white);
+        border: 1px solid var(--kkb-line);
+        border-radius: 4px;
+        overflow: hidden;
+    }
+
+    .kkb-page .kkb-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: .88rem;
+        color: var(--kkb-forest);
+    }
+
+    .kkb-page .kkb-table thead {
+        background: var(--kkb-ivory);
+        border-bottom: 1px solid var(--kkb-line);
+    }
+
+    .kkb-page .kkb-table th {
+        padding: 14px 18px;
+        text-align: left;
+        font-family: var(--kkb-sans);
+        font-size: .62rem;
+        font-weight: 700;
+        letter-spacing: .22em;
+        text-transform: uppercase;
+        color: var(--kkb-muted);
+        white-space: nowrap;
+    }
+
+    .kkb-page .kkb-table th:last-child {
+        text-align: right;
+    }
+
+    .kkb-page .kkb-table td {
+        padding: 18px;
+        vertical-align: middle;
+        border-bottom: 1px solid var(--kkb-line);
+    }
+
+    .kkb-page .kkb-table tbody tr:last-child td {
+        border-bottom: none;
+    }
+
+    .kkb-page .kkb-row {
+        transition: background-color .25s var(--kkb-ease);
+    }
+
+    .kkb-page .kkb-row:hover {
+        background: rgba(232, 223, 201, .18);
+    }
+
+    /* ---------------------------------------------------- CELLS ---- */
+    .kkb-page .kkb-title {
+        display: block;
+        font-family: var(--kkb-serif);
+        font-weight: 500;
+        font-size: 1.05rem;
+        line-height: 1.3;
+        color: var(--kkb-forest);
+        overflow-wrap: break-word;
+        word-break: break-word;
+    }
+
+    .kkb-page .kkb-title--empty {
+        font-family: var(--kkb-sans);
+        font-style: italic;
+        font-size: .88rem;
+        color: var(--kkb-muted);
+    }
+
+    .kkb-page .kkb-category {
+        display: inline-block;
+        padding: 4px 10px;
+        font-family: var(--kkb-sans);
+        font-size: .7rem;
+        font-weight: 600;
+        letter-spacing: .08em;
+        line-height: 1.5;
+        color: var(--kkb-forest);
+        background: var(--kkb-ivory);
+        border: 1px solid var(--kkb-line);
+        border-radius: 2px;
+        white-space: nowrap;
+        max-width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .kkb-page .kkb-category--empty {
+        font-style: italic;
+        font-weight: 400;
+        color: var(--kkb-muted);
+        background: transparent;
+        border: none;
+        padding: 0;
+    }
+
+    /* -------------------------------------------------------- STATUS ---- */
+    .kkb-page .kkb-status {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 12px;
+        border-radius: 999px;
+        font-family: var(--kkb-sans);
+        font-size: .64rem;
+        font-weight: 600;
+        letter-spacing: .14em;
+        text-transform: uppercase;
+        white-space: nowrap;
+    }
+
+    .kkb-page .kkb-status i {
+        display: inline-block;
+        flex: none;
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: currentColor;
+    }
+
+    .kkb-page .kkb-status--on {
+        background: rgba(143, 168, 136, .22);
+        color: #2e5238;
+    }
+
+    .kkb-page .kkb-status--off {
+        background: rgba(20, 39, 31, .06);
+        color: #5a6b60;
+    }
+
+    /* -------------------------------------------------------- UPDATED ---- */
+    .kkb-page .kkb-date {
+        display: block;
+        font-family: var(--kkb-sans);
+        font-size: .82rem;
+        line-height: 1.5;
+        color: var(--kkb-forest);
+        white-space: nowrap;
+    }
+
+    .kkb-page .kkb-time {
+        display: block;
+        font-family: var(--kkb-mono);
+        font-size: .72rem;
+        line-height: 1.5;
+        letter-spacing: .02em;
+        color: var(--kkb-muted);
+        white-space: nowrap;
+    }
+
+    /* -------------------------------------------------------- ACTIONS ---- */
+    .kkb-page .kkb-actions {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 8px;
+    }
+
+    .kkb-page .kkb-actions form {
+        margin: 0;
+        display: inline-flex;
+    }
+
+    /* --------------------------------------------------------- EMPTY ---- */
+    .kkb-page .kkb-empty {
+        padding: 64px 24px;
+        text-align: center;
+    }
+
+    .kkb-page .kkb-empty__icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 72px;
+        height: 72px;
+        margin-bottom: 20px;
+        border-radius: 50%;
+        background: var(--kkb-ivory);
+        color: var(--kkb-sage);
+    }
+
+    .kkb-page .kkb-empty strong {
+        display: block;
+        margin-bottom: 8px;
+        font-family: var(--kkb-serif);
+        font-size: clamp(1.3rem, 2vw, 1.6rem);
+        font-weight: 500;
+        color: var(--kkb-forest);
+    }
+
+    .kkb-page .kkb-empty p {
+        margin: 0 0 20px;
+        font-size: .9rem;
+        line-height: 1.6;
+        color: var(--kkb-muted);
+    }
+
+    /* -------------------------------------- FILTER-HIDDEN-ALL-ROWS ---- */
+    .kkb-page .kkb-all-hidden td {
+        padding: 48px 24px;
+        text-align: center;
+        font-size: .9rem;
+        color: var(--kkb-muted);
+        font-style: italic;
+    }
+
+    /* ------------------------------------------------------ RESPONSIVE ---- */
+    @@media (max-width: 900px) {
+        .kkb-page .kkb-stats {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+
+        .kkb-page .kkb-table-wrap {
+            background: transparent;
+            border: none;
+            overflow: visible;
+        }
+
+        .kkb-page .kkb-table,
+        .kkb-page .kkb-table tbody,
+        .kkb-page .kkb-table tr,
+        .kkb-page .kkb-table td {
+            display: block;
+            width: 100%;
+        }
+
+        .kkb-page .kkb-table thead {
+            display: none;
+        }
+
+        .kkb-page .kkb-row {
+            background: var(--kkb-white);
+            border: 1px solid var(--kkb-line);
+            border-radius: 4px;
+            padding: 16px 18px;
+            margin-bottom: 12px;
+        }
+
+        .kkb-page .kkb-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .kkb-page .kkb-table td {
+            padding: 8px 0;
+            border: none;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: baseline;
+            gap: 8px 14px;
+        }
+
+        .kkb-page .kkb-table td::before {
+            content: attr(data-label);
+            flex: 0 0 100px;
+            font-size: .6rem;
+            font-weight: 700;
+            letter-spacing: .22em;
+            text-transform: uppercase;
+            color: var(--kkb-sage);
+        }
+
+        .kkb-page .kkb-table td.kkb-empty::before,
+        .kkb-page .kkb-table td.kkb-all-hidden::before {
+            display: none;
+        }
+
+        .kkb-page .kkb-actions {
+            justify-content: flex-start;
+            padding-top: 12px;
+            margin-top: 4px;
+            border-top: 1px solid var(--kkb-line);
+        }
+
+        .kkb-page .kkb-category {
+            white-space: normal;
+        }
+    }
+
+    @@media (max-width: 560px) {
+        .kkb-page .kkb-stats {
+            grid-template-columns: 1fr;
+        }
+
+        .kkb-page .kkb-toolbar {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .kkb-page .kkb-search-form {
+            flex-direction: column;
+        }
+
+        .kkb-page .kkb-search,
+        .kkb-page .kkb-select,
+        .kkb-page .kkb-search-form .kkb-btn {
+            width: 100%;
+        }
+
+        .kkb-page .kkb-btn--sm {
+            width: 100%;
+        }
+
+        .kkb-page .kkb-actions {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .kkb-page .kkb-actions form {
+            width: 100%;
+        }
+
+        .kkb-page .kkb-date,
+        .kkb-page .kkb-time {
+            white-space: normal;
+        }
+    }
+
+    /* --------------------------------------------- REDUCED MOTION ---- */
+    @@media (prefers-reduced-motion: reduce) {
+        .kkb-page {
+            animation: none;
+        }
+
+        .kkb-page *,
+        .kkb-page *::before,
+        .kkb-page *::after {
+            transition: none !important;
+            animation: none !important;
+        }
+    }
+</style>
+
+<div class="page-heading">
+    <div>
+        <div class="eyebrow">Karnel AI · Knowledge base · @totalCount @(totalCount == 1 ? "entry" : "entries")</div>
+        <h1>Approved knowledge.</h1>
+        <p>Manage the reference material Karnel AI draws from when answering travellers.</p>
+    </div>
+
+    <a class="kkb-btn kkb-btn--primary" href="/Admin/AI/Knowledge/Create">
+        New entry
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round"
+             aria-hidden="true" focusable="false">
+            <path d="M12 5v14M5 12h14" />
+        </svg>
+    </a>
+</div>
+
+@* Preserves the original anti-forgery form that pages/JS may reference *@
+<form id="knowledge-token" hidden>@Html.AntiForgeryToken()</form>
+
+<div class="kkb-page">
+
+    <div class="kkb-stats">
+        <div class="kkb-stat">
+            <span class="kkb-stat__label">Total entries</span>
+            <strong>@totalCount</strong>
+        </div>
+
+        <div class="kkb-stat kkb-stat--active">
+            <span class="kkb-stat__label">Active</span>
+            <strong>@activeCount</strong>
+        </div>
+
+        <div class="kkb-stat kkb-stat--inactive">
+            <span class="kkb-stat__label">Inactive</span>
+            <strong>@inactiveCount</strong>
+        </div>
+    </div>
+
+    <div class="kkb-toolbar">
+
+        @* Preserved: GET search form with `search` parameter *@
+        <form class="kkb-search-form" method="get">
+            <label for="kkbSearchInput" class="visually-hidden">Search knowledge entries</label>
+            <input class="kkb-search"
+                   type="search"
+                   id="kkbSearchInput"
+                   name="search"
+                   value="@currentSearch"
+                   placeholder="Search approved knowledge..." />
+            <button class="kkb-btn kkb-btn--quiet" type="submit">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
+                     stroke="currentColor" stroke-width="1.8"
+                     stroke-linecap="round" stroke-linejoin="round"
+                     aria-hidden="true" focusable="false">
+                    <circle cx="11" cy="11" r="7" />
+                    <path d="M20 20l-3.5-3.5" />
+                </svg>
+                Search
+            </button>
+        </form>
+
+        <label for="kkbStatus" class="visually-hidden">Filter by status</label>
+        <select class="kkb-select" id="kkbStatus" aria-label="Filter by status">
+            <option value="all">All statuses</option>
+            <option value="on">Active</option>
+            <option value="off">Inactive</option>
+        </select>
+
+    </div>
+
+    <div class="kkb-table-wrap">
+        <table class="kkb-table" id="kkbTable">
+            <thead>
+                <tr>
+                    <th scope="col">Title</th>
+                    <th scope="col">Category</th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Updated</th>
+                    <th scope="col"><span class="visually-hidden">Actions</span></th>
+                </tr>
+            </thead>
+
+            <tbody>
+                @if (totalCount == 0)
+                {
+                    <tr>
+                        <td colspan="5" class="kkb-empty">
+                            <div class="kkb-empty__icon" aria-hidden="true">
+                                <svg width="32" height="32" viewBox="0 0 24 24" fill="none"
+                                     stroke="currentColor" stroke-width="1.2"
+                                     stroke-linecap="round" stroke-linejoin="round"
+                                     focusable="false">
+                                    <path d="M4 4h12l4 4v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4z" />
+                                    <path d="M8 10h8M8 14h6" />
+                                </svg>
+                            </div>
+
+                            @if (!string.IsNullOrWhiteSpace(currentSearch))
+                            {
+                                <strong>No entries match "@currentSearch".</strong>
+                                <p>Try a different search, or clear the filter to see everything.</p>
+                                <a class="kkb-btn kkb-btn--quiet" href="@Context.Request.Path">Clear search</a>
+                            }
+                            else
+                            {
+                                <strong>No knowledge entries yet.</strong>
+                                <p>Approved reference material will appear here once you add it.</p>
+                                <a class="kkb-btn kkb-btn--primary" href="/Admin/AI/Knowledge/Create">
+                                    New entry
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
+                                         stroke="currentColor" stroke-width="2"
+                                         stroke-linecap="round" stroke-linejoin="round"
+                                         aria-hidden="true" focusable="false">
+                                        <path d="M12 5v14M5 12h14" />
+                                    </svg>
+                                </a>
+                            }
+                        </td>
+                    </tr>
+                }
+                else
+                {
+                    foreach (var item in entries)
+                    {
+                        var hasTitle = !string.IsNullOrWhiteSpace(item.Title);
+                        var hasCategory = !string.IsNullOrWhiteSpace(item.Category);
+                        var statusClass = item.IsEnabled ? "kkb-status--on" : "kkb-status--off";
+                        var statusText = item.IsEnabled ? "Active" : "Inactive";
+                        var statusValue = item.IsEnabled ? "on" : "off";
+                        var actionLabel = item.IsEnabled ? "Disable" : "Enable";
+
+                        <tr class="kkb-row" data-status="@statusValue">
+
+                            <td data-label="Title">
+                                @if (hasTitle)
+                                {
+                                    <span class="kkb-title">@item.Title</span>
+                                }
+                                else
+                                {
+                                    <span class="kkb-title kkb-title--empty">Untitled entry</span>
+                                }
+                            </td>
+
+                            <td data-label="Category">
+                                @if (hasCategory)
+                                {
+                                    <span class="kkb-category">@item.Category</span>
+                                }
+                                else
+                                {
+                                    <span class="kkb-category kkb-category--empty">—</span>
+                                }
+                            </td>
+
+                            <td data-label="Status">
+                                <span class="kkb-status @statusClass">
+                                    <i aria-hidden="true"></i>
+                                    @statusText
+                                </span>
+                            </td>
+
+                            <td data-label="Updated">
+                                <span class="kkb-date">
+                                    @item.UpdatedAt.ToLocalTime().ToString("dd MMM yyyy")
+                                </span>
+                                <span class="kkb-time">
+                                    @item.UpdatedAt.ToLocalTime().ToString("HH:mm")
+                                </span>
+                            </td>
+
+                            <td data-label="Actions">
+                                <div class="kkb-actions">
+
+                                    @* Preserved: Edit link *@
+                                    <a class="kkb-btn kkb-btn--quiet kkb-btn--sm"
+                                       href="/Admin/AI/Knowledge/Edit/@item.Id">
+                                        Edit
+                                    </a>
+
+                                    @* Preserved: Toggle form (Enable/Disable) *@
+                                    <form method="post" action="/Admin/AI/Knowledge/Toggle/@item.Id">
+                                        <input name="enabled" type="hidden" value="@(!item.IsEnabled)" />
+                                        @Html.AntiForgeryToken()
+                                        <button class="kkb-btn kkb-btn--quiet kkb-btn--sm" type="submit">
+                                            @actionLabel
+                                        </button>
+                                    </form>
+
+                                    @* Preserved: Delete form with confirm *@
+                                    <form method="post"
+                                          action="/Admin/AI/Knowledge/Delete/@item.Id"
+                                          onsubmit="return confirm('Delete this approved knowledge entry?');">
+                                        @Html.AntiForgeryToken()
+                                        <button class="kkb-btn kkb-btn--danger kkb-btn--sm" type="submit">
+                                            Delete
+                                        </button>
+                                    </form>
+
+                                </div>
+                            </td>
+
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+
+</div>
+
+@section Scripts {
+    <script>
+        (() => {
+            const status = document.getElementById("kkbStatus");
+            const table = document.getElementById("kkbTable");
+            if (!status || !table) { return; }
+
+            const tbody = table.querySelector("tbody");
+            const rows = Array.from(tbody.querySelectorAll(".kkb-row"));
+            if (rows.length === 0) { return; }
+
+            let noMatchRow = tbody.querySelector(".kkb-all-hidden");
+            if (!noMatchRow) {
+                noMatchRow = document.createElement("tr");
+                noMatchRow.className = "kkb-all-hidden";
+                noMatchRow.style.display = "none";
+                const cell = document.createElement("td");
+                cell.colSpan = 5;
+                cell.textContent = "No entries match this status filter.";
+                noMatchRow.appendChild(cell);
+                tbody.appendChild(noMatchRow);
+            }
+
+            function applyFilter() {
+                const selected = status.value;
+                let visibleCount = 0;
+
+                rows.forEach(row => {
+                    const rowStatus = row.dataset.status;
+                    const visible = selected === "all" || rowStatus === selected;
+                    row.style.display = visible ? "" : "none";
+                    if (visible) { visibleCount++; }
+                });
+
+                noMatchRow.style.display = visibleCount === 0 ? "" : "none";
+            }
+
+            status.addEventListener("change", applyFilter);
+        })();
+    </script>
+}

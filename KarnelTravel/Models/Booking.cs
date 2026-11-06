@@ -20,6 +20,9 @@ public class Booking
     [EmailAddress, StringLength(256)]
     public string? Email { get; set; }
 
+    [StringLength(256)]
+    public string? OwnerEmail { get; set; }
+
     [Required, StringLength(30)]
     public string ServiceType { get; set; } = string.Empty;
 

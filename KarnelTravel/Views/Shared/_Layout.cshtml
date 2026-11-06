@@ -602,6 +602,154 @@
                     transform: scaleX(1);
                 }
 
+            /* ---------- Karnel AI navigation CTA (premium animated pill) ---------- */
+            .karnel-ai-link {
+                position: relative;
+                display: inline-flex;
+                align-items: center;
+                gap: 8px;
+                height: 42px;
+                padding: 0 18px 0 12px;
+                border-radius: 999px;
+                background: linear-gradient(135deg, #FBF8F0 0%, #ECEFE5 100%);
+                color: var(--forest-deep);
+                border: 1px solid rgba(143, 168, 136, .55);
+                font-size: .72rem;
+                font-weight: 600;
+                letter-spacing: .14em;
+                text-transform: uppercase;
+                white-space: nowrap;
+                overflow: hidden;
+                isolation: isolate;
+                box-shadow: 0 2px 8px rgba(20, 39, 31, .06);
+                transition: border-color .3s var(--ease), box-shadow .3s var(--ease),
+                            transform .3s var(--ease), background .3s var(--ease);
+            }
+
+            .karnel-ai-link:hover,
+            .karnel-ai-link:focus-visible {
+                border-color: var(--sage);
+                background: linear-gradient(135deg, #FFFFFF 0%, #F2F4EB 100%);
+                box-shadow: 0 4px 16px rgba(20, 39, 31, .12),
+                            0 0 0 3px rgba(143, 168, 136, .20);
+                transform: translateY(-1px);
+            }
+
+            /* Sparkle wrapper — gentle float */
+            .karnel-ai-link__icon {
+                position: relative;
+                z-index: 2;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                width: 18px;
+                height: 18px;
+                flex: 0 0 auto;
+                color: var(--forest-deep);
+                animation: kai-nav-float 3.4s ease-in-out infinite;
+            }
+
+            /* Sparkle glyph — slow rotation */
+            .karnel-ai-link__icon svg {
+                position: relative;
+                z-index: 1;
+                width: 100%;
+                height: 100%;
+                display: block;
+                animation: kai-nav-spin 14s linear infinite;
+                transform-origin: 50% 50%;
+            }
+
+            /* Sage halo — soft pulse */
+            .karnel-ai-link__icon::after {
+                content: "";
+                position: absolute;
+                inset: -7px;
+                z-index: 0;
+                border-radius: 50%;
+                background: radial-gradient(circle,
+                    rgba(143, 168, 136, .55) 0%,
+                    rgba(143, 168, 136, 0) 70%);
+                animation: kai-nav-pulse 3.4s ease-in-out infinite;
+                pointer-events: none;
+            }
+
+            /* Faster, brighter on hover / focus */
+            .karnel-ai-link:hover .karnel-ai-link__icon,
+            .karnel-ai-link:focus-visible .karnel-ai-link__icon {
+                animation-duration: 1.8s;
+            }
+
+            .karnel-ai-link:hover .karnel-ai-link__icon::after,
+            .karnel-ai-link:focus-visible .karnel-ai-link__icon::after {
+                background: radial-gradient(circle,
+                    rgba(143, 168, 136, .85) 0%,
+                    rgba(143, 168, 136, 0) 70%);
+            }
+
+            /* Label kept above the sweep layer */
+            .karnel-ai-link__label {
+                position: relative;
+                z-index: 2;
+            }
+
+            /* Periodic light sweep */
+            .karnel-ai-link::before {
+                content: "";
+                position: absolute;
+                inset: 0;
+                z-index: 1;
+                background: linear-gradient(105deg,
+                    transparent 35%,
+                    rgba(255, 255, 255, .85) 50%,
+                    transparent 65%);
+                transform: translateX(-160%);
+                animation: kai-nav-sweep 8s ease-in-out infinite;
+                animation-delay: 2.5s;
+                pointer-events: none;
+            }
+
+            @@keyframes kai-nav-float {
+                0%, 100% { transform: translateY(0); }
+                50%      { transform: translateY(-1.5px); }
+            }
+
+            @@keyframes kai-nav-spin {
+                from { transform: rotate(0deg); }
+                to   { transform: rotate(360deg); }
+            }
+
+            @@keyframes kai-nav-pulse {
+                0%, 100% { opacity: .55; transform: scale(.85); }
+                50%      { opacity: 1;   transform: scale(1.18); }
+            }
+
+            @@keyframes kai-nav-sweep {
+                0%, 78%   { transform: translateX(-160%); }
+                90%, 100% { transform: translateX(160%); }
+            }
+
+            @@media (max-width: 620px) {
+                .karnel-ai-link {
+                    height: 38px;
+                    padding: 0 14px 0 10px;
+                    gap: 6px;
+                    font-size: .66rem;
+                    letter-spacing: .11em;
+                }
+                .karnel-ai-link__icon { width: 16px; height: 16px; }
+            }
+
+            @@media (max-width: 460px) {
+                .karnel-ai-link {
+                    padding: 0 12px 0 8px;
+                    gap: 5px;
+                    font-size: .62rem;
+                    letter-spacing: .09em;
+                }
+                .karnel-ai-link__icon { width: 14px; height: 14px; }
+            }
+
             /* Pill menu button */
             .menu-btn {
                 display: inline-flex;
@@ -1796,6 +1944,15 @@
 
                 <div class="header-actions">
                     <a class="header-link" href="@Url.Action("Index", "Search")">Explore</a>
+                    <a class="karnel-ai-link" href="@Url.Action("Index", "KarnelAI")" aria-label="Open Karnel AI travel assistant">
+                        <span class="karnel-ai-link__icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
+                                <path d="M12 3 14 9l6 2-6 2-2 6-2-6-6-2 6-2z" />
+                                <path d="m19 4 .6 1.8L21.5 6l-1.9.7L19 8.5l-.6-1.8L16.5 6l1.9-.7z" />
+                            </svg>
+                        </span>
+                        <span class="karnel-ai-link__label">Karnel AI</span>
+                    </a>
                     <button class="menu-btn" type="button" data-menu-open
                             aria-controls="site-menu" aria-expanded="false">
                         <span class="menu-btn__label">Menu</span>
@@ -1904,6 +2061,9 @@
                                             </svg>
                                         </span>
                                     </a>
+                                </li>
+                                <li class="menu__item" data-preview="ai">
+                                    <a class="menu__link" href="@Url.Action("Index", "KarnelAI")"><span class="menu__index">AI</span><span class="menu__text">Karnel AI</span><span class="menu__arrow" aria-hidden="true">↗</span></a>
                                 </li>
 
                                 <li class="menu__item" data-preview="about">
@@ -2126,8 +2286,8 @@
                         <li><a href="@Url.Action("Index", "Contact")">Get in Touch</a></li>
                         <li><a href="@Url.Action("Index", "Contact")#inquiry-form">Inquiry Form</a></li>
                         <li><a href="@Url.Action("Index", "Contact")#feedback-form">Feedback Form</a></li>
-                        <li><a href="@Url.Action("Index", "Contact")">Privacy Notice</a></li>
-                        <li><span class="mf-col__soon">Coming soon</span></li>
+                        <li><a href="@Url.Action("Login", "Account", new { returnUrl = Context.Request.Path + Context.Request.QueryString })">Account sign in</a></li>
+                        <li><a href="@Url.Action("Index", "Contact", new { category = "Tour or destination inquiry" })">Request a booking</a></li>
                     </ul>
                 </nav>
             </div>

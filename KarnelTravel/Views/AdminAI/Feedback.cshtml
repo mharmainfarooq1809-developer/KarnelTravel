@@ -1,0 +1,680 @@
+@model IReadOnlyList<KarnelTravel.Models.AIFeedback>
+
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "AI Feedback";
+
+    var feedback = Model ?? Array.Empty<KarnelTravel.Models.AIFeedback>();
+    var totalCount = feedback.Count;
+    var helpfulCount = feedback.Count(x => x.IsHelpful);
+    var unhelpfulCount = totalCount - helpfulCount;
+    var positiveRate = totalCount > 0
+        ? (int)System.Math.Round((double)helpfulCount / totalCount * 100)
+        : 0;
+}
+
+<style>
+    /* ==========================================================================
+       KARNEL TRAVEL GUIDE — ADMIN · AI FEEDBACK
+       Scoped with .kfb- prefix. Inline <style> because _AdminLayout does not
+       render a Styles section (matching the rest of the admin suite).
+       ========================================================================== */
+
+    .kfb-page {
+        --kfb-forest: var(--forest-deep, #14271F);
+        --kfb-ivory: var(--ivory, #F8F6F0);
+        --kfb-sage: var(--sage, #8FA888);
+        --kfb-sand: var(--sand, #E8DFC9);
+        --kfb-white: #FFFFFF;
+        --kfb-muted: var(--muted, #5A6B60);
+        --kfb-line: var(--line, rgba(20, 39, 31, .12));
+        --kfb-serif: var(--serif, "Playfair Display", Georgia, "Times New Roman", serif);
+        --kfb-sans: var(--sans, "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif);
+        --kfb-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+        --kfb-ease: var(--ease, cubic-bezier(.22, .61, .36, 1));
+
+        animation: kfb-fade .45s var(--kfb-ease) both;
+    }
+
+    @@keyframes kfb-fade {
+        from { opacity: 0; transform: translateY(6px); }
+        to   { opacity: 1; transform: none; }
+    }
+
+    .kfb-page .visually-hidden {
+        position: absolute !important;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+    }
+
+    /* ----------------------------------------------------- STAT CARDS ---- */
+    .kfb-page .kfb-stats {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 14px;
+        margin-bottom: 22px;
+    }
+
+    .kfb-page .kfb-stat {
+        position: relative;
+        padding: 20px 22px 20px 26px;
+        background: var(--kfb-white);
+        border: 1px solid var(--kfb-line);
+        border-radius: 4px;
+        overflow: hidden;
+        transition: border-color .3s var(--kfb-ease);
+    }
+
+    .kfb-page .kfb-stat:hover {
+        border-color: rgba(20, 39, 31, .22);
+    }
+
+    .kfb-page .kfb-stat::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 3px;
+        background: var(--kfb-forest);
+    }
+
+    .kfb-page .kfb-stat--helpful::before   { background: var(--kfb-sage); }
+    .kfb-page .kfb-stat--unhelpful::before { background: #b86550; }
+    .kfb-page .kfb-stat--rate::before      { background: var(--kfb-sand); }
+
+    .kfb-page .kfb-stat__label {
+        display: block;
+        margin-bottom: 8px;
+        font-size: .62rem;
+        font-weight: 600;
+        letter-spacing: .22em;
+        text-transform: uppercase;
+        color: var(--kfb-muted);
+    }
+
+    .kfb-page .kfb-stat strong {
+        display: block;
+        font-family: var(--kfb-serif);
+        font-size: clamp(1.5rem, 2.4vw, 2.05rem);
+        font-weight: 500;
+        line-height: 1.05;
+        letter-spacing: -.01em;
+        color: var(--kfb-forest);
+    }
+
+    .kfb-page .kfb-stat__suffix {
+        display: inline-block;
+        margin-left: 3px;
+        font-family: var(--kfb-sans);
+        font-size: .85rem;
+        font-weight: 600;
+        letter-spacing: 0;
+        color: var(--kfb-muted);
+        vertical-align: baseline;
+    }
+
+    /* -------------------------------------------------------- TOOLBAR ---- */
+    .kfb-page .kfb-toolbar {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+        padding: 14px 16px;
+        background: var(--kfb-white);
+        border: 1px solid var(--kfb-line);
+        border-radius: 4px;
+        margin-bottom: 16px;
+    }
+
+    .kfb-page .kfb-search {
+        flex: 1 1 280px;
+        min-width: 0;
+        padding: 10px 14px;
+        border: 1px solid var(--kfb-line);
+        border-radius: 3px;
+        font-family: var(--kfb-sans);
+        font-size: .88rem;
+        background: var(--kfb-ivory);
+        color: var(--kfb-forest);
+        transition: border-color .25s var(--kfb-ease),
+                    background-color .25s var(--kfb-ease),
+                    box-shadow .25s var(--kfb-ease);
+    }
+
+    .kfb-page .kfb-search::placeholder {
+        color: rgba(90, 107, 96, .7);
+    }
+
+    .kfb-page .kfb-search:focus {
+        outline: none;
+        border-color: var(--kfb-sage);
+        background: var(--kfb-white);
+        box-shadow: 0 0 0 3px rgba(143, 168, 136, .18);
+    }
+
+    .kfb-page .kfb-select {
+        padding: 10px 34px 10px 14px;
+        border: 1px solid var(--kfb-line);
+        border-radius: 3px;
+        font-family: var(--kfb-sans);
+        font-size: .88rem;
+        color: var(--kfb-forest);
+        background-color: var(--kfb-ivory);
+        background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8' fill='none' stroke='%235A6B60' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'><path d='M1 1l5 5 5-5'/></svg>");
+        background-repeat: no-repeat;
+        background-position: right 12px center;
+        appearance: none;
+        -webkit-appearance: none;
+        cursor: pointer;
+        transition: border-color .25s var(--kfb-ease),
+                    background-color .25s var(--kfb-ease),
+                    box-shadow .25s var(--kfb-ease);
+    }
+
+    .kfb-page .kfb-select:focus {
+        outline: none;
+        border-color: var(--kfb-sage);
+        background-color: var(--kfb-white);
+        box-shadow: 0 0 0 3px rgba(143, 168, 136, .18);
+    }
+
+    /* ---------------------------------------------------- TABLE SHELL ---- */
+    .kfb-page .kfb-table-wrap {
+        background: var(--kfb-white);
+        border: 1px solid var(--kfb-line);
+        border-radius: 4px;
+        overflow: hidden;
+    }
+
+    .kfb-page .kfb-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: .88rem;
+        color: var(--kfb-forest);
+    }
+
+    .kfb-page .kfb-table thead {
+        background: var(--kfb-ivory);
+        border-bottom: 1px solid var(--kfb-line);
+    }
+
+    .kfb-page .kfb-table th {
+        padding: 14px 18px;
+        text-align: left;
+        font-family: var(--kfb-sans);
+        font-size: .62rem;
+        font-weight: 700;
+        letter-spacing: .22em;
+        text-transform: uppercase;
+        color: var(--kfb-muted);
+        white-space: nowrap;
+    }
+
+    .kfb-page .kfb-table td {
+        padding: 18px;
+        vertical-align: top;
+        border-bottom: 1px solid var(--kfb-line);
+    }
+
+    .kfb-page .kfb-table tbody tr:last-child td {
+        border-bottom: none;
+    }
+
+    .kfb-page .kfb-row {
+        transition: background-color .25s var(--kfb-ease);
+    }
+
+    .kfb-page .kfb-row:hover {
+        background: rgba(232, 223, 201, .18);
+    }
+
+    /* --------------------------------------------------- IDENTIFIER ---- */
+    .kfb-page .kfb-key {
+        display: inline-block;
+        padding: 5px 10px;
+        font-family: var(--kfb-mono);
+        font-size: .74rem;
+        font-weight: 500;
+        line-height: 1.4;
+        color: var(--kfb-forest);
+        background: var(--kfb-ivory);
+        border: 1px solid var(--kfb-line);
+        border-radius: 2px;
+        white-space: nowrap;
+        max-width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        vertical-align: middle;
+    }
+
+    .kfb-page .kfb-key--empty {
+        font-family: var(--kfb-sans);
+        font-style: italic;
+        color: var(--kfb-muted);
+        background: transparent;
+        border: none;
+        padding: 0;
+    }
+
+    /* ------------------------------------------------------ OUTCOME ---- */
+    .kfb-page .kfb-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 12px;
+        border-radius: 999px;
+        font-family: var(--kfb-sans);
+        font-size: .64rem;
+        font-weight: 600;
+        letter-spacing: .14em;
+        text-transform: uppercase;
+        white-space: nowrap;
+    }
+
+    .kfb-page .kfb-pill i {
+        display: inline-block;
+        flex: none;
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: currentColor;
+    }
+
+    .kfb-page .kfb-pill--yes {
+        background: rgba(143, 168, 136, .22);
+        color: #2e5238;
+    }
+
+    .kfb-page .kfb-pill--no {
+        background: rgba(196, 96, 74, .18);
+        color: #7a3325;
+    }
+
+    /* -------------------------------------------------------- COMMENT ---- */
+    .kfb-page .kfb-comment {
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        max-width: 520px;
+        margin: 0;
+        font-size: .88rem;
+        line-height: 1.6;
+        color: var(--kfb-forest);
+        overflow-wrap: break-word;
+        word-break: break-word;
+    }
+
+    .kfb-page .kfb-comment--empty {
+        font-style: italic;
+        color: var(--kfb-muted);
+    }
+
+    /* ------------------------------------------------------ TIMESTAMP ---- */
+    .kfb-page .kfb-date {
+        display: block;
+        font-family: var(--kfb-sans);
+        font-size: .82rem;
+        line-height: 1.5;
+        color: var(--kfb-forest);
+        white-space: nowrap;
+    }
+
+    .kfb-page .kfb-time {
+        display: block;
+        font-family: var(--kfb-mono);
+        font-size: .72rem;
+        line-height: 1.5;
+        letter-spacing: .02em;
+        color: var(--kfb-muted);
+        white-space: nowrap;
+    }
+
+    /* --------------------------------------------------------- EMPTY ---- */
+    .kfb-page .kfb-empty {
+        padding: 64px 24px;
+        text-align: center;
+    }
+
+    .kfb-page .kfb-empty__icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 72px;
+        height: 72px;
+        margin-bottom: 20px;
+        border-radius: 50%;
+        background: var(--kfb-ivory);
+        color: var(--kfb-sage);
+    }
+
+    .kfb-page .kfb-empty strong {
+        display: block;
+        margin-bottom: 8px;
+        font-family: var(--kfb-serif);
+        font-size: clamp(1.3rem, 2vw, 1.6rem);
+        font-weight: 500;
+        color: var(--kfb-forest);
+    }
+
+    .kfb-page .kfb-empty p {
+        margin: 0;
+        font-size: .9rem;
+        color: var(--kfb-muted);
+    }
+
+    /* -------------------------------------- FILTER-HIDDEN-ALL-ROWS ---- */
+    .kfb-page .kfb-all-hidden td {
+        padding: 48px 24px;
+        text-align: center;
+        font-size: .9rem;
+        color: var(--kfb-muted);
+        font-style: italic;
+    }
+
+    /* ------------------------------------------------------ RESPONSIVE ---- */
+    @@media (max-width: 900px) {
+        .kfb-page .kfb-stats {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .kfb-page .kfb-table-wrap {
+            background: transparent;
+            border: none;
+            overflow: visible;
+        }
+
+        .kfb-page .kfb-table,
+        .kfb-page .kfb-table tbody,
+        .kfb-page .kfb-table tr,
+        .kfb-page .kfb-table td {
+            display: block;
+            width: 100%;
+        }
+
+        .kfb-page .kfb-table thead {
+            display: none;
+        }
+
+        .kfb-page .kfb-row {
+            background: var(--kfb-white);
+            border: 1px solid var(--kfb-line);
+            border-radius: 4px;
+            padding: 16px 18px;
+            margin-bottom: 12px;
+        }
+
+        .kfb-page .kfb-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .kfb-page .kfb-table td {
+            padding: 6px 0;
+            border: none;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: baseline;
+            gap: 8px 14px;
+        }
+
+        .kfb-page .kfb-table td::before {
+            content: attr(data-label);
+            flex: 0 0 100px;
+            font-size: .6rem;
+            font-weight: 700;
+            letter-spacing: .22em;
+            text-transform: uppercase;
+            color: var(--kfb-sage);
+        }
+
+        .kfb-page .kfb-table td.kfb-empty::before,
+        .kfb-page .kfb-table td.kfb-all-hidden::before {
+            display: none;
+        }
+
+        .kfb-page .kfb-comment {
+            max-width: none;
+        }
+
+        .kfb-page .kfb-key {
+            white-space: normal;
+            word-break: break-all;
+        }
+    }
+
+    @@media (max-width: 560px) {
+        .kfb-page .kfb-stats {
+            grid-template-columns: 1fr;
+        }
+
+        .kfb-page .kfb-toolbar {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .kfb-page .kfb-search,
+        .kfb-page .kfb-select {
+            width: 100%;
+        }
+
+        .kfb-page .kfb-date,
+        .kfb-page .kfb-time {
+            white-space: normal;
+        }
+    }
+
+    /* --------------------------------------------- REDUCED MOTION ---- */
+    @@media (prefers-reduced-motion: reduce) {
+        .kfb-page {
+            animation: none;
+        }
+
+        .kfb-page *,
+        .kfb-page *::before,
+        .kfb-page *::after {
+            transition: none !important;
+            animation: none !important;
+        }
+    }
+</style>
+
+<div class="page-heading">
+    <div>
+        <div class="eyebrow">Karnel AI · Feedback · @totalCount @(totalCount == 1 ? "response" : "responses")</div>
+        <h1>What travellers are saying.</h1>
+        <p>Visitors can tell us whether a conversation helped them. Every response is recorded here.</p>
+    </div>
+
+    <a href="@Context.Request.Path"
+       class="btn btn-quiet">
+        Refresh ↻
+    </a>
+</div>
+
+<div class="kfb-page">
+
+    <div class="kfb-stats">
+        <div class="kfb-stat">
+            <span class="kfb-stat__label">Total feedback</span>
+            <strong>@totalCount</strong>
+        </div>
+
+        <div class="kfb-stat kfb-stat--helpful">
+            <span class="kfb-stat__label">Marked helpful</span>
+            <strong>@helpfulCount</strong>
+        </div>
+
+        <div class="kfb-stat kfb-stat--unhelpful">
+            <span class="kfb-stat__label">Marked unhelpful</span>
+            <strong>@unhelpfulCount</strong>
+        </div>
+
+        <div class="kfb-stat kfb-stat--rate">
+            <span class="kfb-stat__label">Positive rate</span>
+            <strong>
+                @positiveRate<span class="kfb-stat__suffix">%</span>
+            </strong>
+        </div>
+    </div>
+
+    <div class="kfb-toolbar">
+        <input class="kfb-search"
+               type="search"
+               id="kfbSearch"
+               placeholder="Search by identifier or comment..."
+               aria-label="Search feedback" />
+
+        <select class="kfb-select"
+                id="kfbOutcome"
+                aria-label="Filter by helpfulness">
+            <option value="all">All feedback</option>
+            <option value="helpful">Helpful</option>
+            <option value="unhelpful">Not helpful</option>
+        </select>
+    </div>
+
+    <div class="kfb-table-wrap">
+        <table class="kfb-table" id="kfbTable">
+            <thead>
+                <tr>
+                    <th scope="col">Conversation</th>
+                    <th scope="col">Helpful</th>
+                    <th scope="col">Comment</th>
+                    <th scope="col">Received</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                @if (totalCount == 0)
+                {
+                    <tr>
+                        <td colspan="4" class="kfb-empty">
+                            <div class="kfb-empty__icon" aria-hidden="true">
+                                <svg width="32" height="32" viewBox="0 0 24 24" fill="none"
+                                     stroke="currentColor" stroke-width="1.2"
+                                     stroke-linecap="round" stroke-linejoin="round"
+                                     focusable="false">
+                                    <path d="M21 15a2 2 0 0 1-2 2H8l-5 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                                    <path d="M9 10h.01M15 10h.01M9.5 13.5c.5.5 1.5.8 2.5.8s2-.3 2.5-.8" />
+                                </svg>
+                            </div>
+                            <strong>No feedback received yet.</strong>
+                            <p>Responses from travellers on Karnel AI conversations will appear here.</p>
+                        </td>
+                    </tr>
+                }
+                else
+                {
+                    foreach (var item in feedback)
+                    {
+                        var hasKey = !string.IsNullOrWhiteSpace(item.ConversationKey);
+                        var hasComment = !string.IsNullOrWhiteSpace(item.Comment);
+                        var outcomeClass = item.IsHelpful ? "kfb-pill--yes" : "kfb-pill--no";
+                        var outcomeText = item.IsHelpful ? "Helpful" : "Not helpful";
+                        var outcomeValue = item.IsHelpful ? "helpful" : "unhelpful";
+
+                        <tr class="kfb-row" data-outcome="@outcomeValue">
+
+                            <td data-label="Conversation">
+                                @if (hasKey)
+                                {
+                                    <span class="kfb-key" title="@item.ConversationKey">@item.ConversationKey</span>
+                                }
+                                else
+                                {
+                                    <span class="kfb-key kfb-key--empty">Not assigned</span>
+                                }
+                            </td>
+
+                            <td data-label="Helpful">
+                                <span class="kfb-pill @outcomeClass">
+                                    <i aria-hidden="true"></i>
+                                    @outcomeText
+                                </span>
+                            </td>
+
+                            <td data-label="Comment">
+                                @if (hasComment)
+                                {
+                                    <p class="kfb-comment">@item.Comment</p>
+                                }
+                                else
+                                {
+                                    <p class="kfb-comment kfb-comment--empty">No comment provided.</p>
+                                }
+                            </td>
+
+                            <td data-label="Received">
+                                <span class="kfb-date">
+                                    @item.CreatedAt.ToLocalTime().ToString("dd MMM yyyy")
+                                </span>
+                                <span class="kfb-time">
+                                    @item.CreatedAt.ToLocalTime().ToString("HH:mm")
+                                </span>
+                            </td>
+
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+
+</div>
+
+@section Scripts {
+    <script>
+        (() => {
+            const search = document.getElementById("kfbSearch");
+            const outcome = document.getElementById("kfbOutcome");
+            const table = document.getElementById("kfbTable");
+            if (!search || !outcome || !table) { return; }
+
+            const tbody = table.querySelector("tbody");
+            const rows = Array.from(tbody.querySelectorAll(".kfb-row"));
+
+            let noMatchRow = tbody.querySelector(".kfb-all-hidden");
+            if (!noMatchRow) {
+                noMatchRow = document.createElement("tr");
+                noMatchRow.className = "kfb-all-hidden";
+                noMatchRow.style.display = "none";
+                const cell = document.createElement("td");
+                cell.colSpan = 4;
+                cell.textContent = "No feedback matches your filters.";
+                noMatchRow.appendChild(cell);
+                tbody.appendChild(noMatchRow);
+            }
+
+            function applyFilters() {
+                const query = search.value.trim().toLowerCase();
+                const selected = outcome.value;
+                let visibleCount = 0;
+
+                rows.forEach(row => {
+                    const text = row.textContent.toLowerCase();
+                    const rowOutcome = row.dataset.outcome;
+
+                    const matchesSearch = !query || text.includes(query);
+                    const matchesOutcome =
+                        selected === "all" || rowOutcome === selected;
+
+                    const visible = matchesSearch && matchesOutcome;
+                    row.style.display = visible ? "" : "none";
+                    if (visible) { visibleCount++; }
+                });
+
+                noMatchRow.style.display = visibleCount === 0 ? "" : "none";
+            }
+
+            search.addEventListener("input", applyFilters);
+            outcome.addEventListener("change", applyFilters);
+        })();
+    </script>
+}

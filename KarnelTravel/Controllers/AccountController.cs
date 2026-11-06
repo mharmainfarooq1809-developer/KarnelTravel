@@ -5,6 +5,7 @@ using System.Security.Claims;
 using System.Threading.Tasks;
 using KarnelTravel.Models;
 using KarnelTravel.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Mvc;
@@ -12,6 +13,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace KarnelTravel.Controllers;
 
 [Route("Account")]
+[AllowAnonymous]
 public class AccountController : Controller
 {
     private readonly IAdminAuthService _auth;

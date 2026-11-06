@@ -1,0 +1,1051 @@
+@model KarnelTravel.ViewModels.KarnelAiPageViewModel
+@{
+    ViewData["Title"] = "Karnel AI";
+    ViewData["Description"] = "A practical local AI travel assistant grounded in Karnel Travel Guide listings.";
+    var listingCount = Model.Listings?.Count() ?? 0;
+}
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:wght@500;600;700&display=swap" />
+
+<style>
+    /* ============================================================
+           KARNEL AI — TRAVEL INTELLIGENCE WORKSPACE
+           ============================================================ */
+
+    .kai-page {
+        --forest: #14271F;
+        --forest-soft: #1E3A2C;
+        --ivory: #F8F6F0;
+        --sand: #E8DFC9;
+        --sage: #8FA888;
+        --white: #FFFFFF;
+        --ink: #182720;
+        --muted: #6C776E;
+        --line: #E2DFD3;
+        --line-strong: #D2CFC0;
+        --shadow: 0 18px 44px rgba(20, 39, 31, .07);
+        background: var(--ivory);
+        color: var(--ink);
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        font-size: 16px;
+        line-height: 1.6;
+        padding-bottom: 96px;
+        -webkit-font-smoothing: antialiased;
+    }
+
+        .kai-page *,
+        .kai-page *::before,
+        .kai-page *::after {
+            box-sizing: border-box;
+        }
+
+        .kai-page [hidden] {
+            display: none !important;
+        }
+
+        .kai-page h1,
+        .kai-page h2,
+        .kai-page h3 {
+            font-family: 'Playfair Display', Georgia, 'Times New Roman', serif;
+            font-weight: 600;
+            letter-spacing: -.01em;
+            color: var(--forest);
+            margin: 0;
+        }
+
+    .kai-shell {
+        width: 100%;
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 0 20px;
+    }
+
+    .kai-visually-hidden {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0 0 0 0);
+        white-space: nowrap;
+        border: 0;
+    }
+
+    /* ---------- SECTION A — CINEMATIC INTRODUCTION ---------- */
+
+    .kai-hero {
+        position: relative;
+        overflow: hidden;
+        isolation: isolate;
+        padding: clamp(52px, 7vw, 84px) 0 clamp(92px, 11vw, 140px);
+        color: #EAF0E7;
+        background: radial-gradient(120% 150% at 84% 0%, #234231 0%, #14271F 62%), var(--forest);
+    }
+
+        .kai-hero::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            background: radial-gradient(70% 90% at 8% 0%, rgba(232, 223, 201, .10), transparent 62%);
+        }
+
+    .kai-hero__art {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: -1px;
+        width: 100%;
+        height: clamp(120px, 34%, 300px);
+        pointer-events: none;
+        z-index: 1;
+    }
+
+    .kai-hero__inner {
+        position: relative;
+        z-index: 2;
+    }
+
+    .kai-eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 12px;
+        margin: 0 0 20px;
+        font-size: .72rem;
+        font-weight: 600;
+        letter-spacing: .3em;
+        text-transform: uppercase;
+        color: var(--sage);
+    }
+
+        .kai-eyebrow::before {
+            content: "";
+            width: 28px;
+            height: 1px;
+            background: currentColor;
+            opacity: .75;
+        }
+
+    .kai-hero h1 {
+        color: #F6F4EC;
+        font-size: clamp(2.5rem, 6.2vw, 4.6rem);
+        line-height: 1.03;
+        letter-spacing: -.025em;
+        max-width: 20ch;
+    }
+
+    .kai-hero__lede {
+        margin: 22px 0 0;
+        max-width: 56ch;
+        font-size: clamp(.98rem, 1.4vw, 1.08rem);
+        line-height: 1.68;
+        color: rgba(234, 240, 231, .78);
+    }
+
+    .kai-hero__status {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 10px 14px;
+        margin-top: 32px;
+    }
+
+    .kai-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        padding: 8px 16px;
+        border-radius: 999px;
+        border: 1px solid rgba(143, 168, 136, .34);
+        background: rgba(255, 255, 255, .05);
+        font-size: .78rem;
+        letter-spacing: .04em;
+        color: #DCE7D8;
+    }
+
+    .kai-chip__dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: var(--sage);
+        box-shadow: 0 0 0 4px rgba(143, 168, 136, .18);
+        flex: 0 0 auto;
+    }
+
+    .kai-chip[data-available="False"] {
+        border-color: rgba(232, 223, 201, .30);
+        color: #E6DFC9;
+    }
+
+        .kai-chip[data-available="False"] .kai-chip__dot {
+            background: #C8A97C;
+            box-shadow: 0 0 0 4px rgba(200, 169, 124, .16);
+        }
+
+    .kai-chip--quiet {
+        border-color: rgba(234, 240, 231, .16);
+        background: transparent;
+        color: rgba(234, 240, 231, .66);
+    }
+
+    /* ---------- SECTION B/C/D — AI WORKSPACE ---------- */
+
+    .kai-workspace {
+        position: relative;
+        z-index: 3;
+        margin-top: clamp(-72px, -5vw, -44px);
+    }
+
+    .kai-workspace__grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1.7fr) minmax(300px, .95fr);
+        gap: 20px;
+        align-items: start;
+    }
+
+    .kai-panel {
+        background: var(--white);
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        box-shadow: var(--shadow);
+        overflow: hidden;
+    }
+
+    .kai-panel__head {
+        padding: 24px 28px 18px;
+        border-bottom: 1px solid var(--line);
+    }
+
+    .kai-panel__title {
+        font-size: 1.4rem;
+        line-height: 1.25;
+    }
+
+    .kai-panel__sub {
+        margin: 7px 0 0;
+        max-width: 54ch;
+        font-size: .85rem;
+        line-height: 1.6;
+        color: var(--muted);
+    }
+
+    .kai-panel__body {
+        padding: 20px 28px 24px;
+    }
+
+    .kai-prompts {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin: 0 0 18px;
+    }
+
+    .kai-prompt {
+        appearance: none;
+        cursor: pointer;
+        font: inherit;
+        font-size: .8rem;
+        line-height: 1.35;
+        text-align: left;
+        padding: 8px 15px;
+        border-radius: 999px;
+        border: 1px solid var(--line-strong);
+        background: #FCFBF6;
+        color: #3C4E43;
+        transition: background .18s ease, border-color .18s ease, color .18s ease, transform .18s ease;
+    }
+
+        .kai-prompt:hover {
+            border-color: var(--sage);
+            background: #F2F5EF;
+            color: var(--forest);
+            transform: translateY(-1px);
+        }
+
+        .kai-prompt:focus-visible {
+            outline: 2px solid var(--forest);
+            outline-offset: 2px;
+        }
+
+    .kai-chat {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        min-height: 320px;
+        max-height: 460px;
+        overflow-y: auto;
+        padding: 4px 4px 4px 0;
+        scrollbar-width: thin;
+        scrollbar-color: #CFD6CB transparent;
+    }
+
+        .kai-chat::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .kai-chat::-webkit-scrollbar-thumb {
+            background: #D8DED4;
+            border-radius: 8px;
+        }
+
+    .kai-msg {
+        max-width: 86%;
+        padding: 13px 17px;
+        border-radius: 14px;
+        font-size: .94rem;
+        line-height: 1.68;
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+        animation: kai-rise .28s ease both;
+    }
+
+    .kai-msg--assistant {
+        align-self: flex-start;
+        background: #F1F4EE;
+        border: 1px solid #E1E7DC;
+        border-top-left-radius: 4px;
+        color: #22322A;
+    }
+
+    .kai-msg--user {
+        align-self: flex-end;
+        background: var(--forest);
+        border: 1px solid var(--forest);
+        border-top-right-radius: 4px;
+        color: #F3F1E8;
+    }
+
+    .kai-msg--typing {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 17px 18px;
+    }
+
+        .kai-msg--typing span {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--sage);
+            animation: kai-pulse 1.05s ease-in-out infinite;
+        }
+
+            .kai-msg--typing span:nth-child(2) {
+                animation-delay: .15s;
+            }
+
+            .kai-msg--typing span:nth-child(3) {
+                animation-delay: .30s;
+            }
+
+    .kai-composer {
+        display: flex;
+        align-items: flex-end;
+        gap: 10px;
+        margin-top: 18px;
+        padding: 10px 10px 10px 16px;
+        border: 1px solid var(--line-strong);
+        border-radius: 16px;
+        background: #FCFBF6;
+        transition: border-color .18s ease, box-shadow .18s ease, background .18s ease;
+    }
+
+        .kai-composer:focus-within {
+            border-color: var(--forest);
+            background: #FFFFFF;
+            box-shadow: 0 0 0 4px rgba(20, 39, 31, .08);
+        }
+
+        .kai-composer textarea {
+            flex: 1 1 auto;
+            min-height: 56px;
+            max-height: 180px;
+            padding: 9px 0;
+            border: 0;
+            outline: none;
+            resize: vertical;
+            background: transparent;
+            font: inherit;
+            font-size: .95rem;
+            line-height: 1.55;
+            color: var(--ink);
+        }
+
+            .kai-composer textarea::placeholder {
+                color: #93A096;
+            }
+
+    .kai-btn {
+        appearance: none;
+        cursor: pointer;
+        font: inherit;
+        font-size: .9rem;
+        font-weight: 600;
+        letter-spacing: .02em;
+        white-space: nowrap;
+        border: 0;
+        border-radius: 11px;
+        padding: 13px 24px;
+        background: var(--forest);
+        color: #F6F4EC;
+        transition: background .18s ease, transform .18s ease, opacity .18s ease;
+    }
+
+        .kai-btn:hover {
+            background: var(--forest-soft);
+        }
+
+        .kai-btn:active {
+            transform: translateY(1px);
+        }
+
+        .kai-btn:disabled {
+            opacity: .55;
+            cursor: progress;
+            transform: none;
+        }
+
+        .kai-btn:focus-visible {
+            outline: 2px solid var(--sage);
+            outline-offset: 3px;
+        }
+
+    .kai-statusline {
+        min-height: 22px;
+        margin-top: 10px;
+        font-size: .82rem;
+        line-height: 1.5;
+        color: var(--muted);
+    }
+
+        .kai-statusline.is-error {
+            color: #9B4331;
+        }
+
+    .kai-feedback {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px;
+        margin-top: 16px;
+        padding-top: 16px;
+        border-top: 1px solid var(--line);
+    }
+
+    .kai-feedback__label {
+        margin-right: 4px;
+        font-size: .72rem;
+        font-weight: 600;
+        letter-spacing: .16em;
+        text-transform: uppercase;
+        color: #96A096;
+    }
+
+    /* ---------- SECTION E — TRIP PLANNER ---------- */
+
+    .kai-planner {
+        position: sticky;
+        top: 20px;
+        padding: 26px 24px 24px;
+        border: 1px solid #E4DCC6;
+        border-radius: 18px;
+        background: linear-gradient(180deg, #FFFDF7 0%, #FBF8EE 100%);
+        box-shadow: 0 18px 40px rgba(20, 39, 31, .06);
+    }
+
+        .kai-planner h2 {
+            font-size: 1.4rem;
+            line-height: 1.25;
+        }
+
+    .kai-planner__sub {
+        margin: 8px 0 22px;
+        font-size: .85rem;
+        line-height: 1.62;
+        color: #7A7A66;
+    }
+
+    .kai-field {
+        margin-bottom: 16px;
+    }
+
+        .kai-field label {
+            display: block;
+            margin-bottom: 7px;
+            font-size: .7rem;
+            font-weight: 600;
+            letter-spacing: .16em;
+            text-transform: uppercase;
+            color: #8A8B78;
+        }
+
+        .kai-field input {
+            width: 100%;
+            padding: 12px 14px;
+            font: inherit;
+            font-size: .93rem;
+            color: var(--ink);
+            background: #FFFEFB;
+            border: 1px solid #D9D2BD;
+            border-radius: 11px;
+            transition: border-color .18s ease, box-shadow .18s ease, background .18s ease;
+        }
+
+            .kai-field input::placeholder {
+                color: #ABA895;
+            }
+
+            .kai-field input:focus {
+                outline: none;
+                border-color: var(--forest);
+                background: #FFFFFF;
+                box-shadow: 0 0 0 4px rgba(20, 39, 31, .07);
+            }
+
+    .kai-planner .kai-btn {
+        width: 100%;
+        margin-top: 4px;
+    }
+
+    #itinerary {
+        margin-top: 18px;
+        padding: 18px 18px 18px 20px;
+        max-height: 420px;
+        overflow-y: auto;
+        background: #FFFFFF;
+        border: 1px solid #E4DCC6;
+        border-left: 3px solid var(--sage);
+        border-radius: 12px;
+        font-size: .9rem;
+        line-height: 1.78;
+        color: #28362E;
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+        animation: kai-rise .3s ease both;
+    }
+
+    /* ---------- SECTION F — PUBLISHED DATABASE CONTEXT ---------- */
+
+    .kai-context {
+        margin-top: 60px;
+    }
+
+    .kai-context__head {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 18px 24px;
+        padding-bottom: 18px;
+        margin-bottom: 26px;
+        border-bottom: 1px solid var(--line-strong);
+    }
+
+        .kai-context__head h2 {
+            font-size: clamp(1.5rem, 3vw, 2.05rem);
+            line-height: 1.2;
+        }
+
+        .kai-context__head p {
+            margin: 10px 0 0;
+            max-width: 62ch;
+            font-size: .88rem;
+            line-height: 1.65;
+            color: var(--muted);
+        }
+
+    .kai-count {
+        font-size: .72rem;
+        font-weight: 600;
+        letter-spacing: .2em;
+        text-transform: uppercase;
+        color: #8B968C;
+        white-space: nowrap;
+    }
+
+    .kai-listings {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        gap: 16px;
+    }
+
+    .kai-listing {
+        position: relative;
+        padding: 20px 22px 18px;
+        background: var(--white);
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        transition: border-color .2s ease, transform .2s ease, box-shadow .2s ease;
+    }
+
+        .kai-listing:hover {
+            border-color: var(--sage);
+            transform: translateY(-2px);
+            box-shadow: 0 14px 30px rgba(20, 39, 31, .07);
+        }
+
+    .kai-listing__type {
+        display: inline-block;
+        margin-bottom: 10px;
+        font-size: .66rem;
+        font-weight: 700;
+        letter-spacing: .18em;
+        text-transform: uppercase;
+        color: #7E9582;
+    }
+
+    .kai-listing__name {
+        margin: 0 0 6px;
+        font-size: 1.15rem;
+        line-height: 1.32;
+        color: var(--forest);
+    }
+
+    .kai-listing__loc {
+        margin: 0 0 14px;
+        font-size: .85rem;
+        line-height: 1.5;
+        color: var(--muted);
+    }
+
+    .kai-listing__price {
+        margin: 0;
+        padding-top: 12px;
+        border-top: 1px solid #EEECE2;
+        font-size: .85rem;
+        font-weight: 600;
+        color: #2E4A3A;
+    }
+
+    .kai-empty {
+        margin: 0;
+        padding: 36px 26px;
+        border: 1px dashed var(--line-strong);
+        border-radius: 14px;
+        background: #FCFBF6;
+        text-align: center;
+        font-size: .9rem;
+        line-height: 1.7;
+        color: var(--muted);
+    }
+
+    /* ---------- MOTION ---------- */
+
+    @@keyframes kai-rise {
+        from {
+            opacity: 0;
+            transform: translateY(6px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @@keyframes kai-pulse {
+        0%, 100% {
+            opacity: .35;
+            transform: translateY(0);
+        }
+
+        50% {
+            opacity: 1;
+            transform: translateY(-2px);
+        }
+    }
+
+    /* ---------- RESPONSIVE ---------- */
+
+    @@media (min-width: 900px) {
+        .kai-listing:first-child {
+            grid-column: span 2;
+            background: linear-gradient(135deg, #FFFFFF 0%, #F6F9F3 100%);
+            border-color: #D9E0D4;
+        }
+
+            .kai-listing:first-child .kai-listing__name {
+                font-size: 1.5rem;
+            }
+    }
+
+    @@media (max-width: 960px) {
+        .kai-workspace__grid {
+            grid-template-columns: 1fr;
+        }
+
+        .kai-planner {
+            position: static;
+        }
+    }
+
+    @@media (max-width: 640px) {
+        .kai-page {
+            padding-bottom: 64px;
+        }
+
+        .kai-workspace {
+            margin-top: -32px;
+        }
+
+        .kai-panel__head {
+            padding: 20px 18px 16px;
+        }
+
+        .kai-panel__body {
+            padding: 16px 18px 20px;
+        }
+
+        .kai-planner {
+            padding: 22px 18px;
+        }
+
+        .kai-chat {
+            min-height: 260px;
+            max-height: 400px;
+        }
+
+        .kai-msg {
+            max-width: 100%;
+        }
+
+        .kai-composer {
+            flex-direction: column;
+            align-items: stretch;
+            padding: 12px;
+        }
+
+            .kai-composer textarea {
+                min-height: 76px;
+                padding: 4px 2px;
+            }
+
+            .kai-composer .kai-btn {
+                width: 100%;
+            }
+
+        .kai-hero {
+            padding-bottom: 96px;
+        }
+
+        .kai-context {
+            margin-top: 44px;
+        }
+    }
+
+    @@media (prefers-reduced-motion: reduce) {
+        .kai-page *,
+        .kai-page *::before,
+        .kai-page *::after {
+            animation-duration: .001ms !important;
+            animation-iteration-count: 1 !important;
+            transition-duration: .001ms !important;
+            scroll-behavior: auto !important;
+        }
+    }
+</style>
+
+<main class="kai-page">
+
+    <form id="ai-antiforgery" hidden>@Html.AntiForgeryToken()</form>
+
+    <!-- ================= SECTION A — CINEMATIC INTRODUCTION ================= -->
+    <section class="kai-hero">
+        <svg class="kai-hero__art" viewBox="0 0 1440 300" preserveAspectRatio="none" aria-hidden="true" focusable="false">
+            <path d="M0 232 L118 150 L196 196 L300 104 L410 190 L486 148 L590 214 L700 120 L800 186 L890 132 L1000 200 L1104 150 L1200 206 L1310 140 L1440 210 L1440 300 L0 300 Z"
+                  fill="rgba(143,168,136,0.10)"></path>
+            <path d="M0 262 L96 208 L182 244 L280 176 L372 238 L470 196 L566 252 L672 190 L780 244 L872 200 L980 250 L1082 208 L1188 252 L1290 206 L1440 258 L1440 300 L0 300 Z"
+                  fill="rgba(143,168,136,0.16)"></path>
+            <path d="M0 288 L130 262 L246 282 L360 246 L470 280 L590 254 L700 284 L820 252 L940 284 L1060 256 L1180 286 L1300 258 L1440 284 L1440 300 L0 300 Z"
+                  fill="rgba(10,24,18,0.55)"></path>
+        </svg>
+
+        <div class="kai-shell kai-hero__inner">
+            <p class="kai-eyebrow">Travel Intelligence · Karnel</p>
+            <h1>Discover more. Travel better.</h1>
+            <p class="kai-hero__lede">
+                Explore published Karnel destinations, compare travel options and build a more structured
+                journey with Karnel AI.
+            </p>
+            <div class="kai-hero__status">
+                <span class="kai-chip" data-available="@Model.EngineAvailable">
+                    <span class="kai-chip__dot" aria-hidden="true"></span>
+                    @(Model.EngineAvailable ? "Travel intelligence available" : "Travel intelligence unavailable")
+                </span>
+                <span class="kai-chip kai-chip--quiet">Grounded in published Karnel listings</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- ================= SECTION B / C / D — AI WORKSPACE ================= -->
+    <div class="kai-shell kai-workspace">
+        <div class="kai-workspace__grid">
+
+            <!-- Conversation -->
+            <section class="kai-panel" aria-labelledby="kai-chat-title">
+                <header class="kai-panel__head">
+                    <h2 class="kai-panel__title" id="kai-chat-title">Ask Karnel AI</h2>
+                    <p class="kai-panel__sub">
+                        Answers are drawn from published Karnel Travel Guide records — no invented
+                        availability, prices or ratings.
+                    </p>
+                </header>
+
+                <div class="kai-panel__body">
+                    <div class="kai-prompts">
+                        @foreach (var prompt in Model.QuickPrompts)
+                        {
+                            <button class="kai-prompt" type="button" data-prompt="@prompt">@prompt</button>
+                        }
+                    </div>
+
+                    <div id="chat" class="kai-chat" aria-live="polite" aria-label="Conversation with Karnel AI">
+                        <div class="kai-msg kai-msg--assistant">Hello. I can help you explore published Karnel listings and plan a trip. What would you like to know?</div>
+                    </div>
+
+                    <form id="chat-form" class="kai-composer">
+                        <label class="kai-visually-hidden" for="chat-message">Your travel question</label>
+                        <textarea id="chat-message" maxlength="2000" placeholder="Ask a travel question…" required></textarea>
+                        <button class="kai-btn" type="submit">Ask</button>
+                    </form>
+
+                    <div id="chat-status" class="kai-statusline" role="status" aria-live="polite"></div>
+
+                    <div id="feedback-controls" class="kai-feedback" hidden>
+                        <span class="kai-feedback__label">Was this helpful?</span>
+                        <button class="kai-prompt" type="button" data-helpful="true">Helpful</button>
+                        <button class="kai-prompt" type="button" data-helpful="false">Not helpful</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ================= SECTION E — TRIP PLANNER ================= -->
+            <aside class="kai-planner" aria-labelledby="kai-planner-title">
+                <h2 id="kai-planner-title">Shape your next journey.</h2>
+                <p class="kai-planner__sub">
+                    Build a structured travel plan around your destination, available information
+                    and preferred duration.
+                </p>
+
+                <form id="planner-form">
+                    <div class="kai-field">
+                        <label for="destination">Destination</label>
+                        <input id="destination" maxlength="120" required placeholder="e.g. Hunza" />
+                    </div>
+
+                    <div class="kai-field">
+                        <label for="duration">Duration in days</label>
+                        <input id="duration" type="number" min="1" max="60" value="3" required />
+                    </div>
+
+                    <div class="kai-field">
+                        <label for="budget">Budget (optional)</label>
+                        <input id="budget" maxlength="80" placeholder="e.g. PKR 100,000" />
+                    </div>
+
+                    <button class="kai-btn" type="submit">Build itinerary</button>
+                </form>
+
+                <div id="planner-status" class="kai-statusline" role="status" aria-live="polite"></div>
+                <div id="itinerary" hidden></div>
+            </aside>
+
+        </div>
+    </div>
+
+    <!-- ================= SECTION F — PUBLISHED DATABASE CONTEXT ================= -->
+    <section class="kai-shell kai-context" aria-labelledby="kai-context-title">
+        <div class="kai-context__head">
+            <div>
+                <h2 id="kai-context-title">Published database context</h2>
+                <p>
+                    Karnel AI answers only from current published records. Everything referenced in
+                    this workspace is listed below.
+                </p>
+            </div>
+            <span class="kai-count">@listingCount @(listingCount == 1 ? "record" : "records")</span>
+        </div>
+
+        @if (listingCount > 0)
+        {
+            <div class="kai-listings">
+                @foreach (var listing in Model.Listings)
+                {
+                    <article class="kai-listing">
+                        <span class="kai-listing__type">@listing.Type</span>
+                        <h3 class="kai-listing__name">@listing.Name</h3>
+                        <p class="kai-listing__loc">@(listing.Location ?? "Location unavailable")</p>
+                        <p class="kai-listing__price">@listing.PriceLabel</p>
+                    </article>
+                }
+            </div>
+        }
+        else
+        {
+            <p class="kai-empty">
+                No published listings are available right now. Karnel AI will only discuss
+                destinations once they are published in the travel guide.
+            </p>
+        }
+    </section>
+
+</main>
+
+@section Scripts {
+    <script>
+        (function () {
+            'use strict';
+
+            const token = document.querySelector('input[name="__RequestVerificationToken"]');
+            const headers = { 'Content-Type': 'application/json', 'RequestVerificationToken': token ? token.value : '' };
+
+            const keyName = 'karnel-ai-conversation';
+            const conversationKey = sessionStorage.getItem(keyName) || crypto.randomUUID();
+            sessionStorage.setItem(keyName, conversationKey);
+
+            const chat = document.getElementById('chat');
+            const input = document.getElementById('chat-message');
+            const status = document.getElementById('chat-status');
+            const chatForm = document.getElementById('chat-form');
+            const chatButton = chatForm.querySelector('button');
+            const feedbackControls = document.getElementById('feedback-controls');
+
+            function addMessage(text, role) {
+                const el = document.createElement('div');
+                el.className = 'kai-msg kai-msg--' + role;
+                el.textContent = text;
+                chat.appendChild(el);
+                chat.scrollTop = chat.scrollHeight;
+                return el;
+            }
+
+            function setThinking(isThinking) {
+                const existing = chat.querySelector('.kai-msg--typing');
+                if (existing) { existing.remove(); }
+                if (!isThinking) { return; }
+
+                const el = document.createElement('div');
+                el.className = 'kai-msg kai-msg--assistant kai-msg--typing';
+                el.setAttribute('aria-label', 'Karnel AI is preparing a response');
+                el.innerHTML = '<span></span><span></span><span></span>';
+                chat.appendChild(el);
+                chat.scrollTop = chat.scrollHeight;
+            }
+
+            async function ask(message) {
+                addMessage(message, 'user');
+                status.textContent = 'Karnel AI is thinking…';
+                status.classList.remove('is-error');
+                chatButton.disabled = true;
+                if (feedbackControls) { feedbackControls.hidden = true; }
+                setThinking(true);
+
+                try {
+                    const response = await fetch('@Url.Action("Chat", "KarnelAI")', {
+                        method: 'POST',
+                        headers: headers,
+                        body: JSON.stringify({ message: message, conversationKey: conversationKey })
+                    });
+
+                    const data = await response.json();
+                    if (!response.ok || !data.success) {
+                        throw new Error(data.error || 'The assistant could not respond.');
+                    }
+
+                    setThinking(false);
+                    addMessage(data.reply, 'assistant');
+                    if (feedbackControls) { feedbackControls.hidden = false; }
+                    status.textContent = '';
+                } catch (error) {
+                    setThinking(false);
+                    status.textContent = error.message + ' Please try again.';
+                    status.classList.add('is-error');
+                } finally {
+                    chatButton.disabled = false;
+                }
+            }
+
+            /* Quick prompts — fill the composer, never auto-submit */
+            document.querySelectorAll('[data-prompt]').forEach(function (button) {
+                button.addEventListener('click', function () {
+                    input.value = button.dataset.prompt;
+                    input.focus();
+                    input.setSelectionRange(input.value.length, input.value.length);
+                });
+            });
+
+            /* Conversation submit */
+            chatForm.addEventListener('submit', function (event) {
+                event.preventDefault();
+                const message = input.value.trim();
+                if (!message) { return; }
+                input.value = '';
+                ask(message);
+            });
+
+            /* Response feedback */
+            document.querySelectorAll('[data-helpful]').forEach(function (button) {
+                button.addEventListener('click', async function () {
+                    try {
+                        await fetch('@Url.Action("Feedback", "KarnelAI")', {
+                            method: 'POST',
+                            headers: headers,
+                            body: JSON.stringify({
+                                conversationKey: conversationKey,
+                                isHelpful: button.dataset.helpful === 'true'
+                            })
+                        });
+                    } catch (error) {
+                        /* Feedback is non-critical; the UI is dismissed regardless. */
+                    } finally {
+                        button.parentElement.hidden = true;
+                    }
+                });
+            });
+
+            /* Trip planner */
+            document.getElementById('planner-form').addEventListener('submit', async function (event) {
+                event.preventDefault();
+
+                const output = document.getElementById('itinerary');
+                const plannerStatus = document.getElementById('planner-status');
+                const button = this.querySelector('button');
+
+                plannerStatus.textContent = 'Building your itinerary…';
+                plannerStatus.classList.remove('is-error');
+                output.hidden = true;
+                button.disabled = true;
+
+                try {
+                    const response = await fetch('@Url.Action("Plan", "KarnelAI")', {
+                        method: 'POST',
+                        headers: headers,
+                        body: JSON.stringify({
+                            destination: document.getElementById('destination').value,
+                            durationDays: Number(document.getElementById('duration').value),
+                            budget: document.getElementById('budget').value,
+                            conversationKey: conversationKey
+                        })
+                    });
+
+                    const data = await response.json();
+                    if (!response.ok || !data.success) {
+                        throw new Error(data.error || 'The itinerary could not be prepared.');
+                    }
+
+                    output.textContent = data.itinerary;
+                    output.hidden = false;
+                    plannerStatus.textContent = '';
+                } catch (error) {
+                    plannerStatus.textContent = error.message;
+                    plannerStatus.classList.add('is-error');
+                } finally {
+                    button.disabled = false;
+                }
+            });
+        })();
+    </script>
+}

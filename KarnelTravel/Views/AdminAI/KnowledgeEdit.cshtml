@@ -1,0 +1,676 @@
+@model KarnelTravel.Models.AIKnowledgeEntry
+
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = Model.Id == 0 ? "New AI Knowledge Entry" : "Edit AI Knowledge Entry";
+    var isNew = Model.Id == 0;
+}
+
+<style>
+    /* ==========================================================================
+       KARNEL TRAVEL GUIDE — ADMIN · AI KNOWLEDGE ENTRY (NEW / EDIT)
+       Scoped with .kke- prefix. Inline <style> because _AdminLayout does not
+       render a Styles section (matching the rest of the admin suite).
+       ========================================================================== */
+
+    .kke-page {
+        --kke-forest: var(--forest-deep, #14271F);
+        --kke-ivory: var(--ivory, #F8F6F0);
+        --kke-sage: var(--sage, #8FA888);
+        --kke-sand: var(--sand, #E8DFC9);
+        --kke-white: #FFFFFF;
+        --kke-muted: var(--muted, #5A6B60);
+        --kke-line: var(--line, rgba(20, 39, 31, .12));
+        --kke-danger: #a8442e;
+        --kke-serif: var(--serif, "Playfair Display", Georgia, "Times New Roman", serif);
+        --kke-sans: var(--sans, "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif);
+        --kke-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+        --kke-ease: var(--ease, cubic-bezier(.22, .61, .36, 1));
+
+        animation: kke-fade .45s var(--kke-ease) both;
+    }
+
+    @@keyframes kke-fade {
+        from { opacity: 0; transform: translateY(6px); }
+        to   { opacity: 1; transform: none; }
+    }
+
+    .kke-page .visually-hidden {
+        position: absolute !important;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+    }
+
+    /* -------------------------------------------------------- BACK LINK ---- */
+    .kke-page .kke-back {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 14px;
+        border: 1px solid var(--kke-line);
+        border-radius: 2px;
+        background: transparent;
+        color: var(--kke-forest);
+        font-family: var(--kke-sans);
+        font-size: .64rem;
+        font-weight: 600;
+        letter-spacing: .2em;
+        text-transform: uppercase;
+        text-decoration: none;
+        transition:
+            background-color .25s var(--kke-ease),
+            border-color .25s var(--kke-ease),
+            color .25s var(--kke-ease);
+    }
+
+    .kke-page .kke-back svg {
+        flex: none;
+        transition: transform .25s var(--kke-ease);
+    }
+
+    .kke-page .kke-back:hover {
+        background: var(--kke-forest);
+        border-color: var(--kke-forest);
+        color: var(--kke-ivory);
+    }
+
+    .kke-page .kke-back:hover svg {
+        transform: translateX(-3px);
+    }
+
+    .kke-page .kke-back:focus-visible {
+        outline: 2px solid var(--kke-sand);
+        outline-offset: 2px;
+    }
+
+    /* --------------------------------------------------------- LAYOUT ---- */
+    .kke-page .kke-form {
+        display: grid;
+        grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr);
+        gap: 22px;
+        align-items: start;
+        margin: 0;
+    }
+
+    .kke-page .kke-main,
+    .kke-page .kke-side {
+        display: flex;
+        flex-direction: column;
+        gap: 22px;
+        min-width: 0;
+    }
+
+    /* ---------------------------------------------------------- CARDS ---- */
+    .kke-page .kke-card {
+        position: relative;
+        background: var(--kke-white);
+        border: 1px solid var(--kke-line);
+        border-radius: 4px;
+        padding: 24px 26px;
+    }
+
+    .kke-page .kke-card__head {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 12px;
+        padding-bottom: 14px;
+        margin-bottom: 20px;
+        border-bottom: 1px solid var(--kke-line);
+    }
+
+    .kke-page .kke-card__title {
+        margin: 0;
+        font-family: var(--kke-serif);
+        font-weight: 500;
+        font-size: 1.2rem;
+        line-height: 1.2;
+        letter-spacing: -.005em;
+        color: var(--kke-forest);
+    }
+
+    .kke-page .kke-card__meta {
+        margin: 0;
+        font-family: var(--kke-sans);
+        font-size: .62rem;
+        font-weight: 600;
+        letter-spacing: .2em;
+        text-transform: uppercase;
+        color: var(--kke-sage);
+        white-space: nowrap;
+    }
+
+    /* --------------------------------------------------------- FIELDS ---- */
+    .kke-page .kke-field {
+        display: block;
+        margin-bottom: 22px;
+    }
+
+    .kke-page .kke-field:last-child {
+        margin-bottom: 0;
+    }
+
+    .kke-page .kke-field__head {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 8px;
+    }
+
+    .kke-page .kke-field__head label,
+    .kke-page .kke-field > label:first-child {
+        display: block;
+        margin: 0;
+        font-family: var(--kke-sans);
+        font-size: .64rem;
+        font-weight: 700;
+        letter-spacing: .22em;
+        text-transform: uppercase;
+        color: var(--kke-muted);
+    }
+
+    .kke-page .kke-counter {
+        font-family: var(--kke-mono);
+        font-size: .72rem;
+        letter-spacing: .02em;
+        color: var(--kke-muted);
+        white-space: nowrap;
+    }
+
+    .kke-page .kke-counter--near {
+        color: #7a5a14;
+    }
+
+    .kke-page .kke-counter--at {
+        color: var(--kke-danger);
+        font-weight: 600;
+    }
+
+    .kke-page .kke-field input[type="text"],
+    .kke-page .kke-field input[type="search"],
+    .kke-page .kke-field input[type="number"],
+    .kke-page .kke-field textarea {
+        width: 100%;
+        box-sizing: border-box;
+        padding: 12px 14px;
+        font-family: var(--kke-sans);
+        font-size: .95rem;
+        line-height: 1.55;
+        color: var(--kke-forest);
+        background: var(--kke-ivory);
+        border: 1px solid var(--kke-line);
+        border-radius: 3px;
+        transition: border-color .25s var(--kke-ease),
+                    background-color .25s var(--kke-ease),
+                    box-shadow .25s var(--kke-ease);
+    }
+
+    .kke-page .kke-field textarea {
+        min-height: 260px;
+        resize: vertical;
+        line-height: 1.7;
+    }
+
+    .kke-page .kke-field input[type="text"]:focus,
+    .kke-page .kke-field input[type="search"]:focus,
+    .kke-page .kke-field input[type="number"]:focus,
+    .kke-page .kke-field textarea:focus {
+        outline: none;
+        border-color: var(--kke-sage);
+        background: var(--kke-white);
+        box-shadow: 0 0 0 3px rgba(143, 168, 136, .18);
+    }
+
+    .kke-page .kke-hint {
+        display: block;
+        margin-top: 8px;
+        font-family: var(--kke-sans);
+        font-size: .78rem;
+        line-height: 1.55;
+        color: var(--kke-muted);
+        font-style: italic;
+    }
+
+    /* ASP.NET validation output */
+    .kke-page .kke-field .field-validation-error,
+    .kke-page .kke-field .field-validation-valid {
+        display: block;
+        margin-top: 8px;
+        font-family: var(--kke-sans);
+        font-size: .78rem;
+        line-height: 1.5;
+    }
+
+    .kke-page .kke-field .field-validation-error,
+    .kke-page .kke-field .text-danger {
+        color: var(--kke-danger);
+        font-weight: 500;
+    }
+
+    .kke-page .kke-field .field-validation-valid {
+        display: none;
+    }
+
+    .kke-page .kke-field input.input-validation-error,
+    .kke-page .kke-field textarea.input-validation-error {
+        border-color: var(--kke-danger);
+        background: rgba(168, 68, 46, .05);
+    }
+
+    .kke-page .kke-field input.input-validation-error:focus,
+    .kke-page .kke-field textarea.input-validation-error:focus {
+        box-shadow: 0 0 0 3px rgba(168, 68, 46, .15);
+    }
+
+    /* ------------------------------------------------------ VALIDATION ---- */
+    .kke-page .validation-summary-errors {
+        margin: 0 0 22px;
+        padding: 14px 18px;
+        background: rgba(168, 68, 46, .06);
+        border: 1px solid rgba(168, 68, 46, .25);
+        border-left: 3px solid var(--kke-danger);
+        border-radius: 3px;
+        font-family: var(--kke-sans);
+        font-size: .88rem;
+        line-height: 1.6;
+        color: var(--kke-danger);
+    }
+
+    .kke-page .validation-summary-errors ul {
+        margin: 0;
+        padding-left: 20px;
+    }
+
+    .kke-page .validation-summary-errors li + li {
+        margin-top: 4px;
+    }
+
+    .kke-page .validation-summary-valid {
+        display: none;
+    }
+
+    /* --------------------------------------------------------- TOGGLE ---- */
+    .kke-page .kke-toggle {
+        display: flex;
+        align-items: flex-start;
+        gap: 14px;
+        padding: 16px 18px;
+        background: var(--kke-ivory);
+        border: 1px solid var(--kke-line);
+        border-radius: 3px;
+        cursor: pointer;
+        transition: border-color .25s var(--kke-ease),
+                    background-color .25s var(--kke-ease);
+    }
+
+    .kke-page .kke-toggle:hover {
+        border-color: rgba(20, 39, 31, .22);
+    }
+
+    .kke-page .kke-toggle input[type="checkbox"] {
+        flex: none;
+        width: 18px;
+        height: 18px;
+        margin: 2px 0 0;
+        accent-color: var(--kke-forest);
+        cursor: pointer;
+    }
+
+    .kke-page .kke-toggle__body {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .kke-page .kke-toggle__title {
+        display: block;
+        font-family: var(--kke-sans);
+        font-size: .92rem;
+        font-weight: 600;
+        line-height: 1.4;
+        color: var(--kke-forest);
+    }
+
+    .kke-page .kke-toggle__desc {
+        display: block;
+        margin-top: 4px;
+        font-family: var(--kke-sans);
+        font-size: .8rem;
+        line-height: 1.55;
+        color: var(--kke-muted);
+    }
+
+    /* -------------------------------------------------------- ACTIONS ---- */
+    .kke-page .kke-actions {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 12px;
+        padding-top: 20px;
+        margin-top: 4px;
+        border-top: 1px solid var(--kke-line);
+    }
+
+    .kke-page .kke-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        padding: 13px 22px;
+        border-radius: 2px;
+        font-family: var(--kke-sans);
+        font-size: .68rem;
+        font-weight: 600;
+        letter-spacing: .22em;
+        text-transform: uppercase;
+        text-decoration: none;
+        cursor: pointer;
+        border: 1px solid transparent;
+        white-space: nowrap;
+        transition:
+            background-color .25s var(--kke-ease),
+            border-color .25s var(--kke-ease),
+            color .25s var(--kke-ease),
+            transform .25s var(--kke-ease);
+    }
+
+    .kke-page .kke-btn svg {
+        flex: none;
+        transition: transform .25s var(--kke-ease);
+    }
+
+    .kke-page .kke-btn--primary {
+        background: var(--kke-forest);
+        border-color: var(--kke-forest);
+        color: var(--kke-ivory);
+    }
+
+    .kke-page .kke-btn--primary:hover {
+        background: var(--kke-sand);
+        border-color: var(--kke-sand);
+        color: var(--kke-forest);
+        transform: translateY(-1px);
+    }
+
+    .kke-page .kke-btn--primary:hover svg {
+        transform: translateX(3px);
+    }
+
+    .kke-page .kke-btn--quiet {
+        background: transparent;
+        border-color: var(--kke-line);
+        color: var(--kke-forest);
+    }
+
+    .kke-page .kke-btn--quiet:hover {
+        border-color: var(--kke-forest);
+        background: var(--kke-ivory);
+    }
+
+    .kke-page .kke-btn:focus-visible {
+        outline: 2px solid var(--kke-sand);
+        outline-offset: 2px;
+    }
+
+    /* -------------------------------------------------------- ASIDE ---- */
+    .kke-page .kke-aside-note {
+        margin: 0;
+        font-family: var(--kke-sans);
+        font-size: .85rem;
+        line-height: 1.65;
+        color: var(--kke-muted);
+    }
+
+    .kke-page .kke-aside-note + .kke-aside-note {
+        margin-top: 12px;
+    }
+
+    .kke-page .kke-aside-note strong {
+        color: var(--kke-forest);
+        font-weight: 600;
+    }
+
+    .kke-page .kke-aside-list {
+        margin: 12px 0 0;
+        padding-left: 18px;
+        font-family: var(--kke-sans);
+        font-size: .85rem;
+        line-height: 1.7;
+        color: var(--kke-muted);
+    }
+
+    .kke-page .kke-aside-list li + li {
+        margin-top: 4px;
+    }
+
+    /* ------------------------------------------------------ RESPONSIVE ---- */
+    @@media (max-width: 900px) {
+        .kke-page .kke-form {
+            grid-template-columns: minmax(0, 1fr);
+        }
+    }
+
+    @@media (max-width: 560px) {
+        .kke-page .kke-card {
+            padding: 20px;
+        }
+
+        .kke-page .kke-actions {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .kke-page .kke-btn {
+            width: 100%;
+        }
+    }
+
+    /* --------------------------------------------- REDUCED MOTION ---- */
+    @@media (prefers-reduced-motion: reduce) {
+        .kke-page {
+            animation: none;
+        }
+
+        .kke-page *,
+        .kke-page *::before,
+        .kke-page *::after {
+            transition: none !important;
+            animation: none !important;
+        }
+    }
+</style>
+
+<div class="page-heading">
+    <div>
+        <a class="kke-back" href="/Admin/AI/Knowledge">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="1.8"
+                 stroke-linecap="round" stroke-linejoin="round"
+                 aria-hidden="true" focusable="false">
+                <path d="M19 12H5M11 6l-6 6 6 6" />
+            </svg>
+            Back to knowledge base
+        </a>
+
+        <div class="eyebrow" style="margin-top:16px;">Karnel AI · @(isNew ? "New entry" : "Edit entry")</div>
+        <h1>@ViewData["Title"]</h1>
+        <p>
+            @(isNew
+                ? "Add approved reference material that Karnel AI can draw on when answering travellers."
+                : "Update this entry's details. Changes take effect for new conversations once saved.")
+        </p>
+    </div>
+</div>
+
+<div class="kke-page">
+
+    <form method="post" action="/Admin/AI/Knowledge/Save" class="kke-form" novalidate>
+
+        <div class="kke-main">
+
+            <div asp-validation-summary="ModelOnly"
+                 class="validation-summary-errors"
+                 role="alert"></div>
+
+            <input asp-for="Id" type="hidden" />
+
+            <section class="kke-card" aria-labelledby="kke-basics-heading">
+                <div class="kke-card__head">
+                    <h2 class="kke-card__title" id="kke-basics-heading">Basics</h2>
+                    <p class="kke-card__meta">Title &amp; category</p>
+                </div>
+
+                <div class="kke-field">
+                    <div class="kke-field__head">
+                        <label asp-for="Title"></label>
+                        <span class="kke-counter"
+                              data-counter-for="Title"
+                              aria-hidden="true"></span>
+                    </div>
+                    <input asp-for="Title" maxlength="120" required autocomplete="off" />
+                    <span asp-validation-for="Title" class="field-validation-error"></span>
+                    <span class="kke-hint">A short, clear name — this is how the entry appears in the list.</span>
+                </div>
+
+                <div class="kke-field">
+                    <div class="kke-field__head">
+                        <label asp-for="Category"></label>
+                        <span class="kke-counter"
+                              data-counter-for="Category"
+                              aria-hidden="true"></span>
+                    </div>
+                    <input asp-for="Category" maxlength="60" required autocomplete="off" />
+                    <span asp-validation-for="Category" class="field-validation-error"></span>
+                    <span class="kke-hint">A short label such as <em>Destinations</em>, <em>Transport</em> or <em>Policies</em>.</span>
+                </div>
+            </section>
+
+            <section class="kke-card" aria-labelledby="kke-content-heading">
+                <div class="kke-card__head">
+                    <h2 class="kke-card__title" id="kke-content-heading">Content</h2>
+                    <p class="kke-card__meta">Approved knowledge</p>
+                </div>
+
+                <div class="kke-field">
+                    <div class="kke-field__head">
+                        <label asp-for="Content"></label>
+                        <span class="kke-counter"
+                              data-counter-for="Content"
+                              aria-hidden="true"></span>
+                    </div>
+                    <textarea asp-for="Content" maxlength="4000" required></textarea>
+                    <span asp-validation-for="Content" class="field-validation-error"></span>
+                    <span class="kke-hint">
+                        Write the approved reference text exactly as it should be used.
+                        Line breaks are preserved.
+                    </span>
+                </div>
+            </section>
+
+        </div>
+
+        <div class="kke-side">
+
+            <section class="kke-card" aria-labelledby="kke-status-heading">
+                <div class="kke-card__head">
+                    <h2 class="kke-card__title" id="kke-status-heading">Visibility</h2>
+                    <p class="kke-card__meta">Toggle</p>
+                </div>
+
+                <label class="kke-toggle" for="IsEnabled">
+                    <input asp-for="IsEnabled" />
+                    <span class="kke-toggle__body">
+                        <span class="kke-toggle__title">Active</span>
+                        <span class="kke-toggle__desc">
+                            When active, this entry is available to Karnel AI
+                            during conversations with travellers.
+                        </span>
+                    </span>
+                </label>
+
+                <span asp-validation-for="IsEnabled" class="field-validation-error"></span>
+            </section>
+
+            <section class="kke-card" aria-labelledby="kke-save-heading">
+                <div class="kke-card__head">
+                    <h2 class="kke-card__title" id="kke-save-heading">@(isNew ? "Create entry" : "Save changes")</h2>
+                </div>
+
+                <p class="kke-aside-note">
+                    <strong>Before you save.</strong> Review the content for accuracy —
+                    Karnel AI treats this text as ground truth when responding to
+                    travellers.
+                </p>
+                <ul class="kke-aside-list">
+                    <li>Prefer clear, factual wording over opinions.</li>
+                    <li>Keep each entry focused on a single topic.</li>
+                    <li>Deactivate an entry instead of deleting it if you might reuse it later.</li>
+                </ul>
+
+                <div class="kke-actions">
+                    <button class="kke-btn kke-btn--primary" type="submit">
+                        Save entry
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                             stroke="currentColor" stroke-width="1.8"
+                             stroke-linecap="round" stroke-linejoin="round"
+                             aria-hidden="true" focusable="false">
+                            <path d="M5 12h14M13 6l6 6-6 6" />
+                        </svg>
+                    </button>
+
+                    <a class="kke-btn kke-btn--quiet" href="/Admin/AI/Knowledge">
+                        Cancel
+                    </a>
+                </div>
+            </section>
+
+        </div>
+
+    </form>
+
+</div>
+
+@section Scripts {
+    <script>
+        (() => {
+            // Live character counters for fields that carry a maxlength
+            const fields = document.querySelectorAll(
+                ".kke-page input[maxlength], .kke-page textarea[maxlength]"
+            );
+
+            fields.forEach(field => {
+                const max = parseInt(field.getAttribute("maxlength"), 10);
+                if (!max || Number.isNaN(max)) { return; }
+
+                const container = field.closest(".kke-field");
+                const counter = container
+                    ? container.querySelector(".kke-counter")
+                    : null;
+                if (!counter) { return; }
+
+                function update() {
+                    const len = field.value.length;
+                    counter.textContent = `${len} / ${max}`;
+
+                    counter.classList.remove("kke-counter--near", "kke-counter--at");
+
+                    const ratio = len / max;
+                    if (len >= max) {
+                        counter.classList.add("kke-counter--at");
+                    } else if (ratio >= 0.8) {
+                        counter.classList.add("kke-counter--near");
+                    }
+                }
+
+                field.addEventListener("input", update);
+                update();
+            });
+        })();
+    </script>
+}

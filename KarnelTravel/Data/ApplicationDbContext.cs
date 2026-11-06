@@ -46,6 +46,15 @@ namespace KarnelTravel.Data
 
         public DbSet<ApplicationSettings> ApplicationSettings => Set<ApplicationSettings>();
         public DbSet<AdminAuditLog> AdminAuditLogs => Set<AdminAuditLog>();
+        public DbSet<AIConfiguration> AIConfigurations => Set<AIConfiguration>();
+        public DbSet<AICapability> AICapabilities => Set<AICapability>();
+        public DbSet<AIKnowledgeEntry> AIKnowledgeEntries => Set<AIKnowledgeEntry>();
+        public DbSet<AIQuickPrompt> AIQuickPrompts => Set<AIQuickPrompt>();
+        public DbSet<AIConversation> AIConversations => Set<AIConversation>();
+        public DbSet<AIMessage> AIMessages => Set<AIMessage>();
+        public DbSet<AIFeedback> AIFeedback => Set<AIFeedback>();
+        public DbSet<AIAuditLog> AIAuditLogs => Set<AIAuditLog>();
+        public DbSet<AIRecommendationSettings> AIRecommendationSettings => Set<AIRecommendationSettings>();
 
 
         // =====================================================
@@ -62,6 +71,16 @@ namespace KarnelTravel.Data
                 e.HasKey(x => x.Id);
                 e.HasIndex(x => x.Id).IsUnique();
             });
+
+            model.Entity<AIConfiguration>(e => { e.ToTable("AIConfigurations"); e.HasKey(x => x.Id); });
+            model.Entity<AICapability>(e => { e.ToTable("AICapabilities"); e.HasKey(x => x.Id); e.HasIndex(x => x.Key).IsUnique(); });
+            model.Entity<AIKnowledgeEntry>(e => { e.ToTable("AIKnowledgeEntries"); e.HasKey(x => x.Id); e.HasIndex(x => new { x.Category, x.IsEnabled }); });
+            model.Entity<AIQuickPrompt>(e => { e.ToTable("AIQuickPrompts"); e.HasKey(x => x.Id); e.HasIndex(x => new { x.DisplayOrder, x.IsEnabled }); });
+            model.Entity<AIConversation>(e => { e.ToTable("AIConversations"); e.HasKey(x => x.Id); e.HasIndex(x => x.ConversationKey).IsUnique(); });
+            model.Entity<AIMessage>(e => { e.ToTable("AIMessages"); e.HasKey(x => x.Id); e.HasIndex(x => new { x.AIConversationId, x.CreatedAt }); e.HasOne(x => x.Conversation).WithMany(x => x.Messages).HasForeignKey(x => x.AIConversationId).OnDelete(DeleteBehavior.Cascade); });
+            model.Entity<AIFeedback>(e => { e.ToTable("AIFeedback"); e.HasKey(x => x.Id); e.HasIndex(x => x.ConversationKey); });
+            model.Entity<AIAuditLog>(e => { e.ToTable("AIAuditLogs"); e.HasKey(x => x.Id); e.HasIndex(x => x.CreatedAt); });
+            model.Entity<AIRecommendationSettings>(e => { e.ToTable("AIRecommendationSettings"); e.HasKey(x => x.Id); e.Property(x => x.LocationWeight).HasPrecision(5, 2); e.Property(x => x.BudgetWeight).HasPrecision(5, 2); e.Property(x => x.FeaturedWeight).HasPrecision(5, 2); e.Property(x => x.CategoryWeight).HasPrecision(5, 2); });
 
             model.Entity<AdminAuditLog>(e =>
             {
@@ -357,6 +376,8 @@ namespace KarnelTravel.Data
                 e.Property(x => x.CustomerName).HasMaxLength(100).IsRequired();
                 e.Property(x => x.Phone).HasMaxLength(30).IsRequired();
                 e.Property(x => x.Email).HasMaxLength(256);
+                e.Property(x => x.OwnerEmail).HasMaxLength(256);
+                e.HasIndex(x => x.OwnerEmail);
                 e.Property(x => x.ServiceType).HasMaxLength(30).IsRequired();
                 e.Property(x => x.ServiceName).HasMaxLength(150).IsRequired();
 

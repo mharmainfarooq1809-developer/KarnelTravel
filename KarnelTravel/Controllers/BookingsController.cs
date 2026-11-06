@@ -3,11 +3,14 @@ using KarnelTravel.Data;
 using KarnelTravel.Models;
 using KarnelTravel.Services;
 using KarnelTravel.ViewModels;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 
 namespace KarnelTravel.Controllers;
 
+[Authorize]
 public class BookingsController : Controller
 {
     private readonly ApplicationDbContext _context;
@@ -708,6 +711,8 @@ public class BookingsController : Controller
             Email = string.IsNullOrWhiteSpace(model.Email)
                 ? null
                 : model.Email.Trim(),
+
+            OwnerEmail = User.FindFirstValue(ClaimTypes.Email)?.Trim().ToLowerInvariant(),
 
             ServiceType = service.Type,
 

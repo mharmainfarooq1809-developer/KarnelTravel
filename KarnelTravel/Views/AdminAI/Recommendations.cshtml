@@ -1,0 +1,812 @@
+@model KarnelTravel.Models.AIRecommendationSettings
+
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "AI Recommendations";
+
+    var locationWeight = Model?.LocationWeight ?? 0m;
+    var budgetWeight   = Model?.BudgetWeight   ?? 0m;
+    var featuredWeight = Model?.FeaturedWeight ?? 0m;
+    var categoryWeight = Model?.CategoryWeight ?? 0m;
+
+    var totalWeight = locationWeight + budgetWeight + featuredWeight + categoryWeight;
+
+    var configuredCount =
+        (locationWeight > 0m ? 1 : 0) +
+        (budgetWeight   > 0m ? 1 : 0) +
+        (featuredWeight > 0m ? 1 : 0) +
+        (categoryWeight > 0m ? 1 : 0);
+
+    var enabledSignals =
+        ((Model?.PreferFeatured ?? false) ? 1 : 0) +
+        ((Model?.MatchBudget   ?? false) ? 1 : 0) +
+        ((Model?.MatchDestination ?? false) ? 1 : 0);
+
+    // Decimal-safe clamp used for the initial bar widths
+    decimal ClampDecimal(decimal value) =>
+        System.Math.Max(0m, System.Math.Min(100m, value));
+}
+
+<style>
+    /* ==========================================================================
+       KARNEL TRAVEL GUIDE — ADMIN · AI RECOMMENDATION SCORING
+       Scoped with .krs- prefix. Inline <style> because _AdminLayout does not
+       render a Styles section (matching the rest of the admin suite).
+       ========================================================================== */
+
+    .krs-page {
+        --krs-forest: var(--forest-deep, #14271F);
+        --krs-ivory: var(--ivory, #F8F6F0);
+        --krs-sage: var(--sage, #8FA888);
+        --krs-sand: var(--sand, #E8DFC9);
+        --krs-white: #FFFFFF;
+        --krs-muted: var(--muted, #5A6B60);
+        --krs-line: var(--line, rgba(20, 39, 31, .12));
+        --krs-danger: #a8442e;
+        --krs-serif: var(--serif, "Playfair Display", Georgia, "Times New Roman", serif);
+        --krs-sans: var(--sans, "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif);
+        --krs-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+        --krs-ease: var(--ease, cubic-bezier(.22, .61, .36, 1));
+
+        animation: krs-fade .45s var(--krs-ease) both;
+    }
+
+    @@keyframes krs-fade {
+        from { opacity: 0; transform: translateY(6px); }
+        to   { opacity: 1; transform: none; }
+    }
+
+    .krs-page .visually-hidden {
+        position: absolute !important;
+        width: 1px; height: 1px;
+        padding: 0; margin: -1px;
+        overflow: hidden; clip: rect(0, 0, 0, 0);
+        white-space: nowrap; border: 0;
+    }
+
+    /* ------------------------------------------------------ SUMMARY STRIP ---- */
+    .krs-page .krs-summary {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 14px;
+        margin-bottom: 22px;
+    }
+
+    .krs-page .krs-summary__item {
+        position: relative;
+        padding: 18px 22px 18px 26px;
+        background: var(--krs-white);
+        border: 1px solid var(--krs-line);
+        border-radius: 4px;
+        overflow: hidden;
+        transition: border-color .3s var(--krs-ease);
+    }
+
+    .krs-page .krs-summary__item:hover {
+        border-color: rgba(20, 39, 31, .22);
+    }
+
+    .krs-page .krs-summary__item::before {
+        content: "";
+        position: absolute;
+        left: 0; top: 0; bottom: 0;
+        width: 3px;
+        background: var(--krs-forest);
+    }
+
+    .krs-page .krs-summary__item--weight::before  { background: var(--krs-sage); }
+    .krs-page .krs-summary__item--signals::before { background: var(--krs-sand); }
+
+    .krs-page .krs-summary__label {
+        display: block;
+        margin-bottom: 6px;
+        font-family: var(--krs-sans);
+        font-size: .62rem;
+        font-weight: 600;
+        letter-spacing: .22em;
+        text-transform: uppercase;
+        color: var(--krs-muted);
+    }
+
+    .krs-page .krs-summary__value {
+        display: block;
+        font-family: var(--krs-serif);
+        font-weight: 500;
+        font-size: clamp(1.35rem, 2.2vw, 1.8rem);
+        line-height: 1.1;
+        letter-spacing: -.01em;
+        color: var(--krs-forest);
+    }
+
+    .krs-page .krs-summary__value small {
+        font-family: var(--krs-sans);
+        font-size: .68rem;
+        font-weight: 600;
+        letter-spacing: .14em;
+        text-transform: uppercase;
+        color: var(--krs-muted);
+        margin-left: 6px;
+    }
+
+    /* ------------------------------------------------------- LAYOUT ---- */
+    .krs-page .krs-form {
+        display: grid;
+        grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr);
+        gap: 22px;
+        align-items: start;
+        margin: 0;
+    }
+
+    .krs-page .krs-main,
+    .krs-page .krs-side {
+        display: flex;
+        flex-direction: column;
+        gap: 22px;
+        min-width: 0;
+    }
+
+    /* --------------------------------------------------------- CARDS ---- */
+    .krs-page .krs-card {
+        position: relative;
+        background: var(--krs-white);
+        border: 1px solid var(--krs-line);
+        border-radius: 4px;
+        padding: 24px 26px;
+    }
+
+    .krs-page .krs-card__head {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 12px;
+        padding-bottom: 14px;
+        margin-bottom: 20px;
+        border-bottom: 1px solid var(--krs-line);
+    }
+
+    .krs-page .krs-card__title {
+        margin: 0;
+        font-family: var(--krs-serif);
+        font-weight: 500;
+        font-size: 1.2rem;
+        line-height: 1.2;
+        letter-spacing: -.005em;
+        color: var(--krs-forest);
+    }
+
+    .krs-page .krs-card__meta {
+        margin: 0;
+        font-family: var(--krs-sans);
+        font-size: .62rem;
+        font-weight: 600;
+        letter-spacing: .2em;
+        text-transform: uppercase;
+        color: var(--krs-sage);
+        white-space: nowrap;
+    }
+
+    /* ------------------------------------------------------ WEIGHTS ---- */
+    .krs-page .krs-weight {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 110px;
+        align-items: center;
+        gap: 14px 20px;
+        padding: 18px 0;
+        border-bottom: 1px solid var(--krs-line);
+    }
+
+    .krs-page .krs-weight:first-of-type {
+        padding-top: 4px;
+    }
+
+    .krs-page .krs-weight:last-of-type {
+        border-bottom: none;
+        padding-bottom: 0;
+    }
+
+    .krs-page .krs-weight__label {
+        display: block;
+        font-family: var(--krs-sans);
+        font-size: .68rem;
+        font-weight: 700;
+        letter-spacing: .22em;
+        text-transform: uppercase;
+        color: var(--krs-muted);
+    }
+
+    .krs-page .krs-weight__hint {
+        display: block;
+        margin-top: 4px;
+        font-family: var(--krs-sans);
+        font-size: .78rem;
+        line-height: 1.55;
+        color: var(--krs-muted);
+        font-style: italic;
+    }
+
+    .krs-page .krs-weight__input {
+        position: relative;
+    }
+
+    .krs-page .krs-weight__input input[type="number"] {
+        width: 100%;
+        box-sizing: border-box;
+        padding: 10px 30px 10px 14px;
+        font-family: var(--krs-mono);
+        font-size: .95rem;
+        font-weight: 600;
+        text-align: right;
+        color: var(--krs-forest);
+        background: var(--krs-ivory);
+        border: 1px solid var(--krs-line);
+        border-radius: 3px;
+        transition: border-color .25s var(--krs-ease),
+                    background-color .25s var(--krs-ease),
+                    box-shadow .25s var(--krs-ease);
+    }
+
+    .krs-page .krs-weight__input input[type="number"]:focus {
+        outline: none;
+        border-color: var(--krs-sage);
+        background: var(--krs-white);
+        box-shadow: 0 0 0 3px rgba(143, 168, 136, .18);
+    }
+
+    .krs-page .krs-weight__input input[type="number"].input-validation-error {
+        border-color: var(--krs-danger);
+        background: rgba(168, 68, 46, .05);
+    }
+
+    .krs-page .krs-weight__input input[type="number"].input-validation-error:focus {
+        box-shadow: 0 0 0 3px rgba(168, 68, 46, .15);
+    }
+
+    .krs-page .krs-weight__suffix {
+        position: absolute;
+        right: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        font-family: var(--krs-mono);
+        font-size: .72rem;
+        font-weight: 500;
+        color: var(--krs-muted);
+        pointer-events: none;
+    }
+
+    .krs-page .krs-weight__bar {
+        grid-column: 1 / -1;
+        position: relative;
+        height: 4px;
+        border-radius: 999px;
+        background: rgba(20, 39, 31, .06);
+        overflow: hidden;
+        margin-top: 2px;
+    }
+
+    .krs-page .krs-weight__fill {
+        position: absolute;
+        left: 0; top: 0; bottom: 0;
+        background: var(--krs-sage);
+        border-radius: 999px;
+        transition: width .35s var(--krs-ease);
+    }
+
+    /* ------------------------------------------------------ SIGNALS ---- */
+    .krs-page .krs-signal {
+        display: flex;
+        align-items: flex-start;
+        gap: 14px;
+        padding: 16px 18px;
+        border: 1px solid var(--krs-line);
+        border-radius: 3px;
+        cursor: pointer;
+        background: var(--krs-ivory);
+        transition: border-color .25s var(--krs-ease),
+                    background-color .25s var(--krs-ease);
+        margin-bottom: 12px;
+    }
+
+    .krs-page .krs-signal:last-of-type {
+        margin-bottom: 0;
+    }
+
+    .krs-page .krs-signal:hover {
+        border-color: rgba(20, 39, 31, .22);
+    }
+
+    .krs-page .krs-signal input[type="checkbox"] {
+        flex: none;
+        width: 18px;
+        height: 18px;
+        margin: 2px 0 0;
+        accent-color: var(--krs-forest);
+        cursor: pointer;
+    }
+
+    .krs-page .krs-signal__body {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .krs-page .krs-signal__title {
+        display: block;
+        font-family: var(--krs-sans);
+        font-size: .92rem;
+        font-weight: 600;
+        line-height: 1.4;
+        color: var(--krs-forest);
+    }
+
+    .krs-page .krs-signal__desc {
+        display: block;
+        margin-top: 4px;
+        font-family: var(--krs-sans);
+        font-size: .8rem;
+        line-height: 1.55;
+        color: var(--krs-muted);
+    }
+
+    /* -------------------------------------------------- VALIDATION ---- */
+    .krs-page .validation-summary-errors {
+        margin: 0 0 22px;
+        padding: 14px 18px;
+        background: rgba(168, 68, 46, .06);
+        border: 1px solid rgba(168, 68, 46, .25);
+        border-left: 3px solid var(--krs-danger);
+        border-radius: 3px;
+        font-family: var(--krs-sans);
+        font-size: .88rem;
+        line-height: 1.6;
+        color: var(--krs-danger);
+    }
+
+    .krs-page .validation-summary-errors ul {
+        margin: 0;
+        padding-left: 20px;
+    }
+
+    .krs-page .validation-summary-errors li + li {
+        margin-top: 4px;
+    }
+
+    .krs-page .validation-summary-valid {
+        display: none;
+    }
+
+    .krs-page .field-validation-error,
+    .krs-page .field-validation-valid {
+        display: block;
+        margin-top: 6px;
+        font-family: var(--krs-sans);
+        font-size: .76rem;
+        line-height: 1.5;
+    }
+
+    .krs-page .field-validation-error,
+    .krs-page .text-danger {
+        color: var(--krs-danger);
+        font-weight: 500;
+    }
+
+    .krs-page .field-validation-valid {
+        display: none;
+    }
+
+    /* --------------------------------------------------------- ACTIONS ---- */
+    .krs-page .krs-actions {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 12px;
+        padding-top: 20px;
+        margin-top: 4px;
+        border-top: 1px solid var(--krs-line);
+    }
+
+    .krs-page .krs-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        padding: 13px 22px;
+        border-radius: 2px;
+        font-family: var(--krs-sans);
+        font-size: .68rem;
+        font-weight: 600;
+        letter-spacing: .22em;
+        text-transform: uppercase;
+        text-decoration: none;
+        cursor: pointer;
+        border: 1px solid transparent;
+        white-space: nowrap;
+        transition:
+            background-color .25s var(--krs-ease),
+            border-color .25s var(--krs-ease),
+            color .25s var(--krs-ease),
+            transform .25s var(--krs-ease);
+    }
+
+    .krs-page .krs-btn svg {
+        flex: none;
+        transition: transform .25s var(--krs-ease);
+    }
+
+    .krs-page .krs-btn--primary {
+        background: var(--krs-forest);
+        border-color: var(--krs-forest);
+        color: var(--krs-ivory);
+    }
+
+    .krs-page .krs-btn--primary:hover {
+        background: var(--krs-sand);
+        border-color: var(--krs-sand);
+        color: var(--krs-forest);
+        transform: translateY(-1px);
+    }
+
+    .krs-page .krs-btn--primary:hover svg {
+        transform: translateX(3px);
+    }
+
+    .krs-page .krs-btn:focus-visible {
+        outline: 2px solid var(--krs-sand);
+        outline-offset: 2px;
+    }
+
+    /* ---------------------------------------------------------- NOTES ---- */
+    .krs-page .krs-note {
+        margin: 0;
+        font-family: var(--krs-sans);
+        font-size: .85rem;
+        line-height: 1.65;
+        color: var(--krs-muted);
+    }
+
+    .krs-page .krs-note + .krs-note {
+        margin-top: 12px;
+    }
+
+    .krs-page .krs-note strong {
+        color: var(--krs-forest);
+        font-weight: 600;
+    }
+
+    .krs-page .krs-note-list {
+        margin: 12px 0 0;
+        padding-left: 18px;
+        font-family: var(--krs-sans);
+        font-size: .85rem;
+        line-height: 1.7;
+        color: var(--krs-muted);
+    }
+
+    .krs-page .krs-note-list li + li {
+        margin-top: 4px;
+    }
+
+    /* ------------------------------------------------------ RESPONSIVE ---- */
+    @@media (max-width: 900px) {
+        .krs-page .krs-form {
+            grid-template-columns: minmax(0, 1fr);
+        }
+    }
+
+    @@media (max-width: 620px) {
+        .krs-page .krs-summary {
+            grid-template-columns: 1fr;
+        }
+
+        .krs-page .krs-card {
+            padding: 20px;
+        }
+
+        .krs-page .krs-weight {
+            grid-template-columns: minmax(0, 1fr) 96px;
+        }
+
+        .krs-page .krs-actions {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .krs-page .krs-btn {
+            width: 100%;
+        }
+    }
+
+    /* --------------------------------------------- REDUCED MOTION ---- */
+    @@media (prefers-reduced-motion: reduce) {
+        .krs-page {
+            animation: none;
+        }
+
+        .krs-page *,
+        .krs-page *::before,
+        .krs-page *::after {
+            transition: none !important;
+            animation: none !important;
+        }
+    }
+</style>
+
+<div class="page-heading">
+    <div>
+        <div class="eyebrow">Karnel AI · Recommendation scoring</div>
+        <h1>Recommendation scoring.</h1>
+        <p>Adjust how Karnel AI ranks destinations, stays and experiences when suggesting options to travellers.</p>
+    </div>
+
+    <a href="@Context.Request.Path"
+       class="btn btn-quiet">
+        Refresh ↻
+    </a>
+</div>
+
+<div class="krs-page">
+
+    <!-- =================================================================
+         SUMMARY STRIP (live-updated by JS below)
+         ================================================================= -->
+    <div class="krs-summary">
+        <div class="krs-summary__item krs-summary__item--weight">
+            <span class="krs-summary__label">Total weight</span>
+            <span class="krs-summary__value">
+                <span id="krsSummaryTotal">@totalWeight.ToString("0.##")</span>
+                <small>points</small>
+            </span>
+        </div>
+
+        <div class="krs-summary__item">
+            <span class="krs-summary__label">Weights configured</span>
+            <span class="krs-summary__value">
+                <span id="krsSummaryConfigured">@configuredCount</span>
+                <small>of 4</small>
+            </span>
+        </div>
+
+        <div class="krs-summary__item krs-summary__item--signals">
+            <span class="krs-summary__label">Signals enabled</span>
+            <span class="krs-summary__value">
+                <span id="krsSummarySignals">@enabledSignals</span>
+                <small>of 3</small>
+            </span>
+        </div>
+    </div>
+
+    <form method="post" class="krs-form" novalidate>
+
+        @Html.AntiForgeryToken()
+
+        <div class="krs-main">
+
+            <div asp-validation-summary="ModelOnly"
+                 class="validation-summary-errors"
+                 role="alert"></div>
+
+            <section class="krs-card" aria-labelledby="krs-weights-heading">
+                <div class="krs-card__head">
+                    <h2 class="krs-card__title" id="krs-weights-heading">Scoring weights</h2>
+                    <p class="krs-card__meta">0 – 100 each</p>
+                </div>
+
+                <div class="krs-weight">
+                    <div>
+                        <label class="krs-weight__label" asp-for="LocationWeight">Location weight</label>
+                        <span class="krs-weight__hint">
+                            How strongly a matching destination or region should boost a recommendation.
+                        </span>
+                    </div>
+                    <div class="krs-weight__input">
+                        <input asp-for="LocationWeight" type="number" min="0" max="100" />
+                        <span class="krs-weight__suffix" aria-hidden="true">pt</span>
+                    </div>
+                    <div class="krs-weight__bar" aria-hidden="true">
+                        <span class="krs-weight__fill"
+                              data-bar-for="LocationWeight"
+                              style="width:@(ClampDecimal(locationWeight).ToString("0.##"))%;"></span>
+                    </div>
+                </div>
+
+                <div class="krs-weight">
+                    <div>
+                        <label class="krs-weight__label" asp-for="BudgetWeight">Budget weight</label>
+                        <span class="krs-weight__hint">
+                            How strongly a traveller’s stated budget should influence the ranking.
+                        </span>
+                    </div>
+                    <div class="krs-weight__input">
+                        <input asp-for="BudgetWeight" type="number" min="0" max="100" />
+                        <span class="krs-weight__suffix" aria-hidden="true">pt</span>
+                    </div>
+                    <div class="krs-weight__bar" aria-hidden="true">
+                        <span class="krs-weight__fill"
+                              data-bar-for="BudgetWeight"
+                              style="width:@(ClampDecimal(budgetWeight).ToString("0.##"))%;"></span>
+                    </div>
+                </div>
+
+                <div class="krs-weight">
+                    <div>
+                        <label class="krs-weight__label" asp-for="FeaturedWeight">Featured weight</label>
+                        <span class="krs-weight__hint">
+                            How much weight featured listings should receive when comparing options.
+                        </span>
+                    </div>
+                    <div class="krs-weight__input">
+                        <input asp-for="FeaturedWeight" type="number" min="0" max="100" />
+                        <span class="krs-weight__suffix" aria-hidden="true">pt</span>
+                    </div>
+                    <div class="krs-weight__bar" aria-hidden="true">
+                        <span class="krs-weight__fill"
+                              data-bar-for="FeaturedWeight"
+                              style="width:@(ClampDecimal(featuredWeight).ToString("0.##"))%;"></span>
+                    </div>
+                </div>
+
+                <div class="krs-weight">
+                    <div>
+                        <label class="krs-weight__label" asp-for="CategoryWeight">Category weight</label>
+                        <span class="krs-weight__hint">
+                            How strongly matching the requested category (stay, restaurant, resort) should boost a result.
+                        </span>
+                    </div>
+                    <div class="krs-weight__input">
+                        <input asp-for="CategoryWeight" type="number" min="0" max="100" />
+                        <span class="krs-weight__suffix" aria-hidden="true">pt</span>
+                    </div>
+                    <div class="krs-weight__bar" aria-hidden="true">
+                        <span class="krs-weight__fill"
+                              data-bar-for="CategoryWeight"
+                              style="width:@(ClampDecimal(categoryWeight).ToString("0.##"))%;"></span>
+                    </div>
+                </div>
+            </section>
+
+        </div>
+
+        <div class="krs-side">
+
+            <section class="krs-card" aria-labelledby="krs-signals-heading">
+                <div class="krs-card__head">
+                    <h2 class="krs-card__title" id="krs-signals-heading">Signals</h2>
+                    <p class="krs-card__meta">Behaviour</p>
+                </div>
+
+                <label class="krs-signal" for="PreferFeatured">
+                    <input asp-for="PreferFeatured" />
+                    <span class="krs-signal__body">
+                        <span class="krs-signal__title">Prefer featured listings</span>
+                        <span class="krs-signal__desc">
+                            Give featured properties a nudge in tie-breaking situations.
+                        </span>
+                    </span>
+                </label>
+
+                <label class="krs-signal" for="MatchBudget">
+                    <input asp-for="MatchBudget" />
+                    <span class="krs-signal__body">
+                        <span class="krs-signal__title">Match budget</span>
+                        <span class="krs-signal__desc">
+                            Filter and score options against the traveller’s stated budget.
+                        </span>
+                    </span>
+                </label>
+
+                <label class="krs-signal" for="MatchDestination">
+                    <input asp-for="MatchDestination" />
+                    <span class="krs-signal__body">
+                        <span class="krs-signal__title">Match destination</span>
+                        <span class="krs-signal__desc">
+                            Prioritise properties that sit inside the traveller’s requested destination.
+                        </span>
+                    </span>
+                </label>
+            </section>
+
+            <section class="krs-card" aria-labelledby="krs-save-heading">
+                <div class="krs-card__head">
+                    <h2 class="krs-card__title" id="krs-save-heading">Save changes</h2>
+                </div>
+
+                <p class="krs-note">
+                    <strong>Tune the weights together.</strong> Raising one weight may
+                    reduce the relative influence of the others — adjust them as a set
+                    rather than in isolation.
+                </p>
+                <ul class="krs-note-list">
+                    <li>Each weight is a value from 0 to 100.</li>
+                    <li>Set a weight to 0 to effectively ignore that signal.</li>
+                    <li>Signals below work alongside the weights, not instead of them.</li>
+                </ul>
+
+                <div class="krs-actions">
+                    <button class="krs-btn krs-btn--primary" type="submit">
+                        Save scoring rules
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                             stroke="currentColor" stroke-width="1.8"
+                             stroke-linecap="round" stroke-linejoin="round"
+                             aria-hidden="true" focusable="false">
+                            <path d="M5 12h14M13 6l6 6-6 6" />
+                        </svg>
+                    </button>
+                </div>
+            </section>
+
+        </div>
+
+    </form>
+
+</div>
+
+@section Scripts {
+    <script>
+        (() => {
+            const weightIds = ["LocationWeight", "BudgetWeight", "FeaturedWeight", "CategoryWeight"];
+            const signalIds = ["PreferFeatured", "MatchBudget", "MatchDestination"];
+
+            const totalEl      = document.getElementById("krsSummaryTotal");
+            const configuredEl = document.getElementById("krsSummaryConfigured");
+            const signalsEl    = document.getElementById("krsSummarySignals");
+
+            function clamp(n) {
+                if (!Number.isFinite(n)) { return 0; }
+                return Math.max(0, Math.min(100, n));
+            }
+
+            function readWeight(id) {
+                const input = document.getElementById(id);
+                if (!input) { return 0; }
+                return clamp(parseFloat(input.value));
+            }
+
+            function updateBars() {
+                weightIds.forEach(id => {
+                    const bar = document.querySelector(`[data-bar-for="${id}"]`);
+                    if (!bar) { return; }
+                    bar.style.width = readWeight(id) + "%";
+                });
+            }
+
+            function updateSummary() {
+                let total = 0;
+                let configured = 0;
+
+                weightIds.forEach(id => {
+                    const value = readWeight(id);
+                    total += value;
+                    if (value > 0) { configured++; }
+                });
+
+                let signals = 0;
+                signalIds.forEach(id => {
+                    const input = document.getElementById(id);
+                    if (input && input.checked) { signals++; }
+                });
+
+                // Trim trailing zeros so "250.00" becomes "250"
+                const totalDisplay = Number(total.toFixed(2)).toString();
+
+                if (totalEl)      { totalEl.textContent = totalDisplay; }
+                if (configuredEl) { configuredEl.textContent = configured; }
+                if (signalsEl)    { signalsEl.textContent = signals; }
+            }
+
+            function refresh() {
+                updateBars();
+                updateSummary();
+            }
+
+            weightIds.forEach(id => {
+                const input = document.getElementById(id);
+                if (input) { input.addEventListener("input", refresh); }
+            });
+
+            signalIds.forEach(id => {
+                const input = document.getElementById(id);
+                if (input) { input.addEventListener("change", refresh); }
+            });
+
+            refresh();
+        })();
+    </script>
+}

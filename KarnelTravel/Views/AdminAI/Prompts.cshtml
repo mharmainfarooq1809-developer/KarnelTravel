@@ -1,0 +1,786 @@
+@model IReadOnlyList<KarnelTravel.Models.AIQuickPrompt>
+
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "AI Quick Prompts";
+
+    var prompts = Model ?? Array.Empty<KarnelTravel.Models.AIQuickPrompt>();
+
+    // Preserve display order priority: lower numbers first
+    var ordered = prompts
+        .OrderBy(x => x.DisplayOrder)
+        .ThenBy(x => x.Id)
+        .ToList();
+
+    var totalCount = ordered.Count;
+    var activeCount = ordered.Count(x => x.IsEnabled);
+    var inactiveCount = totalCount - activeCount;
+}
+
+<style>
+    /* ==========================================================================
+       KARNEL TRAVEL GUIDE — ADMIN · AI QUICK PROMPTS
+       Scoped with .kqp- prefix. Inline <style> because _AdminLayout does not
+       render a Styles section (matching the rest of the admin suite).
+       ========================================================================== */
+
+    .kqp-page {
+        --kqp-forest: var(--forest-deep, #14271F);
+        --kqp-ivory: var(--ivory, #F8F6F0);
+        --kqp-sage: var(--sage, #8FA888);
+        --kqp-sand: var(--sand, #E8DFC9);
+        --kqp-white: #FFFFFF;
+        --kqp-muted: var(--muted, #5A6B60);
+        --kqp-line: var(--line, rgba(20, 39, 31, .12));
+        --kqp-danger: #a8442e;
+        --kqp-serif: var(--serif, "Playfair Display", Georgia, "Times New Roman", serif);
+        --kqp-sans: var(--sans, "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif);
+        --kqp-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+        --kqp-ease: var(--ease, cubic-bezier(.22, .61, .36, 1));
+
+        animation: kqp-fade .45s var(--kqp-ease) both;
+    }
+
+    @@keyframes kqp-fade {
+        from { opacity: 0; transform: translateY(6px); }
+        to   { opacity: 1; transform: none; }
+    }
+
+    .kqp-page .visually-hidden {
+        position: absolute !important;
+        width: 1px; height: 1px;
+        padding: 0; margin: -1px;
+        overflow: hidden; clip: rect(0, 0, 0, 0);
+        white-space: nowrap; border: 0;
+    }
+
+    /* ----------------------------------------------------- STAT CARDS ---- */
+    .kqp-page .kqp-stats {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 14px;
+        margin-bottom: 22px;
+    }
+
+    .kqp-page .kqp-stat {
+        position: relative;
+        padding: 20px 22px 20px 26px;
+        background: var(--kqp-white);
+        border: 1px solid var(--kqp-line);
+        border-radius: 4px;
+        overflow: hidden;
+        transition: border-color .3s var(--kqp-ease);
+    }
+
+    .kqp-page .kqp-stat:hover {
+        border-color: rgba(20, 39, 31, .22);
+    }
+
+    .kqp-page .kqp-stat::before {
+        content: "";
+        position: absolute;
+        left: 0; top: 0; bottom: 0;
+        width: 3px;
+        background: var(--kqp-forest);
+    }
+
+    .kqp-page .kqp-stat--active::before   { background: var(--kqp-sage); }
+    .kqp-page .kqp-stat--inactive::before { background: #b8a882; }
+
+    .kqp-page .kqp-stat__label {
+        display: block;
+        margin-bottom: 8px;
+        font-size: .62rem;
+        font-weight: 600;
+        letter-spacing: .22em;
+        text-transform: uppercase;
+        color: var(--kqp-muted);
+    }
+
+    .kqp-page .kqp-stat strong {
+        display: block;
+        font-family: var(--kqp-serif);
+        font-size: clamp(1.5rem, 2.4vw, 2.05rem);
+        font-weight: 500;
+        line-height: 1.05;
+        letter-spacing: -.01em;
+        color: var(--kqp-forest);
+    }
+
+    /* -------------------------------------------------------- TOOLBAR ---- */
+    .kqp-page .kqp-toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 12px;
+        padding: 14px 16px;
+        background: var(--kqp-white);
+        border: 1px solid var(--kqp-line);
+        border-radius: 4px;
+        margin-bottom: 16px;
+    }
+
+    .kqp-page .kqp-search {
+        flex: 1 1 280px;
+        min-width: 0;
+        padding: 10px 14px;
+        border: 1px solid var(--kqp-line);
+        border-radius: 3px;
+        font-family: var(--kqp-sans);
+        font-size: .88rem;
+        background: var(--kqp-ivory);
+        color: var(--kqp-forest);
+        transition: border-color .25s var(--kqp-ease),
+                    background-color .25s var(--kqp-ease),
+                    box-shadow .25s var(--kqp-ease);
+    }
+
+    .kqp-page .kqp-search::placeholder {
+        color: rgba(90, 107, 96, .7);
+    }
+
+    .kqp-page .kqp-search:focus {
+        outline: none;
+        border-color: var(--kqp-sage);
+        background: var(--kqp-white);
+        box-shadow: 0 0 0 3px rgba(143, 168, 136, .18);
+    }
+
+    .kqp-page .kqp-select {
+        padding: 10px 34px 10px 14px;
+        border: 1px solid var(--kqp-line);
+        border-radius: 3px;
+        font-family: var(--kqp-sans);
+        font-size: .88rem;
+        color: var(--kqp-forest);
+        background-color: var(--kqp-ivory);
+        background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8' fill='none' stroke='%235A6B60' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'><path d='M1 1l5 5 5-5'/></svg>");
+        background-repeat: no-repeat;
+        background-position: right 12px center;
+        background-size: 12px 8px;
+        appearance: none;
+        -webkit-appearance: none;
+        cursor: pointer;
+        transition: border-color .25s var(--kqp-ease),
+                    background-color .25s var(--kqp-ease),
+                    box-shadow .25s var(--kqp-ease);
+    }
+
+    .kqp-page .kqp-select:focus {
+        outline: none;
+        border-color: var(--kqp-sage);
+        background-color: var(--kqp-white);
+        box-shadow: 0 0 0 3px rgba(143, 168, 136, .18);
+    }
+
+    /* ---------------------------------------------------- TABLE SHELL ---- */
+    .kqp-page .kqp-table-wrap {
+        background: var(--kqp-white);
+        border: 1px solid var(--kqp-line);
+        border-radius: 4px;
+        overflow: hidden;
+    }
+
+    .kqp-page .kqp-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: .88rem;
+        color: var(--kqp-forest);
+    }
+
+    .kqp-page .kqp-table thead {
+        background: var(--kqp-ivory);
+        border-bottom: 1px solid var(--kqp-line);
+    }
+
+    .kqp-page .kqp-table th {
+        padding: 14px 18px;
+        text-align: left;
+        font-family: var(--kqp-sans);
+        font-size: .62rem;
+        font-weight: 700;
+        letter-spacing: .22em;
+        text-transform: uppercase;
+        color: var(--kqp-muted);
+        white-space: nowrap;
+    }
+
+    .kqp-page .kqp-table th:last-child {
+        text-align: right;
+    }
+
+    .kqp-page .kqp-table td {
+        padding: 18px;
+        vertical-align: middle;
+        border-bottom: 1px solid var(--kqp-line);
+    }
+
+    .kqp-page .kqp-table tbody tr:last-child td {
+        border-bottom: none;
+    }
+
+    .kqp-page .kqp-row {
+        transition: background-color .25s var(--kqp-ease);
+    }
+
+    .kqp-page .kqp-row:hover {
+        background: rgba(232, 223, 201, .18);
+    }
+
+    /* ---------------------------------------------------- CELLS ---- */
+    .kqp-page .kqp-label {
+        display: block;
+        font-family: var(--kqp-serif);
+        font-weight: 500;
+        font-size: 1.05rem;
+        line-height: 1.3;
+        color: var(--kqp-forest);
+        overflow-wrap: break-word;
+        word-break: break-word;
+    }
+
+    .kqp-page .kqp-label--empty {
+        font-family: var(--kqp-sans);
+        font-style: italic;
+        font-size: .88rem;
+        color: var(--kqp-muted);
+    }
+
+    .kqp-page .kqp-prompt {
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        max-width: 460px;
+        margin: 0;
+        font-family: var(--kqp-sans);
+        font-size: .85rem;
+        line-height: 1.55;
+        color: var(--kqp-muted);
+        overflow-wrap: break-word;
+        word-break: break-word;
+    }
+
+    .kqp-page .kqp-prompt--empty {
+        font-style: italic;
+        opacity: .85;
+    }
+
+    .kqp-page .kqp-order {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 32px;
+        padding: 4px 10px;
+        font-family: var(--kqp-mono);
+        font-size: .82rem;
+        font-weight: 600;
+        line-height: 1.4;
+        color: var(--kqp-forest);
+        background: var(--kqp-ivory);
+        border: 1px solid var(--kqp-line);
+        border-radius: 2px;
+    }
+
+    /* -------------------------------------------------------- STATUS ---- */
+    .kqp-page .kqp-status {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 12px;
+        border-radius: 999px;
+        font-family: var(--kqp-sans);
+        font-size: .64rem;
+        font-weight: 600;
+        letter-spacing: .14em;
+        text-transform: uppercase;
+        white-space: nowrap;
+    }
+
+    .kqp-page .kqp-status i {
+        display: inline-block;
+        flex: none;
+        width: 6px; height: 6px;
+        border-radius: 50%;
+        background: currentColor;
+    }
+
+    .kqp-page .kqp-status--on {
+        background: rgba(143, 168, 136, .22);
+        color: #2e5238;
+    }
+
+    .kqp-page .kqp-status--off {
+        background: rgba(20, 39, 31, .06);
+        color: #5a6b60;
+    }
+
+    /* -------------------------------------------------------- ACTIONS ---- */
+    .kqp-page .kqp-actions {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 8px;
+    }
+
+    .kqp-page .kqp-actions form {
+        margin: 0;
+        display: inline-flex;
+    }
+
+    .kqp-page .kqp-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 8px 12px;
+        border-radius: 2px;
+        font-family: var(--kqp-sans);
+        font-size: .62rem;
+        font-weight: 600;
+        letter-spacing: .16em;
+        text-transform: uppercase;
+        text-decoration: none;
+        cursor: pointer;
+        border: 1px solid transparent;
+        white-space: nowrap;
+        transition:
+            background-color .25s var(--kqp-ease),
+            border-color .25s var(--kqp-ease),
+            color .25s var(--kqp-ease);
+    }
+
+    .kqp-page .kqp-btn--primary {
+        background: var(--kqp-forest);
+        border-color: var(--kqp-forest);
+        color: var(--kqp-ivory);
+        padding: 12px 18px;
+        font-size: .66rem;
+        letter-spacing: .2em;
+    }
+
+    .kqp-page .kqp-btn--primary:hover {
+        background: var(--kqp-sand);
+        border-color: var(--kqp-sand);
+        color: var(--kqp-forest);
+    }
+
+    .kqp-page .kqp-btn--quiet {
+        background: transparent;
+        border-color: var(--kqp-line);
+        color: var(--kqp-forest);
+    }
+
+    .kqp-page .kqp-btn--quiet:hover {
+        border-color: var(--kqp-forest);
+        background: var(--kqp-ivory);
+    }
+
+    .kqp-page .kqp-btn--danger {
+        background: transparent;
+        border-color: rgba(168, 68, 46, .3);
+        color: var(--kqp-danger);
+    }
+
+    .kqp-page .kqp-btn--danger:hover {
+        background: rgba(168, 68, 46, .08);
+        border-color: var(--kqp-danger);
+    }
+
+    .kqp-page .kqp-btn:focus-visible {
+        outline: 2px solid var(--kqp-sand);
+        outline-offset: 2px;
+    }
+
+    .kqp-page .kqp-btn--primary svg {
+        flex: none;
+        transition: transform .25s var(--kqp-ease);
+    }
+
+    .kqp-page .kqp-btn--primary:hover svg {
+        transform: translateX(2px);
+    }
+
+    /* --------------------------------------------------------- EMPTY ---- */
+    .kqp-page .kqp-empty {
+        padding: 64px 24px;
+        text-align: center;
+    }
+
+    .kqp-page .kqp-empty__icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 72px;
+        height: 72px;
+        margin-bottom: 20px;
+        border-radius: 50%;
+        background: var(--kqp-ivory);
+        color: var(--kqp-sage);
+    }
+
+    .kqp-page .kqp-empty strong {
+        display: block;
+        margin-bottom: 8px;
+        font-family: var(--kqp-serif);
+        font-size: clamp(1.3rem, 2vw, 1.6rem);
+        font-weight: 500;
+        color: var(--kqp-forest);
+    }
+
+    .kqp-page .kqp-empty p {
+        margin: 0 0 20px;
+        font-size: .9rem;
+        line-height: 1.6;
+        color: var(--kqp-muted);
+    }
+
+    /* -------------------------------------- FILTER-HIDDEN-ALL-ROWS ---- */
+    .kqp-page .kqp-all-hidden td {
+        padding: 48px 24px;
+        text-align: center;
+        font-size: .9rem;
+        color: var(--kqp-muted);
+        font-style: italic;
+    }
+
+    /* ------------------------------------------------------ RESPONSIVE ---- */
+    @@media (max-width: 900px) {
+        .kqp-page .kqp-table-wrap {
+            background: transparent;
+            border: none;
+            overflow: visible;
+        }
+
+        .kqp-page .kqp-table,
+        .kqp-page .kqp-table tbody,
+        .kqp-page .kqp-table tr,
+        .kqp-page .kqp-table td {
+            display: block;
+            width: 100%;
+        }
+
+        .kqp-page .kqp-table thead {
+            display: none;
+        }
+
+        .kqp-page .kqp-row {
+            background: var(--kqp-white);
+            border: 1px solid var(--kqp-line);
+            border-radius: 4px;
+            padding: 16px 18px;
+            margin-bottom: 12px;
+        }
+
+        .kqp-page .kqp-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .kqp-page .kqp-table td {
+            padding: 8px 0;
+            border: none;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: baseline;
+            gap: 8px 14px;
+        }
+
+        .kqp-page .kqp-table td::before {
+            content: attr(data-label);
+            flex: 0 0 100px;
+            font-size: .6rem;
+            font-weight: 700;
+            letter-spacing: .22em;
+            text-transform: uppercase;
+            color: var(--kqp-sage);
+        }
+
+        .kqp-page .kqp-table td.kqp-empty::before,
+        .kqp-page .kqp-table td.kqp-all-hidden::before {
+            display: none;
+        }
+
+        .kqp-page .kqp-prompt {
+            max-width: none;
+        }
+
+        .kqp-page .kqp-actions {
+            justify-content: flex-start;
+            padding-top: 12px;
+            margin-top: 4px;
+            border-top: 1px solid var(--kqp-line);
+            width: 100%;
+        }
+
+        .kqp-page .kqp-actions > a,
+        .kqp-page .kqp-actions > form {
+            flex: 1 1 auto;
+        }
+
+        .kqp-page .kqp-actions .kqp-btn {
+            width: 100%;
+        }
+    }
+
+    @@media (max-width: 560px) {
+        .kqp-page .kqp-stats {
+            grid-template-columns: 1fr;
+        }
+
+        .kqp-page .kqp-toolbar {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .kqp-page .kqp-search,
+        .kqp-page .kqp-select {
+            width: 100%;
+        }
+
+        .kqp-page .kqp-actions {
+            flex-direction: column;
+            align-items: stretch;
+        }
+    }
+
+    /* --------------------------------------------- REDUCED MOTION ---- */
+    @@media (prefers-reduced-motion: reduce) {
+        .kqp-page {
+            animation: none;
+        }
+
+        .kqp-page *,
+        .kqp-page *::before,
+        .kqp-page *::after {
+            transition: none !important;
+            animation: none !important;
+        }
+    }
+</style>
+
+<div class="page-heading">
+    <div>
+        <div class="eyebrow">Karnel AI · Quick prompts · @totalCount @(totalCount == 1 ? "prompt" : "prompts")</div>
+        <h1>The first questions.</h1>
+        <p>Suggested starting points that appear to travellers when they open Karnel AI.</p>
+    </div>
+
+    <a class="kqp-btn kqp-btn--primary" href="/Admin/AI/Prompts/Create">
+        New prompt
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round"
+             aria-hidden="true" focusable="false">
+            <path d="M12 5v14M5 12h14" />
+        </svg>
+    </a>
+</div>
+
+<div class="kqp-page">
+
+    <div class="kqp-stats">
+        <div class="kqp-stat">
+            <span class="kqp-stat__label">Total prompts</span>
+            <strong>@totalCount</strong>
+        </div>
+
+        <div class="kqp-stat kqp-stat--active">
+            <span class="kqp-stat__label">Active</span>
+            <strong>@activeCount</strong>
+        </div>
+
+        <div class="kqp-stat kqp-stat--inactive">
+            <span class="kqp-stat__label">Inactive</span>
+            <strong>@inactiveCount</strong>
+        </div>
+    </div>
+
+    <div class="kqp-toolbar">
+        <input class="kqp-search"
+               type="search"
+               id="kqpSearch"
+               placeholder="Search label or prompt..."
+               aria-label="Search quick prompts" />
+
+        <select class="kqp-select" id="kqpStatus" aria-label="Filter by status">
+            <option value="all">All statuses</option>
+            <option value="on">Active</option>
+            <option value="off">Inactive</option>
+        </select>
+    </div>
+
+    <div class="kqp-table-wrap">
+        <table class="kqp-table" id="kqpTable">
+            <thead>
+                <tr>
+                    <th scope="col">Label</th>
+                    <th scope="col">Prompt</th>
+                    <th scope="col">Order</th>
+                    <th scope="col">Status</th>
+                    <th scope="col"><span class="visually-hidden">Actions</span></th>
+                </tr>
+            </thead>
+
+            <tbody>
+                @if (totalCount == 0)
+                {
+                    <tr>
+                        <td colspan="5" class="kqp-empty">
+                            <div class="kqp-empty__icon" aria-hidden="true">
+                                <svg width="32" height="32" viewBox="0 0 24 24" fill="none"
+                                     stroke="currentColor" stroke-width="1.2"
+                                     stroke-linecap="round" stroke-linejoin="round"
+                                     focusable="false">
+                                    <path d="M21 15a2 2 0 0 1-2 2H8l-5 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                                    <path d="M9.5 9.5a2.5 2.5 0 0 1 5 0c0 1-.5 1.5-1.5 2-.7.4-1 .9-1 1.5" />
+                                    <path d="M12 16h.01" />
+                                </svg>
+                            </div>
+                            <strong>No quick prompts yet.</strong>
+                            <p>Add your first prompt so travellers have somewhere to begin.</p>
+                            <a class="kqp-btn kqp-btn--primary" href="/Admin/AI/Prompts/Create">
+                                New prompt
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
+                                     stroke="currentColor" stroke-width="2"
+                                     stroke-linecap="round" stroke-linejoin="round"
+                                     aria-hidden="true" focusable="false">
+                                    <path d="M12 5v14M5 12h14" />
+                                </svg>
+                            </a>
+                        </td>
+                    </tr>
+                }
+                else
+                {
+                    foreach (var item in ordered)
+                    {
+                        var hasLabel = !string.IsNullOrWhiteSpace(item.Label);
+                        var hasPrompt = !string.IsNullOrWhiteSpace(item.Prompt);
+                        var statusClass = item.IsEnabled ? "kqp-status--on" : "kqp-status--off";
+                        var statusText = item.IsEnabled ? "Active" : "Inactive";
+                        var statusValue = item.IsEnabled ? "on" : "off";
+                        var actionLabel = item.IsEnabled ? "Disable" : "Enable";
+
+                        <tr class="kqp-row" data-status="@statusValue">
+
+                            <td data-label="Label">
+                                @if (hasLabel)
+                                {
+                                    <span class="kqp-label">@item.Label</span>
+                                }
+                                else
+                                {
+                                    <span class="kqp-label kqp-label--empty">Untitled prompt</span>
+                                }
+                            </td>
+
+                            <td data-label="Prompt">
+                                @if (hasPrompt)
+                                {
+                                    <p class="kqp-prompt" title="@item.Prompt">@item.Prompt</p>
+                                }
+                                else
+                                {
+                                    <p class="kqp-prompt kqp-prompt--empty">No prompt text provided.</p>
+                                }
+                            </td>
+
+                            <td data-label="Order">
+                                <span class="kqp-order">@item.DisplayOrder</span>
+                            </td>
+
+                            <td data-label="Status">
+                                <span class="kqp-status @statusClass">
+                                    <i aria-hidden="true"></i>
+                                    @statusText
+                                </span>
+                            </td>
+
+                            <td data-label="Actions">
+                                <div class="kqp-actions">
+
+                                    <a class="kqp-btn kqp-btn--quiet"
+                                       href="/Admin/AI/Prompts/Edit/@item.Id">
+                                        Edit
+                                    </a>
+
+                                    <form method="post" action="/Admin/AI/Prompts/Toggle/@item.Id">
+                                        <input name="enabled" type="hidden" value="@(!item.IsEnabled)" />
+                                        @Html.AntiForgeryToken()
+                                        <button class="kqp-btn kqp-btn--quiet" type="submit">
+                                            @actionLabel
+                                        </button>
+                                    </form>
+
+                                    <form method="post"
+                                          action="/Admin/AI/Prompts/Delete/@item.Id"
+                                          onsubmit="return confirm('Delete this visitor prompt?');">
+                                        @Html.AntiForgeryToken()
+                                        <button class="kqp-btn kqp-btn--danger" type="submit">
+                                            Delete
+                                        </button>
+                                    </form>
+
+                                </div>
+                            </td>
+
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+
+</div>
+
+@section Scripts {
+    <script>
+        (() => {
+            const search = document.getElementById("kqpSearch");
+            const status = document.getElementById("kqpStatus");
+            const table = document.getElementById("kqpTable");
+            if (!search || !status || !table) { return; }
+
+            const tbody = table.querySelector("tbody");
+            const rows = Array.from(tbody.querySelectorAll(".kqp-row"));
+            if (rows.length === 0) { return; }
+
+            let noMatchRow = tbody.querySelector(".kqp-all-hidden");
+            if (!noMatchRow) {
+                noMatchRow = document.createElement("tr");
+                noMatchRow.className = "kqp-all-hidden";
+                noMatchRow.style.display = "none";
+                const cell = document.createElement("td");
+                cell.colSpan = 5;
+                cell.textContent = "No prompts match your filters.";
+                noMatchRow.appendChild(cell);
+                tbody.appendChild(noMatchRow);
+            }
+
+            function applyFilters() {
+                const query = search.value.trim().toLowerCase();
+                const selected = status.value;
+                let visibleCount = 0;
+
+                rows.forEach(row => {
+                    const text = row.textContent.toLowerCase();
+                    const rowStatus = row.dataset.status;
+
+                    const matchesSearch = !query || text.includes(query);
+                    const matchesStatus =
+                        selected === "all" || rowStatus === selected;
+
+                    const visible = matchesSearch && matchesStatus;
+                    row.style.display = visible ? "" : "none";
+                    if (visible) { visibleCount++; }
+                });
+
+                noMatchRow.style.display = visibleCount === 0 ? "" : "none";
+            }
+
+            search.addEventListener("input", applyFilters);
+            status.addEventListener("change", applyFilters);
+        })();
+    </script>
+}

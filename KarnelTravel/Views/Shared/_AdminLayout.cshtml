@@ -922,12 +922,29 @@
                     <span>Transport</span>
                 </a>
 
+                <a class="@Active("/admin/transport/vehicles")" asp-controller="Admin" asp-action="Vehicles">
+                    <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 16.5V9a3 3 0 0 1 3-3h10a3 3 0 0 1 3 3v7.5"/><path d="M3 16.5h18"/><circle cx="7.5" cy="18.5" r="1.6"/><circle cx="16.5" cy="18.5" r="1.6"/></svg>
+                    <span>Vehicle inventory</span>
+                </a>
+
                 <a class="@Active("/admin/bookings")" asp-controller="Admin" asp-action="Bookings">
                     <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2.5"/><path d="M8 3v4M16 3v4M3 10h18"/></svg>
                     <span>Bookings</span>
                 </a>
 
                 <p class="nav-group-label">System</p>
+
+                <p class="nav-group-label">Karnel AI</p>
+                <a class="@Active("/admin/ai")" asp-controller="AdminAI" asp-action="Overview"><span>AI Overview</span></a>
+                <a class="@Active("/admin/ai/configuration")" asp-controller="AdminAI" asp-action="Configuration"><span>AI Configuration</span></a>
+                <a class="@Active("/admin/ai/capabilities")" asp-controller="AdminAI" asp-action="Capabilities"><span>Capabilities</span></a>
+                <a class="@Active("/admin/ai/knowledge")" asp-controller="AdminAI" asp-action="Knowledge"><span>Knowledge base</span></a>
+                <a class="@Active("/admin/ai/prompts")" asp-controller="AdminAI" asp-action="Prompts"><span>Quick prompts</span></a>
+                <a class="@Active("/admin/ai/recommendations")" asp-controller="AdminAI" asp-action="Recommendations"><span>Recommendations</span></a>
+                <a class="@Active("/admin/ai/conversations")" asp-controller="AdminAI" asp-action="Conversations"><span>Conversations</span></a>
+                <a class="@Active("/admin/ai/feedback")" asp-controller="AdminAI" asp-action="Feedback"><span>Feedback</span></a>
+                <a class="@Active("/admin/ai/auditlogs")" asp-controller="AdminAI" asp-action="AuditLogs"><span>Audit logs</span></a>
+                <a class="@Active("/admin/ai/health")" asp-controller="AdminAI" asp-action="Health"><span>System health</span></a>
 
                 <a class="@Active("/admin/inquiries")" asp-controller="Admin" asp-action="Inquiries">
                     <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 15.5a2.5 2.5 0 0 1-2.5 2.5H8l-4 3V6.5A2.5 2.5 0 0 1 6.5 4h11A2.5 2.5 0 0 1 20 6.5z"/></svg>
@@ -1008,7 +1025,7 @@
             </main>
 
             <footer class="admin-footer">
-                <span>© 2025 Karnel Travel Guide</span>
+                <span>© @DateTime.Now.Year Karnel Travel Guide</span>
                 <span><i class="live-dot"></i> Connected to booking database</span>
             </footer>
         </div>

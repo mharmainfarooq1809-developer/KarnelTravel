@@ -1,11 +1,13 @@
 ﻿using KarnelTravel.Data;
 using KarnelTravel.Models;
 using KarnelTravel.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace KarnelTravel.Controllers
 {
+    [Authorize]
     public class ReviewsController : Controller
     {
         private readonly ApplicationDbContext _context;

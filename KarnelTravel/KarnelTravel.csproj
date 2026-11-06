@@ -20,4 +20,7 @@
   <ItemGroup>
     <Compile Remove="booking-setup-backup\**\*.cs" />
   </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="KarnelTravel.Tests" />
+  </ItemGroup>
 </Project>

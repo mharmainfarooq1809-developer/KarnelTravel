@@ -1,0 +1,554 @@
+@model KarnelTravel.Models.AIConfiguration
+
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "AI Configuration";
+}
+
+<style>
+    /* ==========================================================================
+       KARNEL TRAVEL GUIDE — ADMIN · AI CONFIGURATION
+       Scoped with .kcf- prefix. Inline <style> because _AdminLayout does not
+       render a Styles section (matching the rest of the admin suite).
+       ========================================================================== */
+
+    .kcf-page {
+        --kcf-forest: var(--forest-deep, #14271F);
+        --kcf-ivory: var(--ivory, #F8F6F0);
+        --kcf-sage: var(--sage, #8FA888);
+        --kcf-sand: var(--sand, #E8DFC9);
+        --kcf-white: #FFFFFF;
+        --kcf-muted: var(--muted, #5A6B60);
+        --kcf-line: var(--line, rgba(20, 39, 31, .12));
+        --kcf-danger: #a8442e;
+        --kcf-serif: var(--serif, "Playfair Display", Georgia, "Times New Roman", serif);
+        --kcf-sans: var(--sans, "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif);
+        --kcf-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+        --kcf-ease: var(--ease, cubic-bezier(.22, .61, .36, 1));
+
+        animation: kcf-fade .45s var(--kcf-ease) both;
+    }
+
+    @@keyframes kcf-fade {
+        from { opacity: 0; transform: translateY(6px); }
+        to   { opacity: 1; transform: none; }
+    }
+
+    .kcf-page .visually-hidden {
+        position: absolute !important;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+    }
+
+    /* ----------------------------------------------------- FORM SHELL ---- */
+    .kcf-page .kcf-form {
+        display: grid;
+        grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr);
+        gap: 22px;
+        align-items: start;
+        margin: 0;
+    }
+
+    .kcf-page .kcf-main,
+    .kcf-page .kcf-side {
+        display: flex;
+        flex-direction: column;
+        gap: 22px;
+        min-width: 0;
+    }
+
+    /* --------------------------------------------------------- CARD ---- */
+    .kcf-page .kcf-card {
+        position: relative;
+        background: var(--kcf-white);
+        border: 1px solid var(--kcf-line);
+        border-radius: 4px;
+        padding: 24px 26px;
+    }
+
+    .kcf-page .kcf-card__head {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 12px;
+        padding-bottom: 14px;
+        margin-bottom: 20px;
+        border-bottom: 1px solid var(--kcf-line);
+    }
+
+    .kcf-page .kcf-card__title {
+        margin: 0;
+        font-family: var(--kcf-serif);
+        font-weight: 500;
+        font-size: 1.2rem;
+        line-height: 1.2;
+        letter-spacing: -.005em;
+        color: var(--kcf-forest);
+    }
+
+    .kcf-page .kcf-card__meta {
+        margin: 0;
+        font-family: var(--kcf-sans);
+        font-size: .62rem;
+        font-weight: 600;
+        letter-spacing: .2em;
+        text-transform: uppercase;
+        color: var(--kcf-sage);
+        white-space: nowrap;
+    }
+
+    /* ------------------------------------------------------- FIELDS ---- */
+    .kcf-page .kcf-field {
+        display: block;
+        margin-bottom: 20px;
+    }
+
+    .kcf-page .kcf-field:last-child {
+        margin-bottom: 0;
+    }
+
+    .kcf-page .kcf-field label,
+    .kcf-page .kcf-field > label:first-child {
+        display: block;
+        margin-bottom: 8px;
+        font-family: var(--kcf-sans);
+        font-size: .64rem;
+        font-weight: 700;
+        letter-spacing: .22em;
+        text-transform: uppercase;
+        color: var(--kcf-muted);
+    }
+
+    .kcf-page .kcf-field input[type="text"],
+    .kcf-page .kcf-field input[type="number"],
+    .kcf-page .kcf-field textarea,
+    .kcf-page .kcf-field .kcf-input {
+        width: 100%;
+        box-sizing: border-box;
+        padding: 12px 14px;
+        font-family: var(--kcf-sans);
+        font-size: .95rem;
+        line-height: 1.5;
+        color: var(--kcf-forest);
+        background: var(--kcf-ivory);
+        border: 1px solid var(--kcf-line);
+        border-radius: 3px;
+        transition: border-color .25s var(--kcf-ease),
+                    background-color .25s var(--kcf-ease),
+                    box-shadow .25s var(--kcf-ease);
+    }
+
+    .kcf-page .kcf-field input[type="number"] {
+        font-family: var(--kcf-mono);
+        font-size: .92rem;
+        max-width: 200px;
+    }
+
+    .kcf-page .kcf-field textarea {
+        min-height: 120px;
+        resize: vertical;
+        line-height: 1.65;
+    }
+
+    .kcf-page .kcf-field input[type="text"]:focus,
+    .kcf-page .kcf-field input[type="number"]:focus,
+    .kcf-page .kcf-field textarea:focus,
+    .kcf-page .kcf-field .kcf-input:focus {
+        outline: none;
+        border-color: var(--kcf-sage);
+        background: var(--kcf-white);
+        box-shadow: 0 0 0 3px rgba(143, 168, 136, .18);
+    }
+
+    .kcf-page .kcf-field .kcf-hint {
+        display: block;
+        margin-top: 8px;
+        font-family: var(--kcf-sans);
+        font-size: .78rem;
+        line-height: 1.55;
+        color: var(--kcf-muted);
+        font-style: italic;
+    }
+
+    /* ASP.NET's validation helper emits .field-validation-error — style it */
+    .kcf-page .kcf-field .field-validation-error,
+    .kcf-page .kcf-field .field-validation-valid {
+        display: block;
+        margin-top: 8px;
+        font-family: var(--kcf-sans);
+        font-size: .78rem;
+        line-height: 1.5;
+    }
+
+    .kcf-page .kcf-field .field-validation-error {
+        color: var(--kcf-danger);
+        font-weight: 500;
+    }
+
+    .kcf-page .kcf-field .field-validation-valid {
+        display: none;
+    }
+
+    .kcf-page .kcf-field input.input-validation-error,
+    .kcf-page .kcf-field textarea.input-validation-error {
+        border-color: var(--kcf-danger);
+        background: rgba(168, 68, 46, .05);
+    }
+
+    .kcf-page .kcf-field input.input-validation-error:focus,
+    .kcf-page .kcf-field textarea.input-validation-error:focus {
+        box-shadow: 0 0 0 3px rgba(168, 68, 46, .15);
+    }
+
+    /* ------------------------------------------------------ TOGGLE ---- */
+    .kcf-page .kcf-toggle {
+        display: flex;
+        align-items: flex-start;
+        gap: 14px;
+        padding: 16px 18px;
+        background: var(--kcf-ivory);
+        border: 1px solid var(--kcf-line);
+        border-radius: 3px;
+        cursor: pointer;
+        transition: border-color .25s var(--kcf-ease),
+                    background-color .25s var(--kcf-ease);
+    }
+
+    .kcf-page .kcf-toggle:hover {
+        border-color: rgba(20, 39, 31, .22);
+    }
+
+    .kcf-page .kcf-toggle input[type="checkbox"] {
+        flex: none;
+        width: 18px;
+        height: 18px;
+        margin: 2px 0 0;
+        accent-color: var(--kcf-forest);
+        cursor: pointer;
+    }
+
+    .kcf-page .kcf-toggle__body {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .kcf-page .kcf-toggle__title {
+        display: block;
+        font-family: var(--kcf-sans);
+        font-size: .92rem;
+        font-weight: 600;
+        line-height: 1.4;
+        color: var(--kcf-forest);
+    }
+
+    .kcf-page .kcf-toggle__desc {
+        display: block;
+        margin-top: 4px;
+        font-family: var(--kcf-sans);
+        font-size: .8rem;
+        line-height: 1.55;
+        color: var(--kcf-muted);
+    }
+
+    /* ------------------------------------------------- VALIDATION SUMMARY ---- */
+    .kcf-page .validation-summary-errors {
+        margin: 0 0 20px;
+        padding: 14px 18px;
+        background: rgba(168, 68, 46, .06);
+        border: 1px solid rgba(168, 68, 46, .25);
+        border-left: 3px solid var(--kcf-danger);
+        border-radius: 3px;
+        font-family: var(--kcf-sans);
+        font-size: .88rem;
+        line-height: 1.6;
+        color: var(--kcf-danger);
+    }
+
+    .kcf-page .validation-summary-errors ul {
+        margin: 0;
+        padding-left: 20px;
+    }
+
+    .kcf-page .validation-summary-errors li + li {
+        margin-top: 4px;
+    }
+
+    .kcf-page .validation-summary-valid {
+        display: none;
+    }
+
+    /* ------------------------------------------------------ ACTIONS ---- */
+    .kcf-page .kcf-actions {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 12px;
+        padding-top: 20px;
+        margin-top: 4px;
+        border-top: 1px solid var(--kcf-line);
+    }
+
+    .kcf-page .kcf-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        padding: 13px 22px;
+        border-radius: 2px;
+        font-family: var(--kcf-sans);
+        font-size: .68rem;
+        font-weight: 600;
+        letter-spacing: .22em;
+        text-transform: uppercase;
+        text-decoration: none;
+        cursor: pointer;
+        border: 1px solid transparent;
+        transition:
+            background-color .25s var(--kcf-ease),
+            border-color .25s var(--kcf-ease),
+            color .25s var(--kcf-ease),
+            transform .25s var(--kcf-ease);
+    }
+
+    .kcf-page .kcf-btn svg {
+        flex: none;
+        transition: transform .25s var(--kcf-ease);
+    }
+
+    .kcf-page .kcf-btn--primary {
+        background: var(--kcf-forest);
+        border-color: var(--kcf-forest);
+        color: var(--kcf-ivory);
+    }
+
+    .kcf-page .kcf-btn--primary:hover {
+        background: var(--kcf-sand);
+        border-color: var(--kcf-sand);
+        color: var(--kcf-forest);
+        transform: translateY(-1px);
+    }
+
+    .kcf-page .kcf-btn--primary:hover svg {
+        transform: translateX(3px);
+    }
+
+    .kcf-page .kcf-btn:focus-visible {
+        outline: 2px solid var(--kcf-sand);
+        outline-offset: 2px;
+    }
+
+    /* ------------------------------------------- SIDE INFO / HINT CARD ---- */
+    .kcf-page .kcf-aside-note {
+        font-family: var(--kcf-sans);
+        font-size: .85rem;
+        line-height: 1.65;
+        color: var(--kcf-muted);
+        margin: 0;
+    }
+
+    .kcf-page .kcf-aside-note + .kcf-aside-note {
+        margin-top: 12px;
+    }
+
+    .kcf-page .kcf-aside-note strong {
+        color: var(--kcf-forest);
+        font-weight: 600;
+    }
+
+    /* ------------------------------------------------------ RESPONSIVE ---- */
+    @@media (max-width: 900px) {
+        .kcf-page .kcf-form {
+            grid-template-columns: minmax(0, 1fr);
+        }
+
+        .kcf-page .kcf-field input[type="number"] {
+            max-width: none;
+        }
+    }
+
+    @@media (max-width: 560px) {
+        .kcf-page .kcf-card {
+            padding: 20px;
+        }
+
+        .kcf-page .kcf-btn {
+            width: 100%;
+            justify-content: center;
+        }
+
+        .kcf-page .kcf-actions {
+            flex-direction: column;
+            align-items: stretch;
+        }
+    }
+
+    /* --------------------------------------------- REDUCED MOTION ---- */
+    @@media (prefers-reduced-motion: reduce) {
+        .kcf-page {
+            animation: none;
+        }
+
+        .kcf-page *,
+        .kcf-page *::before,
+        .kcf-page *::after {
+            transition: none !important;
+            animation: none !important;
+        }
+    }
+</style>
+
+<div class="page-heading">
+    <div>
+        <div class="eyebrow">Karnel AI · Configuration</div>
+        <h1>Shape the assistant.</h1>
+        <p>Adjust how Karnel AI presents itself and how it responds to travellers.</p>
+    </div>
+
+    <a href="@Context.Request.Path"
+       class="btn btn-quiet">
+        Refresh ↻
+    </a>
+</div>
+
+<div class="kcf-page">
+
+    <form method="post" class="kcf-form" novalidate>
+
+        @Html.AntiForgeryToken()
+
+        <!-- ======================= MAIN COLUMN ======================= -->
+        <div class="kcf-main">
+
+            <div asp-validation-summary="ModelOnly"
+                 class="validation-summary-errors"
+                 role="alert"></div>
+
+            <section class="kcf-card" aria-labelledby="kcf-identity-heading">
+                <div class="kcf-card__head">
+                    <h2 class="kcf-card__title" id="kcf-identity-heading">Assistant identity</h2>
+                    <p class="kcf-card__meta">Public facing</p>
+                </div>
+
+                <div class="kcf-field">
+                    <label asp-for="AssistantName"></label>
+                    <input asp-for="AssistantName" autocomplete="off" />
+                    <span asp-validation-for="AssistantName" class="field-validation-error"></span>
+                    <span class="kcf-hint">The name travellers will see when Karnel AI introduces itself.</span>
+                </div>
+
+                <div class="kcf-field">
+                    <label asp-for="WelcomeMessage"></label>
+                    <textarea asp-for="WelcomeMessage" rows="4"></textarea>
+                    <span asp-validation-for="WelcomeMessage" class="field-validation-error"></span>
+                    <span class="kcf-hint">The first message shown when a traveller starts a conversation.</span>
+                </div>
+
+                <div class="kcf-field">
+                    <label asp-for="ResponseTone"></label>
+                    <input asp-for="ResponseTone" autocomplete="off" />
+                    <span asp-validation-for="ResponseTone" class="field-validation-error"></span>
+                    <span class="kcf-hint">For example: welcoming, concise, adventurous, formal.</span>
+                </div>
+            </section>
+
+            <section class="kcf-card" aria-labelledby="kcf-limits-heading">
+                <div class="kcf-card__head">
+                    <h2 class="kcf-card__title" id="kcf-limits-heading">Message limits</h2>
+                    <p class="kcf-card__meta">Safety</p>
+                </div>
+
+                <div class="kcf-field">
+                    <label asp-for="MaximumMessageLength"></label>
+                    <input asp-for="MaximumMessageLength" type="number" min="1" />
+                    <span asp-validation-for="MaximumMessageLength" class="field-validation-error"></span>
+                    <span class="kcf-hint">Maximum number of characters accepted per message.</span>
+                </div>
+
+                <div class="kcf-field">
+                    <label asp-for="ConversationMessageLimit"></label>
+                    <input asp-for="ConversationMessageLimit" type="number" min="1" />
+                    <span asp-validation-for="ConversationMessageLimit" class="field-validation-error"></span>
+                    <span class="kcf-hint">Number of messages allowed in a single conversation before it resets.</span>
+                </div>
+            </section>
+
+            <section class="kcf-card" aria-labelledby="kcf-instructions-heading">
+                <div class="kcf-card__head">
+                    <h2 class="kcf-card__title" id="kcf-instructions-heading">System instructions</h2>
+                    <p class="kcf-card__meta">Behaviour</p>
+                </div>
+
+                <div class="kcf-field">
+                    <label asp-for="SystemInstructions"></label>
+                    <textarea asp-for="SystemInstructions" rows="8"></textarea>
+                    <span asp-validation-for="SystemInstructions" class="field-validation-error"></span>
+                    <span class="kcf-hint">
+                        The guiding instructions Karnel AI follows for every response.
+                        Changes here affect all future conversations.
+                    </span>
+                </div>
+            </section>
+
+        </div>
+
+        <!-- ======================= SIDE COLUMN ======================= -->
+        <div class="kcf-side">
+
+            <section class="kcf-card" aria-labelledby="kcf-status-heading">
+                <div class="kcf-card__head">
+                    <h2 class="kcf-card__title" id="kcf-status-heading">Availability</h2>
+                    <p class="kcf-card__meta">Toggle</p>
+                </div>
+
+                <label class="kcf-toggle" for="IsEnabled">
+                    <input asp-for="IsEnabled" />
+                    <span class="kcf-toggle__body">
+                        <span class="kcf-toggle__title">Enable Karnel AI</span>
+                        <span class="kcf-toggle__desc">
+                            When disabled, the assistant is hidden from travellers
+                            and no new conversations can begin.
+                        </span>
+                    </span>
+                </label>
+
+                <span asp-validation-for="IsEnabled" class="field-validation-error"></span>
+            </section>
+
+            <section class="kcf-card" aria-labelledby="kcf-note-heading">
+                <div class="kcf-card__head">
+                    <h2 class="kcf-card__title" id="kcf-note-heading">Before you save</h2>
+                </div>
+
+                <p class="kcf-aside-note">
+                    <strong>Review carefully.</strong> Configuration changes apply to every
+                    new conversation once saved. Existing conversations keep the settings
+                    they were started with.
+                </p>
+                <p class="kcf-aside-note">
+                    Message limits protect both travellers and the assistant from
+                    runaway exchanges. Lower values create a more concise experience.
+                </p>
+
+                <div class="kcf-actions">
+                    <button class="kcf-btn kcf-btn--primary" type="submit">
+                        Save configuration
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                             stroke="currentColor" stroke-width="1.8"
+                             stroke-linecap="round" stroke-linejoin="round"
+                             aria-hidden="true" focusable="false">
+                            <path d="M5 12h14M13 6l6 6-6 6" />
+                        </svg>
+                    </button>
+                </div>
+            </section>
+
+        </div>
+
+    </form>
+
+</div>

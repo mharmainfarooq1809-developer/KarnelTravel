@@ -1,0 +1,684 @@
+@model IReadOnlyList<KarnelTravel.Models.AIAuditLog>
+
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "AI Audit Logs";
+
+    var logs = Model ?? Array.Empty<KarnelTravel.Models.AIAuditLog>();
+    var totalCount = logs.Count;
+    var successCount = logs.Count(x => x.Succeeded);
+    var failedCount = totalCount - successCount;
+}
+
+<style>
+    /* ==========================================================================
+       KARNEL TRAVEL GUIDE — ADMIN · AI AUDIT LOGS
+       Scoped with .kaa- prefix. Inline <style> because _AdminLayout does not
+       render a Styles section (matching the Inquiries / Inquiry Details pages).
+       ========================================================================== */
+
+    .kaa-logs {
+        --kaa-forest: var(--forest-deep, #14271F);
+        --kaa-ivory: var(--ivory, #F8F6F0);
+        --kaa-sage: var(--sage, #8FA888);
+        --kaa-sand: var(--sand, #E8DFC9);
+        --kaa-white: #FFFFFF;
+        --kaa-muted: var(--muted, #5A6B60);
+        --kaa-line: var(--line, rgba(20, 39, 31, .12));
+        --kaa-serif: var(--serif, "Playfair Display", Georgia, "Times New Roman", serif);
+        --kaa-sans: var(--sans, "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif);
+        --kaa-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+        --kaa-ease: var(--ease, cubic-bezier(.22, .61, .36, 1));
+
+        animation: kaa-fade .45s var(--kaa-ease) both;
+    }
+
+    @@keyframes kaa-fade {
+        from { opacity: 0; transform: translateY(6px); }
+        to   { opacity: 1; transform: none; }
+    }
+
+    .kaa-logs .visually-hidden {
+        position: absolute !important;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+    }
+
+    /* ----------------------------------------------------- STAT CARDS ---- */
+    .kaa-logs .kaa-stats {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 14px;
+        margin-bottom: 22px;
+    }
+
+    .kaa-logs .kaa-stat {
+        position: relative;
+        padding: 20px 22px 20px 26px;
+        background: var(--kaa-white);
+        border: 1px solid var(--kaa-line);
+        border-radius: 4px;
+        overflow: hidden;
+        transition: border-color .3s var(--kaa-ease);
+    }
+
+    .kaa-logs .kaa-stat:hover {
+        border-color: rgba(20, 39, 31, .22);
+    }
+
+    .kaa-logs .kaa-stat::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 3px;
+        background: var(--kaa-forest);
+    }
+
+    .kaa-logs .kaa-stat--success::before { background: var(--kaa-sage); }
+    .kaa-logs .kaa-stat--failed::before  { background: #b86550; }
+
+    .kaa-logs .kaa-stat__label {
+        display: block;
+        margin-bottom: 8px;
+        font-size: .62rem;
+        font-weight: 600;
+        letter-spacing: .22em;
+        text-transform: uppercase;
+        color: var(--kaa-muted);
+    }
+
+    .kaa-logs .kaa-stat strong {
+        display: block;
+        font-family: var(--kaa-serif);
+        font-size: clamp(1.5rem, 2.4vw, 2.05rem);
+        font-weight: 500;
+        line-height: 1.05;
+        letter-spacing: -.01em;
+        color: var(--kaa-forest);
+    }
+
+    /* -------------------------------------------------------- TOOLBAR ---- */
+    .kaa-logs .kaa-toolbar {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+        padding: 14px 16px;
+        background: var(--kaa-white);
+        border: 1px solid var(--kaa-line);
+        border-radius: 4px;
+        margin-bottom: 16px;
+    }
+
+    .kaa-logs .kaa-search {
+        flex: 1 1 280px;
+        min-width: 0;
+        padding: 10px 14px;
+        border: 1px solid var(--kaa-line);
+        border-radius: 3px;
+        font-family: var(--kaa-sans);
+        font-size: .88rem;
+        background: var(--kaa-ivory);
+        color: var(--kaa-forest);
+        transition: border-color .25s var(--kaa-ease),
+                    background-color .25s var(--kaa-ease),
+                    box-shadow .25s var(--kaa-ease);
+    }
+
+    .kaa-logs .kaa-search::placeholder {
+        color: rgba(90, 107, 96, .7);
+    }
+
+    .kaa-logs .kaa-search:focus {
+        outline: none;
+        border-color: var(--kaa-sage);
+        background: var(--kaa-white);
+        box-shadow: 0 0 0 3px rgba(143, 168, 136, .18);
+    }
+
+    .kaa-logs .kaa-select {
+        padding: 10px 34px 10px 14px;
+        border: 1px solid var(--kaa-line);
+        border-radius: 3px;
+        font-family: var(--kaa-sans);
+        font-size: .88rem;
+        color: var(--kaa-forest);
+        background-color: var(--kaa-ivory);
+        background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8' fill='none' stroke='%235A6B60' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'><path d='M1 1l5 5 5-5'/></svg>");
+        background-repeat: no-repeat;
+        background-position: right 12px center;
+        appearance: none;
+        -webkit-appearance: none;
+        cursor: pointer;
+        transition: border-color .25s var(--kaa-ease),
+                    background-color .25s var(--kaa-ease),
+                    box-shadow .25s var(--kaa-ease);
+    }
+
+    .kaa-logs .kaa-select:focus {
+        outline: none;
+        border-color: var(--kaa-sage);
+        background-color: var(--kaa-white);
+        box-shadow: 0 0 0 3px rgba(143, 168, 136, .18);
+    }
+
+    /* ---------------------------------------------------- TABLE SHELL ---- */
+    .kaa-logs .kaa-table-wrap {
+        background: var(--kaa-white);
+        border: 1px solid var(--kaa-line);
+        border-radius: 4px;
+        overflow: hidden;
+    }
+
+    .kaa-logs .kaa-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: .88rem;
+        color: var(--kaa-forest);
+    }
+
+    .kaa-logs .kaa-table thead {
+        background: var(--kaa-ivory);
+        border-bottom: 1px solid var(--kaa-line);
+    }
+
+    .kaa-logs .kaa-table th {
+        padding: 14px 18px;
+        text-align: left;
+        font-family: var(--kaa-sans);
+        font-size: .62rem;
+        font-weight: 700;
+        letter-spacing: .22em;
+        text-transform: uppercase;
+        color: var(--kaa-muted);
+        white-space: nowrap;
+    }
+
+    .kaa-logs .kaa-table td {
+        padding: 16px 18px;
+        vertical-align: top;
+        border-bottom: 1px solid var(--kaa-line);
+    }
+
+    .kaa-logs .kaa-table tbody tr:last-child td {
+        border-bottom: none;
+    }
+
+    .kaa-logs .kaa-row {
+        transition: background-color .25s var(--kaa-ease);
+    }
+
+    .kaa-logs .kaa-row:hover {
+        background: rgba(232, 223, 201, .18);
+    }
+
+    /* --------------------------------------------------- ACTION CHIP ---- */
+    .kaa-logs .kaa-action {
+        display: inline-block;
+        padding: 4px 9px;
+        font-family: var(--kaa-mono);
+        font-size: .74rem;
+        font-weight: 500;
+        line-height: 1.4;
+        color: var(--kaa-forest);
+        background: var(--kaa-ivory);
+        border: 1px solid var(--kaa-line);
+        border-radius: 2px;
+        white-space: nowrap;
+    }
+
+    .kaa-logs .kaa-action--empty {
+        font-family: var(--kaa-sans);
+        font-style: italic;
+        font-size: .74rem;
+        color: var(--kaa-muted);
+        background: transparent;
+        border: none;
+        padding: 0;
+    }
+
+    /* ------------------------------------------------- ADMINISTRATOR ---- */
+    .kaa-logs .kaa-admin {
+        display: block;
+        font-family: var(--kaa-serif);
+        font-weight: 500;
+        font-size: 1rem;
+        line-height: 1.3;
+        color: var(--kaa-forest);
+        overflow-wrap: break-word;
+        word-break: break-word;
+    }
+
+    .kaa-logs .kaa-admin--empty {
+        font-family: var(--kaa-sans);
+        font-style: italic;
+        font-size: .85rem;
+        color: var(--kaa-muted);
+    }
+
+    /* -------------------------------------------------- DESCRIPTION ---- */
+    .kaa-logs .kaa-desc {
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        max-width: 460px;
+        margin: 0;
+        font-size: .86rem;
+        line-height: 1.55;
+        color: var(--kaa-muted);
+        overflow-wrap: break-word;
+        word-break: break-word;
+    }
+
+    .kaa-logs .kaa-desc--empty {
+        font-style: italic;
+        opacity: .85;
+    }
+
+    /* ------------------------------------------------------ OUTCOME ---- */
+    .kaa-logs .kaa-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 12px;
+        border-radius: 999px;
+        font-family: var(--kaa-sans);
+        font-size: .64rem;
+        font-weight: 600;
+        letter-spacing: .14em;
+        text-transform: uppercase;
+        white-space: nowrap;
+    }
+
+    .kaa-logs .kaa-pill i {
+        display: inline-block;
+        flex: none;
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: currentColor;
+    }
+
+    .kaa-logs .kaa-pill--yes {
+        background: rgba(143, 168, 136, .22);
+        color: #2e5238;
+    }
+
+    .kaa-logs .kaa-pill--no {
+        background: rgba(196, 96, 74, .18);
+        color: #7a3325;
+    }
+
+    /* ------------------------------------------------------ CREATED ---- */
+    .kaa-logs .kaa-date {
+        display: block;
+        font-family: var(--kaa-sans);
+        font-size: .82rem;
+        line-height: 1.5;
+        color: var(--kaa-forest);
+        white-space: nowrap;
+    }
+
+    .kaa-logs .kaa-time {
+        display: block;
+        font-family: var(--kaa-mono);
+        font-size: .72rem;
+        line-height: 1.5;
+        letter-spacing: .02em;
+        color: var(--kaa-muted);
+        white-space: nowrap;
+    }
+
+    /* --------------------------------------------------------- EMPTY ---- */
+    .kaa-logs .kaa-empty {
+        padding: 64px 24px;
+        text-align: center;
+    }
+
+    .kaa-logs .kaa-empty__icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 72px;
+        height: 72px;
+        margin-bottom: 20px;
+        border-radius: 50%;
+        background: var(--kaa-ivory);
+        color: var(--kaa-sage);
+    }
+
+    .kaa-logs .kaa-empty strong {
+        display: block;
+        margin-bottom: 8px;
+        font-family: var(--kaa-serif);
+        font-size: clamp(1.3rem, 2vw, 1.6rem);
+        font-weight: 500;
+        color: var(--kaa-forest);
+    }
+
+    .kaa-logs .kaa-empty p {
+        margin: 0;
+        font-size: .9rem;
+        color: var(--kaa-muted);
+    }
+
+    /* -------------------------------------- FILTER-HIDDEN-ALL-ROWS ---- */
+    .kaa-logs .kaa-all-hidden td {
+        padding: 48px 24px;
+        text-align: center;
+        font-size: .9rem;
+        color: var(--kaa-muted);
+        font-style: italic;
+    }
+
+    /* ------------------------------------------------------ RESPONSIVE ---- */
+    @@media (max-width: 900px) {
+        .kaa-logs .kaa-stats {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+
+        .kaa-logs .kaa-table-wrap {
+            background: transparent;
+            border: none;
+            overflow: visible;
+        }
+
+        .kaa-logs .kaa-table,
+        .kaa-logs .kaa-table tbody,
+        .kaa-logs .kaa-table tr,
+        .kaa-logs .kaa-table td {
+            display: block;
+            width: 100%;
+        }
+
+        .kaa-logs .kaa-table thead {
+            display: none;
+        }
+
+        .kaa-logs .kaa-row {
+            background: var(--kaa-white);
+            border: 1px solid var(--kaa-line);
+            border-radius: 4px;
+            padding: 16px 18px;
+            margin-bottom: 12px;
+        }
+
+        .kaa-logs .kaa-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .kaa-logs .kaa-table td {
+            padding: 6px 0;
+            border: none;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: baseline;
+            gap: 8px 14px;
+        }
+
+        .kaa-logs .kaa-table td::before {
+            content: attr(data-label);
+            flex: 0 0 92px;
+            font-size: .6rem;
+            font-weight: 700;
+            letter-spacing: .22em;
+            text-transform: uppercase;
+            color: var(--kaa-sage);
+        }
+
+        .kaa-logs .kaa-table td.kaa-empty::before,
+        .kaa-logs .kaa-table td.kaa-all-hidden::before {
+            display: none;
+        }
+
+        .kaa-logs .kaa-desc {
+            max-width: none;
+        }
+    }
+
+    @@media (max-width: 560px) {
+        .kaa-logs .kaa-stats {
+            grid-template-columns: 1fr;
+        }
+
+        .kaa-logs .kaa-toolbar {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .kaa-logs .kaa-search,
+        .kaa-logs .kaa-select {
+            width: 100%;
+        }
+
+        .kaa-logs .kaa-date,
+        .kaa-logs .kaa-time {
+            white-space: normal;
+        }
+    }
+
+    /* --------------------------------------------- REDUCED MOTION ---- */
+    @@media (prefers-reduced-motion: reduce) {
+        .kaa-logs {
+            animation: none;
+        }
+
+        .kaa-logs *,
+        .kaa-logs *::before,
+        .kaa-logs *::after {
+            transition: none !important;
+            animation: none !important;
+        }
+    }
+</style>
+
+<div class="page-heading">
+    <div>
+        <div class="eyebrow">Karnel AI · Audit trail · @totalCount @(totalCount == 1 ? "entry" : "entries")</div>
+        <h1>Audit logs.</h1>
+        <p>A chronological record of every action taken through the AI control panel.</p>
+    </div>
+
+    <a href="@Context.Request.Path"
+       class="btn btn-quiet">
+        Refresh ↻
+    </a>
+</div>
+
+<div class="kaa-logs">
+
+    <div class="kaa-stats">
+        <div class="kaa-stat">
+            <span class="kaa-stat__label">Total events</span>
+            <strong>@totalCount</strong>
+        </div>
+
+        <div class="kaa-stat kaa-stat--success">
+            <span class="kaa-stat__label">Succeeded</span>
+            <strong>@successCount</strong>
+        </div>
+
+        <div class="kaa-stat kaa-stat--failed">
+            <span class="kaa-stat__label">Failed</span>
+            <strong>@failedCount</strong>
+        </div>
+    </div>
+
+    <div class="kaa-toolbar">
+        <input class="kaa-search"
+               type="search"
+               id="kaaSearch"
+               placeholder="Search action, administrator or description..."
+               aria-label="Search audit logs" />
+
+        <select class="kaa-select"
+                id="kaaOutcome"
+                aria-label="Filter by outcome">
+            <option value="all">All outcomes</option>
+            <option value="succeeded">Succeeded</option>
+            <option value="failed">Failed</option>
+        </select>
+    </div>
+
+    <div class="kaa-table-wrap">
+        <table class="kaa-table" id="kaaTable">
+            <thead>
+                <tr>
+                    <th scope="col">Action</th>
+                    <th scope="col">Administrator</th>
+                    <th scope="col">Description</th>
+                    <th scope="col">Outcome</th>
+                    <th scope="col">Created</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                @if (totalCount == 0)
+                {
+                    <tr>
+                        <td colspan="5" class="kaa-empty">
+                            <div class="kaa-empty__icon" aria-hidden="true">
+                                <svg width="32" height="32" viewBox="0 0 24 24" fill="none"
+                                     stroke="currentColor" stroke-width="1.2"
+                                     stroke-linecap="round" stroke-linejoin="round"
+                                     focusable="false">
+                                    <path d="M4 4h16v16H4z" />
+                                    <path d="M8 9h8M8 13h8M8 17h5" />
+                                </svg>
+                            </div>
+                            <strong>No audit entries yet.</strong>
+                            <p>Actions performed through the AI panel will be recorded here.</p>
+                        </td>
+                    </tr>
+                }
+                else
+                {
+                    foreach (var item in logs)
+                    {
+                        var hasAction = !string.IsNullOrWhiteSpace(item.Action);
+                        var hasAdmin = !string.IsNullOrWhiteSpace(item.Administrator);
+                        var hasDesc = !string.IsNullOrWhiteSpace(item.Description);
+                        var outcomeClass = item.Succeeded ? "kaa-pill--yes" : "kaa-pill--no";
+                        var outcomeText = item.Succeeded ? "Succeeded" : "Failed";
+                        var outcomeValue = item.Succeeded ? "succeeded" : "failed";
+
+                        <tr class="kaa-row" data-outcome="@outcomeValue">
+
+                            <td data-label="Action">
+                                @if (hasAction)
+                                {
+                                    <span class="kaa-action">@item.Action</span>
+                                }
+                                else
+                                {
+                                    <span class="kaa-action kaa-action--empty">—</span>
+                                }
+                            </td>
+
+                            <td data-label="Administrator">
+                                @if (hasAdmin)
+                                {
+                                    <span class="kaa-admin">@item.Administrator</span>
+                                }
+                                else
+                                {
+                                    <span class="kaa-admin kaa-admin--empty">Unknown</span>
+                                }
+                            </td>
+
+                            <td data-label="Description">
+                                @if (hasDesc)
+                                {
+                                    <p class="kaa-desc">@item.Description</p>
+                                }
+                                else
+                                {
+                                    <p class="kaa-desc kaa-desc--empty">No description provided.</p>
+                                }
+                            </td>
+
+                            <td data-label="Outcome">
+                                <span class="kaa-pill @outcomeClass">
+                                    <i aria-hidden="true"></i>
+                                    @outcomeText
+                                </span>
+                            </td>
+
+                            <td data-label="Created">
+                                <span class="kaa-date">
+                                    @item.CreatedAt.ToLocalTime().ToString("dd MMM yyyy")
+                                </span>
+                                <span class="kaa-time">
+                                    @item.CreatedAt.ToLocalTime().ToString("HH:mm")
+                                </span>
+                            </td>
+
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+
+</div>
+
+@section Scripts {
+    <script>
+        (() => {
+            const search = document.getElementById("kaaSearch");
+            const outcome = document.getElementById("kaaOutcome");
+            const table = document.getElementById("kaaTable");
+            if (!search || !outcome || !table) { return; }
+
+            const tbody = table.querySelector("tbody");
+            const rows = Array.from(tbody.querySelectorAll(".kaa-row"));
+
+            // Placeholder row shown when filters hide every row
+            let noMatchRow = tbody.querySelector(".kaa-all-hidden");
+
+            if (!noMatchRow) {
+                noMatchRow = document.createElement("tr");
+                noMatchRow.className = "kaa-all-hidden";
+                noMatchRow.style.display = "none";
+                const cell = document.createElement("td");
+                cell.colSpan = 5;
+                cell.textContent = "No entries match your filters.";
+                noMatchRow.appendChild(cell);
+                tbody.appendChild(noMatchRow);
+            }
+
+            function applyFilters() {
+                const query = search.value.trim().toLowerCase();
+                const selected = outcome.value;
+                let visibleCount = 0;
+
+                rows.forEach(row => {
+                    const text = row.textContent.toLowerCase();
+                    const rowOutcome = row.dataset.outcome;
+
+                    const matchesSearch = !query || text.includes(query);
+                    const matchesOutcome =
+                        selected === "all" || rowOutcome === selected;
+
+                    const visible = matchesSearch && matchesOutcome;
+                    row.style.display = visible ? "" : "none";
+                    if (visible) { visibleCount++; }
+                });
+
+                noMatchRow.style.display = visibleCount === 0 ? "" : "none";
+            }
+
+            search.addEventListener("input", applyFilters);
+            outcome.addEventListener("change", applyFilters);
+        })();
+    </script>
+}

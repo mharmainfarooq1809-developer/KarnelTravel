@@ -2,11 +2,13 @@
 using KarnelTravel.Data;
 using KarnelTravel.Models;
 using KarnelTravel.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace KarnelTravel.Controllers
 {
+    [Authorize]
     public class ContactController : Controller
     {
         private readonly ApplicationDbContext _db;
@@ -25,14 +27,20 @@ namespace KarnelTravel.Controllers
 
         // Display contact form
         [HttpGet]
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(string? category = null, string? service = null)
         {
             var settings = await _settingsService.GetAsync();
             if (!settings.AllowContactSubmissions)
                 return NotFound();
 
             ViewBag.WebsiteContent = await _websiteContentService.GetAsync();
-            return View(new ContactInquiry());
+            var model = new ContactInquiry();
+            if (!string.IsNullOrWhiteSpace(category))
+                model.Category = category.Trim();
+            if (!string.IsNullOrWhiteSpace(service))
+                model.Message = $"I would like to plan a trip to {service.Trim()}.";
+
+            return View(model);
         }
 
         // Save contact inquiry

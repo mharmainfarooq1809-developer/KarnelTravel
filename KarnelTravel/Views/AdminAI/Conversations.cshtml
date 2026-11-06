@@ -1,0 +1,726 @@
+@model IReadOnlyList<KarnelTravel.Models.AIConversation>
+
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "AI Conversations";
+
+    var conversations = Model ?? Array.Empty<KarnelTravel.Models.AIConversation>();
+    var totalCount = conversations.Count;
+    var activeCount = conversations.Count(x =>
+        !string.IsNullOrWhiteSpace(x.Status) &&
+        (x.Status.Equals("Active", System.StringComparison.OrdinalIgnoreCase) ||
+         x.Status.Equals("Open", System.StringComparison.OrdinalIgnoreCase)));
+    var closedCount = conversations.Count(x =>
+        !string.IsNullOrWhiteSpace(x.Status) &&
+        (x.Status.Equals("Closed", System.StringComparison.OrdinalIgnoreCase) ||
+         x.Status.Equals("Archived", System.StringComparison.OrdinalIgnoreCase) ||
+         x.Status.Equals("Completed", System.StringComparison.OrdinalIgnoreCase)));
+    var totalMessages = conversations.Sum(x => x.MessageCount);
+}
+
+<style>
+    /* ==========================================================================
+       KARNEL TRAVEL GUIDE — ADMIN · AI CONVERSATIONS
+       Scoped with .kcn- prefix. Inline <style> because _AdminLayout does not
+       render a Styles section (matching the rest of the admin suite).
+       ========================================================================== */
+
+    .kcn-page {
+        --kcn-forest: var(--forest-deep, #14271F);
+        --kcn-ivory: var(--ivory, #F8F6F0);
+        --kcn-sage: var(--sage, #8FA888);
+        --kcn-sand: var(--sand, #E8DFC9);
+        --kcn-white: #FFFFFF;
+        --kcn-muted: var(--muted, #5A6B60);
+        --kcn-line: var(--line, rgba(20, 39, 31, .12));
+        --kcn-serif: var(--serif, "Playfair Display", Georgia, "Times New Roman", serif);
+        --kcn-sans: var(--sans, "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif);
+        --kcn-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+        --kcn-ease: var(--ease, cubic-bezier(.22, .61, .36, 1));
+
+        animation: kcn-fade .45s var(--kcn-ease) both;
+    }
+
+    @@keyframes kcn-fade {
+        from { opacity: 0; transform: translateY(6px); }
+        to   { opacity: 1; transform: none; }
+    }
+
+    .kcn-page .visually-hidden {
+        position: absolute !important;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+    }
+
+    /* ----------------------------------------------------- STAT CARDS ---- */
+    .kcn-page .kcn-stats {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 14px;
+        margin-bottom: 22px;
+    }
+
+    .kcn-page .kcn-stat {
+        position: relative;
+        padding: 20px 22px 20px 26px;
+        background: var(--kcn-white);
+        border: 1px solid var(--kcn-line);
+        border-radius: 4px;
+        overflow: hidden;
+        transition: border-color .3s var(--kcn-ease);
+    }
+
+    .kcn-page .kcn-stat:hover {
+        border-color: rgba(20, 39, 31, .22);
+    }
+
+    .kcn-page .kcn-stat::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 3px;
+        background: var(--kcn-forest);
+    }
+
+    .kcn-page .kcn-stat--active::before { background: var(--kcn-sage); }
+    .kcn-page .kcn-stat--closed::before { background: #b8a882; }
+    .kcn-page .kcn-stat--messages::before { background: var(--kcn-sand); }
+
+    .kcn-page .kcn-stat__label {
+        display: block;
+        margin-bottom: 8px;
+        font-size: .62rem;
+        font-weight: 600;
+        letter-spacing: .22em;
+        text-transform: uppercase;
+        color: var(--kcn-muted);
+    }
+
+    .kcn-page .kcn-stat strong {
+        display: block;
+        font-family: var(--kcn-serif);
+        font-size: clamp(1.5rem, 2.4vw, 2.05rem);
+        font-weight: 500;
+        line-height: 1.05;
+        letter-spacing: -.01em;
+        color: var(--kcn-forest);
+    }
+
+    /* -------------------------------------------------------- TOOLBAR ---- */
+    .kcn-page .kcn-toolbar {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+        padding: 14px 16px;
+        background: var(--kcn-white);
+        border: 1px solid var(--kcn-line);
+        border-radius: 4px;
+        margin-bottom: 16px;
+    }
+
+    .kcn-page .kcn-search {
+        flex: 1 1 280px;
+        min-width: 0;
+        padding: 10px 14px;
+        border: 1px solid var(--kcn-line);
+        border-radius: 3px;
+        font-family: var(--kcn-sans);
+        font-size: .88rem;
+        background: var(--kcn-ivory);
+        color: var(--kcn-forest);
+        transition: border-color .25s var(--kcn-ease),
+                    background-color .25s var(--kcn-ease),
+                    box-shadow .25s var(--kcn-ease);
+    }
+
+    .kcn-page .kcn-search::placeholder {
+        color: rgba(90, 107, 96, .7);
+    }
+
+    .kcn-page .kcn-search:focus {
+        outline: none;
+        border-color: var(--kcn-sage);
+        background: var(--kcn-white);
+        box-shadow: 0 0 0 3px rgba(143, 168, 136, .18);
+    }
+
+    .kcn-page .kcn-select {
+        padding: 10px 34px 10px 14px;
+        border: 1px solid var(--kcn-line);
+        border-radius: 3px;
+        font-family: var(--kcn-sans);
+        font-size: .88rem;
+        color: var(--kcn-forest);
+        background-color: var(--kcn-ivory);
+        background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8' fill='none' stroke='%235A6B60' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'><path d='M1 1l5 5 5-5'/></svg>");
+        background-repeat: no-repeat;
+        background-position: right 12px center;
+        appearance: none;
+        -webkit-appearance: none;
+        cursor: pointer;
+        transition: border-color .25s var(--kcn-ease),
+                    background-color .25s var(--kcn-ease),
+                    box-shadow .25s var(--kcn-ease);
+    }
+
+    .kcn-page .kcn-select:focus {
+        outline: none;
+        border-color: var(--kcn-sage);
+        background-color: var(--kcn-white);
+        box-shadow: 0 0 0 3px rgba(143, 168, 136, .18);
+    }
+
+    /* ---------------------------------------------------- TABLE SHELL ---- */
+    .kcn-page .kcn-table-wrap {
+        background: var(--kcn-white);
+        border: 1px solid var(--kcn-line);
+        border-radius: 4px;
+        overflow: hidden;
+    }
+
+    .kcn-page .kcn-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: .88rem;
+        color: var(--kcn-forest);
+    }
+
+    .kcn-page .kcn-table thead {
+        background: var(--kcn-ivory);
+        border-bottom: 1px solid var(--kcn-line);
+    }
+
+    .kcn-page .kcn-table th {
+        padding: 14px 18px;
+        text-align: left;
+        font-family: var(--kcn-sans);
+        font-size: .62rem;
+        font-weight: 700;
+        letter-spacing: .22em;
+        text-transform: uppercase;
+        color: var(--kcn-muted);
+        white-space: nowrap;
+    }
+
+    .kcn-page .kcn-table td {
+        padding: 18px;
+        vertical-align: top;
+        border-bottom: 1px solid var(--kcn-line);
+    }
+
+    .kcn-page .kcn-table tbody tr:last-child td {
+        border-bottom: none;
+    }
+
+    .kcn-page .kcn-row {
+        transition: background-color .25s var(--kcn-ease);
+    }
+
+    .kcn-page .kcn-row:hover {
+        background: rgba(232, 223, 201, .18);
+    }
+
+    /* --------------------------------------------------- IDENTIFIER ---- */
+    .kcn-page .kcn-key {
+        display: inline-block;
+        padding: 5px 10px;
+        font-family: var(--kcn-mono);
+        font-size: .74rem;
+        font-weight: 500;
+        line-height: 1.4;
+        color: var(--kcn-forest);
+        background: var(--kcn-ivory);
+        border: 1px solid var(--kcn-line);
+        border-radius: 2px;
+        white-space: nowrap;
+        max-width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        vertical-align: middle;
+    }
+
+    .kcn-page .kcn-key--empty {
+        font-family: var(--kcn-sans);
+        font-style: italic;
+        color: var(--kcn-muted);
+        background: transparent;
+        border: none;
+        padding: 0;
+    }
+
+    /* ----------------------------------------------------- MESSAGES ---- */
+    .kcn-page .kcn-count {
+        display: inline-flex;
+        align-items: baseline;
+        gap: 6px;
+        font-family: var(--kcn-serif);
+        font-size: 1.15rem;
+        font-weight: 500;
+        line-height: 1.1;
+        color: var(--kcn-forest);
+    }
+
+    .kcn-page .kcn-count small {
+        font-family: var(--kcn-sans);
+        font-size: .66rem;
+        font-weight: 600;
+        letter-spacing: .14em;
+        text-transform: uppercase;
+        color: var(--kcn-muted);
+    }
+
+    /* -------------------------------------------------------- STATUS ---- */
+    .kcn-page .kcn-status {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 12px;
+        border-radius: 999px;
+        font-family: var(--kcn-sans);
+        font-size: .64rem;
+        font-weight: 600;
+        letter-spacing: .14em;
+        text-transform: uppercase;
+        white-space: nowrap;
+    }
+
+    .kcn-page .kcn-status i {
+        display: inline-block;
+        flex: none;
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: currentColor;
+    }
+
+    .kcn-page .kcn-status--active {
+        background: rgba(143, 168, 136, .22);
+        color: #2e5238;
+    }
+
+    .kcn-page .kcn-status--closed {
+        background: rgba(20, 39, 31, .06);
+        color: #5a6b60;
+    }
+
+    .kcn-page .kcn-status--pending {
+        background: rgba(232, 199, 107, .22);
+        color: #7a5a14;
+    }
+
+    .kcn-page .kcn-status--neutral {
+        background: rgba(20, 39, 31, .06);
+        color: #5a6b60;
+    }
+
+    /* ------------------------------------------------------ TIMESTAMPS ---- */
+    .kcn-page .kcn-date {
+        display: block;
+        font-family: var(--kcn-sans);
+        font-size: .82rem;
+        line-height: 1.5;
+        color: var(--kcn-forest);
+        white-space: nowrap;
+    }
+
+    .kcn-page .kcn-time {
+        display: block;
+        font-family: var(--kcn-mono);
+        font-size: .72rem;
+        line-height: 1.5;
+        letter-spacing: .02em;
+        color: var(--kcn-muted);
+        white-space: nowrap;
+    }
+
+    /* --------------------------------------------------------- EMPTY ---- */
+    .kcn-page .kcn-empty {
+        padding: 64px 24px;
+        text-align: center;
+    }
+
+    .kcn-page .kcn-empty__icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 72px;
+        height: 72px;
+        margin-bottom: 20px;
+        border-radius: 50%;
+        background: var(--kcn-ivory);
+        color: var(--kcn-sage);
+    }
+
+    .kcn-page .kcn-empty strong {
+        display: block;
+        margin-bottom: 8px;
+        font-family: var(--kcn-serif);
+        font-size: clamp(1.3rem, 2vw, 1.6rem);
+        font-weight: 500;
+        color: var(--kcn-forest);
+    }
+
+    .kcn-page .kcn-empty p {
+        margin: 0;
+        font-size: .9rem;
+        color: var(--kcn-muted);
+    }
+
+    /* -------------------------------------- FILTER-HIDDEN-ALL-ROWS ---- */
+    .kcn-page .kcn-all-hidden td {
+        padding: 48px 24px;
+        text-align: center;
+        font-size: .9rem;
+        color: var(--kcn-muted);
+        font-style: italic;
+    }
+
+    /* ------------------------------------------------------ RESPONSIVE ---- */
+    @@media (max-width: 900px) {
+        .kcn-page .kcn-stats {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .kcn-page .kcn-table-wrap {
+            background: transparent;
+            border: none;
+            overflow: visible;
+        }
+
+        .kcn-page .kcn-table,
+        .kcn-page .kcn-table tbody,
+        .kcn-page .kcn-table tr,
+        .kcn-page .kcn-table td {
+            display: block;
+            width: 100%;
+        }
+
+        .kcn-page .kcn-table thead {
+            display: none;
+        }
+
+        .kcn-page .kcn-row {
+            background: var(--kcn-white);
+            border: 1px solid var(--kcn-line);
+            border-radius: 4px;
+            padding: 16px 18px;
+            margin-bottom: 12px;
+        }
+
+        .kcn-page .kcn-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .kcn-page .kcn-table td {
+            padding: 6px 0;
+            border: none;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: baseline;
+            gap: 8px 14px;
+        }
+
+        .kcn-page .kcn-table td::before {
+            content: attr(data-label);
+            flex: 0 0 100px;
+            font-size: .6rem;
+            font-weight: 700;
+            letter-spacing: .22em;
+            text-transform: uppercase;
+            color: var(--kcn-sage);
+        }
+
+        .kcn-page .kcn-table td.kcn-empty::before,
+        .kcn-page .kcn-table td.kcn-all-hidden::before {
+            display: none;
+        }
+
+        .kcn-page .kcn-key {
+            white-space: normal;
+            word-break: break-all;
+        }
+    }
+
+    @@media (max-width: 560px) {
+        .kcn-page .kcn-stats {
+            grid-template-columns: 1fr;
+        }
+
+        .kcn-page .kcn-toolbar {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .kcn-page .kcn-search,
+        .kcn-page .kcn-select {
+            width: 100%;
+        }
+
+        .kcn-page .kcn-date,
+        .kcn-page .kcn-time {
+            white-space: normal;
+        }
+    }
+
+    /* --------------------------------------------- REDUCED MOTION ---- */
+    @@media (prefers-reduced-motion: reduce) {
+        .kcn-page {
+            animation: none;
+        }
+
+        .kcn-page *,
+        .kcn-page *::before,
+        .kcn-page *::after {
+            transition: none !important;
+            animation: none !important;
+        }
+    }
+</style>
+
+<div class="page-heading">
+    <div>
+        <div class="eyebrow">Karnel AI · Conversations · @totalCount @(totalCount == 1 ? "session" : "sessions")</div>
+        <h1>Every conversation, at a glance.</h1>
+        <p>Review how travellers interact with Karnel AI and monitor the shape of each session.</p>
+    </div>
+
+    <a href="@Context.Request.Path"
+       class="btn btn-quiet">
+        Refresh ↻
+    </a>
+</div>
+
+<div class="kcn-page">
+
+    <div class="kcn-stats">
+        <div class="kcn-stat">
+            <span class="kcn-stat__label">Total conversations</span>
+            <strong>@totalCount</strong>
+        </div>
+
+        <div class="kcn-stat kcn-stat--active">
+            <span class="kcn-stat__label">Active</span>
+            <strong>@activeCount</strong>
+        </div>
+
+        <div class="kcn-stat kcn-stat--closed">
+            <span class="kcn-stat__label">Closed / archived</span>
+            <strong>@closedCount</strong>
+        </div>
+
+        <div class="kcn-stat kcn-stat--messages">
+            <span class="kcn-stat__label">Total messages</span>
+            <strong>@totalMessages</strong>
+        </div>
+    </div>
+
+    <div class="kcn-toolbar">
+        <input class="kcn-search"
+               type="search"
+               id="kcnSearch"
+               placeholder="Search by identifier or status..."
+               aria-label="Search conversations" />
+
+        <select class="kcn-select"
+                id="kcnStatus"
+                aria-label="Filter by status">
+            <option value="all">All statuses</option>
+            <option value="active">Active</option>
+            <option value="closed">Closed</option>
+            <option value="other">Other</option>
+        </select>
+    </div>
+
+    <div class="kcn-table-wrap">
+        <table class="kcn-table" id="kcnTable">
+            <thead>
+                <tr>
+                    <th scope="col">Identifier</th>
+                    <th scope="col">Messages</th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Created</th>
+                    <th scope="col">Updated</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                @if (totalCount == 0)
+                {
+                    <tr>
+                        <td colspan="5" class="kcn-empty">
+                            <div class="kcn-empty__icon" aria-hidden="true">
+                                <svg width="32" height="32" viewBox="0 0 24 24" fill="none"
+                                     stroke="currentColor" stroke-width="1.2"
+                                     stroke-linecap="round" stroke-linejoin="round"
+                                     focusable="false">
+                                    <path d="M21 15a2 2 0 0 1-2 2H8l-5 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                                </svg>
+                            </div>
+                            <strong>No conversations yet.</strong>
+                            <p>Traveller sessions with Karnel AI will appear here.</p>
+                        </td>
+                    </tr>
+                }
+                else
+                {
+                    foreach (var item in conversations)
+                    {
+                        var hasKey = !string.IsNullOrWhiteSpace(item.ConversationKey);
+                        var hasStatus = !string.IsNullOrWhiteSpace(item.Status);
+
+                        var rawStatus = hasStatus ? item.Status : string.Empty;
+
+                        var isActive = hasStatus &&
+                            (rawStatus.Equals("Active", System.StringComparison.OrdinalIgnoreCase) ||
+                             rawStatus.Equals("Open", System.StringComparison.OrdinalIgnoreCase) ||
+                             rawStatus.Equals("In Progress", System.StringComparison.OrdinalIgnoreCase));
+
+                        var isClosed = hasStatus &&
+                            (rawStatus.Equals("Closed", System.StringComparison.OrdinalIgnoreCase) ||
+                             rawStatus.Equals("Archived", System.StringComparison.OrdinalIgnoreCase) ||
+                             rawStatus.Equals("Completed", System.StringComparison.OrdinalIgnoreCase) ||
+                             rawStatus.Equals("Ended", System.StringComparison.OrdinalIgnoreCase));
+
+                        var isPending = hasStatus &&
+                            (rawStatus.Equals("Pending", System.StringComparison.OrdinalIgnoreCase) ||
+                             rawStatus.Equals("New", System.StringComparison.OrdinalIgnoreCase));
+
+                        string statusClass;
+                        string filterGroup;
+
+                        if (isActive)
+                        {
+                            statusClass = "kcn-status--active";
+                            filterGroup = "active";
+                        }
+                        else if (isClosed)
+                        {
+                            statusClass = "kcn-status--closed";
+                            filterGroup = "closed";
+                        }
+                        else if (isPending)
+                        {
+                            statusClass = "kcn-status--pending";
+                            filterGroup = "other";
+                        }
+                        else
+                        {
+                            statusClass = "kcn-status--neutral";
+                            filterGroup = "other";
+                        }
+
+                        var displayStatus = hasStatus ? rawStatus : "Unknown";
+                        var messageLabel = item.MessageCount == 1 ? "message" : "messages";
+
+                        <tr class="kcn-row" data-status="@filterGroup">
+
+                            <td data-label="Identifier">
+                                @if (hasKey)
+                                {
+                                    <span class="kcn-key" title="@item.ConversationKey">@item.ConversationKey</span>
+                                }
+                                else
+                                {
+                                    <span class="kcn-key kcn-key--empty">Not assigned</span>
+                                }
+                            </td>
+
+                            <td data-label="Messages">
+                                <span class="kcn-count">
+                                    @item.MessageCount
+                                    <small>@messageLabel</small>
+                                </span>
+                            </td>
+
+                            <td data-label="Status">
+                                <span class="kcn-status @statusClass">
+                                    <i aria-hidden="true"></i>
+                                    @displayStatus
+                                </span>
+                            </td>
+
+                            <td data-label="Created">
+                                <span class="kcn-date">
+                                    @item.CreatedAt.ToLocalTime().ToString("dd MMM yyyy")
+                                </span>
+                                <span class="kcn-time">
+                                    @item.CreatedAt.ToLocalTime().ToString("HH:mm")
+                                </span>
+                            </td>
+
+                            <td data-label="Updated">
+                                <span class="kcn-date">
+                                    @item.UpdatedAt.ToLocalTime().ToString("dd MMM yyyy")
+                                </span>
+                                <span class="kcn-time">
+                                    @item.UpdatedAt.ToLocalTime().ToString("HH:mm")
+                                </span>
+                            </td>
+
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+
+</div>
+
+@section Scripts {
+    <script>
+        (() => {
+            const search = document.getElementById("kcnSearch");
+            const status = document.getElementById("kcnStatus");
+            const table = document.getElementById("kcnTable");
+            if (!search || !status || !table) { return; }
+
+            const tbody = table.querySelector("tbody");
+            const rows = Array.from(tbody.querySelectorAll(".kcn-row"));
+
+            let noMatchRow = tbody.querySelector(".kcn-all-hidden");
+            if (!noMatchRow) {
+                noMatchRow = document.createElement("tr");
+                noMatchRow.className = "kcn-all-hidden";
+                noMatchRow.style.display = "none";
+                const cell = document.createElement("td");
+                cell.colSpan = 5;
+                cell.textContent = "No conversations match your filters.";
+                noMatchRow.appendChild(cell);
+                tbody.appendChild(noMatchRow);
+            }
+
+            function applyFilters() {
+                const query = search.value.trim().toLowerCase();
+                const selected = status.value;
+                let visibleCount = 0;
+
+                rows.forEach(row => {
+                    const text = row.textContent.toLowerCase();
+                    const rowStatus = row.dataset.status;
+
+                    const matchesSearch = !query || text.includes(query);
+                    const matchesStatus =
+                        selected === "all" || rowStatus === selected;
+
+                    const visible = matchesSearch && matchesStatus;
+                    row.style.display = visible ? "" : "none";
+                    if (visible) { visibleCount++; }
+                });
+
+                noMatchRow.style.display = visibleCount === 0 ? "" : "none";
+            }
+
+            search.addEventListener("input", applyFilters);
+            status.addEventListener("change", applyFilters);
+        })();
+    </script>
+}

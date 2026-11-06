@@ -2259,6 +2259,55 @@ public class AdminController : Controller
         return RedirectToAction(nameof(Vehicles));
     }
 
+    [HttpPost("Transport/Vehicles/Toggle/{id:int}")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ToggleVehicle(int id)
+    {
+        var vehicle = await _context.TransportServices.FindAsync(id);
+
+        if (vehicle == null)
+            return NotFound();
+
+        vehicle.IsPublished = !vehicle.IsPublished;
+        vehicle.UpdatedAt = DateTime.UtcNow;
+        await _context.SaveChangesAsync();
+
+        TempData["SuccessMessage"] = vehicle.IsPublished
+            ? "Vehicle published successfully."
+            : "Vehicle unpublished successfully.";
+
+        return RedirectToAction(nameof(Vehicles));
+    }
+
+    [HttpPost("Transport/Vehicles/Delete/{id:int}")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> DeleteVehicle(int id)
+    {
+        var vehicle = await _context.TransportServices.FindAsync(id);
+
+        if (vehicle == null)
+            return NotFound();
+
+        var hasRoutes = await _context.TransportRoutePricings
+            .AnyAsync(route => route.TransportServiceId == id);
+        var hasBookings = await _context.Bookings
+            .AnyAsync(booking => booking.TransportServiceId == id);
+
+        if (hasRoutes || hasBookings)
+        {
+            TempData["ErrorMessage"] =
+                "This vehicle cannot be deleted because it has routes or booking history. Unpublish it instead.";
+            return RedirectToAction(nameof(Vehicles));
+        }
+
+        DeleteTransportImage(vehicle.ImageUrl);
+        _context.TransportServices.Remove(vehicle);
+        await _context.SaveChangesAsync();
+
+        TempData["SuccessMessage"] = "Vehicle deleted successfully.";
+        return RedirectToAction(nameof(Vehicles));
+    }
+
     // =========================================================
     // TRANSPORT - IMAGE UPLOAD
     // =========================================================

@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using KarnelTravel.Services;
+using Microsoft.AspNetCore.Authorization;
 
 namespace KarnelTravel.Controllers
 {

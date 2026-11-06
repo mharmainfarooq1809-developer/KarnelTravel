@@ -8,6 +8,7 @@
     var reviews = ViewBag.Reviews as List<Review> ?? new List<Review>();
     double averageRating = ViewBag.AverageRating ?? 0;
     int totalReviews = ViewBag.TotalReviews ?? 0;
+    var routes = ViewBag.Routes as List<TransportRoutePricing> ?? new List<TransportRoutePricing>();
 
     var reviewUrl = Url.Action("Create", "Reviews", new
     {
@@ -367,6 +368,32 @@
                 <section class="transport-panel">
                     <h2>Journey Route</h2>
 
+                    @if (routes.Count > 0)
+                    {
+                        foreach (var route in routes)
+                        {
+                            <div class="transport-route">
+                                <div>
+                                    <small>Departure</small>
+                                    <strong>@route.PickupCity</strong>
+                                </div>
+                                <div class="transport-route-arrow">→</div>
+                                <div>
+                                    <small>Destination</small>
+                                    <strong>@route.DropoffCity</strong>
+                                    <div class="transport-price">PKR @route.OneWayFarePKR.ToString("N0")</div>
+                                    <small>One-way · @(route.ReturnFarePKR.HasValue ? "PKR " + route.ReturnFarePKR.Value.ToString("N0") + " return" : "return fare on request")</small>
+                                </div>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <p class="transport-empty">Route pricing is currently available on request.</p>
+                    }
+
+                    @if (routes.Count == 0)
+                    {
                     <div class="transport-route">
 
                         <div>
@@ -390,6 +417,7 @@
                         </div>
 
                     </div>
+                    }
                 </section>
 
                 <!-- TRANSPORT INFORMATION -->
