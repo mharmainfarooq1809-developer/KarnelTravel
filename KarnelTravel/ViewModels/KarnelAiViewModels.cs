@@ -27,6 +27,8 @@ public sealed class KarnelAiChatRequest
     [Required, StringLength(2000)]
     public string Message { get; set; } = string.Empty;
     public string? ConversationKey { get; set; }
+    public string InputMode { get; set; } = "text";
+    public string RequestId { get; set; } = string.Empty;
 }
 
 public sealed class KarnelAiChatResponse
@@ -37,6 +39,8 @@ public sealed class KarnelAiChatResponse
     public IReadOnlyList<TravelAiListing> Sources { get; init; } = Array.Empty<TravelAiListing>();
     public string? Intent { get; init; }
     public string? ConversationKey { get; init; }
+    public string InputMode { get; init; } = "text";
+    public string RequestId { get; init; } = string.Empty;
 }
 
 public sealed class KarnelAiPlannerRequest

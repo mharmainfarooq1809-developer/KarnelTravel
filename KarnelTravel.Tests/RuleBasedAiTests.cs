@@ -10,6 +10,16 @@ public sealed class RuleBasedAiTests
     [InlineData("show restaurants", AIIntent.RestaurantSearch)]
     [InlineData("plan a 4 day trip", AIIntent.TripPlanning)]
     [InlineData("compare destinations", AIIntent.DestinationComparison)]
+    [InlineData("Can you explain the difference between a hotel and a resort?", AIIntent.GeneralTravelInformation)]
+    [InlineData("Tell me about the natural beauty of Skardu.", AIIntent.DestinationInformation)]
+    [InlineData("I have three days. Suggest a destination.", AIIntent.DestinationRecommendation)]
+    [InlineData("Suggest a three-day trip to Hunza.", AIIntent.TripPlanning)]
+    [InlineData("What is the hotel price in Hunza?", AIIntent.HotelPriceInquiry)]
+    [InlineData("What is the transport fare to Skardu?", AIIntent.TransportFareInquiry)]
+    [InlineData("Compare Hunza and Skardu.", AIIntent.DestinationComparison)]
+    [InlineData("Show me hotels in Lahore.", AIIntent.HotelSearch)]
+    [InlineData("Find resorts in Hunza.", AIIntent.ResortSearch)]
+    [InlineData("What should travellers check before visiting northern Pakistan?", AIIntent.GeneralTravelInformation)]
     [InlineData("tell me a joke", AIIntent.Unsupported)]
     public void IntentDetector_classifies_supported_and_unsupported_requests(string message, AIIntent expected)
     {
@@ -24,5 +34,22 @@ public sealed class RuleBasedAiTests
         Assert.Equal(5, result.DurationDays);
         Assert.Equal(4, result.Travelers);
         Assert.Equal("family", result.Preference);
+    }
+
+    [Fact]
+    public void EntityExtractor_keeps_recommendation_without_destination()
+    {
+        var result = new EntityExtractor().Extract("I have three days. Suggest a destination.");
+        Assert.Null(result.Location);
+        Assert.Equal(3, result.DurationDays);
+    }
+
+    [Fact]
+    public void EntityExtractor_extracts_two_comparison_destinations()
+    {
+        var result = new EntityExtractor().Extract("Compare Hunza and Skardu.");
+        Assert.Equal("Hunza", result.DestinationA);
+        Assert.Equal("Skardu", result.DestinationB);
+        Assert.Equal(new[] { "Hunza", "Skardu" }, result.Destinations);
     }
 }

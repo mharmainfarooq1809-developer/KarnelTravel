@@ -14,6 +14,7 @@ namespace KarnelTravel.Controllers
         }
 
         // The root route can point to this action in Program.cs.
+        [AllowAnonymous]
         public async Task<IActionResult> Index()
         {
             ViewBag.WebsiteContent = await _websiteContentService.GetAsync();

@@ -76,8 +76,10 @@ public sealed class KarnelAiController : Controller
         if (!ModelState.IsValid)
             return BadRequest(new KarnelAiChatResponse { Error = "Please enter a travel question." });
 
+        var inputMode = string.Equals(request.InputMode, "voice", StringComparison.OrdinalIgnoreCase) ? "voice" : "text";
+        var requestId = string.IsNullOrWhiteSpace(request.RequestId) ? Guid.NewGuid().ToString("N") : request.RequestId;
         var result = await _ai.ProcessAsync(new AIRequest(request.Message.Trim(), request.ConversationKey ?? Guid.NewGuid().ToString("N")), cancellationToken);
-        return Ok(new KarnelAiChatResponse { Success = true, Reply = result.Text, Sources = result.Listings, Intent = result.Intent.ToString(), ConversationKey = result.ConversationKey });
+        return Ok(new KarnelAiChatResponse { Success = true, Reply = result.Text, Sources = result.Listings, Intent = result.Intent.ToString(), ConversationKey = result.ConversationKey, InputMode = inputMode, RequestId = requestId });
     }
 
     [HttpPost("Plan")]

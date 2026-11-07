@@ -1,6 +1,8 @@
 using KarnelTravel.Data;
 using KarnelTravel.Models;
 using Microsoft.EntityFrameworkCore;
+using System.Linq.Expressions;
+using System.Text.RegularExpressions;
 
 namespace KarnelTravel.Services.AI;
 
@@ -8,8 +10,10 @@ public sealed record AISearchRequest(string? Query, string? Category, string? Lo
 public sealed record AISearchResult(IReadOnlyList<TravelAiListing> Items, int TotalCount, int Page, int PageSize);
 public sealed record AIRecommendation(TravelAiListing Listing, int Score, string Explanation);
 public sealed record AIBudgetEstimate(decimal KnownTotal, IReadOnlyList<string> UnavailableCategories);
+public sealed record AIKnowledgeMatch(AIKnowledgeEntry Entry, int Score);
 
 public interface ITravelSearchService { Task<AISearchResult> SearchAsync(AISearchRequest request, CancellationToken cancellationToken = default); }
+public interface IAIKnowledgeService { Task<IReadOnlyList<AIKnowledgeMatch>> SearchAsync(string question, CancellationToken cancellationToken = default); }
 public interface IRecommendationService { Task<IReadOnlyList<AIRecommendation>> RecommendAsync(AIEntities entities, CancellationToken cancellationToken = default); }
 public interface ITripPlannerService { Task<string> PlanAsync(AIEntities entities, CancellationToken cancellationToken = default); }
 public interface IBudgetEstimatorService { Task<AIBudgetEstimate> EstimateAsync(AIEntities entities, CancellationToken cancellationToken = default); }
@@ -34,6 +38,100 @@ public sealed class TravelSearchService : ITravelSearchService
         if (category is null or "transport") items.AddRange(await _db.TransportServices.AsNoTracking().Where(x => x.IsPublished && (query == "" || x.Name.Contains(query) || (x.StartingCity != null && x.StartingCity.Contains(query)) || (x.DestinationCity != null && x.DestinationCity.Contains(query))) && (location == null || (x.StartingCity != null && x.StartingCity.Contains(location)) || (x.DestinationCity != null && x.DestinationCity.Contains(location))) && (!request.MaximumPrice.HasValue || (x.StartingPrice.HasValue && x.StartingPrice <= request.MaximumPrice))).OrderBy(x => x.DisplayOrder).ThenBy(x => x.Name).Select(x => new TravelAiListing { Type="Transport", Id=x.Id, Name=x.Name, Location=x.DestinationCity, Description=x.Description, IsFeatured=x.IsFeatured, Price=x.StartingPrice, PriceLabel=x.StartingPrice.HasValue ? $"From PKR {x.StartingPrice.Value:N0}" : "Cost unavailable" }).ToListAsync(cancellationToken));
         var total = items.Count;
         return new AISearchResult(items.Skip((page - 1) * pageSize).Take(pageSize).ToList(), total, page, pageSize);
+    }
+}
+
+public sealed class AIKnowledgeService : IAIKnowledgeService
+{
+    private static readonly HashSet<string> StopWords = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "what", "where", "when", "which", "who", "how", "are", "the", "this", "that", "about", "also", "tell", "me", "please", "can", "you", "for", "from", "with", "and", "valley", "popular", "attractions", "best", "known", "travel", "season", "seasons", "destination", "destinations", "beach", "beaches", "tell", "visiting", "visitors", "travellers", "travelers", "should", "before"
+    };
+
+    private readonly ApplicationDbContext _db;
+
+    public AIKnowledgeService(ApplicationDbContext db) => _db = db;
+
+    public async Task<IReadOnlyList<AIKnowledgeMatch>> SearchAsync(string question, CancellationToken cancellationToken = default)
+    {
+        var terms = Regex.Split(question ?? string.Empty, "[^\\p{L}\\p{Nd}]+")
+            .Where(x => x.Length >= 3 && !StopWords.Contains(x))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Take(16)
+            .ToArray();
+
+        if (terms.Length == 0) return Array.Empty<AIKnowledgeMatch>();
+
+        var parameter = Expression.Parameter(typeof(AIKnowledgeEntry), "entry");
+        Expression? termExpression = null;
+        foreach (var term in terms)
+        {
+            var loweredTerm = Expression.Constant(term.ToLowerInvariant());
+            Expression? fieldExpression = null;
+            foreach (var propertyName in new[] { nameof(AIKnowledgeEntry.Title), nameof(AIKnowledgeEntry.Category), nameof(AIKnowledgeEntry.Content) })
+            {
+                var property = Expression.Property(parameter, propertyName);
+                var loweredProperty = Expression.Call(property, nameof(string.ToLower), Type.EmptyTypes);
+                var contains = Expression.Call(loweredProperty, nameof(string.Contains), Type.EmptyTypes, loweredTerm);
+                fieldExpression = fieldExpression == null ? contains : Expression.OrElse(fieldExpression, contains);
+            }
+
+            termExpression = termExpression == null ? fieldExpression : Expression.OrElse(termExpression, fieldExpression);
+        }
+
+        var predicate = Expression.Lambda<Func<AIKnowledgeEntry, bool>>(
+            Expression.AndAlso(
+                Expression.Property(parameter, nameof(AIKnowledgeEntry.IsEnabled)),
+                termExpression!),
+            parameter);
+
+        var entries = await _db.AIKnowledgeEntries
+            .AsNoTracking()
+            .Where(predicate)
+            .ToListAsync(cancellationToken);
+
+        return entries
+            .Select(entry => new AIKnowledgeMatch(entry, Score(entry, terms)))
+            .Where(match => HasRelevantTitleOrContent(match.Entry, terms))
+            .OrderByDescending(match => match.Score)
+            .ThenByDescending(match => match.Entry.UpdatedAt)
+            .Take(5)
+            .ToList();
+    }
+
+    private static int Score(AIKnowledgeEntry entry, IReadOnlyList<string> terms)
+    {
+        var score = 0;
+        foreach (var term in terms)
+        {
+            score += CountOccurrences(entry.Title, term) * 6;
+            score += CountOccurrences(entry.Category, term) * 3;
+            score += CountOccurrences(entry.Content, term);
+        }
+
+        return score;
+    }
+
+    private static bool HasRelevantTitleOrContent(AIKnowledgeEntry entry, IReadOnlyList<string> terms)
+    {
+        var titleOrCategoryMatches = terms.Count(term =>
+            entry.Title.Contains(term, StringComparison.OrdinalIgnoreCase) ||
+            entry.Category.Contains(term, StringComparison.OrdinalIgnoreCase));
+        var contentMatches = terms.Count(term => entry.Content.Contains(term, StringComparison.OrdinalIgnoreCase));
+        return titleOrCategoryMatches > 0 || contentMatches >= 3;
+    }
+
+    private static int CountOccurrences(string value, string term)
+    {
+        var count = 0;
+        var index = 0;
+        while ((index = value.IndexOf(term, index, StringComparison.OrdinalIgnoreCase)) >= 0)
+        {
+            count++;
+            index += term.Length;
+        }
+
+        return count;
     }
 }
 

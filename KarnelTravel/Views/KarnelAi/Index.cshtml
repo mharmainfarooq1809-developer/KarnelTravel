@@ -8,6 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:wght@500;600;700&display=swap" />
+<link rel="stylesheet" href="~/css/karnel-ai-voice.css" asp-append-version="true" />
 
 <style>
     /* ============================================================
@@ -802,12 +803,60 @@
                         }
                     </div>
 
+                    <section class="kai-voice" id="kai-voice" aria-labelledby="kai-voice-title" data-default-language="en-US">
+                        <div class="kai-voice__topline">
+                            <div>
+                                <p class="kai-voice__eyebrow">Voice concierge</p>
+                                <h3 id="kai-voice-title">Talk to Karnel naturally.</h3>
+                            </div>
+                            <label class="kai-voice__toggle">
+                                <span>Voice replies</span>
+                                <input id="kai-voice-enabled" type="checkbox" role="switch" />
+                                <span class="kai-voice__switch" aria-hidden="true"></span>
+                            </label>
+                        </div>
+
+                        <div class="kai-voice__stage" data-voice-state="idle">
+                            <div class="kai-voice__orb" aria-hidden="true">
+                                <span class="kai-voice__ring kai-voice__ring--one"></span>
+                                <span class="kai-voice__ring kai-voice__ring--two"></span>
+                                <span class="kai-voice__mic-icon">●</span>
+                            </div>
+                            <div class="kai-voice__copy">
+                                <strong id="kai-voice-state">Ready when you are</strong>
+                                <span id="kai-voice-help">Use the microphone to dictate a question, then review it before sending.</span>
+                            </div>
+                            <div class="kai-voice__actions">
+                                <button id="kai-voice-microphone" class="kai-voice__button kai-voice__button--primary" type="button" aria-label="Start voice input">
+                                    <span aria-hidden="true">●</span> Start listening
+                                </button>
+                                <button id="kai-voice-stop" class="kai-voice__button" type="button" hidden>Stop speaking</button>
+                            </div>
+                        </div>
+
+                        <div class="kai-voice__settings">
+                            <label for="kai-voice-language">Recognition language</label>
+                            <select id="kai-voice-language" aria-label="Recognition language">
+                                <option value="en-US">English (US)</option>
+                                <option value="en-GB">English (UK)</option>
+                                <option value="ur-PK">Urdu (Pakistan, if supported)</option>
+                            </select>
+                            <button id="kai-voice-pause" class="kai-voice__link-button" type="button" hidden>Pause</button>
+                            <button id="kai-voice-resume" class="kai-voice__link-button" type="button" hidden>Resume</button>
+                            <select id="kai-voice-voice" aria-label="Spoken response voice" hidden>
+                                <option value="">System default voice</option>
+                            </select>
+                        </div>
+                        <p id="kai-voice-status" class="kai-voice__status" role="status" aria-live="polite"></p>
+                    </section>
+
                     <div id="chat" class="kai-chat" aria-live="polite" aria-label="Conversation with Karnel AI">
                         <div class="kai-msg kai-msg--assistant">Hello. I can help you explore published Karnel listings and plan a trip. What would you like to know?</div>
                     </div>
 
                     <form id="chat-form" class="kai-composer">
                         <label class="kai-visually-hidden" for="chat-message">Your travel question</label>
+                        <input id="kai-input-mode" type="hidden" value="text" />
                         <textarea id="chat-message" maxlength="2000" placeholder="Ask a travel question…" required></textarea>
                         <button class="kai-btn" type="submit">Ask</button>
                     </form>
@@ -912,6 +961,7 @@
             const chatForm = document.getElementById('chat-form');
             const chatButton = chatForm.querySelector('button');
             const feedbackControls = document.getElementById('feedback-controls');
+            const inputMode = document.getElementById('kai-input-mode');
 
             function addMessage(text, role) {
                 const el = document.createElement('div');
@@ -935,9 +985,11 @@
                 chat.scrollTop = chat.scrollHeight;
             }
 
-            async function ask(message) {
+            async function ask(message, inputMode) {
+                const requestId = crypto.randomUUID();
                 addMessage(message, 'user');
                 status.textContent = 'Karnel AI is thinking…';
+                document.dispatchEvent(new CustomEvent('karnel-ai:question', { detail: { inputMode: inputMode, requestId: requestId } }));
                 status.classList.remove('is-error');
                 chatButton.disabled = true;
                 if (feedbackControls) { feedbackControls.hidden = true; }
@@ -947,7 +999,7 @@
                     const response = await fetch('@Url.Action("Chat", "KarnelAI")', {
                         method: 'POST',
                         headers: headers,
-                        body: JSON.stringify({ message: message, conversationKey: conversationKey })
+                        body: JSON.stringify({ message: message, conversationKey: conversationKey, inputMode: inputMode, requestId: requestId })
                     });
 
                     const data = await response.json();
@@ -958,9 +1010,11 @@
                     setThinking(false);
                     addMessage(data.reply, 'assistant');
                     if (feedbackControls) { feedbackControls.hidden = false; }
+                    document.dispatchEvent(new CustomEvent('karnel-ai:response', { detail: { text: data.reply, inputMode: data.inputMode === 'voice' ? 'voice' : inputMode, requestId: data.requestId || requestId } }));
                     status.textContent = '';
                 } catch (error) {
                     setThinking(false);
+                    document.dispatchEvent(new CustomEvent('karnel-ai:error', { detail: { message: error.message } }));
                     status.textContent = error.message + ' Please try again.';
                     status.classList.add('is-error');
                 } finally {
@@ -982,8 +1036,10 @@
                 event.preventDefault();
                 const message = input.value.trim();
                 if (!message) { return; }
+                const mode = inputMode.value === 'voice' ? 'voice' : 'text';
                 input.value = '';
-                ask(message);
+                inputMode.value = 'text';
+                ask(message, mode);
             });
 
             /* Response feedback */
@@ -1048,4 +1104,5 @@
             });
         })();
     </script>
+    <script src="~/js/karnel-ai-voice.js" asp-append-version="true"></script>
 }

@@ -33,6 +33,7 @@ builder.Services.AddScoped<IAuditLogService, AuditLogService>();
 builder.Services.AddScoped<ILanguageModelProvider, RuleBasedLanguageProvider>();
 builder.Services.AddScoped<IAIEngine, AIEngine>();
 builder.Services.AddScoped<ITravelSearchService, TravelSearchService>();
+builder.Services.AddScoped<IAIKnowledgeService, AIKnowledgeService>();
 builder.Services.AddScoped<IRecommendationService, RecommendationService>();
 builder.Services.AddScoped<ITripPlannerService, TripPlannerService>();
 builder.Services.AddScoped<IBudgetEstimatorService, BudgetEstimatorService>();
