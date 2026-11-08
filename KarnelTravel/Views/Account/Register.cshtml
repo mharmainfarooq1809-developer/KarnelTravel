@@ -85,6 +85,12 @@
                 </div>
 
                 <div class="login-field">
+                    <label asp-for="PhoneNumber">Phone number</label>
+                    <input class="input" asp-for="PhoneNumber" placeholder="e.g. +92 300 1234567" autocomplete="tel" />
+                    <span asp-validation-for="PhoneNumber" style="color:var(--red); font-size:12px;"></span>
+                </div>
+
+                <div class="login-field">
                     <label asp-for="Password">Password</label>
                     <div class="login-password-wrap">
                         <input class="input" asp-for="Password" type="password" placeholder="Create a strong password" autocomplete="new-password" />
@@ -105,6 +111,12 @@
                     </div>
                     <span asp-validation-for="ConfirmPassword" style="color:var(--red); font-size:12px;"></span>
                 </div>
+
+                <label style="display:flex; gap:10px; align-items:flex-start; margin-top:12px; font-size:13px;">
+                    <input asp-for="AcceptTerms" style="margin-top:3px;" />
+                    <span>I accept the Terms of Service and Privacy Policy.</span>
+                </label>
+                <span asp-validation-for="AcceptTerms" style="color:var(--red); font-size:12px;"></span>
 
                 <button type="submit" class="btn btn-primary login-submit" style="margin-top: 10px;">
                     Create account

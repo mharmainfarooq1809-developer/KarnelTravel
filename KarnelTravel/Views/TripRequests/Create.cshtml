@@ -1,0 +1,978 @@
+@model KarnelTravel.ViewModels.CustomTripRequestViewModel
+@{
+    ViewData["Title"] = "Request a Custom Trip";
+
+    // has-hero -> transparent site header over our dark hero (same pattern as other pages)
+    var existing = ViewData["BodyClass"] as string ?? string.Empty;
+    ViewData["BodyClass"] = (existing + " has-hero").Trim();
+}
+
+@section Styles {
+<style>
+    /* ============================================================
+       CUSTOM TRIP REQUEST — Editorial travel planning
+       Uses the layout's design tokens; local aliases keep it readable
+       ============================================================ */
+    .ctr-page {
+        --ctr-forest:   #14271F;
+        --ctr-ivory:    #F8F6F0;
+        --ctr-sage:     #8FA888;
+        --ctr-sand:     #E8DFC9;
+        --ctr-white:    #FFFFFF;
+        --ctr-ink:      #1A2620;
+        --ctr-muted:    #6B756C;
+        --ctr-line:     #E2DFD3;
+        --ctr-line-strong: #D4D0BF;
+        --ctr-error:    #B85C3C;
+        --ctr-error-bg: #FDF5F2;
+        --ctr-error-border: #EBC8B8;
+        --ctr-radius:   12px;
+
+        background: var(--ctr-ivory);
+        color: var(--ctr-ink);
+        font-family: var(--sans, 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
+        padding-top: calc(var(--header-h) + 0px);
+        -webkit-font-smoothing: antialiased;
+    }
+    .ctr-page *, .ctr-page *::before, .ctr-page *::after { box-sizing: border-box; }
+
+    /* ---------- HERO ---------- */
+    .ctr-hero {
+        position: relative;
+        isolation: isolate;
+        overflow: hidden;
+        color: #EAF0E7;
+        padding: clamp(56px, 9vw, 110px) 0 clamp(56px, 8vw, 96px);
+        background: var(--ctr-forest);
+    }
+    .ctr-hero__bg {
+        position: absolute;
+        inset: 0;
+        z-index: 0;
+        pointer-events: none;
+    }
+    .ctr-hero__bg img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        object-position: center 40%;
+        filter: saturate(1.05);
+    }
+    .ctr-hero__bg::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background:
+            linear-gradient(180deg, rgba(20,39,31,.55) 0%, rgba(20,39,31,.78) 60%, rgba(20,39,31,.9) 100%),
+            radial-gradient(80% 60% at 20% 30%, rgba(143,168,136,.18), transparent 60%);
+    }
+    .ctr-hero__inner {
+        position: relative;
+        z-index: 1;
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 0 24px;
+    }
+    .ctr-eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 12px;
+        margin: 0 0 22px;
+        font-size: .72rem;
+        font-weight: 500;
+        letter-spacing: .3em;
+        text-transform: uppercase;
+        color: var(--ctr-sage);
+    }
+    .ctr-eyebrow::before {
+        content: "";
+        width: 32px;
+        height: 1px;
+        background: currentColor;
+        opacity: .7;
+    }
+    .ctr-hero__title {
+        font-family: var(--serif);
+        font-weight: 400;
+        font-size: clamp(2.4rem, 5.6vw, 4.4rem);
+        line-height: 1.02;
+        letter-spacing: -.02em;
+        color: #F6F4EC;
+        margin: 0;
+        max-width: 15ch;
+    }
+    .ctr-hero__lede {
+        margin: 22px 0 0;
+        max-width: 54ch;
+        font-size: clamp(.96rem, 1.35vw, 1.08rem);
+        line-height: 1.68;
+        color: rgba(234,240,231,.82);
+    }
+    .ctr-hero__note {
+        display: inline-flex;
+        align-items: flex-start;
+        gap: 10px;
+        margin: 32px 0 0;
+        padding: 12px 18px;
+        max-width: 60ch;
+        font-size: .82rem;
+        line-height: 1.55;
+        color: rgba(234,240,231,.86);
+        background: rgba(20,39,31,.55);
+        border: 1px solid rgba(143,168,136,.32);
+        border-radius: 999px;
+    }
+    .ctr-hero__note-icon {
+        flex: 0 0 auto;
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        background: var(--ctr-sage);
+        color: var(--ctr-forest);
+        font-size: .72rem;
+        font-weight: 700;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        line-height: 1;
+        margin-top: 1px;
+    }
+
+    /* ---------- SPLIT ---------- */
+    .ctr-main {
+        padding: clamp(48px, 6vw, 84px) 0 clamp(64px, 8vw, 110px);
+    }
+    .ctr-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+        gap: clamp(28px, 4vw, 64px);
+        align-items: start;
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 0 24px;
+    }
+
+    /* ---------- EDITORIAL (left) ---------- */
+    .ctr-editorial {
+        position: sticky;
+        top: calc(var(--header-h) + 28px);
+        display: flex;
+        flex-direction: column;
+        gap: 28px;
+    }
+    .ctr-editorial__media {
+        position: relative;
+        overflow: hidden;
+        border-radius: var(--ctr-radius);
+        aspect-ratio: 4 / 5;
+        background: var(--ctr-forest);
+        box-shadow: var(--shadow-md);
+    }
+    .ctr-editorial__media img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+        transition: transform 1.2s var(--ease);
+    }
+    .ctr-editorial__media:hover img { transform: scale(1.04); }
+    .ctr-editorial__media::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(180deg, transparent 40%, rgba(20,39,31,.55) 100%);
+        pointer-events: none;
+    }
+    .ctr-editorial__badge {
+        position: absolute;
+        left: 18px;
+        bottom: 18px;
+        z-index: 1;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 14px;
+        border-radius: 999px;
+        background: rgba(248,246,240,.94);
+        color: var(--ctr-forest);
+        font-size: .68rem;
+        font-weight: 500;
+        letter-spacing: .16em;
+        text-transform: uppercase;
+        backdrop-filter: blur(6px);
+    }
+    .ctr-editorial__badge-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--ctr-sage);
+        box-shadow: 0 0 0 3px rgba(143,168,136,.24);
+    }
+
+    .ctr-editorial__head {
+        margin-top: 8px;
+    }
+    .ctr-editorial__eyebrow {
+        display: inline-block;
+        margin: 0 0 10px;
+        font-size: .68rem;
+        font-weight: 500;
+        letter-spacing: .26em;
+        text-transform: uppercase;
+        color: var(--ctr-muted);
+    }
+    .ctr-editorial__title {
+        font-family: var(--serif);
+        font-weight: 400;
+        font-size: clamp(1.5rem, 2.2vw, 1.9rem);
+        line-height: 1.2;
+        color: var(--ctr-forest);
+        margin: 0;
+    }
+    .ctr-editorial__lede {
+        margin: 12px 0 0;
+        font-size: .92rem;
+        line-height: 1.65;
+        color: var(--ctr-muted);
+    }
+
+    /* Steps */
+    .ctr-steps {
+        list-style: none;
+        margin: 4px 0 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 0;
+    }
+    .ctr-steps__item {
+        position: relative;
+        padding: 0 0 26px 46px;
+    }
+    .ctr-steps__item::before {
+        content: "";
+        position: absolute;
+        left: 16px;
+        top: 36px;
+        bottom: 2px;
+        width: 1px;
+        background: var(--ctr-line-strong);
+    }
+    .ctr-steps__item:last-child { padding-bottom: 0; }
+    .ctr-steps__item:last-child::before { display: none; }
+    .ctr-steps__num {
+        position: absolute;
+        left: 0;
+        top: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 34px;
+        height: 34px;
+        border-radius: 50%;
+        background: var(--ctr-forest);
+        color: var(--ctr-sand);
+        font-size: .72rem;
+        font-weight: 600;
+        letter-spacing: .04em;
+    }
+    .ctr-steps__title {
+        font-family: var(--serif);
+        font-weight: 400;
+        font-size: 1.06rem;
+        line-height: 1.3;
+        color: var(--ctr-forest);
+        margin: 6px 0 6px;
+    }
+    .ctr-steps__text {
+        margin: 0;
+        font-size: .87rem;
+        line-height: 1.6;
+        color: var(--ctr-muted);
+    }
+
+    /* ---------- FORM (right) ---------- */
+    .ctr-form-col { min-width: 0; }
+    .ctr-form {
+        background: var(--ctr-white);
+        border: 1px solid var(--ctr-line);
+        border-radius: 20px;
+        padding: clamp(24px, 3vw, 44px);
+        box-shadow: var(--shadow-md);
+    }
+
+    /* Validation summary */
+    .validation-summary-valid { display: none; }
+    .ctr-form .validation-summary-errors {
+        display: block;
+        margin: 0 0 24px;
+        padding: 14px 18px 14px 20px;
+        border: 1px solid var(--ctr-error-border);
+        border-left: 3px solid var(--ctr-error);
+        background: var(--ctr-error-bg);
+        border-radius: 10px;
+        font-size: .88rem;
+        line-height: 1.55;
+        color: #7A2A17;
+    }
+    .ctr-form .validation-summary-errors ul {
+        margin: 0;
+        padding-left: 18px;
+    }
+    .ctr-form .validation-summary-errors li + li { margin-top: 4px; }
+
+    /* Section */
+    .ctr-section {
+        border: 0;
+        margin: 0;
+        padding: 28px 0;
+        border-top: 1px solid var(--ctr-line);
+    }
+    .ctr-section:first-of-type {
+        border-top: 0;
+        padding-top: 4px;
+    }
+    .ctr-section__legend {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        width: 100%;
+        padding: 0;
+        margin: 0 0 22px;
+    }
+    .ctr-section__num {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        border: 1px solid var(--ctr-line);
+        background: var(--ctr-ivory);
+        color: var(--ctr-forest);
+        font-size: .68rem;
+        font-weight: 600;
+        letter-spacing: .06em;
+        flex: 0 0 auto;
+    }
+    .ctr-section__title {
+        font-family: var(--serif);
+        font-weight: 400;
+        font-size: clamp(1.15rem, 1.6vw, 1.4rem);
+        line-height: 1.25;
+        color: var(--ctr-forest);
+        margin: 0;
+    }
+
+    /* Fields */
+    .ctr-field {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        min-width: 0;
+    }
+    .ctr-field + .ctr-field { margin-top: 18px; }
+    .ctr-row { display: grid; gap: 16px; }
+    .ctr-row + .ctr-row,
+    .ctr-row + .ctr-field { margin-top: 18px; }
+    .ctr-row--2 { grid-template-columns: 1fr 1fr; }
+    .ctr-row--3 { grid-template-columns: 1fr 1fr 1fr; }
+
+    .ctr-label {
+        font-size: .7rem;
+        font-weight: 600;
+        letter-spacing: .14em;
+        text-transform: uppercase;
+        color: var(--ctr-muted);
+        line-height: 1.4;
+        cursor: pointer;
+    }
+    .ctr-label.is-required::after {
+        content: " *";
+        color: var(--ctr-error);
+        font-weight: 700;
+    }
+
+    .ctr-input,
+    .ctr-textarea {
+        width: 100%;
+        font: inherit;
+        font-size: .95rem;
+        line-height: 1.5;
+        color: var(--ctr-ink);
+        background: var(--ctr-white);
+        border: 1px solid var(--ctr-line-strong);
+        border-radius: 10px;
+        padding: 0 14px;
+        height: 50px;
+        transition: border-color .18s ease, box-shadow .18s ease, background .18s ease;
+        -webkit-appearance: none;
+        appearance: none;
+    }
+    .ctr-input::placeholder,
+    .ctr-textarea::placeholder { color: #A9AFA4; }
+    .ctr-input:hover,
+    .ctr-textarea:hover { border-color: #B8B4A4; }
+    .ctr-input:focus,
+    .ctr-textarea:focus {
+        outline: none;
+        border-color: var(--ctr-forest);
+        background: var(--ctr-white);
+        box-shadow: 0 0 0 3px rgba(20,39,31,.1);
+    }
+    .ctr-input.input-validation-error,
+    .ctr-textarea.input-validation-error {
+        border-color: var(--ctr-error);
+        background: var(--ctr-error-bg);
+    }
+    .ctr-textarea {
+        height: auto;
+        min-height: 120px;
+        padding: 14px;
+        resize: vertical;
+        line-height: 1.6;
+    }
+
+    .ctr-hint {
+        margin: 0;
+        font-size: .78rem;
+        line-height: 1.5;
+        color: var(--ctr-muted);
+    }
+
+    .ctr-error.field-validation-error {
+        display: block;
+        margin-top: 2px;
+        font-size: .8rem;
+        line-height: 1.5;
+        color: var(--ctr-error);
+    }
+    .ctr-error.field-validation-valid { display: none; }
+
+    /* Input-group for PKR prefix */
+    .ctr-input-group {
+        position: relative;
+        display: flex;
+        align-items: center;
+    }
+    .ctr-input-group__prefix {
+        position: absolute;
+        left: 14px;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: .78rem;
+        font-weight: 600;
+        letter-spacing: .06em;
+        color: var(--ctr-muted);
+        pointer-events: none;
+        text-transform: uppercase;
+    }
+    .ctr-input-group .ctr-input { padding-left: 52px; }
+
+    /* Stepper */
+    .ctr-stepper {
+        display: inline-flex;
+        align-items: stretch;
+        width: 100%;
+        border: 1px solid var(--ctr-line-strong);
+        border-radius: 10px;
+        overflow: hidden;
+        background: var(--ctr-white);
+        transition: border-color .18s ease, box-shadow .18s ease;
+    }
+    .ctr-stepper:hover { border-color: #B8B4A4; }
+    .ctr-stepper:focus-within {
+        border-color: var(--ctr-forest);
+        box-shadow: 0 0 0 3px rgba(20,39,31,.1);
+    }
+    .ctr-stepper__btn {
+        appearance: none;
+        cursor: pointer;
+        border: 0;
+        background: transparent;
+        width: 44px;
+        flex: 0 0 auto;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font: inherit;
+        font-size: 1.1rem;
+        font-weight: 500;
+        color: var(--ctr-forest);
+        transition: background .15s ease, color .15s ease;
+    }
+    .ctr-stepper__btn:hover { background: var(--ctr-ivory); }
+    .ctr-stepper__btn:active { background: #EDEAE1; }
+    .ctr-stepper__btn:focus-visible {
+        outline: 2px solid var(--ctr-forest);
+        outline-offset: -3px;
+    }
+    .ctr-stepper__input {
+        flex: 1 1 auto;
+        min-width: 0;
+        height: 48px;
+        border: 0;
+        border-left: 1px solid var(--ctr-line);
+        border-right: 1px solid var(--ctr-line);
+        background: transparent;
+        text-align: center;
+        font: inherit;
+        font-size: .95rem;
+        font-weight: 500;
+        color: var(--ctr-ink);
+        -moz-appearance: textfield;
+        appearance: textfield;
+    }
+    .ctr-stepper__input::-webkit-outer-spin-button,
+    .ctr-stepper__input::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+    }
+    .ctr-stepper__input:focus { outline: none; }
+
+    /* Submit */
+    .ctr-submit {
+        margin-top: 28px;
+        padding-top: 28px;
+        border-top: 1px solid var(--ctr-line);
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        align-items: flex-start;
+    }
+    .ctr-submit__btn {
+        appearance: none;
+        cursor: pointer;
+        font: inherit;
+        font-size: .82rem;
+        font-weight: 500;
+        letter-spacing: .14em;
+        text-transform: uppercase;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        min-height: 54px;
+        padding: 0 36px;
+        border: 0;
+        border-radius: 999px;
+        background: var(--ctr-forest);
+        color: var(--ctr-ivory);
+        transition: background .2s ease, transform .2s ease, box-shadow .2s ease, opacity .2s ease;
+    }
+    .ctr-submit__btn:hover {
+        background: var(--forest, #20382D);
+        transform: translateY(-2px);
+        box-shadow: 0 14px 30px rgba(20,39,31,.22);
+    }
+    .ctr-submit__btn:active { transform: translateY(0); }
+    .ctr-submit__btn:focus-visible {
+        outline: 2px solid var(--ctr-sage);
+        outline-offset: 3px;
+    }
+    .ctr-submit__btn:disabled {
+        opacity: .72;
+        cursor: progress;
+        transform: none;
+        box-shadow: none;
+    }
+    .ctr-submit__btn.is-loading::before {
+        content: "";
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        border: 2px solid rgba(248,246,240,.35);
+        border-top-color: var(--ctr-ivory);
+        animation: ctr-spin .7s linear infinite;
+        flex: 0 0 auto;
+    }
+    @@keyframes ctr-spin {
+        to { transform: rotate(360deg); }
+    }
+    .ctr-submit__note {
+        margin: 0;
+        font-size: .82rem;
+        line-height: 1.55;
+        color: var(--ctr-muted);
+        max-width: 52ch;
+    }
+
+    /* ---------- RESPONSIVE ---------- */
+    @@media (max-width: 960px) {
+        .ctr-grid {
+            grid-template-columns: 1fr;
+            gap: 32px;
+        }
+        .ctr-editorial {
+            position: static;
+            flex-direction: row;
+            align-items: flex-start;
+            gap: 20px;
+        }
+        .ctr-editorial__media {
+            flex: 0 0 42%;
+            aspect-ratio: 1 / 1;
+        }
+        .ctr-editorial__head { margin-top: 0; }
+        .ctr-editorial .ctr-steps { display: none; }
+    }
+
+    @@media (max-width: 640px) {
+        .ctr-hero { padding: 48px 0 56px; }
+        .ctr-hero__inner,
+        .ctr-grid { padding: 0 18px; }
+        .ctr-hero__note { font-size: .78rem; padding: 10px 14px; gap: 8px; }
+        .ctr-editorial {
+            flex-direction: column;
+        }
+        .ctr-editorial__media {
+            width: 100%;
+            flex: none;
+            aspect-ratio: 4 / 3;
+        }
+        .ctr-editorial .ctr-steps { display: flex; }
+        .ctr-form {
+            padding: 22px 18px 26px;
+            border-radius: 16px;
+        }
+        .ctr-section { padding: 22px 0; }
+        .ctr-row--2, .ctr-row--3 { grid-template-columns: 1fr; }
+        .ctr-input, .ctr-textarea { font-size: 16px; } /* avoid iOS zoom */
+        .ctr-submit__btn { width: 100%; }
+    }
+
+    @@media (prefers-reduced-motion: reduce) {
+        .ctr-page *, .ctr-page *::before, .ctr-page *::after {
+            animation-duration: .001ms !important;
+            animation-iteration-count: 1 !important;
+            transition-duration: .001ms !important;
+        }
+        .ctr-editorial__media:hover img { transform: none; }
+        .ctr-submit__btn:hover { transform: none; }
+    }
+</style>
+}
+
+<div class="ctr-page">
+
+    <!-- ================= HERO ================= -->
+    <section class="ctr-hero" aria-labelledby="ctr-hero-title">
+        <div class="ctr-hero__bg" aria-hidden="true">
+            <img
+                src="https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&w=2400&q=80"
+                alt=""
+                loading="eager" />
+        </div>
+        <div class="ctr-hero__inner">
+            <p class="ctr-eyebrow">Bespoke travel planning</p>
+            <h1 class="ctr-hero__title" id="ctr-hero-title">Your journey. Your&nbsp;way.</h1>
+            <p class="ctr-hero__lede">
+                Tell us what you have in mind. We'll help shape a journey around your destination,
+                travel dates, preferences, and budget.
+            </p>
+            <p class="ctr-hero__note">
+                <span class="ctr-hero__note-icon" aria-hidden="true">i</span>
+                <span>This is a trip request, not a confirmed booking. Our team will review your details and prepare an offer.</span>
+            </p>
+        </div>
+    </section>
+
+    <!-- ================= SPLIT ================= -->
+    <section class="ctr-main">
+        <div class="ctr-grid">
+
+            <!-- ---------- LEFT: editorial + process ---------- -->
+            <aside class="ctr-editorial" aria-labelledby="ctr-process-title">
+                <div class="ctr-editorial__media">
+                    <img
+                        src="https://images.unsplash.com/photo-1488646953014-85cb44e25828?auto=format&fit=crop&w=900&q=80"
+                        alt=""
+                        loading="lazy" />
+                    <span class="ctr-editorial__badge">
+                        <span class="ctr-editorial__badge-dot" aria-hidden="true"></span>
+                        Karnel · Custom Journeys
+                    </span>
+                </div>
+
+                <div class="ctr-editorial__head">
+                    <span class="ctr-editorial__eyebrow">The Process</span>
+                    <h2 class="ctr-editorial__title" id="ctr-process-title">How we build your journey</h2>
+                    <p class="ctr-editorial__lede">
+                        Three simple steps from your first idea to a tailored offer prepared by our team.
+                    </p>
+                </div>
+
+                <ol class="ctr-steps">
+                    <li class="ctr-steps__item">
+                        <span class="ctr-steps__num" aria-hidden="true">01</span>
+                        <h3 class="ctr-steps__title">Share your travel requirements</h3>
+                        <p class="ctr-steps__text">Tell us your destination, dates, travellers, and the services you need.</p>
+                    </li>
+                    <li class="ctr-steps__item">
+                        <span class="ctr-steps__num" aria-hidden="true">02</span>
+                        <h3 class="ctr-steps__title">Our team reviews your request</h3>
+                        <p class="ctr-steps__text">We check availability, feasibility, and the details that matter for your journey.</p>
+                    </li>
+                    <li class="ctr-steps__item">
+                        <span class="ctr-steps__num" aria-hidden="true">03</span>
+                        <h3 class="ctr-steps__title">We prepare a suitable travel offer</h3>
+                        <p class="ctr-steps__text">You receive an itinerary and offer prepared around your brief — no obligation.</p>
+                    </li>
+                </ol>
+            </aside>
+
+            <!-- ---------- RIGHT: form ---------- -->
+            <div class="ctr-form-col">
+                <form asp-action="Create" method="post" class="ctr-form" id="ctr-form">
+
+                    <div asp-validation-summary="ModelOnly"
+                         class="ctr-val-summary"></div>
+
+                    <!-- Section A -->
+                    <fieldset class="ctr-section">
+                        <legend class="ctr-section__legend">
+                            <span class="ctr-section__num" aria-hidden="true">01</span>
+                            <span class="ctr-section__title">Where are you dreaming of going?</span>
+                        </legend>
+
+                        <div class="ctr-field">
+                            <label asp-for="Destination" class="ctr-label"></label>
+                            <input asp-for="Destination" class="ctr-input"
+                                   placeholder="e.g. Hunza Valley, Skardu, Naran" autocomplete="off" />
+                            <span asp-validation-for="Destination" class="ctr-error"></span>
+                        </div>
+
+                        <div class="ctr-row ctr-row--2">
+                            <div class="ctr-field">
+                                <label asp-for="DepartureDate" class="ctr-label"></label>
+                                <input asp-for="DepartureDate" class="ctr-input" />
+                                <span asp-validation-for="DepartureDate" class="ctr-error"></span>
+                            </div>
+                            <div class="ctr-field">
+                                <label asp-for="ReturnDate" class="ctr-label"></label>
+                                <input asp-for="ReturnDate" class="ctr-input" />
+                                <span asp-validation-for="ReturnDate" class="ctr-error"></span>
+                            </div>
+                        </div>
+                    </fieldset>
+
+                    <!-- Section B -->
+                    <fieldset class="ctr-section">
+                        <legend class="ctr-section__legend">
+                            <span class="ctr-section__num" aria-hidden="true">02</span>
+                            <span class="ctr-section__title">Who is coming along?</span>
+                        </legend>
+
+                        <div class="ctr-row ctr-row--2">
+                            <div class="ctr-field">
+                                <label asp-for="Adults" class="ctr-label"></label>
+                                <div class="ctr-stepper">
+                                    <button type="button" class="ctr-stepper__btn" data-step="-1" aria-label="Decrease adults">?</button>
+                                    <input asp-for="Adults" class="ctr-stepper__input" min="0" />
+                                    <button type="button" class="ctr-stepper__btn" data-step="1" aria-label="Increase adults">+</button>
+                                </div>
+                                <span asp-validation-for="Adults" class="ctr-error"></span>
+                            </div>
+                            <div class="ctr-field">
+                                <label asp-for="Children" class="ctr-label"></label>
+                                <div class="ctr-stepper">
+                                    <button type="button" class="ctr-stepper__btn" data-step="-1" aria-label="Decrease children">?</button>
+                                    <input asp-for="Children" class="ctr-stepper__input" min="0" />
+                                    <button type="button" class="ctr-stepper__btn" data-step="1" aria-label="Increase children">+</button>
+                                </div>
+                                <span asp-validation-for="Children" class="ctr-error"></span>
+                            </div>
+                        </div>
+                    </fieldset>
+
+                    <!-- Section C -->
+                    <fieldset class="ctr-section">
+                        <legend class="ctr-section__legend">
+                            <span class="ctr-section__num" aria-hidden="true">03</span>
+                            <span class="ctr-section__title">Let's understand your budget.</span>
+                        </legend>
+
+                        <div class="ctr-field">
+                            <label asp-for="BudgetPKR" class="ctr-label">Budget</label>
+                            <div class="ctr-input-group">
+                                <span class="ctr-input-group__prefix" aria-hidden="true">PKR</span>
+                                <input asp-for="BudgetPKR" class="ctr-input"
+                                       inputmode="decimal"
+                                       placeholder="e.g. 250,000" />
+                            </div>
+                            <p class="ctr-hint">Total budget in Pakistani Rupees (PKR).</p>
+                            <span asp-validation-for="BudgetPKR" class="ctr-error"></span>
+                        </div>
+                    </fieldset>
+
+                    <!-- Section D -->
+                    <fieldset class="ctr-section">
+                        <legend class="ctr-section__legend">
+                            <span class="ctr-section__num" aria-hidden="true">04</span>
+                            <span class="ctr-section__title">What would make your journey complete?</span>
+                        </legend>
+
+                        <div class="ctr-field">
+                            <label asp-for="ServiceNeeds" class="ctr-label"></label>
+                            <textarea asp-for="ServiceNeeds" class="ctr-textarea" rows="3"
+                                      placeholder="e.g. Transport, hotels, guided tours, airport transfers"></textarea>
+                            <span asp-validation-for="ServiceNeeds" class="ctr-error"></span>
+                        </div>
+                    </fieldset>
+
+                    <!-- Section E -->
+                    <fieldset class="ctr-section">
+                        <legend class="ctr-section__legend">
+                            <span class="ctr-section__num" aria-hidden="true">05</span>
+                            <span class="ctr-section__title">How can we reach you?</span>
+                        </legend>
+
+                        <div class="ctr-field">
+                            <label asp-for="CustomerName" class="ctr-label"></label>
+                            <input asp-for="CustomerName" class="ctr-input" autocomplete="name" />
+                            <span asp-validation-for="CustomerName" class="ctr-error"></span>
+                        </div>
+
+                        <div class="ctr-row ctr-row--2">
+                            <div class="ctr-field">
+                                <label asp-for="Phone" class="ctr-label"></label>
+                                <input asp-for="Phone" type="tel" class="ctr-input"
+                                       autocomplete="tel" placeholder="+92 3XX XXXXXXX" />
+                                <span asp-validation-for="Phone" class="ctr-error"></span>
+                            </div>
+                            <div class="ctr-field">
+                                <label asp-for="Email" class="ctr-label"></label>
+                                <input asp-for="Email" type="email" class="ctr-input"
+                                       autocomplete="email" placeholder="you@example.com" />
+                                <span asp-validation-for="Email" class="ctr-error"></span>
+                            </div>
+                        </div>
+                    </fieldset>
+
+                    <!-- Section F -->
+                    <fieldset class="ctr-section">
+                        <legend class="ctr-section__legend">
+                            <span class="ctr-section__num" aria-hidden="true">06</span>
+                            <span class="ctr-section__title">Anything else we should know?</span>
+                        </legend>
+
+                        <div class="ctr-field">
+                            <label asp-for="AdditionalRequirements" class="ctr-label"></label>
+                            <textarea asp-for="AdditionalRequirements" class="ctr-textarea" rows="4"
+                                      placeholder="Preferences, special requirements, accessibility needs, or notes about your journey."></textarea>
+                            <span asp-validation-for="AdditionalRequirements" class="ctr-error"></span>
+                        </div>
+                    </fieldset>
+
+                    <!-- Submit -->
+                    <div class="ctr-submit">
+                        <button type="submit" class="ctr-submit__btn">Send my trip request</button>
+                        <p class="ctr-submit__note">
+                            Our team will review your request and contact you with the next steps.
+                        </p>
+                    </div>
+                </form>
+            </div>
+
+        </div>
+    </section>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+
+    <script>
+        /* ============================================================
+           CUSTOM TRIP REQUEST — Interactions
+           ============================================================ */
+        (function () {
+            'use strict';
+
+            var form = document.getElementById('ctr-form');
+            if (!form) { return; }
+
+            /* ---------- 1. Mark required labels (driven by model validation) ---------- */
+            form.querySelectorAll('input[data-val-required], textarea[data-val-required], select[data-val-required]').forEach(function (field) {
+                var wrap = field.closest('.ctr-field');
+                if (!wrap) return;
+                var label = wrap.querySelector('.ctr-label');
+                if (label) label.classList.add('is-required');
+            });
+
+            /* ---------- 2. Stepper controls (Adults / Children) ---------- */
+            form.querySelectorAll('.ctr-stepper').forEach(function (stepper) {
+                var input = stepper.querySelector('input');
+                if (!input) return;
+
+                stepper.querySelectorAll('[data-step]').forEach(function (btn) {
+                    btn.addEventListener('click', function () {
+                        var delta = parseInt(btn.getAttribute('data-step'), 10) || 0;
+                        var current = parseInt(input.value, 10);
+                        if (isNaN(current)) current = 0;
+                        var next = current + delta;
+
+                        var min = input.getAttribute('min');
+                        var max = input.getAttribute('max');
+                        if (min !== null && min !== '') {
+                            var minVal = parseInt(min, 10);
+                            if (!isNaN(minVal) && next < minVal) next = minVal;
+                        }
+                        if (max !== null && max !== '') {
+                            var maxVal = parseInt(max, 10);
+                            if (!isNaN(maxVal) && next > maxVal) next = maxVal;
+                        }
+
+                        input.value = next;
+                        input.dispatchEvent(new Event('input', { bubbles: true }));
+                        input.dispatchEvent(new Event('change', { bubbles: true }));
+                    });
+                });
+
+                // Keep stepper buttons from triggering form submit if Enter is pressed on them
+                stepper.querySelectorAll('button').forEach(function (b) {
+                    b.addEventListener('keydown', function (e) {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            b.click();
+                        }
+                    });
+                });
+            });
+
+            /* ---------- 3. Submit loading state (only when form passes client validation) ---------- */
+            form.addEventListener('submit', function () {
+                // If jQuery.validate is present and the form is invalid, let it handle it.
+                try {
+                    if (window.jQuery && window.jQuery.fn && window.jQuery.fn.valid) {
+                        if (!window.jQuery(form).valid()) { return; }
+                    }
+                } catch (e) { /* fall through: let the browser/server decide */ }
+
+                var btn = form.querySelector('button[type="submit"]');
+                if (!btn) return;
+                btn.disabled = true;
+                btn.classList.add('is-loading');
+                btn.setAttribute('aria-busy', 'true');
+                btn.textContent = 'Sending…';
+            });
+
+            /* ---------- 4. Clear input-validation-error styling as user fixes fields ---------- */
+            form.addEventListener('input', function (e) {
+                var el = e.target;
+                if (!el || !el.classList) return;
+                if (el.classList.contains('input-validation-error')) {
+                    el.classList.remove('input-validation-error');
+                }
+                var wrap = el.closest('.ctr-field');
+                if (wrap) {
+                    var err = wrap.querySelector('.field-validation-error');
+                    if (err) {
+                        err.classList.remove('field-validation-error');
+                        err.classList.add('field-validation-valid');
+                        err.textContent = '';
+                    }
+                }
+            });
+        })();
+    </script>
+}

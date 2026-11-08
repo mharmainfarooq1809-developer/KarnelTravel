@@ -1,0 +1,50 @@
+@model IReadOnlyList<KarnelTravel.Models.Booking>
+@{
+    ViewData["Title"] = "My Bookings";
+}
+<section class="container" style="padding:64px 20px;">
+    <p class="eyebrow">Customer account</p>
+    <h1>My bookings</h1>
+    <p>Review your booking requests and current status. A request is confirmed only after administrative confirmation.</p>
+
+    @if (TempData["BookingMessage"] is string message)
+    {
+        <p class="notice">@message</p>
+    }
+    @if (TempData["BookingError"] is string error)
+    {
+        <p class="notice">@error</p>
+    }
+
+    @if (Model.Count == 0)
+    {
+        <p class="notice">You do not have any bookings yet.</p>
+    }
+    else
+    {
+        <div class="listing-grid">
+            @foreach (var booking in Model)
+            {
+                <article class="listing-card">
+                    <div class="listing-content">
+                        <div class="section-label">@booking.ServiceType</div>
+                        <h2>@booking.ServiceName</h2>
+                        <p><strong>Reference:</strong> @booking.ReferenceNumber</p>
+                        <p><strong>Date:</strong> @booking.BookingDate.ToString("dd MMM yyyy")</p>
+                        <p><strong>Status:</strong> @booking.Status</p>
+                        @if (booking.EstimatedTotalPKR.HasValue)
+                        {
+                            <p><strong>Estimated amount:</strong> @booking.EstimatedTotalPKR.Value.ToString("N0") PKR</p>
+                        }
+                        @if (booking.Status.Equals("Pending", StringComparison.OrdinalIgnoreCase) || booking.Status.Equals("Confirmed", StringComparison.OrdinalIgnoreCase))
+                        {
+                            <form asp-action="CancelBooking" asp-route-id="@booking.Id" method="post">
+                                <button type="submit" class="button">Cancel booking</button>
+                            </form>
+                        }
+                    </div>
+                </article>
+            }
+        </div>
+    }
+</section>

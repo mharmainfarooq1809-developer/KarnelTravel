@@ -1,5 +1,4 @@
-﻿
-using System;
+﻿using System;
 using System.ComponentModel.DataAnnotations;
 
 namespace KarnelTravel.Models;
@@ -10,6 +9,9 @@ public class Booking
 
     [Required, StringLength(30)]
     public string ReferenceNumber { get; set; } = string.Empty;
+
+    [StringLength(80)]
+    public string? IdempotencyKey { get; set; }
 
     [Required, StringLength(100)]
     public string CustomerName { get; set; } = string.Empty;
@@ -22,6 +24,8 @@ public class Booking
 
     [StringLength(256)]
     public string? OwnerEmail { get; set; }
+    public int? CustomerId { get; set; }
+    public CustomerAccount? Customer { get; set; }
 
     [Required, StringLength(30)]
     public string ServiceType { get; set; } = string.Empty;
@@ -88,4 +92,21 @@ public class Booking
     public string? TripType { get; set; }
 
     public TourDeparture? TourDeparture { get; set; }
+    public ICollection<BookingTicket> Tickets { get; set; } = new List<BookingTicket>();
+    public ICollection<BookingStatusHistory> StatusHistory { get; set; } = new List<BookingStatusHistory>();
+    public ICollection<CustomerNotification> Notifications { get; set; } = new List<CustomerNotification>();
+    public ICollection<EmailDeliveryAttempt> EmailDeliveryAttempts { get; set; } = new List<EmailDeliveryAttempt>();
+
+    public static bool CanTransition(string currentStatus, string nextStatus)
+    {
+        if (string.Equals(currentStatus, nextStatus, StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        return currentStatus switch
+        {
+            "Pending" => nextStatus is "Confirmed" or "Rejected" or "Cancelled",
+            "Confirmed" => nextStatus is "Completed" or "Cancelled",
+            _ => false
+        };
+    }
 }

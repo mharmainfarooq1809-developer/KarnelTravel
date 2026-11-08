@@ -64,6 +64,14 @@ namespace KarnelTravel.Controllers
                     .ThenBy(r => r.Name)
                     .ToListAsync(),
 
+                Packages = await _context.TourPackages
+                    .AsNoTracking()
+                    .Include(p => p.Departures)
+                    .Where(p => p.DestinationId == destination.Id && p.IsPublished)
+                    .OrderBy(p => p.DisplayOrder)
+                    .ThenBy(p => p.Name)
+                    .ToListAsync(),
+
                 Resorts = await _context.Resorts
                     .AsNoTracking()
                     .Where(r =>

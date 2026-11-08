@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.IO;
 using KarnelTravel.ViewModels;
 
 namespace KarnelTravel.Tests;
@@ -40,5 +41,31 @@ public sealed class KarnelAiChatContractTests
 
         Assert.Equal(inputMode, response?.InputMode);
         Assert.Equal("request-123", response?.RequestId);
+    }
+
+    [Fact]
+    public void Voice_script_uses_a_dedicated_turn_without_populating_text_input()
+    {
+        var path = FindWorkspaceFile("KarnelTravel", "wwwroot", "js", "karnel-ai-voice.js");
+        var script = File.ReadAllText(path);
+
+        Assert.Contains("submitVoiceTurn", script);
+        Assert.Contains("inputMode: 'voice'", script);
+        Assert.Contains("voiceConversationKey", script);
+        Assert.DoesNotContain("input.value = (transcript + interim)", script);
+        Assert.DoesNotContain("form.submit()", script);
+    }
+
+    private static string FindWorkspaceFile(params string[] parts)
+    {
+        var directory = new DirectoryInfo(Directory.GetCurrentDirectory());
+        while (directory != null)
+        {
+            var candidate = Path.Combine(new[] { directory.FullName }.Concat(parts).ToArray());
+            if (File.Exists(candidate)) return candidate;
+            directory = directory.Parent;
+        }
+
+        throw new FileNotFoundException("Workspace file was not found.", Path.Combine(parts));
     }
 }

@@ -9,6 +9,9 @@ public class TripInquiry
     [Required, StringLength(30)]
     public string ReferenceNumber { get; set; } = string.Empty;
 
+    [StringLength(80)]
+    public string? IdempotencyKey { get; set; }
+
     [Required, StringLength(100)]
     public string CustomerName { get; set; } = string.Empty;
 
@@ -17,6 +20,9 @@ public class TripInquiry
 
     [StringLength(256)]
     public string? Email { get; set; }
+
+    [StringLength(256)]
+    public string? OwnerEmail { get; set; }
 
     [Required, StringLength(1000)]
     public string Destinations { get; set; } = string.Empty;
@@ -40,6 +46,19 @@ public class TripInquiry
 
     [StringLength(2000)]
     public string? AdditionalRequirements { get; set; }
+
+    [StringLength(2000)]
+    public string? AdminNotes { get; set; }
+
+    [StringLength(2000)]
+    public string? ProposedOffer { get; set; }
+
+    [StringLength(80)]
+    public string? OfferIdempotencyKey { get; set; }
+
+    public DateTime? OfferAcceptedAt { get; set; }
+
+    public int? ConvertedBookingId { get; set; }
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 }

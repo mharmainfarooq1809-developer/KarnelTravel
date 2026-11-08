@@ -31,6 +31,20 @@
         IsDiscoverMore ? "menu__link menu__link--toggle is-active" : "menu__link menu__link--toggle";
 
     private string BodyClass => ViewData["BodyClass"] as string ?? string.Empty;
+
+    private string FooterLink(string controller, string action = "Index", object? routeValues = null, string? fragment = null)
+    {
+        var destination = Url.Action(action, controller, routeValues) ?? "/";
+        if (!string.IsNullOrWhiteSpace(fragment))
+            destination += fragment.StartsWith("#", StringComparison.Ordinal) ? fragment : $"#{fragment}";
+
+        if (string.Equals(CurrentController, "Landing", StringComparison.OrdinalIgnoreCase) && User.Identity?.IsAuthenticated != true)
+        {
+            return Url.Action("Login", "Account", new { returnUrl = destination }) ?? destination;
+        }
+
+        return destination;
+    }
 }
 @{
     var websiteContent = ViewBag.WebsiteContent as KarnelTravel.Models.WebsiteContent
@@ -1943,7 +1957,7 @@
                 </a>
 
                 <div class="header-actions">
-                    <a class="header-link" href="@Url.Action("Index", "Search")">Explore</a>
+                    <a class="header-link" href="@Url.Action("Index", "Destinations")">Explore</a>
                     <a class="karnel-ai-link" href="@Url.Action("Index", "KarnelAI")" aria-label="Open Karnel AI travel assistant">
                         <span class="karnel-ai-link__icon" aria-hidden="true">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
@@ -2169,6 +2183,18 @@
                                         </span>
                                     </a>
                                 </li>
+                                <li class="menu__item" data-preview="account">
+                                    <a class="@MenuLinkClass("Customer")" href="@(User.IsInRole("Customer") || User.IsInRole("User") ? Url.Action("Dashboard", "Customer") : User.IsInRole("Admin") ? Url.Action("Dashboard", "Admin") : Url.Action("Login", "Account"))">
+                                        <span class="menu__index">06</span>
+                                        <span class="menu__text">@(User.IsInRole("Customer") || User.IsInRole("User") ? "My dashboard" : User.IsInRole("Admin") ? "Admin workspace" : "Sign in")</span>
+                                        <span class="menu__arrow" aria-hidden="true">
+                                            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor"
+                                                 stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="M3 8h10M9 4l4 4-4 4" />
+                                            </svg>
+                                        </span>
+                                    </a>
+                                </li>
 
                             </ol>
                         </nav>
@@ -2230,7 +2256,7 @@
 
             <div class="mf__content">
                 <div class="mf__brand">
-                    <a class="mf-brand__logo" href="@Url.Action("Index", "Home")" aria-label="Karnel Travel Guide — home">
+                    <a class="mf-brand__logo" href="@FooterLink("Home")" aria-label="Karnel Travel Guide — home">
                         <span class="mf-brand__mark" aria-hidden="true">
                             <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.6">
                                 <circle cx="16" cy="16" r="13" />
@@ -2259,35 +2285,57 @@
                 <nav class="mf__col mf__col--menu" aria-label="Journey">
                     <h3 class="mf-col__title">Journey</h3>
                     <ul class="mf-col__list">
-                        <li><a href="@Url.Action("Index", "Home")">Journey Home</a></li>
-                        <li><a href="@Url.Action("Index", "About")">Our Story</a></li>
-                        <li><a href="@Url.Action("Index", "Search")">Explore</a></li>
-                        <li><a href="@Url.Action("Advanced", "Search")">Advanced Discovery</a></li>
-                        <li><a href="@Url.Action("Index", "Information")">Discover More</a></li>
+                        <li><a href="@FooterLink("Home")">Journey Home</a></li>
+                        <li><a href="@FooterLink("About")">Our Story</a></li>
+                        <li><a href="@FooterLink("Search")">Explore</a></li>
+                        <li><a href="@FooterLink("Search", "Advanced")">Advanced Discovery</a></li>
+                        <li><a href="@FooterLink("Information")">Discover More</a></li>
                     </ul>
                 </nav>
 
                 <nav class="mf__col" aria-label="Essentials">
                     <h3 class="mf-col__title">Essentials</h3>
                     <ul class="mf-col__list">
-                        <li><a href="@Url.Action("Index", "Destinations")">Destinations</a></li>
-                        <li><a href="@Url.Action("Index", "Transport")">Transport</a></li>
-                        <li><a href="@Url.Action("Index", "Hotels")">Hotels</a></li>
-                        <li><a href="@Url.Action("Index", "Restaurants")">Restaurants</a></li>
-                        <li><a href="@Url.Action("Index", "Resorts")">Resorts</a></li>
-                        <li><a href="@Url.Action("Index", "Experiences")">Experiences</a></li>
-                        <li><a href="@Url.Action("Index", "Tours")">Tour Packages</a></li>
+                        <li><a href="@FooterLink("Destinations")">Destinations</a></li>
+                        <li><a href="@FooterLink("Transport")">Transport</a></li>
+                        <li><a href="@FooterLink("Hotels")">Hotels</a></li>
+                        <li><a href="@FooterLink("Restaurants")">Restaurants</a></li>
+                        <li><a href="@FooterLink("Resorts")">Resorts</a></li>
+                        <li><a href="@FooterLink("Experiences")">Experiences</a></li>
+                        <li><a href="@FooterLink("Tours")">Tour Packages</a></li>
                     </ul>
                 </nav>
 
                 <nav class="mf__col" aria-label="More from Karnel">
                     <h3 class="mf-col__title">More from Karnel</h3>
                     <ul class="mf-col__list">
-                        <li><a href="@Url.Action("Index", "Contact")">Get in Touch</a></li>
-                        <li><a href="@Url.Action("Index", "Contact")#inquiry-form">Inquiry Form</a></li>
-                        <li><a href="@Url.Action("Index", "Contact")#feedback-form">Feedback Form</a></li>
-                        <li><a href="@Url.Action("Login", "Account", new { returnUrl = Context.Request.Path + Context.Request.QueryString })">Account sign in</a></li>
-                        <li><a href="@Url.Action("Index", "Contact", new { category = "Tour or destination inquiry" })">Request a booking</a></li>
+                        <li><a href="@FooterLink("Contact")">Get in Touch</a></li>
+                        <li><a href="@FooterLink("Contact", "Index", null, "#inquiry-form")">Inquiry Form</a></li>
+                        <li><a href="@FooterLink("Contact", "Index", null, "#feedback-form")">Feedback Form</a></li>
+                        @if (User.Identity?.IsAuthenticated == true)
+                        {
+                            if (User.IsInRole("Customer") || User.IsInRole("User"))
+                            {
+                                <li><a href="@Url.Action("Dashboard", "Customer")">My dashboard</a></li>
+                                <li><a href="@Url.Action("Bookings", "Customer")">My bookings</a></li>
+                                <li><a href="@Url.Action("Profile", "Customer")">My profile</a></li>
+                            }
+                            else if (User.IsInRole("Admin"))
+                            {
+                                <li><a href="@Url.Action("Dashboard", "Admin")">Admin workspace</a></li>
+                                <li><a href="@Url.Action("Bookings", "Admin")">Manage bookings</a></li>
+                            }
+                            <li>
+                                <form asp-controller="Account" asp-action="Logout" method="post">
+                                    <button type="submit">Sign out</button>
+                                </form>
+                            </li>
+                        }
+                        else
+                        {
+                            <li><a href="@Url.Action("Login", "Account", new { returnUrl = Context.Request.Path + Context.Request.QueryString })">Account sign in</a></li>
+                        }
+                        <li><a href="@FooterLink("Contact", "Index", new { category = "Tour or destination inquiry" })">Request a booking</a></li>
                     </ul>
                 </nav>
             </div>

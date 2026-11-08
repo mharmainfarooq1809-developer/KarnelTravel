@@ -15,6 +15,7 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using System.Security.Claims;
 
 
 namespace KarnelTravel.Controllers;
@@ -28,19 +29,105 @@ public class AdminController : Controller
     private readonly IWebsiteContentService _websiteContentService;
     private readonly ISettingsService _settingsService;
     private readonly IAuditLogService _auditLogService;
+    private readonly IBookingStatusService _bookingStatusService;
 
     public AdminController(
         ApplicationDbContext context,
         IWebHostEnvironment environment,
         IWebsiteContentService websiteContentService,
         ISettingsService settingsService,
-        IAuditLogService auditLogService)
+        IAuditLogService auditLogService,
+        IBookingStatusService bookingStatusService)
     {
         _context = context;
         _environment = environment;
         _websiteContentService = websiteContentService;
         _settingsService = settingsService;
         _auditLogService = auditLogService;
+        _bookingStatusService = bookingStatusService;
+    }
+
+    [HttpGet("Experiences")]
+    public async Task<IActionResult> Experiences()
+    {
+        var model = await _context.Experiences.AsNoTracking()
+            .OrderBy(x => x.DisplayOrder).ThenBy(x => x.Name)
+            .Select(x => new AdminExperienceRowViewModel
+            {
+                Id = x.Id, Name = x.Name, Category = x.Category, Location = x.Location,
+                StartingPrice = x.StartingPrice, IsPublished = x.IsPublished,
+                IsFeatured = x.IsFeatured, DisplayOrder = x.DisplayOrder
+            }).ToListAsync();
+        return View(model);
+    }
+
+    [HttpGet("Experiences/Create")]
+    public IActionResult CreateExperience() => View("ExperienceEditor", new AdminExperienceFormViewModel { IsPublished = true });
+
+    [HttpPost("Experiences/Create")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> CreateExperience(AdminExperienceFormViewModel model)
+    {
+        if (!ModelState.IsValid) return View("ExperienceEditor", model);
+        _context.Experiences.Add(ToExperience(model));
+        await _context.SaveChangesAsync();
+        TempData["SuccessMessage"] = "Experience created successfully.";
+        return RedirectToAction(nameof(Experiences));
+    }
+
+    [HttpGet("Experiences/Edit/{id:int}")]
+    public async Task<IActionResult> EditExperience(int id)
+    {
+        var experience = await _context.Experiences.FindAsync(id);
+        return experience is null ? NotFound() : View("ExperienceEditor", AdminExperienceFormViewModel.FromEntity(experience));
+    }
+
+    [HttpPost("Experiences/Edit/{id:int}")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> EditExperience(int id, AdminExperienceFormViewModel model)
+    {
+        if (id != model.Id) return BadRequest();
+        if (!ModelState.IsValid) return View("ExperienceEditor", model);
+        var experience = await _context.Experiences.FindAsync(id);
+        if (experience is null) return NotFound();
+        ApplyExperience(experience, model);
+        await _context.SaveChangesAsync();
+        TempData["SuccessMessage"] = "Experience updated successfully.";
+        return RedirectToAction(nameof(Experiences));
+    }
+
+    [HttpPost("Experiences/Delete/{id:int}")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> DeleteExperience(int id)
+    {
+        var experience = await _context.Experiences.FindAsync(id);
+        if (experience is null) return NotFound();
+        if (await _context.Bookings.AnyAsync(x => x.ServiceType == "Experience" && x.ServiceName == experience.Name))
+        {
+            TempData["ErrorMessage"] = "This experience cannot be deleted because it has booking records. Unpublish it instead.";
+            return RedirectToAction(nameof(Experiences));
+        }
+        _context.Experiences.Remove(experience);
+        await _context.SaveChangesAsync();
+        TempData["SuccessMessage"] = "Experience deleted successfully.";
+        return RedirectToAction(nameof(Experiences));
+    }
+
+    private static Experience ToExperience(AdminExperienceFormViewModel model)
+    {
+        var entity = new Experience();
+        ApplyExperience(entity, model);
+        return entity;
+    }
+
+    private static void ApplyExperience(Experience entity, AdminExperienceFormViewModel model)
+    {
+        entity.Name = model.Name.Trim(); entity.Category = model.Category.Trim(); entity.Location = model.Location.Trim();
+        entity.Duration = model.Duration.Trim(); entity.ImageUrl = model.ImageUrl?.Trim();
+        entity.ShortDescription = model.ShortDescription?.Trim(); entity.Description = model.Description?.Trim();
+        entity.StartingPrice = model.StartingPrice; entity.Includes = model.Includes?.Trim(); entity.Excludes = model.Excludes?.Trim();
+        entity.IsPublished = model.IsPublished; entity.IsFeatured = model.IsFeatured; entity.DisplayOrder = model.DisplayOrder;
+        entity.UpdatedAt = DateTime.UtcNow;
     }
 
 
@@ -583,6 +670,10 @@ public class AdminController : Controller
     {
         ViewData["Title"] = "Add Property";
         ViewData["Section"] = "Stays";
+        ViewBag.Destinations = _context.Destinations
+            .AsNoTracking()
+            .OrderBy(x => x.Name)
+            .ToList();
 
         return View("PropertyForm", new AdminPropertyFormViewModel());
     }
@@ -598,11 +689,15 @@ public class AdminController : Controller
     {
         ViewData["Title"] = "Add Property";
         ViewData["Section"] = "Stays";
+        ViewBag.Destinations = await GetPropertyDestinationsAsync();
 
         if (!ValidatePropertyForm(model))
         {
             return View("PropertyForm", model);
         }
+
+        if (!await ValidatePropertyDestinationAsync(model))
+            return View("PropertyForm", model);
 
         var slug = CreatePropertySlug(model.Name);
 
@@ -682,7 +777,15 @@ public class AdminController : Controller
                 break;
         }
 
-        await _context.SaveChangesAsync();
+        try
+        {
+            await _context.SaveChangesAsync();
+        }
+        catch (DbUpdateException)
+        {
+            ModelState.AddModelError(nameof(model.DestinationId), "The selected destination is no longer available. Select an existing destination and try again.");
+            return View("PropertyForm", model);
+        }
 
         TempData["SuccessMessage"] =
             $"{model.Category} added successfully.";
@@ -729,7 +832,7 @@ public class AdminController : Controller
                         IsPublished = item.IsPublished,
                         IsFeatured = item.IsFeatured,
                         DisplayOrder = item.DisplayOrder,
-                        DestinationId = item.DestinationId
+                        DestinationId = item.DestinationId ?? 0
                     };
                     break;
                 }
@@ -758,7 +861,7 @@ public class AdminController : Controller
                         IsPublished = item.IsPublished,
                         IsFeatured = item.IsFeatured,
                         DisplayOrder = item.DisplayOrder,
-                        DestinationId = item.DestinationId
+                        DestinationId = item.DestinationId ?? 0
                     };
                     break;
                 }
@@ -786,7 +889,7 @@ public class AdminController : Controller
                         IsPublished = item.IsPublished,
                         IsFeatured = item.IsFeatured,
                         DisplayOrder = item.DisplayOrder,
-                        DestinationId = item.DestinationId
+                        DestinationId = item.DestinationId ?? 0
                     };
                     break;
                 }
@@ -798,6 +901,7 @@ public class AdminController : Controller
         ViewData["Title"] = $"Edit {model.Category}";
         ViewData["Section"] = "Stays";
         ViewData["PropertyId"] = id;
+        ViewBag.Destinations = await GetPropertyDestinationsAsync();
 
         return View("PropertyForm", model);
     }
@@ -815,11 +919,15 @@ public class AdminController : Controller
         ViewData["Title"] = "Edit Property";
         ViewData["Section"] = "Stays";
         ViewData["PropertyId"] = id;
+        ViewBag.Destinations = await GetPropertyDestinationsAsync();
 
         if (!ValidatePropertyForm(model))
         {
             return View("PropertyForm", model);
         }
+
+        if (!await ValidatePropertyDestinationAsync(model))
+            return View("PropertyForm", model);
 
         var slug = CreatePropertySlug(model.Name);
 
@@ -906,7 +1014,15 @@ public class AdminController : Controller
                 return BadRequest("Invalid property category.");
         }
 
-        await _context.SaveChangesAsync();
+        try
+        {
+            await _context.SaveChangesAsync();
+        }
+        catch (DbUpdateException)
+        {
+            ModelState.AddModelError(nameof(model.DestinationId), "The selected destination is no longer available. Select an existing destination and try again.");
+            return View("PropertyForm", model);
+        }
 
         TempData["SuccessMessage"] =
             $"{model.Category} updated successfully.";
@@ -1037,6 +1153,23 @@ public class AdminController : Controller
 
         return ModelState.IsValid;
     }
+
+    private async Task<bool> ValidatePropertyDestinationAsync(AdminPropertyFormViewModel model)
+    {
+        if (model.DestinationId <= 0 || !await _context.Destinations.AnyAsync(x => x.Id == model.DestinationId))
+        {
+            ModelState.AddModelError(nameof(model.DestinationId), "Select an existing destination or leave this field empty.");
+            return false;
+        }
+
+        return true;
+    }
+
+    private Task<List<Destination>> GetPropertyDestinationsAsync() =>
+        _context.Destinations
+            .AsNoTracking()
+            .OrderBy(x => x.Name)
+            .ToListAsync();
 
     // =========================================================
     // PROPERTY SLUG VALIDATION
@@ -1842,6 +1975,41 @@ public class AdminController : Controller
         return View(bookings);
     }
 
+    [HttpGet("Customers")]
+    public async Task<IActionResult> Customers(CancellationToken cancellationToken)
+    {
+        var customers = await _context.CustomerAccounts
+            .AsNoTracking()
+            .Select(customer => new AdminCustomerViewModel
+            {
+                Name = customer.FullName,
+                Email = customer.Email,
+                PhoneNumber = customer.PhoneNumber,
+                AccountType = "Customer account",
+                EmailConfirmed = customer.EmailConfirmed,
+                CreatedAt = customer.CreatedAt,
+                BookingCount = customer.Bookings.Count()
+            })
+            .ToListAsync(cancellationToken);
+
+        var legacyCustomers = await _context.AdminUsers
+            .AsNoTracking()
+            .Where(user => user.Role != "Admin")
+            .Select(user => new AdminCustomerViewModel
+            {
+                Name = user.DisplayName,
+                Email = user.Email,
+                AccountType = "Legacy customer account",
+                EmailConfirmed = true,
+                CreatedAt = DateTime.MinValue,
+                BookingCount = _context.Bookings.Count(booking => booking.OwnerEmail == user.Email.ToLower())
+            })
+            .ToListAsync(cancellationToken);
+
+        customers.AddRange(legacyCustomers);
+        return View(customers.OrderBy(x => x.Name).ToList());
+    }
+
     // =========================================================
     // BOOKING DETAILS
     // =========================================================
@@ -1850,6 +2018,9 @@ public class AdminController : Controller
     public async Task<IActionResult> BookingDetails(int id)
     {
         var booking = await _context.Bookings
+                .Include(b => b.Customer)
+                .Include(b => b.Tickets)
+                .Include(b => b.StatusHistory)
             .AsNoTracking()
             .FirstOrDefaultAsync(b => b.Id == id);
 
@@ -1876,6 +2047,7 @@ public class AdminController : Controller
         {
         "Pending",
         "Confirmed",
+        "Rejected",
         "Completed",
         "Cancelled"
     };
@@ -1913,6 +2085,13 @@ public class AdminController : Controller
             {
                 await transaction.RollbackAsync();
                 return NotFound();
+            }
+
+            if (!Booking.CanTransition(booking.Status, status))
+            {
+                await transaction.RollbackAsync();
+                TempData["BookingError"] = $"A booking cannot move from {booking.Status} to {status}.";
+                return RedirectToAction(nameof(BookingDetails), new { id });
             }
 
             // Only tour bookings linked to a scheduled departure
@@ -2013,11 +2192,20 @@ public class AdminController : Controller
                 departure.UpdatedAt = DateTime.UtcNow;
             }
 
-            booking.Status = status;
             booking.AdminNotes = adminNotes?.Trim();
-            booking.UpdatedAt = DateTime.UtcNow;
-
-            await _context.SaveChangesAsync();
+            var changedByUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!await _bookingStatusService.ChangeStatusAsync(
+                    booking,
+                    status,
+                    changedByUserId,
+                    "Admin",
+                    adminNotes,
+                    HttpContext.RequestAborted))
+            {
+                await transaction.RollbackAsync();
+                TempData["BookingError"] = $"A booking cannot move from {booking.Status} to {status}.";
+                return RedirectToAction(nameof(BookingDetails), new { id });
+            }
 
             await _auditLogService.RecordAsync(
                 User.Identity?.Name,
@@ -2662,6 +2850,60 @@ public class AdminController : Controller
         ViewData["Section"] = "Inquiries";
 
         return View(inquiry);
+    }
+
+    [HttpGet("CustomTripRequests")]
+    public async Task<IActionResult> CustomTripRequests(string? status, string? search)
+    {
+        var query = _context.TripInquiries.AsNoTracking().AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(status) && !string.Equals(status, "all", StringComparison.OrdinalIgnoreCase))
+            query = query.Where(x => x.Status == status);
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var term = search.Trim();
+            query = query.Where(x => x.ReferenceNumber.Contains(term) || x.CustomerName.Contains(term) || x.Destinations.Contains(term));
+        }
+
+        ViewData["Title"] = "Custom Trip Requests";
+        ViewData["Section"] = "Inquiries";
+        return View(await query.OrderByDescending(x => x.CreatedAt).ToListAsync());
+    }
+
+    [HttpGet("CustomTripRequests/{id:int}")]
+    public async Task<IActionResult> CustomTripRequestDetails(int id)
+    {
+        var inquiry = await _context.TripInquiries.FirstOrDefaultAsync(x => x.Id == id);
+        if (inquiry == null)
+            return NotFound();
+
+        ViewData["Title"] = "Custom Trip Request";
+        ViewData["Section"] = "Inquiries";
+        return View(inquiry);
+    }
+
+    [HttpPost("CustomTripRequests/{id:int}/Update")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> UpdateCustomTripRequest(int id, string status, string? adminNotes, string? proposedOffer)
+    {
+        var allowedStatuses = new[] { "Pending", "In Progress", "Offer Prepared", "Accepted", "Declined", "Cancelled" };
+        if (!allowedStatuses.Contains(status) || adminNotes?.Length > 2000 || proposedOffer?.Length > 2000)
+        {
+            TempData["InquiryError"] = "Invalid custom request update.";
+            return RedirectToAction(nameof(CustomTripRequestDetails), new { id });
+        }
+
+        var inquiry = await _context.TripInquiries.FirstOrDefaultAsync(x => x.Id == id);
+        if (inquiry == null)
+            return NotFound();
+
+        inquiry.Status = status;
+        inquiry.AdminNotes = string.IsNullOrWhiteSpace(adminNotes) ? null : adminNotes.Trim();
+        inquiry.ProposedOffer = string.IsNullOrWhiteSpace(proposedOffer) ? null : proposedOffer.Trim();
+        await _context.SaveChangesAsync();
+        TempData["InquirySuccess"] = "Custom trip request updated.";
+        return RedirectToAction(nameof(CustomTripRequestDetails), new { id });
     }
 
     // =========================================================

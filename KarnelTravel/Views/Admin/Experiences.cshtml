@@ -1,0 +1,30 @@
+@model IReadOnlyList<KarnelTravel.ViewModels.AdminExperienceRowViewModel>
+@{ Layout = "~/Views/Shared/_AdminLayout.cshtml"; ViewData["Title"] = "Experiences"; ViewData["Section"] = "Experiences"; }
+
+<section class="admin-page">
+    <div class="admin-page-header">
+        <div><p class="admin-eyebrow">Experience management</p><h1>Experiences</h1><p class="admin-description">Create and manage bookable experiences shown on the public website.</p></div>
+        <a asp-action="CreateExperience" class="admin-button admin-button-primary">+ Add experience</a>
+    </div>
+    @if (TempData["SuccessMessage"] is string success) { <div class="admin-alert admin-alert-success">@success</div> }
+    @if (TempData["ErrorMessage"] is string error) { <div class="admin-alert admin-alert-error">@error</div> }
+    <div class="property-panel">
+        @if (Model.Count == 0)
+        {
+            <p>No experiences exist yet. Add the first experience to publish it.</p>
+        }
+        else
+        {
+            <div style="overflow-x:auto"><table class="admin-table"><thead><tr><th>Name</th><th>Category</th><th>Location</th><th>Price</th><th>Status</th><th>Actions</th></tr></thead><tbody>
+            @foreach (var experience in Model)
+            {
+                <tr>
+                    <td>@experience.Name</td><td>@experience.Category</td><td>@experience.Location</td><td>@(experience.StartingPrice?.ToString("N0") ?? "On request")</td>
+                    <td>@(experience.IsPublished ? "Published" : "Draft")@(experience.IsFeatured ? " · Featured" : "")</td>
+                    <td><a asp-action="EditExperience" asp-route-id="@experience.Id">Edit</a> <form asp-action="DeleteExperience" asp-route-id="@experience.Id" method="post" style="display:inline">@Html.AntiForgeryToken()<button type="submit" onclick="return confirm('Delete this experience?')">Delete</button></form></td>
+                </tr>
+            }
+            </tbody></table></div>
+        }
+    </div>
+</section>

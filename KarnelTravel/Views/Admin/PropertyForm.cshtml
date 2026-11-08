@@ -482,15 +482,16 @@
                 </div>
 
                 <div class="form-field">
-                    <label asp-for="DestinationId">Destination ID</label>
+                    <label asp-for="DestinationId">Destination ID <span>*</span></label>
                     <input asp-for="DestinationId"
                            type="number"
                            min="1"
+                           step="1"
                            class="control"
-                           placeholder="Optional destination ID" />
+                           placeholder="e.g. 1" />
                     <span asp-validation-for="DestinationId" class="field-error"></span>
                     <div class="form-help">
-                        Enter an existing destination ID if this property belongs to a destination.
+                        Enter the ID of an existing destination.
                     </div>
                 </div>
 
@@ -716,6 +717,10 @@
 
             const propertyForm = document.getElementById("propertyForm");
             const saveButton = document.getElementById("saveButton");
+            const destinationIdInput = document.getElementById("DestinationId");
+            const destinationIds = new Set(@Html.Raw(System.Text.Json.JsonSerializer.Serialize(
+                ((IEnumerable<KarnelTravel.Models.Destination>)(ViewBag.Destinations ?? Enumerable.Empty<KarnelTravel.Models.Destination>()))
+                    .Select(x => x.Id))));
 
             function updateCategoryFields() {
                 if (!categorySelect) return;
@@ -798,7 +803,15 @@
             }
 
             if (propertyForm && saveButton) {
-                propertyForm.addEventListener("submit", function () {
+                propertyForm.addEventListener("submit", function (event) {
+                    const destinationId = Number(destinationIdInput?.value);
+                    if (!Number.isInteger(destinationId) || !destinationIds.has(destinationId)) {
+                        event.preventDefault();
+                        alert("There is no destination with ID " + (destinationIdInput?.value || "entered") + ". Enter a valid destination ID.");
+                        destinationIdInput?.focus();
+                        return;
+                    }
+
                     if (propertyForm.checkValidity()) {
                         saveButton.disabled = true;
                         saveButton.innerHTML = "Saving...";

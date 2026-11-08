@@ -2642,51 +2642,52 @@
             </a>
         </div>
 
-        <div class="discover__grid" data-reveal-group>
+        @{ var featuredDestinations = (ViewBag.FeaturedDestinations as IEnumerable<KarnelTravel.Models.Destination>)?.ToList() ?? new List<KarnelTravel.Models.Destination>(); }
+        @if (featuredDestinations.Any())
+        {
+            <div class="discover__grid" data-reveal-group>
             <article class="discover__feature" data-reveal>
-                <img src="https://images.unsplash.com/photo-1519681393784-d120267933ba?auto=format&fit=crop&w=1400&q=80"
-                     alt="Snow-capped peaks above Hunza Valley" loading="lazy" decoding="async" />
+                <a href="@Url.Action("Details", "Destinations", new { slug = featuredDestinations[0].Slug })">
+                @if (!string.IsNullOrWhiteSpace(featuredDestinations[0].ImageUrl))
+                {
+                    <img src="@featuredDestinations[0].ImageUrl" alt="@featuredDestinations[0].Name" loading="lazy" decoding="async" />
+                }
                 <div class="discover__feature-body">
-                    <span class="discover__region">Gilgit-Baltistan</span>
-                    <h3>Hunza Valley</h3>
-                    <p>
-                        Famous for apricot orchards, forts and views of Rakaposhi — a scenic
-                        base for northern exploration and long, unhurried mornings.
-                    </p>
-                    <a class="link-arrow link-arrow--light" href="@Url.Action("Index", "Destinations")">
-                        Explore Hunza
-                    </a>
+                    <span class="discover__region">@featuredDestinations[0].Region</span>
+                    <h3>@featuredDestinations[0].Name</h3>
+                    <p>@featuredDestinations[0].ShortDescription</p>
+                    <span class="link-arrow link-arrow--light">Explore @featuredDestinations[0].Name</span>
                 </div>
+                </a>
             </article>
 
             <div class="discover__stack">
+                @foreach (var destination in featuredDestinations.Skip(1).Take(2))
+                {
                 <article class="discover__item" data-reveal>
+                    <a href="@Url.Action("Details", "Destinations", new { slug = destination.Slug })">
                     <div class="discover__item-media">
-                        <img src="https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=800&q=75"
-                             alt="Mountain lake near Skardu" loading="lazy" decoding="async" />
+                        @if (!string.IsNullOrWhiteSpace(destination.ImageUrl))
+                        {
+                            <img src="@destination.ImageUrl" alt="@destination.Name" loading="lazy" decoding="async" />
+                        }
                     </div>
                     <div class="discover__item-body">
-                        <span class="region-tag">Baltistan</span>
-                        <h3>Skardu</h3>
-                        <p>Cold desert, alpine lakes and a gateway to some of the world's highest peaks.</p>
-                        <a class="link-arrow" href="@Url.Action("Index", "Destinations")">Explore Skardu</a>
+                        <span class="region-tag">@destination.Region</span>
+                        <h3>@destination.Name</h3>
+                        <p>@destination.ShortDescription</p>
+                        <span class="link-arrow">Explore @destination.Name</span>
                     </div>
+                    </a>
                 </article>
-
-                <article class="discover__item" data-reveal>
-                    <div class="discover__item-media">
-                        <img src="https://images.unsplash.com/photo-1441974231531-c6227db76b6e?auto=format&fit=crop&w=800&q=75"
-                             alt="Green valley in Swat with pine forest" loading="lazy" decoding="async" />
-                    </div>
-                    <div class="discover__item-body">
-                        <span class="region-tag">Khyber Pakhtunkhwa</span>
-                        <h3>Swat Valley</h3>
-                        <p>Rivers, pine forests and meadow trails — a quieter side of the north.</p>
-                        <a class="link-arrow" href="@Url.Action("Index", "Destinations")">Explore Swat</a>
-                    </div>
-                </article>
+                }
             </div>
-        </div>
+            </div>
+        }
+        else
+        {
+            <div class="notice">Published destinations will appear here when they are available.</div>
+        }
     </div>
 </section>
 

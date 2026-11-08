@@ -37,6 +37,9 @@ public class BookingsController : Controller
     [HttpGet("/Bookings/Create")]
     public async Task<IActionResult> Create(string serviceType, int serviceId)
     {
+        if (string.Equals(serviceType, "Destination", StringComparison.OrdinalIgnoreCase))
+            return RedirectToAction("Create", "TripRequests", new { destination = serviceId });
+
         var service = await FindService(serviceType, serviceId);
 
         if (service == null)
@@ -81,6 +84,9 @@ public class BookingsController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create(BookingRequestViewModel model)
     {
+        if (string.Equals(model.ServiceType, "Destination", StringComparison.OrdinalIgnoreCase))
+            return RedirectToAction("Create", "TripRequests", new { destination = model.ServiceId });
+
         var service = await FindService(
             model.ServiceType,
             model.ServiceId
@@ -676,6 +682,16 @@ public class BookingsController : Controller
             }
         }
 
+        if (service.Type == "Experience")
+        {
+            var experience = await _context.Experiences
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x => x.Id == service.Id && x.IsPublished);
+
+            if (experience?.StartingPrice is > 0)
+                totalFare = experience.StartingPrice.Value * model.Adults;
+        }
+
         // =====================================================
         // RETURN FORM IF VALIDATION FAILS
         // =====================================================
@@ -695,12 +711,26 @@ public class BookingsController : Controller
             return View("~/Views/Bookings/Create.cshtml", model);
         }
 
+        var idempotencyKey = string.IsNullOrWhiteSpace(model.IdempotencyKey)
+            ? Guid.NewGuid().ToString("N")
+            : model.IdempotencyKey.Trim();
+        var ownerEmail = User.FindFirstValue(ClaimTypes.Email)?.Trim().ToLowerInvariant();
+        var existingBooking = await _context.Bookings.AsNoTracking()
+            .FirstOrDefaultAsync(x => x.IdempotencyKey == idempotencyKey && x.OwnerEmail == ownerEmail);
+        if (existingBooking != null)
+            return RedirectToAction(nameof(Confirmation), new { reference = existingBooking.ReferenceNumber });
+
         // =====================================================
         // CREATE BOOKING
         // =====================================================
 
+        int? customerId = int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var parsedCustomerId) && User.IsInRole("Customer")
+            ? parsedCustomerId
+            : null;
+
         var booking = new Booking
         {
+            IdempotencyKey = idempotencyKey,
             ReferenceNumber =
                 $"{settings.BookingReferencePrefix}-{Guid.NewGuid():N}"[..Math.Min(settings.BookingReferencePrefix.Length + 13, 30)].ToUpperInvariant(),
 
@@ -713,6 +743,7 @@ public class BookingsController : Controller
                 : model.Email.Trim(),
 
             OwnerEmail = User.FindFirstValue(ClaimTypes.Email)?.Trim().ToLowerInvariant(),
+            CustomerId = customerId,
 
             ServiceType = service.Type,
 
@@ -775,6 +806,9 @@ public class BookingsController : Controller
                 booking.HotelId = service.Id;
                 break;
 
+            case "Experience":
+                break;
+
             case "Resort":
                 booking.ResortId = service.Id;
                 break;
@@ -827,10 +861,12 @@ public class BookingsController : Controller
             return NotFound();
         }
 
+        var ownerEmail = User.FindFirstValue(ClaimTypes.Email)?.Trim().ToLowerInvariant();
         var booking = await _context.Bookings
             .AsNoTracking()
             .FirstOrDefaultAsync(
-                b => b.ReferenceNumber == reference
+                b => b.ReferenceNumber == reference &&
+                    (User.IsInRole("Admin") || b.OwnerEmail == ownerEmail)
             );
 
         if (booking == null)
@@ -891,19 +927,6 @@ public class BookingsController : Controller
 
         switch (serviceType.Trim().ToLowerInvariant())
         {
-            case "destination":
-                {
-                    var item = await _context.Destinations
-                        .AsNoTracking()
-                        .FirstOrDefaultAsync(x =>
-                            x.Id == serviceId &&
-                            x.IsPublished);
-
-                    return item == null
-                        ? null
-                        : new ServiceInfo("Destination", item.Id, item.Name);
-                }
-
             case "hotel":
                 {
                     var item = await _context.Hotels
@@ -954,6 +977,17 @@ public class BookingsController : Controller
                     return item == null
                         ? null
                         : new ServiceInfo("Tour", item.Id, item.Name);
+                }
+
+            case "experience":
+                {
+                    var item = await _context.Experiences
+                        .AsNoTracking()
+                        .FirstOrDefaultAsync(x => x.Id == serviceId && x.IsPublished);
+
+                    return item == null
+                        ? null
+                        : new ServiceInfo("Experience", item.Id, item.Name);
                 }
 
             case "transport":

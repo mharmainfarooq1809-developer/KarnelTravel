@@ -835,6 +835,59 @@
             </div>
         </section>
 
+        <section class="listing-section" id="packages">
+            <div class="container">
+                <div class="section-heading">
+                    <div>
+                        <div class="section-label">Published experiences</div>
+                        <h2>Trips to @destination.Name</h2>
+                        <p class="section-description">Choose a published package with real dates and availability, or request a custom itinerary below.</p>
+                    </div>
+                </div>
+
+                @if (Model.Packages.Any())
+                {
+                    <div class="listing-grid">
+                        @foreach (var package in Model.Packages)
+                        {
+                            var departures = package.Departures
+                                .Where(d => d.IsActive && d.DepartureDate.Date >= DateTime.Today && d.AvailableSeats > 0)
+                                .OrderBy(d => d.DepartureDate)
+                                .ToList();
+                            <article class="listing-card">
+                                @if (!string.IsNullOrWhiteSpace(package.ImageUrl))
+                                {
+                                    <img class="listing-image" src="@package.ImageUrl" alt="@package.Name" />
+                                }
+                                <div class="listing-content">
+                                    <div class="section-label">@package.DurationDays day package</div>
+                                    <h3>@package.Name</h3>
+                                    <p>@package.ShortDescription</p>
+                                    @if (package.PricePerAdult.HasValue)
+                                    {
+                                        <p><strong>From @package.PricePerAdult.Value.ToString("N0") PKR per adult</strong></p>
+                                    }
+                                    @if (departures.Any())
+                                    {
+                                        <p>@departures.Count available departure(s), from @departures[0].DepartureDate.ToString("dd MMM yyyy")</p>
+                                        <a class="button" href="/Bookings/Create?serviceType=Tour&amp;serviceId=@package.Id">Book this package →</a>
+                                    }
+                                    else
+                                    {
+                                        <p class="notice">No published departure is currently available.</p>
+                                    }
+                                </div>
+                            </article>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="notice">There are no published packages for this destination yet.</div>
+                }
+            </div>
+        </section>
+
         <!-- TRIP INQUIRY -->
         <section class="planning" id="plan-trip">
             <div class="container">
@@ -845,7 +898,7 @@
                     and the arrangements you need. Our team can review your request.
                 </p>
 
-                <a class="button" href="@destinationInquiryUrl">
+                <a class="button" href="/TripRequests/Create?destination=@destination.Id">
                     Plan a trip to @destination.Name →
                 </a>
 

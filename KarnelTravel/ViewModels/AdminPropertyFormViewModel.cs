@@ -53,5 +53,7 @@ public class AdminPropertyFormViewModel
     [Range(0, 100000)]
     public int DisplayOrder { get; set; }
 
-    public int? DestinationId { get; set; }
+    [Required(ErrorMessage = "Destination ID is required.")]
+    [Range(1, int.MaxValue, ErrorMessage = "Enter a valid positive destination ID.")]
+    public int DestinationId { get; set; }
 }

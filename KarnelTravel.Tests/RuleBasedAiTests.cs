@@ -6,6 +6,12 @@ public sealed class RuleBasedAiTests
 {
     [Theory]
     [InlineData("hello", AIIntent.Greeting)]
+    [InlineData("Hi, my name is Harman", AIIntent.Introduction)]
+    [InlineData("What is my name?", AIIntent.NameRecall)]
+    [InlineData("Thank you", AIIntent.Gratitude)]
+    [InlineData("Okay", AIIntent.Acknowledgement)]
+    [InlineData("Goodbye", AIIntent.Farewell)]
+    [InlineData("Can you clarify?", AIIntent.Clarification)]
     [InlineData("find a hotel", AIIntent.HotelSearch)]
     [InlineData("show restaurants", AIIntent.RestaurantSearch)]
     [InlineData("plan a 4 day trip", AIIntent.TripPlanning)]
@@ -51,5 +57,14 @@ public sealed class RuleBasedAiTests
         Assert.Equal("Hunza", result.DestinationA);
         Assert.Equal("Skardu", result.DestinationB);
         Assert.Equal(new[] { "Hunza", "Skardu" }, result.Destinations);
+    }
+
+    [Fact]
+    public void Natural_conversation_does_not_use_travel_fallback_intents()
+    {
+        var detector = new IntentDetector();
+
+        Assert.NotEqual(AIIntent.Unsupported, detector.Detect("Hi, my name is Harman"));
+        Assert.NotEqual(AIIntent.Unsupported, detector.Detect("Thank you"));
     }
 }

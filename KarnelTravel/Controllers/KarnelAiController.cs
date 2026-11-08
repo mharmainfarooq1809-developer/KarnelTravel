@@ -4,6 +4,7 @@ using KarnelTravel.Models;
 using KarnelTravel.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace KarnelTravel.Controllers;
 
@@ -78,7 +79,9 @@ public sealed class KarnelAiController : Controller
 
         var inputMode = string.Equals(request.InputMode, "voice", StringComparison.OrdinalIgnoreCase) ? "voice" : "text";
         var requestId = string.IsNullOrWhiteSpace(request.RequestId) ? Guid.NewGuid().ToString("N") : request.RequestId;
-        var result = await _ai.ProcessAsync(new AIRequest(request.Message.Trim(), request.ConversationKey ?? Guid.NewGuid().ToString("N")), cancellationToken);
+        var ownerEmail = User.FindFirstValue(ClaimTypes.Email)?.Trim().ToLowerInvariant();
+        var anonymousOwnerKey = GetAnonymousOwnerKey();
+        var result = await _ai.ProcessAsync(new AIRequest(request.Message.Trim(), request.ConversationKey ?? Guid.NewGuid().ToString("N"), ownerEmail, User.IsInRole("Admin"), anonymousOwnerKey), cancellationToken);
         return Ok(new KarnelAiChatResponse { Success = true, Reply = result.Text, Sources = result.Listings, Intent = result.Intent.ToString(), ConversationKey = result.ConversationKey, InputMode = inputMode, RequestId = requestId });
     }
 
@@ -89,8 +92,27 @@ public sealed class KarnelAiController : Controller
         if (!ModelState.IsValid)
             return BadRequest(new KarnelAiPlannerResponse { Error = "Enter a destination and a trip duration from 1 to 60 days." });
 
-        var result = await _ai.ProcessAsync(new AIRequest($"Plan a {request.DurationDays} day trip to {request.Destination}. Budget {request.Budget}", request.ConversationKey ?? Guid.NewGuid().ToString("N")), cancellationToken);
+        var ownerEmail = User.FindFirstValue(ClaimTypes.Email)?.Trim().ToLowerInvariant();
+        var result = await _ai.ProcessAsync(new AIRequest($"Plan a {request.DurationDays} day trip to {request.Destination}. Budget {request.Budget}", request.ConversationKey ?? Guid.NewGuid().ToString("N"), ownerEmail, User.IsInRole("Admin"), GetAnonymousOwnerKey()), cancellationToken);
         return Ok(new KarnelAiPlannerResponse { Success = true, Itinerary = result.Text, Sources = result.Listings, ConversationKey = result.ConversationKey });
+    }
+
+    private string GetAnonymousOwnerKey()
+    {
+        const string cookieName = "KarnelAI.AnonymousOwner";
+        if (Request.Cookies.TryGetValue(cookieName, out var existing) && Guid.TryParse(existing, out _))
+            return existing;
+
+        var value = Guid.NewGuid().ToString("N");
+        Response.Cookies.Append(cookieName, value, new CookieOptions
+        {
+            HttpOnly = true,
+            SameSite = SameSiteMode.Strict,
+            Secure = Request.IsHttps,
+            IsEssential = true,
+            MaxAge = TimeSpan.FromDays(30)
+        });
+        return value;
     }
 
 }

@@ -1,0 +1,763 @@
+@model KarnelTravel.Models.BookingTicket
+@{
+    ViewData["Title"] = "Digital Booking Ticket";
+
+    var existing = ViewData["BodyClass"] as string ?? string.Empty;
+    ViewData["BodyClass"] = (existing + " has-hero").Trim();
+
+    var statusText = Model.Booking.Status?.ToString() ?? "—";
+    var statusLower = statusText.ToLowerInvariant();
+    var statusClass = statusLower.Contains("confirm") || statusLower.Contains("approv") ? "is-confirmed"
+        : statusLower.Contains("cancel") || statusLower.Contains("reject") || statusLower.Contains("fail") ? "is-cancelled"
+        : statusLower.Contains("pending") || statusLower.Contains("wait") ? "is-pending"
+        : "is-neutral";
+}
+
+@section Styles {
+<style>
+    /* ============================================================
+       QR BOOKING TICKET — Premium digital travel document
+       Uses layout tokens; local aliases keep it readable
+       ============================================================ */
+    .qrt-page {
+        --qrt-forest-deep: var(--forest-deep, #14271F);
+        --qrt-forest:      var(--forest, #20382D);
+        --qrt-ivory:       var(--ivory, #F8F6F0);
+        --qrt-sage:        var(--sage, #A8B59A);
+        --qrt-sand:        var(--sand, #E9DFC9);
+        --qrt-white:       var(--white, #FFFFFF);
+        --qrt-charcoal:    var(--charcoal, #242923);
+        --qrt-muted:       var(--muted, #73796F);
+        --qrt-line-soft:   #E8E5D8;
+
+        background: var(--qrt-ivory);
+        color: var(--qrt-charcoal);
+        font-family: var(--sans, 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
+        -webkit-font-smoothing: antialiased;
+    }
+    .qrt-page *, .qrt-page *::before, .qrt-page *::after { box-sizing: border-box; }
+
+    /* ---------- INTRO (dark, header transparent via has-hero) ---------- */
+    .qrt-intro {
+        position: relative;
+        isolation: isolate;
+        overflow: hidden;
+        padding: calc(var(--header-h) + 56px) 0 clamp(52px, 7vw, 88px);
+        background: var(--qrt-forest-deep);
+        color: #EAF0E7;
+    }
+    .qrt-intro__bg {
+        position: absolute;
+        inset: 0;
+        z-index: -1;
+        pointer-events: none;
+    }
+    .qrt-intro__bg img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        object-position: center 35%;
+    }
+    .qrt-intro__bg::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background:
+            linear-gradient(180deg, rgba(20,39,31,.62) 0%, rgba(20,39,31,.86) 62%, rgba(20,39,31,.95) 100%),
+            radial-gradient(70% 60% at 22% 30%, rgba(143,168,136,.18), transparent 60%);
+    }
+    .qrt-intro__inner {
+        position: relative;
+        max-width: 920px;
+        margin: 0 auto;
+        padding: 0 24px;
+    }
+    .qrt-eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 12px;
+        margin: 0 0 22px;
+        font-size: .7rem;
+        font-weight: 500;
+        letter-spacing: .3em;
+        text-transform: uppercase;
+        color: var(--qrt-sage);
+    }
+    .qrt-eyebrow::before {
+        content: "";
+        width: 30px;
+        height: 1px;
+        background: currentColor;
+        opacity: .7;
+    }
+    .qrt-intro__title {
+        font-family: var(--serif, 'DM Serif Display', Georgia, serif);
+        font-weight: 400;
+        font-size: clamp(2rem, 4.4vw, 3.2rem);
+        line-height: 1.08;
+        letter-spacing: -.02em;
+        color: #F6F4EC;
+        margin: 0;
+        max-width: 18ch;
+    }
+    .qrt-intro__lede {
+        margin: 20px 0 0;
+        max-width: 54ch;
+        font-size: clamp(.94rem, 1.3vw, 1.04rem);
+        line-height: 1.68;
+        color: rgba(234,240,231,.82);
+    }
+
+    /* ---------- STAGE ---------- */
+    .qrt-stage {
+        padding: clamp(40px, 6vw, 72px) 0 clamp(56px, 8vw, 96px);
+    }
+    .qrt-container {
+        max-width: 920px;
+        margin: 0 auto;
+        padding: 0 24px;
+    }
+
+    /* ---------- TICKET ---------- */
+    .qrt-ticket {
+        position: relative;
+        background: var(--qrt-white);
+        border-radius: 22px;
+        overflow: hidden;
+        box-shadow:
+            0 1px 2px rgba(20,39,31,.04),
+            0 8px 24px rgba(20,39,31,.06),
+            0 32px 80px rgba(20,39,31,.08);
+        animation: qrt-ticket-in .6s cubic-bezier(.22,.61,.36,1) both;
+    }
+    @@keyframes qrt-ticket-in {
+        from { opacity: 0; transform: translateY(12px); }
+        to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .qrt-ticket__body {
+        display: grid;
+        grid-template-columns: minmax(0, 1.1fr) minmax(0, .9fr);
+        align-items: stretch;
+    }
+
+    /* ---------- LEFT: booking info ---------- */
+    .qrt-ticket__main {
+        padding: clamp(28px, 4vw, 44px) clamp(24px, 3.4vw, 40px);
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+        min-width: 0;
+    }
+
+    .qrt-brand {
+        display: inline-flex;
+        align-items: center;
+        gap: 12px;
+    }
+    .qrt-brand__mark {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 38px;
+        height: 38px;
+        border-radius: 11px;
+        background: var(--qrt-forest-deep);
+        color: var(--qrt-sand);
+        flex: 0 0 auto;
+    }
+    .qrt-brand__mark svg { width: 22px; height: 22px; display: block; }
+    .qrt-brand__text { display: flex; flex-direction: column; line-height: 1.1; }
+    .qrt-brand__name {
+        font-family: var(--serif);
+        font-weight: 400;
+        font-size: 1.08rem;
+        color: var(--qrt-forest-deep);
+    }
+    .qrt-brand__tag {
+        font-size: .58rem;
+        font-weight: 500;
+        letter-spacing: .28em;
+        text-transform: uppercase;
+        color: var(--qrt-muted);
+        margin-top: 3px;
+    }
+
+    .qrt-ref {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        padding: 18px 0 20px;
+        border-top: 1px solid var(--qrt-line-soft);
+        border-bottom: 1px solid var(--qrt-line-soft);
+    }
+    .qrt-ref__label {
+        font-size: .64rem;
+        font-weight: 500;
+        letter-spacing: .24em;
+        text-transform: uppercase;
+        color: var(--qrt-muted);
+    }
+    .qrt-ref__value {
+        font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+        font-size: clamp(1.35rem, 2.4vw, 1.7rem);
+        font-weight: 500;
+        letter-spacing: .06em;
+        color: var(--qrt-forest-deep);
+        word-break: break-all;
+        line-height: 1.2;
+    }
+
+    .qrt-meta {
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+    .qrt-meta__item { display: flex; flex-direction: column; gap: 4px; }
+    .qrt-meta__item dt {
+        font-size: .64rem;
+        font-weight: 500;
+        letter-spacing: .22em;
+        text-transform: uppercase;
+        color: var(--qrt-muted);
+    }
+    .qrt-meta__item dd {
+        margin: 0;
+        font-size: .98rem;
+        font-weight: 500;
+        color: var(--qrt-charcoal);
+        word-break: break-all;
+    }
+
+    .qrt-service {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        padding-top: 20px;
+        border-top: 1px solid var(--qrt-line-soft);
+    }
+    .qrt-service__label {
+        font-size: .64rem;
+        font-weight: 500;
+        letter-spacing: .22em;
+        text-transform: uppercase;
+        color: var(--qrt-muted);
+    }
+    .qrt-service__name {
+        font-family: var(--serif);
+        font-weight: 400;
+        font-size: clamp(1.35rem, 2.2vw, 1.7rem);
+        line-height: 1.15;
+        letter-spacing: -.01em;
+        color: var(--qrt-forest-deep);
+        margin: 0;
+        overflow-wrap: anywhere;
+    }
+    .qrt-service__type {
+        font-size: .82rem;
+        color: var(--qrt-muted);
+        letter-spacing: .02em;
+    }
+
+    .qrt-status {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-top: auto;
+        padding-top: 22px;
+        border-top: 1px solid var(--qrt-line-soft);
+    }
+    .qrt-status__label {
+        font-size: .64rem;
+        font-weight: 500;
+        letter-spacing: .22em;
+        text-transform: uppercase;
+        color: var(--qrt-muted);
+    }
+    .qrt-status__pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        align-self: flex-start;
+        padding: 7px 14px 7px 12px;
+        border-radius: 999px;
+        background: rgba(168,181,154,.14);
+        color: var(--qrt-forest-deep);
+        font-size: .82rem;
+        font-weight: 500;
+        letter-spacing: .02em;
+        border: 1px solid rgba(168,181,154,.3);
+    }
+    .qrt-status__dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: var(--qrt-sage);
+        box-shadow: 0 0 0 3px rgba(168,181,154,.24);
+        flex: 0 0 auto;
+    }
+    .qrt-status.is-confirmed .qrt-status__pill {
+        background: rgba(168,181,154,.2);
+        border-color: rgba(168,181,154,.42);
+    }
+    .qrt-status.is-confirmed .qrt-status__dot {
+        background: #5A8B5F;
+        box-shadow: 0 0 0 3px rgba(90,139,95,.22);
+    }
+    .qrt-status.is-pending .qrt-status__pill {
+        background: rgba(233,223,201,.55);
+        border-color: rgba(180,155,100,.35);
+        color: #6E5A1F;
+    }
+    .qrt-status.is-pending .qrt-status__dot {
+        background: #B8923D;
+        box-shadow: 0 0 0 3px rgba(184,146,61,.2);
+    }
+    .qrt-status.is-cancelled .qrt-status__pill {
+        background: rgba(184,92,60,.1);
+        border-color: rgba(184,92,60,.28);
+        color: #8B3B21;
+    }
+    .qrt-status.is-cancelled .qrt-status__dot {
+        background: #B85C3C;
+        box-shadow: 0 0 0 3px rgba(184,92,60,.18);
+    }
+
+    /* ---------- RIGHT: QR centerpiece ---------- */
+    .qrt-ticket__qr {
+        position: relative;
+        padding: clamp(28px, 4vw, 44px) clamp(24px, 3.4vw, 40px);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 18px;
+        border-left: 1px dashed rgba(20,39,31,.16);
+        background:
+            radial-gradient(circle at 50% 40%, rgba(168,181,154,.06), transparent 62%),
+            var(--qrt-white);
+        min-width: 0;
+        text-align: center;
+    }
+    /* Circle markers on the vertical perforation */
+    .qrt-ticket__qr::before,
+    .qrt-ticket__qr::after {
+        content: "";
+        position: absolute;
+        left: -7px;
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        background: var(--qrt-ivory);
+        border: 1px solid rgba(20,39,31,.15);
+        box-shadow: inset 0 1px 2px rgba(0,0,0,.04);
+        pointer-events: none;
+        z-index: 1;
+    }
+    .qrt-ticket__qr::before { top: -7px; }
+    .qrt-ticket__qr::after  { bottom: -7px; }
+
+    .qrt-qr__eyebrow {
+        font-size: .66rem;
+        font-weight: 500;
+        letter-spacing: .28em;
+        text-transform: uppercase;
+        color: var(--qrt-sage);
+    }
+    .qrt-qr__frame {
+        padding: 16px;
+        background: var(--qrt-white);
+        border: 1px solid var(--qrt-line-soft);
+        border-radius: 14px;
+        box-shadow:
+            0 1px 2px rgba(20,39,31,.03),
+            0 6px 16px rgba(20,39,31,.04);
+        max-width: 260px;
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .qrt-qr__image {
+        display: block;
+        width: 100%;
+        max-width: 220px;
+        height: auto;
+        aspect-ratio: 1 / 1;
+    }
+    .qrt-qr__note {
+        margin: 0;
+        max-width: 28ch;
+        font-size: .82rem;
+        line-height: 1.55;
+        color: var(--qrt-muted);
+    }
+
+    /* ---------- TICKET FOOTER ---------- */
+    .qrt-ticket__foot {
+        position: relative;
+        padding: 20px clamp(24px, 3.4vw, 40px);
+        border-top: 1px dashed rgba(20,39,31,.16);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        background: linear-gradient(180deg, rgba(248,246,240,.55) 0%, var(--qrt-white) 45%);
+    }
+    /* Circle markers on the horizontal perforation */
+    .qrt-ticket__foot::before,
+    .qrt-ticket__foot::after {
+        content: "";
+        position: absolute;
+        top: -7px;
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        background: var(--qrt-ivory);
+        border: 1px solid rgba(20,39,31,.15);
+        box-shadow: inset 0 1px 2px rgba(0,0,0,.04);
+        pointer-events: none;
+        z-index: 1;
+    }
+    .qrt-ticket__foot::before { left: 24px; }
+    .qrt-ticket__foot::after  { right: 24px; }
+
+    .qrt-download {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        padding: 14px 26px;
+        border-radius: 999px;
+        background: var(--qrt-forest-deep);
+        color: var(--qrt-ivory);
+        font-size: .78rem;
+        font-weight: 500;
+        letter-spacing: .14em;
+        text-transform: uppercase;
+        text-decoration: none;
+        border: 1px solid var(--qrt-forest-deep);
+        box-shadow: 0 2px 6px rgba(20,39,31,.08);
+        transition: background .2s ease, transform .2s ease, box-shadow .2s ease;
+    }
+    .qrt-download:hover {
+        background: var(--qrt-forest);
+        border-color: var(--qrt-forest);
+        transform: translateY(-1px);
+        box-shadow: 0 12px 28px rgba(20,39,31,.2);
+    }
+    .qrt-download:active { transform: translateY(0); }
+    .qrt-download:focus-visible {
+        outline: 2px solid var(--qrt-sage);
+        outline-offset: 3px;
+    }
+    .qrt-download__icon {
+        width: 15px;
+        height: 15px;
+        flex: 0 0 auto;
+    }
+
+    /* ---------- QR CONTENTS (collapsible) ---------- */
+    .qrt-qrcontents {
+        margin-top: 24px;
+        background: var(--qrt-white);
+        border: 1px solid var(--qrt-line-soft);
+        border-radius: 14px;
+        overflow: hidden;
+        transition: border-color .2s ease, box-shadow .2s ease;
+    }
+    .qrt-qrcontents[open] {
+        border-color: rgba(20,39,31,.16);
+        box-shadow: 0 4px 14px rgba(20,39,31,.04);
+    }
+    .qrt-qrcontents__summary {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 16px 22px;
+        cursor: pointer;
+        list-style: none;
+        font-size: .84rem;
+        font-weight: 500;
+        letter-spacing: .04em;
+        color: var(--qrt-forest-deep);
+        transition: background .15s ease;
+    }
+    .qrt-qrcontents__summary::-webkit-details-marker { display: none; }
+    .qrt-qrcontents__summary:hover { background: rgba(168,181,154,.06); }
+    .qrt-qrcontents__summary:focus-visible {
+        outline: 2px solid var(--qrt-sage);
+        outline-offset: -2px;
+    }
+    .qrt-qrcontents__chevron {
+        width: 15px;
+        height: 15px;
+        color: var(--qrt-muted);
+        transition: transform .25s ease;
+        flex: 0 0 auto;
+    }
+    .qrt-qrcontents[open] .qrt-qrcontents__chevron { transform: rotate(180deg); }
+    .qrt-qrcontents__body {
+        padding: 16px 22px 20px;
+        border-top: 1px solid var(--qrt-line-soft);
+    }
+    .qrt-qrcontents__pre {
+        margin: 0;
+        padding: 14px 16px;
+        background: #F4F2EA;
+        border: 1px solid var(--qrt-line-soft);
+        border-radius: 8px;
+        font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+        font-size: .78rem;
+        line-height: 1.6;
+        color: var(--qrt-charcoal);
+        white-space: pre-wrap;
+        word-break: break-word;
+        max-height: 320px;
+        overflow: auto;
+        user-select: text;
+    }
+
+    /* ---------- INFO ---------- */
+    .qrt-info {
+        margin-top: 40px;
+        padding: 28px 0 0;
+        border-top: 1px solid var(--qrt-line-soft);
+    }
+    .qrt-info__title {
+        font-family: var(--serif);
+        font-weight: 400;
+        font-size: 1.2rem;
+        line-height: 1.3;
+        color: var(--qrt-forest-deep);
+        margin: 0 0 16px;
+    }
+    .qrt-info__list {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+    .qrt-info__list li {
+        position: relative;
+        padding-left: 22px;
+        font-size: .9rem;
+        line-height: 1.6;
+        color: var(--qrt-muted);
+    }
+    .qrt-info__list li::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: .65em;
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--qrt-sage);
+        opacity: .7;
+    }
+
+    /* ---------- RESPONSIVE ---------- */
+    @@media (max-width: 768px) {
+        .qrt-ticket__body { grid-template-columns: 1fr; }
+        .qrt-ticket__qr {
+            border-left: none;
+            border-top: 1px dashed rgba(20,39,31,.16);
+        }
+        .qrt-ticket__qr::before,
+        .qrt-ticket__qr::after {
+            left: auto;
+            top: -7px;
+            bottom: auto;
+        }
+        .qrt-ticket__qr::before { left: 24px; }
+        .qrt-ticket__qr::after  { right: 24px; left: auto; }
+
+        .qrt-ticket__foot { justify-content: stretch; }
+        .qrt-download { width: 100%; }
+    }
+
+    @@media (max-width: 640px) {
+        .qrt-intro { padding: calc(var(--header-h) + 40px) 0 52px; }
+        .qrt-intro__inner,
+        .qrt-container { padding: 0 16px; }
+        .qrt-stage { padding: 28px 0 56px; }
+
+        .qrt-ticket { border-radius: 18px; }
+        .qrt-ticket__main { padding: 24px 20px; gap: 20px; }
+        .qrt-ticket__qr { padding: 26px 20px; gap: 14px; }
+        .qrt-ticket__foot { padding: 18px 20px; }
+        .qrt-ticket__foot::before { left: 18px; }
+        .qrt-ticket__foot::after  { right: 18px; }
+
+        .qrt-qr__frame { padding: 12px; max-width: 220px; }
+        .qrt-qr__image { max-width: 190px; }
+
+        .qrt-qrcontents__summary { padding: 14px 18px; }
+        .qrt-qrcontents__body { padding: 14px 18px 18px; }
+    }
+
+    @@media (prefers-reduced-motion: reduce) {
+        .qrt-page *, .qrt-page *::before, .qrt-page *::after {
+            animation-duration: .001ms !important;
+            animation-iteration-count: 1 !important;
+            transition-duration: .001ms !important;
+        }
+        .qrt-ticket { animation: none; }
+        .qrt-download:hover { transform: none; }
+    }
+
+    /* ---------- PRINT ---------- */
+  @@media print {
+        .qrt-intro__bg,
+        .qrt-download,
+        .qrt-info { display: none !important; }
+        .qrt-page { background: #fff; }
+        .qrt-intro { padding: 20px 0; background: #fff; color: #000; }
+        .qrt-intro__title { color: #000; }
+        .qrt-intro__lede { color: #333; }
+        .qrt-ticket {
+            box-shadow: none;
+            border: 1px solid #ddd;
+            border-radius: 0;
+        }
+        .qrt-ticket__foot { display: none; }
+    }
+</style>
+}
+
+<div class="qrt-page">
+
+    <!-- ================= INTRO ================= -->
+    <section class="qrt-intro" aria-labelledby="qrt-intro-title">
+        <div class="qrt-intro__bg" aria-hidden="true">
+            <img
+                src="https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&w=2400&q=80"
+                alt=""
+                loading="eager" />
+        </div>
+        <div class="qrt-intro__inner">
+            <p class="qrt-eyebrow">Karnel Travel · Digital Ticket</p>
+            <h1 class="qrt-intro__title" id="qrt-intro-title">Your journey,officially documented.</h1>
+            <p class="qrt-intro__lede">
+                Keep your digital ticket accessible throughout your journey. Your QR code and booking
+                reference contain the information associated with your booking.
+            </p>
+        </div>
+    </section>
+
+    <!-- ================= TICKET ================= -->
+    <section class="qrt-stage">
+        <div class="qrt-container">
+
+            <article class="qrt-ticket" aria-labelledby="qrt-ticket-title">
+                <div class="qrt-ticket__body">
+
+                    <!-- ---------- LEFT: booking info ---------- -->
+                    <div class="qrt-ticket__main">
+                        <header class="qrt-brand">
+                            <span class="qrt-brand__mark" aria-hidden="true">
+                                <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.5">
+                                    <circle cx="16" cy="16" r="13" />
+                                    <path d="M21 11 18.4 18.4 11 21l2.6-7.4z" stroke-linejoin="round" />
+                                </svg>
+                            </span>
+                            <div class="qrt-brand__text">
+                                <span class="qrt-brand__name">Karnel Travel</span>
+                                <span class="qrt-brand__tag">Digital Ticket</span>
+                            </div>
+                        </header>
+
+                        <div class="qrt-ref">
+                            <span class="qrt-ref__label">Ticket Reference</span>
+                            <span class="qrt-ref__value">@Model.TicketReference</span>
+                        </div>
+
+                        <dl class="qrt-meta">
+                            <div class="qrt-meta__item">
+                                <dt>Booking Reference</dt>
+                                <dd>@Model.Booking.ReferenceNumber</dd>
+                            </div>
+                        </dl>
+
+                        <div class="qrt-service">
+                            <span class="qrt-service__label">Service</span>
+                            <h2 class="qrt-service__name" id="qrt-ticket-title">@Model.Booking.ServiceName</h2>
+                            <span class="qrt-service__type">@Model.Booking.ServiceType</span>
+                        </div>
+
+                        <div class="qrt-status @statusClass">
+                            <span class="qrt-status__label">Status</span>
+                            <span class="qrt-status__pill">
+                                <span class="qrt-status__dot" aria-hidden="true"></span>
+                                <span>@statusText</span>
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- ---------- RIGHT: QR ---------- -->
+                    <div class="qrt-ticket__qr">
+                        <span class="qrt-qr__eyebrow">Scan your ticket</span>
+                        <div class="qrt-qr__frame">
+                            <img class="qrt-qr__image"
+                                 alt="QR code for booking @Model.Booking.ReferenceNumber"
+                                 src="data:image/png;base64,@Convert.ToBase64String(Model.QrCodePng)" />
+                        </div>
+                        <p class="qrt-qr__note">
+                            Present this QR code when requested by the service provider.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- ---------- FOOTER: download ---------- -->
+                <div class="qrt-ticket__foot">
+                    <a class="qrt-download"
+                       asp-controller="Ticket"
+                       asp-action="Download"
+                       asp-route-id="@Model.Id">
+                        <svg class="qrt-download__icon" viewBox="0 0 16 16"
+                             fill="none" stroke="currentColor" stroke-width="1.6"
+                             stroke-linecap="round" stroke-linejoin="round"
+                             aria-hidden="true">
+                            <path d="M8 2v8" />
+                            <path d="M4.5 6.5 8 10l3.5-3.5" />
+                            <path d="M2 13h12" />
+                        </svg>
+                        Download PDF Ticket
+                    </a>
+                </div>
+            </article>
+
+            <!-- ---------- QR CONTENTS (collapsed) ---------- -->
+            <details class="qrt-qrcontents">
+                <summary class="qrt-qrcontents__summary">
+                    <span>View QR contents</span>
+                    <svg class="qrt-qrcontents__chevron" viewBox="0 0 16 16"
+                         fill="none" stroke="currentColor" stroke-width="1.6"
+                         stroke-linecap="round" stroke-linejoin="round"
+                         aria-hidden="true">
+                        <path d="M4 6l4 4 4-4" />
+                    </svg>
+                </summary>
+                <div class="qrt-qrcontents__body">
+                    <pre class="qrt-qrcontents__pre">@Model.QrText</pre>
+                </div>
+            </details>
+
+            <!-- ---------- INFO ---------- -->
+            <section class="qrt-info" aria-labelledby="qrt-info-title">
+                <h2 class="qrt-info__title" id="qrt-info-title">Keeping your ticket ready</h2>
+                <ul class="qrt-info__list">
+                    <li>Keep your digital ticket accessible throughout your journey.</li>
+                    <li>Present the QR code when it is requested by the service provider.</li>
+                    <li>Keep your booking reference available if you need to contact support.</li>
+                </ul>
+            </section>
+
+        </div>
+    </section>
+</div>

@@ -9,7 +9,14 @@ public sealed class IntentDetector
 {
     public AIIntent Detect(string text)
     {
-        if (Regex.IsMatch(text, "^\\s*(hi|hello|hey|salam)[!.?\\s]*$", RegexOptions.IgnoreCase)) return AIIntent.Greeting;
+        if (Regex.IsMatch(text, "^\\s*(hi|hello|hey|salam)(?:[,.!]?\\s+(?:my name is|i am|i'm)\\s+[A-Za-z][A-Za-z '-]*)?[!.?\\s]*$", RegexOptions.IgnoreCase))
+            return Regex.IsMatch(text, "\\b(my name is|i am|i'm)\\b", RegexOptions.IgnoreCase) ? AIIntent.Introduction : AIIntent.Greeting;
+        if (Regex.IsMatch(text, "\\b(my name is|i am|i'm)\\s+[A-Za-z][A-Za-z '-]*[.!?]?$", RegexOptions.IgnoreCase)) return AIIntent.Introduction;
+        if (Regex.IsMatch(text, "\\b(what is|what's|do you know)\\s+my name\\b", RegexOptions.IgnoreCase)) return AIIntent.NameRecall;
+        if (Regex.IsMatch(text, "^\\s*(thanks|thank you|thx|appreciate it)[!.?\\s]*$", RegexOptions.IgnoreCase)) return AIIntent.Gratitude;
+        if (Regex.IsMatch(text, "^\\s*(okay|ok|alright|got it|great|sure|yes|no)[!.?\\s]*$", RegexOptions.IgnoreCase)) return AIIntent.Acknowledgement;
+        if (Regex.IsMatch(text, "^\\s*(bye|goodbye|see you|talk to you later)[!.?\\s]*$", RegexOptions.IgnoreCase)) return AIIntent.Farewell;
+        if (Regex.IsMatch(text, "\\b(can you clarify|please clarify|what do you mean|i don't understand|could you explain)\\b", RegexOptions.IgnoreCase)) return AIIntent.Clarification;
         if (Regex.IsMatch(text, "\\b(help|what can you do)\\b", RegexOptions.IgnoreCase)) return AIIntent.Help;
         if (Regex.IsMatch(text, "\\b(compare|versus|\\bvs\\b|difference between)\\b", RegexOptions.IgnoreCase) && (HasDestinationPair(text) || Regex.IsMatch(text, "\\b destinations?\\b", RegexOptions.IgnoreCase))) return AIIntent.DestinationComparison;
         if (Regex.IsMatch(text, "\\b(difference between|hotel and resort|hotel or resort|which is better.*(hotel|resort)|(hotel|resort).*which is better)\\b", RegexOptions.IgnoreCase)) return AIIntent.GeneralTravelInformation;
@@ -32,6 +39,7 @@ public sealed class IntentDetector
         if (Regex.IsMatch(text, "\\b(recommend|suggest|best)\\b", RegexOptions.IgnoreCase)) return AIIntent.DestinationRecommendation;
         if (Regex.IsMatch(text, "\\b(days?|duration)\\b", RegexOptions.IgnoreCase) && !HasKnownDestination(text)) return AIIntent.DestinationRecommendation;
         if (Regex.IsMatch(text, "\\b(where|destination|visit|travel|tour)\\b", RegexOptions.IgnoreCase)) return AIIntent.DestinationInformation;
+        if (Regex.IsMatch(text, "^\\s*(how are you|nice to meet you|who am i|good morning|good evening)[!.?\\s]*$", RegexOptions.IgnoreCase)) return AIIntent.GeneralConversation;
         return AIIntent.Unsupported;
     }
 
@@ -71,9 +79,24 @@ public sealed class ConversationManager
 {
     private readonly ApplicationDbContext _db;
     public ConversationManager(ApplicationDbContext db) => _db = db;
+    public async Task<AIConversationContext> GetContextAsync(string conversationKey, string? ownerEmail, bool isAdmin, string? anonymousOwnerKey, CancellationToken cancellationToken)
+    {
+        var messages = await _db.AIMessages.AsNoTracking()
+            .Where(x => x.Conversation != null && x.Conversation.ConversationKey == conversationKey && x.Role == "user" &&
+                (isAdmin || x.Conversation.OwnerEmail == ownerEmail || (x.Conversation.IsAnonymous && x.Conversation.AnonymousOwnerKey == anonymousOwnerKey)))
+            .OrderByDescending(x => x.Id)
+            .Take(12)
+            .Select(x => x.Content)
+            .ToListAsync(cancellationToken);
+        var name = messages.Select(ExtractName).FirstOrDefault(x => x != null);
+        var destination = messages.SelectMany(x => DestinationNames().Where(d => Regex.IsMatch(x, $"\\b{Regex.Escape(d)}\\b", RegexOptions.IgnoreCase))).FirstOrDefault();
+        return new AIConversationContext(name, destination);
+    }
     public async Task SaveAsync(AIRequest request, AIResponse response, CancellationToken cancellationToken)
     {
-        var conversation = await _db.AIConversations.FirstOrDefaultAsync(x => x.ConversationKey == request.ConversationKey, cancellationToken) ?? new AIConversation { ConversationKey = request.ConversationKey };
+        var conversation = await _db.AIConversations.FirstOrDefaultAsync(x => x.ConversationKey == request.ConversationKey &&
+            (request.IsAdmin || x.OwnerEmail == request.OwnerEmail || (x.IsAnonymous && x.AnonymousOwnerKey == request.AnonymousOwnerKey)), cancellationToken)
+            ?? new AIConversation { ConversationKey = request.ConversationKey, OwnerEmail = request.OwnerEmail, AnonymousOwnerKey = request.AnonymousOwnerKey, IsAnonymous = string.IsNullOrWhiteSpace(request.OwnerEmail) };
         if (conversation.Id == 0) _db.AIConversations.Add(conversation);
         conversation.UpdatedAt = DateTime.UtcNow;
         conversation.MessageCount += 2;
@@ -81,15 +104,30 @@ public sealed class ConversationManager
         conversation.Messages.Add(new AIMessage { Role = "assistant", Content = response.Text, Intent = response.Intent.ToString(), WasSupported = response.Supported });
         await _db.SaveChangesAsync(cancellationToken);
     }
+
+    private static string? ExtractName(string message)
+    {
+        var match = Regex.Match(message, "\\b(?:my name is|i am|i'm)\\s+([A-Za-z][A-Za-z'-]*)", RegexOptions.IgnoreCase);
+        return match.Success ? match.Groups[1].Value : null;
+    }
+
+    private static IEnumerable<string> DestinationNames() => new[] { "Hunza", "Skardu", "Lahore", "Islamabad", "Naran", "Kaghan", "Swat", "Murree" };
 }
 
 public sealed class ResponseBuilder
 {
     private static readonly Regex InternalInstruction = new("\\b(important test instruction|internal (?:ai|administrative|admin)|testing instruction|retrieval metadata|do not reveal|if a traveller asks|if a traveler asks|mention at least|use this approved knowledge|do not invent)\\b", RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
-    public string Build(AIIntent intent, AIEntities entities, IReadOnlyList<TravelAiListing> listings, string? plan = null, IReadOnlyList<AIKnowledgeMatch>? knowledge = null, string? question = null)
+    public string Build(AIIntent intent, AIEntities entities, IReadOnlyList<TravelAiListing> listings, string? plan = null, IReadOnlyList<AIKnowledgeMatch>? knowledge = null, string? question = null, AIConversationContext? context = null)
     {
         if (intent == AIIntent.Greeting) return "Welcome to Karnel Travel. Tell me a destination, stay, dining preference, or trip length and I’ll help you explore published options.";
+        if (intent == AIIntent.Introduction) return $"Nice to meet you, {ExtractName(question) ?? "traveller"}! How can I help you plan your next journey?";
+        if (intent == AIIntent.NameRecall) return context?.UserName is { Length: > 0 } name ? $"Your name is {name}." : "I don't have your name in this conversation yet. What should I call you?";
+        if (intent == AIIntent.Gratitude) return "You're welcome! I'm happy to help with your journey.";
+        if (intent == AIIntent.Acknowledgement) return "Great. What would you like to explore next?";
+        if (intent == AIIntent.Farewell) return "Goodbye! I hope you have a wonderful journey.";
+        if (intent == AIIntent.Clarification) return "Of course. Which part would you like me to clarify?";
+        if (intent == AIIntent.GeneralConversation) return "I'm doing well and ready to help you discover a journey. What would you like to explore?";
         if (intent == AIIntent.Help) return "I can search published destinations, hotels, restaurants, resorts and transport, recommend options, compare listings, estimate known costs, and structure a trip plan.";
         if (plan != null) return plan;
         if (intent == AIIntent.DestinationRecommendation)
@@ -109,9 +147,15 @@ public sealed class ResponseBuilder
             return $"I don't currently have enough approved Karnel information{SubjectSuffix(question)} to provide a reliable destination overview. You can explore the published destinations and listings available in Karnel.";
         if (intent == AIIntent.GeneralTravelInformation)
             return "I don't currently have enough approved Karnel information to answer that reliably. You can explore the published destinations and listings available in Karnel.";
-        if (intent == AIIntent.Unsupported) return "I don't currently have enough approved Karnel information to answer that reliably. You can explore the published destinations and listings available in Karnel.";
+        if (intent == AIIntent.Unsupported) return "I can help with destinations, published hotels, resorts, restaurants, transport, trip planning, packages, and booking guidance. What would you like to explore?";
         if (listings.Count == 0) return EmptySearchMessage(intent, entities.Location);
         return $"I found {listings.Count} published option(s) relevant to your request. Prices are shown only when stored in the Karnel Travel database.";
+    }
+    private static string? ExtractName(string? question)
+    {
+        if (question == null) return null;
+        var match = Regex.Match(question, "\\b(?:my name is|i am|i'm)\\s+([A-Za-z][A-Za-z'-]*)", RegexOptions.IgnoreCase);
+        return match.Success ? match.Groups[1].Value : null;
     }
 
     private static string EmptySearchMessage(AIIntent intent, string? location)
@@ -208,8 +252,18 @@ public sealed class AIEngine : IAIEngine
     {
         var text = Regex.Replace(request.Message ?? string.Empty, "\\s+", " ").Trim();
         if (string.IsNullOrWhiteSpace(text)) return new AIResponse("Please tell me what you would like to explore.", AIIntent.Unsupported, false, Array.Empty<TravelAiListing>(), request.ConversationKey);
+        var context = await _conversation.GetContextAsync(request.ConversationKey, request.OwnerEmail, request.IsAdmin, request.AnonymousOwnerKey, cancellationToken);
         var intent = _intent.Detect(text);
-        var entities = _entities.Extract(text);
+        var contextualText = string.IsNullOrWhiteSpace(context.LastDestination) || !Regex.IsMatch(text, "\\b(there|that destination|this destination)\\b", RegexOptions.IgnoreCase)
+            ? text
+            : $"{text} {context.LastDestination}";
+        var entities = _entities.Extract(contextualText);
+        if (intent is AIIntent.Greeting or AIIntent.Introduction or AIIntent.NameRecall or AIIntent.Gratitude or AIIntent.Acknowledgement or AIIntent.Farewell or AIIntent.Clarification or AIIntent.GeneralConversation)
+        {
+            var conversational = new AIResponse(_responses.Build(intent, entities, Array.Empty<TravelAiListing>(), question: text, context: context), intent, true, Array.Empty<TravelAiListing>(), request.ConversationKey);
+            await _conversation.SaveAsync(request, conversational, cancellationToken);
+            return conversational;
+        }
         var knowledge = intent == AIIntent.DestinationComparison
             ? await SearchComparisonKnowledgeAsync(entities, text, cancellationToken)
             : await _knowledge.SearchAsync(text, cancellationToken);
@@ -253,7 +307,7 @@ public sealed class AIEngine : IAIEngine
             await _conversation.SaveAsync(request, noDestination, cancellationToken);
             return noDestination;
         }
-        var response = new AIResponse(_responses.Build(intent, entities, search.Items, plan, knowledge, text), intent, intent != AIIntent.Unsupported || knowledge.Count > 0, search.Items, request.ConversationKey);
+        var response = new AIResponse(_responses.Build(intent, entities, search.Items, plan, knowledge, text, context), intent, intent != AIIntent.Unsupported || knowledge.Count > 0, search.Items, request.ConversationKey);
         await _conversation.SaveAsync(request, response, cancellationToken);
         return response;
     }

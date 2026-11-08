@@ -1,0 +1,719 @@
+@model KarnelTravel.ViewModels.CustomerBookingsViewModel
+@using System.Linq
+
+@{
+    ViewData["Title"] = "My bookings";
+
+    var bookings    = Model.Bookings;
+    var hasBookings = bookings is not null && bookings.Count > 0;
+    var bookingCount = bookings?.Count ?? 0;
+
+    // Reflect current query state back into the form (no model changes)
+    var currentSearch = Model.Search;
+    var currentStatus = Context.Request.Query["status"].ToString();
+    var currentSort   = Context.Request.Query["sort"].ToString();
+    if (string.IsNullOrEmpty(currentSort)) { currentSort = "newest"; }
+
+    var hasActiveFilter =
+        !string.IsNullOrWhiteSpace(currentSearch) ||
+        !string.IsNullOrEmpty(currentStatus) ||
+        currentSort != "newest";
+}
+
+@section Styles {
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+    <style>
+        /* ============================================================
+           Karnel Travel Guide — My Bookings (Centered Editorial)
+           ============================================================ */
+
+        .krn-bookings {
+            --forest: #14271F;
+            --forest-soft: #1E3A2C;
+            --ivory: #F8F6F0;
+            --sage: #8FA888;
+            --sand: #E8DFC9;
+            --white: #FFFFFF;
+            --ink-60: rgba(20, 39, 31, .62);
+            --ink-40: rgba(20, 39, 31, .42);
+            --hairline: rgba(20, 39, 31, .12);
+
+            background: var(--ivory);
+            color: var(--forest);
+            font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+            -webkit-font-smoothing: antialiased;
+            text-rendering: optimizeLegibility;
+        }
+
+        .krn-bookings *,
+        .krn-bookings *::before,
+        .krn-bookings *::after { box-sizing: border-box; }
+
+        .mb-shell {
+            width: 100%;
+            max-width: 880px;
+            margin: 0 auto;
+            padding: 0 clamp(1.15rem, 4.5vw, 2.5rem);
+        }
+
+        .krn-bookings a:focus-visible,
+        .krn-bookings button:focus-visible,
+        .krn-bookings input:focus-visible,
+        .krn-bookings select:focus-visible {
+            outline: 2px solid var(--sage);
+            outline-offset: 2px;
+        }
+
+        /* ---------------- Hero ---------------- */
+
+        .mb-hero {
+            position: relative;
+            overflow: hidden;
+            background: linear-gradient(160deg, #1B3628 0%, #14271F 50%, #0E1D16 100%);
+            color: var(--ivory);
+            text-align: center;
+        }
+
+        .mb-hero__glow {
+            position: absolute;
+            top: -300px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 720px;
+            height: 720px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(143, 168, 136, .28) 0%, rgba(143, 168, 136, 0) 66%);
+            pointer-events: none;
+        }
+
+        .mb-hero__inner {
+            position: relative;
+            z-index: 1;
+            padding-top: clamp(2.75rem, 6.5vw, 4.5rem);
+            padding-bottom: clamp(2.25rem, 5.5vw, 3.75rem);
+        }
+
+        .mb-eyebrow {
+            margin: 0 0 1.15rem;
+            font-size: .68rem;
+            font-weight: 500;
+            letter-spacing: .34em;
+            text-transform: uppercase;
+            color: var(--sage);
+        }
+
+        .mb-title {
+            margin: 0 auto;
+            font-family: "Playfair Display", Georgia, "Times New Roman", serif;
+            font-weight: 600;
+            font-size: clamp(2rem, 5.2vw, 3.4rem);
+            line-height: 1.1;
+            letter-spacing: -.015em;
+            color: #FBF9F3;
+        }
+
+        .mb-hero__divider {
+            width: 44px;
+            height: 1px;
+            margin: clamp(1.25rem, 2.8vw, 1.75rem) auto;
+            background: linear-gradient(90deg, transparent, var(--sage), transparent);
+        }
+
+        .mb-count {
+            display: inline-flex;
+            align-items: center;
+            gap: .55rem;
+            padding: .55rem 1.15rem;
+            border-radius: 999px;
+            border: 1px solid rgba(232, 223, 201, .26);
+            background: rgba(255, 255, 255, .05);
+            color: var(--sand);
+            font-size: .72rem;
+            font-weight: 500;
+            letter-spacing: .16em;
+            text-transform: uppercase;
+        }
+
+        .mb-count__dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--sage);
+            animation: mbPulse 2.8s ease-out infinite;
+        }
+
+        @@keyframes mbPulse {
+            0%   { box-shadow: 0 0 0 0 rgba(143, 168, 136, .55); }
+            70%  { box-shadow: 0 0 0 10px rgba(143, 168, 136, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(143, 168, 136, 0); }
+        }
+
+        /* ---------------- Main ---------------- */
+
+        .mb-main {
+            padding-top: clamp(2rem, 5vw, 3.25rem);
+            padding-bottom: clamp(2.75rem, 6.5vw, 4.5rem);
+        }
+
+        /* ---------------- Filter card ---------------- */
+
+        .mb-filter {
+            position: relative;
+            max-width: 720px;
+            margin: 0 auto clamp(2rem, 4.5vw, 3rem);
+            padding: clamp(1.35rem, 3.5vw, 1.85rem);
+            background: var(--white);
+            border: 1px solid rgba(20, 39, 31, .06);
+            border-radius: 20px;
+            box-shadow: 0 24px 44px -34px rgba(20, 39, 31, .6);
+        }
+
+        .mb-filter::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 42px;
+            height: 2px;
+            background: var(--sage);
+            border-radius: 2px;
+        }
+
+        .mb-form {
+            display: grid;
+            grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr) minmax(0, 1fr) auto;
+            gap: .85rem;
+            align-items: end;
+            margin: 0;
+        }
+
+        .mb-field { min-width: 0; }
+
+        .mb-field__label {
+            display: block;
+            margin: 0 0 .5rem;
+            font-size: .62rem;
+            font-weight: 500;
+            letter-spacing: .2em;
+            text-transform: uppercase;
+            color: var(--ink-60);
+        }
+
+        .mb-input-wrap {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .mb-input-wrap svg {
+            position: absolute;
+            left: .95rem;
+            width: 15px;
+            height: 15px;
+            color: var(--ink-40);
+            pointer-events: none;
+        }
+
+        .mb-input,
+        .mb-select {
+            width: 100%;
+            height: 46px;
+            padding: 0 1rem;
+            border: 1px solid var(--hairline);
+            border-radius: 12px;
+            background: var(--ivory);
+            color: var(--forest);
+            font: inherit;
+            font-size: .9rem;
+            letter-spacing: .01em;
+            transition: border-color .25s ease, background .25s ease, box-shadow .25s ease;
+            appearance: none;
+            -webkit-appearance: none;
+        }
+
+        .mb-input { padding-left: 2.4rem; }
+
+        .mb-input::placeholder {
+            color: rgba(20, 39, 31, .38);
+            letter-spacing: .02em;
+        }
+
+        .mb-input:hover,
+        .mb-select:hover { border-color: rgba(20, 39, 31, .22); }
+
+        .mb-input:focus,
+        .mb-select:focus {
+            outline: none;
+            border-color: var(--sage);
+            background: var(--white);
+            box-shadow: 0 0 0 3px rgba(143, 168, 136, .18);
+        }
+
+        .mb-select-wrap {
+            position: relative;
+        }
+
+        .mb-select-wrap::after {
+            content: "";
+            position: absolute;
+            top: 50%;
+            right: 1rem;
+            width: 8px;
+            height: 8px;
+            border-right: 1.5px solid var(--forest);
+            border-bottom: 1.5px solid var(--forest);
+            transform: translateY(-70%) rotate(45deg);
+            pointer-events: none;
+        }
+
+        .mb-submit {
+            height: 46px;
+            padding: 0 1.35rem;
+            border: 0;
+            border-radius: 12px;
+            background: var(--forest);
+            color: var(--sand);
+            font: inherit;
+            font-size: .74rem;
+            font-weight: 600;
+            letter-spacing: .16em;
+            text-transform: uppercase;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: background .25s ease, transform .25s ease, box-shadow .25s ease;
+        }
+
+        .mb-submit:hover {
+            background: var(--forest-soft);
+            transform: translateY(-1px);
+            box-shadow: 0 14px 22px -16px rgba(20, 39, 31, .85);
+        }
+
+        .mb-submit:active { transform: translateY(0); }
+
+        .mb-clear {
+            display: inline-block;
+            margin-top: 1rem;
+            font-size: .72rem;
+            font-weight: 500;
+            letter-spacing: .14em;
+            text-transform: uppercase;
+            color: var(--ink-60);
+            text-decoration: none;
+            border-bottom: 1px solid transparent;
+            transition: color .25s ease, border-color .25s ease;
+        }
+
+        .mb-clear:hover {
+            color: var(--forest);
+            border-color: var(--sage);
+            text-decoration: none;
+        }
+
+        @@media (max-width: 720px) {
+            .mb-form { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+            .mb-field--grow { grid-column: 1 / -1; }
+            .mb-submit { grid-column: 1 / -1; }
+        }
+
+        /* ---------------- Section heading ---------------- */
+
+        .mb-h2 {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            margin: 0 0 clamp(1.5rem, 3.5vw, 2rem);
+            font-family: "Playfair Display", Georgia, "Times New Roman", serif;
+            font-weight: 600;
+            font-size: clamp(1.15rem, 2.4vw, 1.5rem);
+            letter-spacing: .01em;
+            color: var(--forest);
+            text-align: center;
+        }
+
+        .mb-h2::before,
+        .mb-h2::after {
+            content: "";
+            flex: 1 1 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--hairline));
+        }
+
+        .mb-h2::after {
+            background: linear-gradient(90deg, var(--hairline), transparent);
+        }
+
+        /* ---------------- Booking list ---------------- */
+
+        .mb-list {
+            display: grid;
+            gap: 1rem;
+            max-width: 640px;
+            margin: 0 auto;
+            padding: 0;
+            list-style: none;
+        }
+
+        .mb-card {
+            position: relative;
+            display: block;
+            padding: clamp(1.4rem, 3.5vw, 1.85rem);
+            background: var(--white);
+            border: 1px solid rgba(20, 39, 31, .08);
+            border-radius: 18px;
+            text-align: center;
+            text-decoration: none;
+            color: var(--forest);
+            transition: transform .35s cubic-bezier(.22, .68, .32, 1),
+                        box-shadow .35s ease,
+                        border-color .35s ease;
+            overflow: hidden;
+        }
+
+        .mb-card::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 34px;
+            height: 2px;
+            background: var(--sage);
+            border-radius: 2px;
+            opacity: 0;
+            transition: opacity .35s ease, width .35s ease;
+        }
+
+        .mb-card:hover {
+            transform: translateY(-3px);
+            border-color: var(--sage);
+            box-shadow: 0 22px 40px -32px rgba(20, 39, 31, .7);
+            text-decoration: none;
+            color: var(--forest);
+        }
+
+        .mb-card:hover::before {
+            opacity: 1;
+            width: 52px;
+        }
+
+        .mb-card__eyebrow {
+            margin: 0;
+            font-size: .62rem;
+            font-weight: 500;
+            letter-spacing: .28em;
+            text-transform: uppercase;
+            color: var(--sage);
+        }
+
+        .mb-card__title {
+            margin: .65rem 0 0;
+            font-family: "Playfair Display", Georgia, serif;
+            font-size: clamp(1.2rem, 3vw, 1.5rem);
+            font-weight: 600;
+            line-height: 1.25;
+            color: var(--forest);
+            overflow-wrap: break-word;
+        }
+
+        .mb-card__meta {
+            margin: .7rem 0 0;
+            font-size: .82rem;
+            letter-spacing: .04em;
+            color: var(--ink-60);
+            font-variant-numeric: tabular-nums;
+        }
+
+        .mb-card__meta span + span::before {
+            content: "·";
+            margin: 0 .5rem;
+            color: var(--ink-40);
+        }
+
+        .mb-card__status {
+            display: inline-flex;
+            align-items: center;
+            gap: .5rem;
+            margin-top: 1.1rem;
+            padding: .35rem .8rem;
+            border-radius: 999px;
+            border: 1px solid rgba(20, 39, 31, .14);
+            background: rgba(232, 223, 201, .35);
+            font-size: .64rem;
+            font-weight: 500;
+            letter-spacing: .16em;
+            text-transform: uppercase;
+            color: var(--forest);
+        }
+
+        .mb-card__status-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--sage);
+        }
+
+        .mb-card__status--pending    .mb-card__status-dot { background: #C99A4A; }
+        .mb-card__status--confirmed  .mb-card__status-dot { background: var(--sage); }
+        .mb-card__status--completed  .mb-card__status-dot { background: var(--forest); }
+        .mb-card__status--cancelled  .mb-card__status-dot { background: #A15B45; }
+        .mb-card__status--rejected   .mb-card__status-dot { background: #8A4B3E; }
+
+        .mb-card__cta {
+            display: inline-flex;
+            align-items: center;
+            gap: .45rem;
+            margin-top: 1.25rem;
+            padding-top: 1.15rem;
+            border-top: 1px solid var(--hairline);
+            width: 100%;
+            justify-content: center;
+            font-size: .72rem;
+            font-weight: 600;
+            letter-spacing: .16em;
+            text-transform: uppercase;
+            color: var(--forest);
+            transition: color .25s ease;
+        }
+
+        .mb-card__cta svg {
+            width: 13px;
+            height: 13px;
+            transition: transform .3s ease;
+        }
+
+        .mb-card:hover .mb-card__cta svg { transform: translateX(4px); }
+
+        /* ---------------- Empty state ---------------- */
+
+        .mb-empty {
+            max-width: 560px;
+            margin: 0 auto;
+            padding: 2rem 1.75rem;
+            border: 1px dashed rgba(20, 39, 31, .18);
+            border-radius: 18px;
+            background: rgba(255, 255, 255, .55);
+            text-align: center;
+            font-size: .92rem;
+            line-height: 1.7;
+            color: var(--ink-60);
+        }
+
+        .mb-empty__title {
+            margin: 0 0 .5rem;
+            font-family: "Playfair Display", Georgia, serif;
+            font-size: 1.15rem;
+            font-weight: 600;
+            color: var(--forest);
+        }
+
+        .mb-empty__link {
+            display: inline-block;
+            margin-top: 1.1rem;
+            padding: .6rem 1.1rem;
+            border-radius: 999px;
+            background: var(--forest);
+            color: var(--sand);
+            font-size: .72rem;
+            font-weight: 600;
+            letter-spacing: .16em;
+            text-transform: uppercase;
+            text-decoration: none;
+            transition: background .25s ease, transform .25s ease;
+        }
+
+        .mb-empty__link:hover {
+            background: var(--forest-soft);
+            color: var(--sand);
+            text-decoration: none;
+            transform: translateY(-1px);
+        }
+
+        /* ---------------- Motion ---------------- */
+
+        @@keyframes mbRise {
+            from { opacity: 0; transform: translateY(16px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        .mb-anim { animation: mbRise .75s cubic-bezier(.22, .68, .32, 1) both; }
+
+        @@media (prefers-reduced-motion: reduce) {
+            .krn-bookings *,
+            .krn-bookings *::before,
+            .krn-bookings *::after {
+                animation: none !important;
+                transition: none !important;
+            }
+        }
+
+        /* ---------------- Print ---------------- */
+
+        @@media print {
+            .krn-bookings { background: #fff; }
+            .mb-hero { background: #fff; color: #14271F; }
+            .mb-hero__glow { display: none !important; }
+            .mb-title { color: #14271F !important; }
+            .mb-count { border-color: #8FA888; background: transparent; color: #14271F; }
+            .mb-filter { box-shadow: none; border-color: #E8DFC9; }
+            .mb-submit { display: none; }
+            .mb-card:hover { transform: none; box-shadow: none; }
+            .mb-anim { animation: none !important; }
+        }
+    </style>
+}
+
+<div class="krn-bookings">
+
+    <!-- ===== Hero ===== -->
+    <header class="mb-hero">
+        <div class="mb-hero__glow" aria-hidden="true"></div>
+
+        <div class="mb-shell mb-hero__inner">
+            <p class="mb-eyebrow">My bookings</p>
+            <h1 class="mb-title">Your travel portfolio</h1>
+
+            <div class="mb-hero__divider" aria-hidden="true"></div>
+
+            <span class="mb-count">
+                <span class="mb-count__dot" aria-hidden="true"></span>
+                @bookingCount @(bookingCount == 1 ? "booking" : "bookings")
+            </span>
+        </div>
+    </header>
+
+    <!-- ===== Main ===== -->
+    <main class="mb-shell mb-main">
+
+        <!-- Filter card -->
+        <section class="mb-filter mb-anim" style="animation-delay:.05s" aria-labelledby="mbFilterHeading">
+            <h2 class="mb-h2" id="mbFilterHeading" style="margin-bottom:1.35rem;">Find a booking</h2>
+
+            <form method="get" class="mb-form" role="search" aria-label="Filter bookings">
+                <div class="mb-field mb-field--grow">
+                    <label class="mb-field__label" for="search">Search</label>
+                    <div class="mb-input-wrap">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <circle cx="11" cy="11" r="7"></circle>
+                            <path d="m20 20-3.5-3.5"></path>
+                        </svg>
+                        <input class="mb-input"
+                               id="search"
+                               name="search"
+                               type="search"
+                               value="@currentSearch"
+                               placeholder="Booking reference" />
+                    </div>
+                </div>
+
+                <div class="mb-field">
+                    <label class="mb-field__label" for="status">Status</label>
+                    <div class="mb-select-wrap">
+                        <select class="mb-select" id="status" name="status">
+                            <option value="" selected="@(string.IsNullOrEmpty(currentStatus) ? "selected" : null)">All statuses</option>
+                            <option value="Pending"   selected="@(currentStatus == "Pending"   ? "selected" : null)">Pending</option>
+                            <option value="Confirmed" selected="@(currentStatus == "Confirmed" ? "selected" : null)">Confirmed</option>
+                            <option value="Completed" selected="@(currentStatus == "Completed" ? "selected" : null)">Completed</option>
+                            <option value="Cancelled" selected="@(currentStatus == "Cancelled" ? "selected" : null)">Cancelled</option>
+                            <option value="Rejected"  selected="@(currentStatus == "Rejected"  ? "selected" : null)">Rejected</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="mb-field">
+                    <label class="mb-field__label" for="sort">Sort</label>
+                    <div class="mb-select-wrap">
+                        <select class="mb-select" id="sort" name="sort">
+                            <option value="newest" selected="@(currentSort == "newest" ? "selected" : null)">Newest</option>
+                            <option value="oldest" selected="@(currentSort == "oldest" ? "selected" : null)">Oldest</option>
+                        </select>
+                    </div>
+                </div>
+
+                <button type="submit" class="mb-submit">Filter</button>
+            </form>
+
+            @if (hasActiveFilter)
+            {
+                <a class="mb-clear" asp-action="Bookings">Clear filters</a>
+            }
+        </section>
+
+        <!-- Booking list -->
+        <section class="mb-anim" style="animation-delay:.12s" aria-labelledby="mbListHeading">
+            <h2 class="mb-h2" id="mbListHeading">
+                @(hasActiveFilter ? "Filtered results" : "All bookings")
+            </h2>
+
+            @if (!hasBookings)
+            {
+                <div class="mb-empty">
+                    <p class="mb-empty__title">No bookings found</p>
+                    <p>
+                        @if (hasActiveFilter)
+                        {
+                            <text>No bookings match your current filters. Try adjusting your search.</text>
+                        }
+                        else
+                        {
+                            <text>You haven't made any bookings yet. Start planning your next journey.</text>
+                        }
+                    </p>
+                    <a class="mb-empty__link"
+                       asp-controller="Search" asp-action="Index">
+                        Explore travel services
+                    </a>
+                </div>
+            }
+            else
+            {
+                <ul class="mb-list">
+                    @foreach (var booking in bookings)
+                    {
+                        var statusKey = (booking.Status ?? "").ToLowerInvariant();
+
+                        <li>
+                            <a class="mb-card"
+                               asp-action="BookingDetails"
+                               asp-route-id="@booking.Id">
+                                <p class="mb-card__eyebrow">Booking</p>
+                                <h3 class="mb-card__title">@booking.ServiceName</h3>
+
+                                <p class="mb-card__meta">
+                                    <span>@booking.ReferenceNumber</span>
+                                    <span>@booking.BookingDate.ToString("dd MMM yyyy")</span>
+                                </p>
+
+                                <span class="mb-card__status mb-card__status--@statusKey">
+                                    <span class="mb-card__status-dot" aria-hidden="true"></span>
+                                    @booking.Status
+                                </span>
+
+                                <span class="mb-card__cta">
+                                    View details
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                         stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                        <path d="M5 12h14"></path>
+                                        <path d="m13 6 6 6-6 6"></path>
+                                    </svg>
+                                </span>
+
+                                <span class="mb-sr" style="position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0;">
+                                    View details for @booking.ServiceName, reference @booking.ReferenceNumber
+                                </span>
+                            </a>
+                        </li>
+                    }
+                </ul>
+            }
+        </section>
+
+    </main>
+</div>

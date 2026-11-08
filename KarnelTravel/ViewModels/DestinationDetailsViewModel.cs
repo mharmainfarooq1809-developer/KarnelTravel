@@ -13,6 +13,8 @@ public class DestinationDetailsViewModel
 
     public List<Resort> Resorts { get; set; } = new();
 
+    public List<TourPackage> Packages { get; set; } = new();
+
     public List<Review> Reviews { get; set; } = new();
 
     public double AverageRating { get; set; }

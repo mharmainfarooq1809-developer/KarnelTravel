@@ -5,29 +5,41 @@ using System.Security.Claims;
 using System.Threading.Tasks;
 using KarnelTravel.Models;
 using KarnelTravel.Services;
+using KarnelTravel.Data;
+using KarnelTravel.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace KarnelTravel.Controllers;
 
 [Route("Account")]
-[AllowAnonymous]
 public class AccountController : Controller
 {
     private readonly IAdminAuthService _auth;
     private readonly ILogger<AccountController> _log;
+    private readonly ApplicationDbContext _db;
+    private readonly ICustomerAccountService _customers;
+    private readonly IBookingStatusService _bookingStatusService;
 
     public AccountController(
         IAdminAuthService auth,
-        ILogger<AccountController> log)
+        ILogger<AccountController> log,
+        ApplicationDbContext db,
+        ICustomerAccountService customers,
+        IBookingStatusService bookingStatusService)
     {
         _auth = auth;
         _log = log;
+        _db = db;
+        _customers = customers;
+        _bookingStatusService = bookingStatusService;
     }
 
     [HttpGet("Login")]
+    [AllowAnonymous]
     public IActionResult Login(string? returnUrl = null)
     {
         ViewData["ReturnUrl"] = returnUrl;
@@ -35,6 +47,7 @@ public class AccountController : Controller
     }
 
     [HttpPost("Login")]
+    [AllowAnonymous]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Login(
         string email,
@@ -60,13 +73,29 @@ public class AccountController : Controller
 
         if (user is null)
         {
-            _log.LogWarning("Failed login attempt for {Email}", email);
+            var customer = await _customers.ValidateCredentialsAsync(email, password);
+            if (customer is null || !customer.EmailConfirmed)
+            {
+                _log.LogWarning("Failed customer login attempt");
 
-            ModelState.AddModelError(
-                string.Empty,
-                "Those credentials don't match our records.");
+                ModelState.AddModelError(string.Empty, "Those credentials don't match our records, or the email has not been verified.");
+                return View();
+            }
 
-            return View();
+            var customerClaims = new List<Claim>
+            {
+                new(ClaimTypes.NameIdentifier, customer.Id.ToString()),
+                new(ClaimTypes.Name, customer.FullName),
+                new(ClaimTypes.Email, customer.Email),
+                new(ClaimTypes.Role, "Customer")
+            };
+
+            await HttpContext.SignInAsync(
+                CookieAuthenticationDefaults.AuthenticationScheme,
+                new ClaimsPrincipal(new ClaimsIdentity(customerClaims, CookieAuthenticationDefaults.AuthenticationScheme)),
+                new AuthenticationProperties { IsPersistent = rememberMe });
+
+            return RedirectToAction("Dashboard", "Customer");
         }
 
         var claims = new List<Claim>
@@ -110,17 +139,22 @@ public class AccountController : Controller
             return RedirectToAction("Dashboard", "Admin");
         }
 
-        // Normal users go to the public homepage.
+        if (string.Equals(user.Role, "User", StringComparison.OrdinalIgnoreCase))
+            return RedirectToAction("Dashboard", "Customer");
+
+        // Other non-administrator users go to the public homepage.
         return RedirectToAction("Index", "Home");
     }
 
     [HttpGet("Register")]
+    [AllowAnonymous]
     public IActionResult Register()
     {
         return View();
     }
 
     [HttpPost("Register")]
+    [AllowAnonymous]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Register(RegisterViewModel model)
     {
@@ -129,9 +163,10 @@ public class AccountController : Controller
             return View(model);
         }
 
-        var user = await _auth.RegisterUserAsync(
-            model.Email,
+        var user = await _customers.CreateAsync(
             model.DisplayName,
+            model.Email,
+            model.PhoneNumber,
             model.Password);
 
         if (user is null)
@@ -143,24 +178,67 @@ public class AccountController : Controller
             return View(model);
         }
 
-        var claims = new List<Claim>
+        await _customers.CreateEmailVerificationTokenAsync(user);
+        TempData["AccountMessage"] = "Your account was created. Check your email to verify it before signing in.";
+        return RedirectToAction(nameof(Login));
+    }
+
+    [HttpGet("VerifyEmail")]
+    [AllowAnonymous]
+    public async Task<IActionResult> VerifyEmail(string token, CancellationToken cancellationToken)
+    {
+        var verified = !string.IsNullOrWhiteSpace(token) && await _customers.VerifyEmailAsync(token, cancellationToken);
+        TempData["AccountMessage"] = verified ? "Your email has been verified. You can now sign in." : "This verification link is invalid or expired.";
+        return RedirectToAction(nameof(Login));
+    }
+
+    [HttpGet("ResendVerification")]
+    [AllowAnonymous]
+    public IActionResult ResendVerification() => View();
+
+    [HttpPost("ResendVerification")]
+    [AllowAnonymous]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ResendVerification(string email, CancellationToken cancellationToken)
+    {
+        var account = await _db.CustomerAccounts.FirstOrDefaultAsync(x => x.Email == email.Trim().ToLowerInvariant(), cancellationToken);
+        if (account is not null && !account.EmailConfirmed)
+            await _customers.CreateEmailVerificationTokenAsync(account, cancellationToken);
+        TempData["AccountMessage"] = "If the account exists and is not verified, a new verification message will be sent.";
+        return RedirectToAction(nameof(Login));
+    }
+
+    [HttpGet("ForgotPassword")]
+    [AllowAnonymous]
+    public IActionResult ForgotPassword() => View(new ForgotPasswordViewModel());
+
+    [HttpPost("ForgotPassword")]
+    [AllowAnonymous]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ForgotPassword(ForgotPasswordViewModel model, CancellationToken cancellationToken)
+    {
+        if (ModelState.IsValid)
+            await _customers.CreatePasswordResetTokenAsync(model.Email, cancellationToken);
+        TempData["AccountMessage"] = "If an account matches that address, password reset instructions will be sent shortly.";
+        return RedirectToAction(nameof(Login));
+    }
+
+    [HttpGet("ResetPassword")]
+    [AllowAnonymous]
+    public IActionResult ResetPassword(string token) => View(new ResetPasswordViewModel { Token = token });
+
+    [HttpPost("ResetPassword")]
+    [AllowAnonymous]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ResetPassword(ResetPasswordViewModel model, CancellationToken cancellationToken)
+    {
+        if (!ModelState.IsValid || !await _customers.ResetPasswordAsync(model.Token, model.Password, cancellationToken))
         {
-            new(ClaimTypes.NameIdentifier, user.Id.ToString()),
-            new(ClaimTypes.Name, user.DisplayName),
-            new(ClaimTypes.Email, user.Email),
-            new(ClaimTypes.Role, user.Role)
-        };
-
-        var identity = new ClaimsIdentity(
-            claims,
-            CookieAuthenticationDefaults.AuthenticationScheme);
-
-        await HttpContext.SignInAsync(
-            CookieAuthenticationDefaults.AuthenticationScheme,
-            new ClaimsPrincipal(identity));
-
-        // Newly registered normal users go to the homepage.
-        return RedirectToAction("Index", "Home");
+            ModelState.AddModelError(string.Empty, "This reset link is invalid or expired.");
+            return View(model);
+        }
+        TempData["AccountMessage"] = "Your password has been updated. You can now sign in.";
+        return RedirectToAction(nameof(Login));
     }
 
     [HttpPost("Logout")]
@@ -173,7 +251,61 @@ public class AccountController : Controller
         return RedirectToAction("Index", "Landing");
     }
 
+    [Authorize]
+    [HttpGet("Bookings")]
+    public async Task<IActionResult> Bookings(CancellationToken cancellationToken)
+    {
+        var ownerEmail = User.FindFirstValue(ClaimTypes.Email)?.Trim().ToLowerInvariant();
+        if (string.IsNullOrWhiteSpace(ownerEmail))
+            return Forbid();
+
+        var bookings = await _db.Bookings
+            .AsNoTracking()
+            .Where(x => x.OwnerEmail == ownerEmail)
+            .OrderByDescending(x => x.CreatedAt)
+            .ToListAsync(cancellationToken);
+
+        return View(bookings);
+    }
+
+    [Authorize]
+    [HttpPost("Bookings/{id:int}/Cancel")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> CancelBooking(int id, CancellationToken cancellationToken)
+    {
+        var ownerEmail = User.FindFirstValue(ClaimTypes.Email)?.Trim().ToLowerInvariant();
+        var booking = await _db.Bookings.FirstOrDefaultAsync(
+            x => x.Id == id && x.OwnerEmail == ownerEmail,
+            cancellationToken);
+
+        if (booking == null)
+            return NotFound();
+
+        if (!string.Equals(booking.Status, "Pending", StringComparison.OrdinalIgnoreCase) &&
+            !string.Equals(booking.Status, "Confirmed", StringComparison.OrdinalIgnoreCase))
+        {
+            TempData["BookingError"] = "This booking can no longer be cancelled.";
+            return RedirectToAction(nameof(Bookings));
+        }
+
+        if (!await _bookingStatusService.ChangeStatusAsync(
+                booking,
+                "Cancelled",
+                User.FindFirstValue(ClaimTypes.NameIdentifier),
+                User.FindFirstValue(ClaimTypes.Role),
+                "Cancelled by customer",
+                cancellationToken))
+        {
+            TempData["BookingError"] = "This booking could not be cancelled.";
+            return RedirectToAction(nameof(Bookings));
+        }
+
+        TempData["BookingMessage"] = "Your booking was cancelled.";
+        return RedirectToAction(nameof(Bookings));
+    }
+
     [HttpGet("Denied")]
+    [AllowAnonymous]
     public IActionResult Denied()
     {
         return View();

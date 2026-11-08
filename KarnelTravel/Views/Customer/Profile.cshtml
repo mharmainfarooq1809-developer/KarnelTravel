@@ -1,0 +1,111 @@
+@model KarnelTravel.ViewModels.CustomerProfileViewModel
+@{
+    ViewData["Title"] = "My profile";
+}
+
+@section Styles {
+    <style>
+        .profile-page { max-width: 920px; margin: 0 auto; padding: 3rem 1.25rem 5rem; }
+        .profile-page__header { margin-bottom: 2rem; }
+        .profile-page__header h1 { margin: 0; }
+        .profile-page__header p { margin: .6rem 0 0; color: #64746b; }
+        .profile-page__grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr); gap: 1.25rem; align-items: start; }
+        .profile-card { border: 1px solid rgba(20,39,31,.14); border-radius: 18px; padding: 1.5rem; background: #fff; }
+        .profile-card h2 { margin: 0 0 1rem; font-size: 1.15rem; }
+        .profile-card__detail { padding: .9rem 0; border-bottom: 1px solid rgba(20,39,31,.1); }
+        .profile-card__detail:last-child { border-bottom: 0; }
+        .profile-card__label { display: block; color: #64746b; font-size: .78rem; text-transform: uppercase; letter-spacing: .08em; }
+        .profile-card__value { display: block; margin-top: .35rem; color: #14271f; overflow-wrap: anywhere; }
+        .profile-form { display: grid; gap: 1rem; }
+        .profile-form__field { display: grid; gap: .4rem; }
+        .profile-form label { font-weight: 600; color: #14271f; }
+        .profile-form input { width: 100%; border: 1px solid rgba(20,39,31,.2); border-radius: 9px; padding: .75rem .85rem; font: inherit; color: #14271f; background: #fff; }
+        .profile-form input:focus { outline: 2px solid #8fa888; outline-offset: 2px; border-color: #8fa888; }
+        .profile-form .field-validation-error, .profile-form .validation-summary-errors { color: #a15b45; font-size: .9rem; }
+        .profile-form .validation-summary-errors ul { margin: 0; padding-left: 1.2rem; }
+        .profile-form__divider { margin: .5rem 0 0; padding-top: 1.25rem; border-top: 1px solid rgba(20,39,31,.12); }
+        .profile-form__hint { margin: -.5rem 0 0; color: #64746b; font-size: .9rem; }
+        .profile-form button { width: fit-content; border: 0; border-radius: 999px; padding: .75rem 1.25rem; background: #14271f; color: #fff; font: inherit; cursor: pointer; }
+        .profile-form button:hover { background: #1e3a2c; }
+        .profile-page__back { display: inline-block; margin-top: 1.25rem; color: #4e6e5a; }
+        .profile-message { margin: 0 0 1.25rem; padding: .85rem 1rem; border-radius: 10px; background: #e8dfc9; color: #14271f; }
+        @@media (max-width: 700px) { .profile-page__grid { grid-template-columns: 1fr; } }
+    </style>
+}
+
+<main class="profile-page">
+    <header class="profile-page__header">
+        <h1>My profile</h1>
+        <p>Keep your contact details current and manage your account password.</p>
+    </header>
+
+    @if (TempData["AccountMessage"] is string accountMessage)
+    {
+        <p class="profile-message" role="status">@accountMessage</p>
+    }
+
+    <div class="profile-page__grid">
+        <section class="profile-card" aria-labelledby="accountDetailsHeading">
+            <h2 id="accountDetailsHeading">Account details</h2>
+            <div class="profile-card__detail">
+                <span class="profile-card__label">Email</span>
+                <span class="profile-card__value">@Model.Email</span>
+            </div>
+            <div class="profile-card__detail">
+                <span class="profile-card__label">Email status</span>
+                <span class="profile-card__value">@(Model.EmailConfirmed ? "Verified" : "Not verified")</span>
+            </div>
+            <div class="profile-card__detail">
+                <span class="profile-card__label">Member since</span>
+                <time class="profile-card__value" datetime="@Model.CreatedAt.ToString("yyyy-MM-dd")">@Model.CreatedAt.ToString("dd MMMM yyyy")</time>
+            </div>
+        </section>
+
+        <section class="profile-card" aria-labelledby="profileFormHeading">
+            <h2 id="profileFormHeading">Edit profile</h2>
+            <form method="post" class="profile-form">
+                @Html.AntiForgeryToken()
+                <div asp-validation-summary="ModelOnly"></div>
+
+                <div class="profile-form__field">
+                    <label asp-for="FullName"></label>
+                    <input asp-for="FullName" autocomplete="name" />
+                    <span asp-validation-for="FullName"></span>
+                </div>
+
+                <div class="profile-form__field">
+                    <label asp-for="PhoneNumber"></label>
+                    <input asp-for="PhoneNumber" autocomplete="tel" />
+                    <span asp-validation-for="PhoneNumber"></span>
+                </div>
+
+                <div class="profile-form__divider">
+                    <h2>Change password</h2>
+                    <p class="profile-form__hint">Leave these fields blank if you do not want to change your password.</p>
+                </div>
+
+                <div class="profile-form__field">
+                    <label asp-for="CurrentPassword"></label>
+                    <input asp-for="CurrentPassword" autocomplete="current-password" />
+                    <span asp-validation-for="CurrentPassword"></span>
+                </div>
+
+                <div class="profile-form__field">
+                    <label asp-for="NewPassword"></label>
+                    <input asp-for="NewPassword" autocomplete="new-password" />
+                    <span asp-validation-for="NewPassword"></span>
+                </div>
+
+                <div class="profile-form__field">
+                    <label asp-for="ConfirmNewPassword"></label>
+                    <input asp-for="ConfirmNewPassword" autocomplete="new-password" />
+                    <span asp-validation-for="ConfirmNewPassword"></span>
+                </div>
+
+                <button type="submit">Save profile</button>
+            </form>
+        </section>
+    </div>
+
+    <a class="profile-page__back" asp-controller="Customer" asp-action="Dashboard">Back to dashboard</a>
+</main>

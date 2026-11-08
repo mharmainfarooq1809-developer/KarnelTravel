@@ -1,0 +1,589 @@
+@model KarnelTravel.ViewModels.CustomerDashboardViewModel
+@{
+    ViewData["Title"] = "My travel dashboard";
+
+    var firstName = Model.Customer?.FullName;
+    var hasName = !string.IsNullOrWhiteSpace(firstName);
+
+    // Explicit slugs — avoids "Total bookings" → "total bookings" (space breaks the class)
+    var stats = new[]
+    {
+        new { Label = "Total bookings", Value = Model.TotalBookings,       Slug = "total"     },
+        new { Label = "Pending",        Value = Model.PendingBookings,     Slug = "pending"   },
+        new { Label = "Confirmed",      Value = Model.ConfirmedBookings,   Slug = "confirmed" },
+        new { Label = "Completed",      Value = Model.CompletedBookings,   Slug = "completed" },
+        new { Label = "Cancelled",      Value = Model.CancelledBookings,   Slug = "cancelled" }
+    };
+
+    var hasRecentBookings = Model.RecentBookings is not null && Model.RecentBookings.Count > 0;
+}
+
+@* Styles are inlined on purpose so they render regardless of whether
+   _Layout.cshtml defines @RenderSection("Styles"). This view is self-contained. *@
+<style>
+    .krn-dash {
+        --forest: #14271F;
+        --forest-soft: #1E3A2C;
+        --ivory: #F8F6F0;
+        --sage: #8FA888;
+        --sand: #E8DFC9;
+        --white: #FFFFFF;
+        --ink-60: rgba(20, 39, 31, .62);
+        --ink-40: rgba(20, 39, 31, .42);
+        --hairline: rgba(20, 39, 31, .12);
+
+        background: var(--ivory);
+        color: var(--forest);
+        font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+        -webkit-font-smoothing: antialiased;
+        text-rendering: optimizeLegibility;
+    }
+
+    .krn-dash *,
+    .krn-dash *::before,
+    .krn-dash *::after { box-sizing: border-box; }
+
+    .kd-shell {
+        width: 100%;
+        max-width: 1120px;
+        margin: 0 auto;
+        padding: 0 clamp(1.1rem, 4vw, 2.5rem);
+    }
+
+    .kd-sr {
+        position: absolute;
+        width: 1px; height: 1px;
+        padding: 0; margin: -1px;
+        overflow: hidden;
+        clip: rect(0 0 0 0);
+        white-space: nowrap;
+        border: 0;
+    }
+
+    .krn-dash a:focus-visible,
+    .krn-dash button:focus-visible {
+        outline: 2px solid var(--sage);
+        outline-offset: 3px;
+    }
+
+    /* ---------- Hero ---------- */
+
+    .kd-hero {
+        position: relative;
+        overflow: hidden;
+        background: linear-gradient(155deg, #1B3628 0%, #14271F 48%, #0E1D16 100%);
+        color: var(--ivory);
+    }
+
+    .kd-hero__glow {
+        position: absolute;
+        top: -240px;
+        right: -140px;
+        width: 560px;
+        height: 560px;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(143, 168, 136, .34) 0%, rgba(143, 168, 136, 0) 68%);
+        pointer-events: none;
+    }
+
+    .kd-hero__inner {
+        position: relative;
+        z-index: 1;
+        padding-top: clamp(2rem, 5vw, 4rem);
+        padding-bottom: clamp(2rem, 5vw, 3.6rem);
+    }
+
+    .kd-eyebrow {
+        margin: 0 0 1rem;
+        font-size: .7rem;
+        font-weight: 500;
+        letter-spacing: .3em;
+        text-transform: uppercase;
+        color: var(--sage);
+    }
+
+    .kd-title {
+        margin: 0;
+        font-family: "Playfair Display", Georgia, "Times New Roman", serif;
+        font-weight: 600;
+        font-size: clamp(1.85rem, 4.6vw, 3.15rem);
+        line-height: 1.12;
+        letter-spacing: -.01em;
+        color: #FBF9F3;
+        max-width: 26ch;
+        overflow-wrap: break-word;
+    }
+
+    .kd-sub {
+        margin: 1rem 0 0;
+        max-width: 52ch;
+        font-size: .96rem;
+        font-weight: 300;
+        line-height: 1.75;
+        color: rgba(248, 246, 240, .74);
+    }
+
+    .kd-hero__actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: .6rem;
+        margin-top: clamp(1.5rem, 3vw, 2rem);
+    }
+
+    .kd-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: .5rem;
+        padding: .6rem 1.05rem;
+        border-radius: 999px;
+        border: 1px solid rgba(232, 223, 201, .28);
+        background: rgba(255, 255, 255, .05);
+        color: var(--sand);
+        font-size: .74rem;
+        font-weight: 500;
+        letter-spacing: .14em;
+        text-transform: uppercase;
+        text-decoration: none;
+        transition: background .28s ease, color .28s ease, border-color .28s ease;
+    }
+
+    .kd-pill:hover {
+        background: var(--sand);
+        border-color: var(--sand);
+        color: var(--forest);
+        text-decoration: none;
+    }
+
+    .kd-pill--accent {
+        background: var(--sage);
+        border-color: var(--sage);
+        color: #0E1D16;
+    }
+
+    .kd-pill--accent:hover {
+        background: #A6BFA0;
+        border-color: #A6BFA0;
+        color: #0E1D16;
+    }
+
+    .kd-pill svg {
+        width: 13px;
+        height: 13px;
+        display: block;
+    }
+
+    /* ---------- Stats rail ---------- */
+
+    .kd-stats-wrap {
+        padding-top: clamp(1.75rem, 4vw, 2.5rem);
+    }
+
+    .kd-stats {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        border-top: 1px solid var(--hairline);
+        border-bottom: 1px solid var(--hairline);
+    }
+
+    .kd-stat {
+        position: relative;
+        padding: clamp(1.1rem, 2.4vw, 1.6rem) 1.1rem;
+        min-width: 0;
+        transition: background .35s ease;
+    }
+
+    .kd-stat + .kd-stat::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 22%;
+        bottom: 22%;
+        width: 1px;
+        background: var(--hairline);
+    }
+
+    .kd-stat:hover { background: rgba(232, 223, 201, .22); }
+
+    .kd-stat__value {
+        display: block;
+        font-family: "Playfair Display", Georgia, serif;
+        font-weight: 600;
+        font-size: clamp(1.5rem, 3vw, 2rem);
+        line-height: 1.05;
+        letter-spacing: -.01em;
+        color: var(--forest);
+        font-variant-numeric: tabular-nums;
+    }
+
+    .kd-stat__label {
+        display: block;
+        margin-top: .55rem;
+        font-size: .64rem;
+        font-weight: 500;
+        letter-spacing: .18em;
+        text-transform: uppercase;
+        color: var(--ink-60);
+    }
+
+    .kd-stat--pending   .kd-stat__value { color: #8A6A2A; }
+    .kd-stat--confirmed .kd-stat__value { color: var(--forest); }
+    .kd-stat--completed .kd-stat__value { color: #4E6E5A; }
+    .kd-stat--cancelled .kd-stat__value { color: #A15B45; }
+
+    @@media (max-width: 780px) {
+        .kd-stats { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+        .kd-stat + .kd-stat::before { display: none; }
+        .kd-stat { border-top: 1px solid var(--hairline); }
+        .kd-stat:nth-child(-n+3) { border-top: 0; }
+    }
+
+    @@media (max-width: 460px) {
+        .kd-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .kd-stat:nth-child(-n+3) { border-top: 1px solid var(--hairline); }
+        .kd-stat:nth-child(-n+2) { border-top: 0; }
+    }
+
+    /* ---------- Sections ---------- */
+
+    .kd-main {
+        padding-top: clamp(2rem, 5vw, 3.25rem);
+        padding-bottom: clamp(2.5rem, 6vw, 4rem);
+    }
+
+    .kd-section {
+        padding-bottom: clamp(1.75rem, 3.5vw, 2.5rem);
+        margin-bottom: clamp(1.75rem, 3.5vw, 2.5rem);
+        border-bottom: 1px solid var(--hairline);
+    }
+
+    .kd-section:last-child {
+        padding-bottom: 0;
+        margin-bottom: 0;
+        border-bottom: 0;
+    }
+
+    .kd-h2 {
+        display: flex;
+        align-items: center;
+        gap: .85rem;
+        margin: 0 0 1.5rem;
+        font-family: "Playfair Display", Georgia, "Times New Roman", serif;
+        font-weight: 600;
+        font-size: clamp(1.15rem, 2.3vw, 1.5rem);
+        letter-spacing: .01em;
+        color: var(--forest);
+    }
+
+    .kd-h2::before {
+        content: "";
+        flex: none;
+        width: 1.75rem;
+        height: 1px;
+        background: var(--sage);
+    }
+
+    .kd-h2__count {
+        margin-left: auto;
+        font-family: "Inter", system-ui, sans-serif;
+        font-size: .64rem;
+        font-weight: 500;
+        letter-spacing: .16em;
+        text-transform: uppercase;
+        color: var(--ink-60);
+    }
+
+    /* ---------- Bookings list ---------- */
+
+    .kd-bookings {
+        display: grid;
+        gap: .5rem;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+
+    .kd-booking { position: relative; }
+
+    .kd-booking__link {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto auto;
+        align-items: center;
+        gap: 1rem 1.5rem;
+        padding: 1.15rem 1.25rem;
+        border-radius: 14px;
+        border: 1px solid transparent;
+        text-decoration: none;
+        color: var(--forest);
+        transition: background .3s ease, border-color .3s ease, transform .3s ease, box-shadow .3s ease;
+    }
+
+    .kd-booking__link:hover {
+        background: var(--white);
+        border-color: rgba(20, 39, 31, .08);
+        transform: translateY(-1px);
+        box-shadow: 0 14px 26px -22px rgba(20, 39, 31, .55);
+        text-decoration: none;
+    }
+
+    .kd-booking__title {
+        margin: 0;
+        font-family: "Playfair Display", Georgia, serif;
+        font-size: 1.15rem;
+        font-weight: 600;
+        line-height: 1.25;
+        color: var(--forest);
+        overflow-wrap: break-word;
+    }
+
+    .kd-booking__meta {
+        margin: .4rem 0 0;
+        font-size: .8rem;
+        letter-spacing: .03em;
+        color: var(--ink-60);
+        font-variant-numeric: tabular-nums;
+    }
+
+    .kd-booking__meta span + span::before {
+        content: "·";
+        margin: 0 .5rem;
+        color: var(--ink-40);
+    }
+
+    .kd-booking__status {
+        flex: none;
+        padding: .35rem .7rem;
+        border-radius: 999px;
+        border: 1px solid rgba(20, 39, 31, .16);
+        font-size: .66rem;
+        font-weight: 500;
+        letter-spacing: .14em;
+        text-transform: uppercase;
+        color: var(--forest);
+        background: rgba(232, 223, 201, .35);
+        white-space: nowrap;
+    }
+
+    .kd-booking__arrow {
+        flex: none;
+        width: 30px;
+        height: 30px;
+        display: grid;
+        place-items: center;
+        border-radius: 50%;
+        border: 1px solid var(--hairline);
+        color: var(--forest);
+        transition: background .3s ease, color .3s ease, border-color .3s ease, transform .3s ease;
+    }
+
+    .kd-booking__arrow svg { width: 14px; height: 14px; display: block; }
+
+    .kd-booking__link:hover .kd-booking__arrow {
+        background: var(--forest);
+        border-color: var(--forest);
+        color: var(--sand);
+        transform: translateX(3px);
+    }
+
+    @@media (max-width: 640px) {
+        .kd-booking__link {
+            grid-template-columns: minmax(0, 1fr) auto;
+            grid-template-areas:
+                "title   arrow"
+                "meta    arrow"
+                "status  arrow";
+            gap: .35rem 1rem;
+        }
+        .kd-booking__body   { grid-area: title; }
+        .kd-booking__meta   { grid-area: meta; }
+        .kd-booking__status { grid-area: status; justify-self: start; }
+        .kd-booking__arrow  { grid-area: arrow; }
+    }
+
+    /* ---------- Empty states ---------- */
+
+    .kd-empty {
+        margin: 0;
+        padding: 1.25rem 1.35rem;
+        border: 1px dashed rgba(20, 39, 31, .18);
+        border-radius: 14px;
+        background: rgba(255, 255, 255, .55);
+        font-size: .92rem;
+        color: var(--ink-60);
+    }
+
+    .kd-empty a {
+        color: var(--forest);
+        text-decoration: underline;
+        text-underline-offset: 3px;
+        text-decoration-thickness: 1px;
+        text-decoration-color: var(--sage);
+        transition: text-decoration-color .25s ease;
+    }
+
+    .kd-empty a:hover {
+        text-decoration-color: var(--forest);
+        color: var(--forest);
+    }
+
+    /* ---------- Motion ---------- */
+
+    @@keyframes kdRise {
+        from { opacity: 0; transform: translateY(16px); }
+        to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .kd-anim { animation: kdRise .75s cubic-bezier(.22, .68, .32, 1) both; }
+
+    @@media (prefers-reduced-motion: reduce) {
+        .krn-dash *,
+        .krn-dash *::before,
+        .krn-dash *::after {
+            animation: none !important;
+            transition: none !important;
+        }
+    }
+
+    /* ---------- Print ---------- */
+
+    @@media print {
+        .krn-dash { background: #fff; }
+        .kd-hero { background: #fff; color: #14271F; }
+        .kd-hero__glow { display: none !important; }
+        .kd-title { color: #14271F !important; }
+        .kd-sub { color: rgba(20, 39, 31, .7) !important; }
+        .kd-hero__actions { display: none !important; }
+        .kd-stat:hover { background: transparent; }
+        .kd-booking__link:hover { box-shadow: none; transform: none; }
+        .kd-anim { animation: none !important; }
+    }
+</style>
+
+<div class="krn-dash">
+
+    <!-- ===== Hero ===== -->
+    <header class="kd-hero">
+        <div class="kd-hero__glow" aria-hidden="true"></div>
+
+        <div class="kd-shell kd-hero__inner">
+            <p class="kd-eyebrow">Customer portal</p>
+
+            <h1 class="kd-title">
+                @if (hasName)
+                {
+                    <text>Welcome, @firstName</text>
+                }
+                else
+                {
+                    <text>Welcome back</text>
+                }
+            </h1>
+
+            <p class="kd-sub">Manage your reservations, tickets, and travel updates in one place.</p>
+
+            <div class="kd-hero__actions">
+                <a class="kd-pill kd-pill--accent"
+                   asp-controller="Customer" asp-action="Bookings">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                         stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <rect x="3" y="5" width="18" height="16" rx="2"></rect>
+                        <path d="M3 10h18"></path>
+                        <path d="M8 3v4"></path>
+                        <path d="M16 3v4"></path>
+                    </svg>
+                    My bookings
+                </a>
+
+                <a class="kd-pill"
+                   asp-controller="Customer" asp-action="Profile">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                         stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <circle cx="12" cy="8" r="4"></circle>
+                        <path d="M4 21a8 8 0 0 1 16 0"></path>
+                    </svg>
+                    My profile
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- ===== Stats rail ===== -->
+    <div class="kd-shell kd-stats-wrap">
+        <ul class="kd-stats" aria-label="Booking statistics">
+            @foreach (var s in stats)
+            {
+                <li class="kd-stat kd-anim kd-stat--@s.Slug">
+                    <span class="kd-stat__value">@s.Value</span>
+                    <span class="kd-stat__label">@s.Label</span>
+                </li>
+            }
+        </ul>
+    </div>
+
+    <!-- ===== Main content ===== -->
+    <main class="kd-shell kd-main">
+
+        <!-- Recent bookings -->
+        <section class="kd-section kd-anim" style="animation-delay:.08s" aria-labelledby="kdBookingsHeading">
+            <h2 class="kd-h2" id="kdBookingsHeading">
+                Recent bookings
+                @if (hasRecentBookings)
+                {
+                    <span class="kd-h2__count">@Model.RecentBookings.Count recent</span>
+                }
+            </h2>
+
+            @if (!hasRecentBookings)
+            {
+                <p class="kd-empty">
+                    You do not have any bookings yet.
+                    <a asp-controller="Search" asp-action="Index">Explore travel services</a>.
+                </p>
+            }
+            else
+            {
+                <ul class="kd-bookings">
+                    @foreach (var booking in Model.RecentBookings)
+                    {
+                        <li class="kd-booking">
+                            <a class="kd-booking__link"
+                               asp-controller="Customer"
+                               asp-action="BookingDetails"
+                               asp-route-id="@booking.Id">
+                                <div class="kd-booking__body">
+                                    <p class="kd-booking__title">@booking.ServiceName</p>
+                                    <p class="kd-booking__meta">
+                                        <span>@booking.ReferenceNumber</span>
+                                        <span>@booking.BookingDate.ToString("dd MMM yyyy")</span>
+                                    </p>
+                                </div>
+
+                                <span class="kd-booking__status">@booking.Status</span>
+
+                                @if (Model.ActiveTickets.TryGetValue(booking.Id, out var ticket))
+                                {
+                                    <span class="kd-booking__ticket">
+                                        <a asp-controller="Ticket" asp-action="Details" asp-route-id="@ticket.Id">QR ticket</a>
+                                    </span>
+                                }
+
+                                <span class="kd-booking__arrow" aria-hidden="true">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                         stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M5 12h14"></path>
+                                        <path d="m13 6 6 6-6 6"></path>
+                                    </svg>
+                                </span>
+
+                                <span class="kd-sr">View booking details for @booking.ServiceName</span>
+                            </a>
+                        </li>
+                    }
+                </ul>
+            }
+        </section>
+
+    </main>
+</div>

@@ -7,8 +7,11 @@ public enum AIIntent
     Greeting, Help, DestinationSearch, HotelSearch, RestaurantSearch, ResortSearch, TransportSearch,
     GeneralTravelInformation, DestinationInformation, DestinationRecommendation, TravelRecommendation, TripPlanning, BudgetEstimation,
     DestinationComparison, HotelPriceInquiry, RestaurantPriceInquiry, TransportFareInquiry,
-    BookingInquiry, ContactInquiry, BookingStatus, CompanyInformation, Unsupported
+    BookingInquiry, ContactInquiry, BookingStatus, CompanyInformation, Introduction, NameRecall,
+    Gratitude, Acknowledgement, Farewell, Clarification, GeneralConversation, Unsupported
 }
+
+public sealed record AIConversationContext(string? UserName, string? LastDestination);
 
 public interface IAICapabilityService
 {
@@ -27,7 +30,7 @@ public sealed record AIEntities(
     string? DestinationA = null,
     string? DestinationB = null,
     IReadOnlyList<string>? Destinations = null);
-public sealed record AIRequest(string Message, string ConversationKey);
+public sealed record AIRequest(string Message, string ConversationKey, string? OwnerEmail = null, bool IsAdmin = false, string? AnonymousOwnerKey = null);
 public sealed record AIResponse(string Text, AIIntent Intent, bool Supported, IReadOnlyList<TravelAiListing> Listings, string ConversationKey);
 public sealed record AIActionResult(bool Success, string Message, object? Data = null);
 

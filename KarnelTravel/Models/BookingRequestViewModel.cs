@@ -1,5 +1,4 @@
-﻿
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace KarnelTravel.ViewModels;
 
@@ -98,4 +97,11 @@ public class BookingRequestViewModel
     [StringLength(1000)]
     [Display(Name = "Additional requests")]
     public string? CustomerNotes { get; set; }
+
+    // =========================================================
+    // IDENTITY
+    // =========================================================
+
+    [StringLength(80)]
+    public string? IdempotencyKey { get; set; }
 }

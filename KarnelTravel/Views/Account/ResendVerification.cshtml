@@ -1,0 +1,2 @@
+@{ Layout = "_Layout"; ViewData["Title"] = "Resend verification"; }
+<section class="page-section"><div class="container"><h1>Verify your email</h1><form method="post">@Html.AntiForgeryToken() <label for="email">Email</label><input id="email" name="email" type="email" autocomplete="email" required /><button type="submit">Resend verification</button></form></div></section>

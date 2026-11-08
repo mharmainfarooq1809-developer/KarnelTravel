@@ -1,0 +1,28 @@
+@model KarnelTravel.Models.TripInquiry
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Custom Trip Request";
+}
+<h1>Custom trip request @Model.ReferenceNumber</h1>
+<p><strong>Customer:</strong> @Model.CustomerName · @Model.Phone · @Model.Email</p>
+<p><strong>Destination:</strong> @Model.Destinations</p>
+<p><strong>Dates:</strong> @Model.DepartureDate?.ToString("dd MMM yyyy") - @Model.ReturnDate?.ToString("dd MMM yyyy")</p>
+<p><strong>Travellers:</strong> @Model.Adults adult(s), @Model.Children child(ren)</p>
+<p><strong>Needs:</strong> @Model.ServiceNeeds</p>
+<p><strong>Budget:</strong> @(Model.BudgetPKR?.ToString("N0") ?? "Not provided") PKR</p>
+<p><strong>Requirements:</strong> @Model.AdditionalRequirements</p>
+<form asp-action="UpdateCustomTripRequest" asp-route-id="@Model.Id" method="post">
+    <div asp-validation-summary="ModelOnly"></div>
+    <label for="status">Status</label>
+    <select id="status" name="status">
+        @foreach (var status in new[] { "Pending", "In Progress", "Offer Prepared", "Accepted", "Declined", "Cancelled" })
+        {
+            <option selected="@(Model.Status == status)" value="@status">@status</option>
+        }
+    </select>
+    <label for="adminNotes">Internal notes</label>
+    <textarea id="adminNotes" name="adminNotes">@Model.AdminNotes</textarea>
+    <label for="proposedOffer">Proposed offer</label>
+    <textarea id="proposedOffer" name="proposedOffer">@Model.ProposedOffer</textarea>
+    <button type="submit">Save request update</button>
+</form>

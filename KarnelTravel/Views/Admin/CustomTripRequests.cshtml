@@ -1,0 +1,23 @@
+@model IEnumerable<KarnelTravel.Models.TripInquiry>
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Custom Trip Requests";
+}
+<h1>Custom trip requests</h1>
+<p>These are requests for review, not confirmed bookings.</p>
+<table>
+    <thead><tr><th>Reference</th><th>Customer</th><th>Destination</th><th>Status</th><th>Submitted</th><th></th></tr></thead>
+    <tbody>
+    @foreach (var request in Model)
+    {
+        <tr>
+            <td>@request.ReferenceNumber</td>
+            <td>@request.CustomerName</td>
+            <td>@request.Destinations</td>
+            <td>@request.Status</td>
+            <td>@request.CreatedAt.ToLocalTime().ToString("dd MMM yyyy")</td>
+            <td><a asp-action="CustomTripRequestDetails" asp-route-id="@request.Id">Review</a></td>
+        </tr>
+    }
+    </tbody>
+</table>

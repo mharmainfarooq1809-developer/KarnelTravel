@@ -28,6 +28,42 @@ public class HomeController : Controller
             .AsNoTracking()
             .ToListAsync();
 
+        ViewBag.FeaturedPackages = await _db.TourPackages
+            .Where(x => x.IsPublished)
+            .OrderBy(x => x.DisplayOrder)
+            .ThenBy(x => x.Name)
+            .Take(3)
+            .AsNoTracking()
+            .ToListAsync();
+
+        ViewBag.FeaturedHotels = await _db.Hotels
+            .Where(x => x.IsPublished)
+            .OrderBy(x => x.Name)
+            .Take(3)
+            .AsNoTracking()
+            .ToListAsync();
+
+        ViewBag.FeaturedResorts = await _db.Resorts
+            .Where(x => x.IsPublished)
+            .OrderBy(x => x.Name)
+            .Take(3)
+            .AsNoTracking()
+            .ToListAsync();
+
+        ViewBag.FeaturedRestaurants = await _db.Restaurants
+            .Where(x => x.IsPublished)
+            .OrderBy(x => x.Name)
+            .Take(3)
+            .AsNoTracking()
+            .ToListAsync();
+
+        ViewBag.FeaturedTransport = await _db.TransportServices
+            .Where(x => x.IsPublished)
+            .OrderBy(x => x.Name)
+            .Take(3)
+            .AsNoTracking()
+            .ToListAsync();
+
         ViewBag.WebsiteContent = await _websiteContentService.GetAsync();
 
         return View();

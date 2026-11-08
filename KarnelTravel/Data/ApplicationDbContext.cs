@@ -23,6 +23,7 @@ namespace KarnelTravel.Data
         public DbSet<Hotel> Hotels => Set<Hotel>();
         public DbSet<Restaurant> Restaurants => Set<Restaurant>();
         public DbSet<Resort> Resorts => Set<Resort>();
+        public DbSet<Experience> Experiences => Set<Experience>();
 
         public DbSet<TourPackage> TourPackages => Set<TourPackage>();
         public DbSet<TourItineraryDay> TourItineraryDays => Set<TourItineraryDay>();
@@ -38,6 +39,11 @@ namespace KarnelTravel.Data
         public DbSet<ContactInquiry> ContactInquiries => Set<ContactInquiry>();
 
         public DbSet<Booking> Bookings => Set<Booking>();
+        public DbSet<CustomerAccount> CustomerAccounts => Set<CustomerAccount>();
+        public DbSet<BookingTicket> BookingTickets => Set<BookingTicket>();
+        public DbSet<BookingStatusHistory> BookingStatusHistory => Set<BookingStatusHistory>();
+        public DbSet<CustomerNotification> CustomerNotifications => Set<CustomerNotification>();
+        public DbSet<EmailDeliveryAttempt> EmailDeliveryAttempts => Set<EmailDeliveryAttempt>();
         public DbSet<Review> Reviews => Set<Review>();
 
         // WEBSITE CONTENT
@@ -72,15 +78,43 @@ namespace KarnelTravel.Data
                 e.HasIndex(x => x.Id).IsUnique();
             });
 
+            model.Entity<Experience>(e =>
+            {
+                e.ToTable("Experiences");
+                e.HasKey(x => x.Id);
+                e.Property(x => x.Name).HasMaxLength(150).IsRequired();
+                e.Property(x => x.Category).HasMaxLength(80).IsRequired();
+                e.Property(x => x.Location).HasMaxLength(150).IsRequired();
+                e.Property(x => x.Duration).HasMaxLength(80).IsRequired();
+                e.Property(x => x.ShortDescription).HasMaxLength(1000);
+                e.Property(x => x.Description).HasMaxLength(4000);
+                e.Property(x => x.ImageUrl).HasMaxLength(500);
+                e.Property(x => x.Includes).HasMaxLength(1000);
+                e.Property(x => x.Excludes).HasMaxLength(1000);
+                e.Property(x => x.StartingPrice).HasPrecision(18, 2);
+                e.HasIndex(x => x.Category);
+                e.HasIndex(x => new { x.IsPublished, x.DisplayOrder });
+            });
+
             model.Entity<AIConfiguration>(e => { e.ToTable("AIConfigurations"); e.HasKey(x => x.Id); });
             model.Entity<AICapability>(e => { e.ToTable("AICapabilities"); e.HasKey(x => x.Id); e.HasIndex(x => x.Key).IsUnique(); });
             model.Entity<AIKnowledgeEntry>(e => { e.ToTable("AIKnowledgeEntries"); e.HasKey(x => x.Id); e.HasIndex(x => new { x.Category, x.IsEnabled }); });
             model.Entity<AIQuickPrompt>(e => { e.ToTable("AIQuickPrompts"); e.HasKey(x => x.Id); e.HasIndex(x => new { x.DisplayOrder, x.IsEnabled }); });
-            model.Entity<AIConversation>(e => { e.ToTable("AIConversations"); e.HasKey(x => x.Id); e.HasIndex(x => x.ConversationKey).IsUnique(); });
+            model.Entity<AIConversation>(e => { e.ToTable("AIConversations"); e.HasKey(x => x.Id); e.HasIndex(x => x.ConversationKey).IsUnique(); e.HasIndex(x => x.OwnerEmail); e.Property(x => x.OwnerEmail).HasMaxLength(256); e.Property(x => x.AnonymousOwnerKey).HasMaxLength(128); });
             model.Entity<AIMessage>(e => { e.ToTable("AIMessages"); e.HasKey(x => x.Id); e.HasIndex(x => new { x.AIConversationId, x.CreatedAt }); e.HasOne(x => x.Conversation).WithMany(x => x.Messages).HasForeignKey(x => x.AIConversationId).OnDelete(DeleteBehavior.Cascade); });
             model.Entity<AIFeedback>(e => { e.ToTable("AIFeedback"); e.HasKey(x => x.Id); e.HasIndex(x => x.ConversationKey); });
             model.Entity<AIAuditLog>(e => { e.ToTable("AIAuditLogs"); e.HasKey(x => x.Id); e.HasIndex(x => x.CreatedAt); });
             model.Entity<AIRecommendationSettings>(e => { e.ToTable("AIRecommendationSettings"); e.HasKey(x => x.Id); e.Property(x => x.LocationWeight).HasPrecision(5, 2); e.Property(x => x.BudgetWeight).HasPrecision(5, 2); e.Property(x => x.FeaturedWeight).HasPrecision(5, 2); e.Property(x => x.CategoryWeight).HasPrecision(5, 2); });
+
+            model.Entity<TripInquiry>(e =>
+            {
+                e.HasIndex(x => x.OwnerEmail);
+                e.Property(x => x.OwnerEmail).HasMaxLength(256);
+                e.Property(x => x.AdminNotes).HasMaxLength(2000);
+                e.Property(x => x.ProposedOffer).HasMaxLength(2000);
+                e.HasIndex(x => x.IdempotencyKey).IsUnique().HasFilter("[IdempotencyKey] IS NOT NULL");
+                e.HasIndex(x => x.OfferIdempotencyKey).IsUnique().HasFilter("[OfferIdempotencyKey] IS NOT NULL");
+            });
 
             model.Entity<AdminAuditLog>(e =>
             {
@@ -373,11 +407,14 @@ namespace KarnelTravel.Data
                 e.HasIndex(x => x.ReferenceNumber).IsUnique();
 
                 e.Property(x => x.ReferenceNumber).HasMaxLength(30).IsRequired();
+                e.Property(x => x.IdempotencyKey).HasMaxLength(80);
+                e.HasIndex(x => x.IdempotencyKey).IsUnique().HasFilter("[IdempotencyKey] IS NOT NULL");
                 e.Property(x => x.CustomerName).HasMaxLength(100).IsRequired();
                 e.Property(x => x.Phone).HasMaxLength(30).IsRequired();
                 e.Property(x => x.Email).HasMaxLength(256);
                 e.Property(x => x.OwnerEmail).HasMaxLength(256);
                 e.HasIndex(x => x.OwnerEmail);
+                e.HasIndex(x => x.CustomerId);
                 e.Property(x => x.ServiceType).HasMaxLength(30).IsRequired();
                 e.Property(x => x.ServiceName).HasMaxLength(150).IsRequired();
 
@@ -419,6 +456,95 @@ namespace KarnelTravel.Data
                     .WithMany()
                     .HasForeignKey(x => x.TransportServiceId)
                     .OnDelete(DeleteBehavior.Restrict);
+
+                e.HasOne(x => x.Customer)
+                    .WithMany(x => x.Bookings)
+                    .HasForeignKey(x => x.CustomerId)
+                    .OnDelete(DeleteBehavior.SetNull);
+            });
+
+            model.Entity<CustomerAccount>(e =>
+            {
+                e.ToTable("CustomerAccounts");
+                e.HasKey(x => x.Id);
+                e.Property(x => x.Email).HasMaxLength(256).IsRequired();
+                e.Property(x => x.FullName).HasMaxLength(150).IsRequired();
+                e.Property(x => x.PhoneNumber).HasMaxLength(30).IsRequired();
+                e.Property(x => x.PasswordHash).HasMaxLength(512).IsRequired();
+                e.Property(x => x.EmailVerificationTokenHash).HasMaxLength(128);
+                e.Property(x => x.PasswordResetTokenHash).HasMaxLength(128);
+                e.HasIndex(x => x.Email).IsUnique();
+            });
+
+            model.Entity<BookingTicket>(e =>
+            {
+                e.ToTable("BookingTickets");
+                e.HasKey(x => x.Id);
+                e.Property(x => x.TicketReference).HasMaxLength(40).IsRequired();
+                e.Property(x => x.VerificationTokenHash).HasMaxLength(128).IsRequired();
+                e.Property(x => x.QrText).IsRequired();
+                e.Property(x => x.QrCodePng).IsRequired();
+                e.HasIndex(x => x.TicketReference).IsUnique();
+                e.HasIndex(x => x.VerificationTokenHash).IsUnique();
+                e.HasIndex(x => x.BookingId).HasFilter("[IsActive] = 1").IsUnique();
+                e.HasOne(x => x.Booking)
+                    .WithMany(x => x.Tickets)
+                    .HasForeignKey(x => x.BookingId)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            model.Entity<BookingStatusHistory>(e =>
+            {
+                e.ToTable("BookingStatusHistory");
+                e.HasKey(x => x.Id);
+                e.Property(x => x.PreviousStatus).HasMaxLength(30).IsRequired();
+                e.Property(x => x.NewStatus).HasMaxLength(30).IsRequired();
+                e.Property(x => x.ChangedByUserId).HasMaxLength(128);
+                e.Property(x => x.ChangedByRole).HasMaxLength(30);
+                e.Property(x => x.Reason).HasMaxLength(500);
+                e.HasIndex(x => new { x.BookingId, x.ChangedAt });
+                e.HasOne(x => x.Booking)
+                    .WithMany(x => x.StatusHistory)
+                    .HasForeignKey(x => x.BookingId)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            model.Entity<CustomerNotification>(e =>
+            {
+                e.ToTable("CustomerNotifications");
+                e.HasKey(x => x.Id);
+                e.Property(x => x.Title).HasMaxLength(160).IsRequired();
+                e.Property(x => x.Message).HasMaxLength(1000).IsRequired();
+                e.Property(x => x.NotificationType).HasMaxLength(50).IsRequired();
+                e.HasIndex(x => new { x.CustomerId, x.IsRead, x.CreatedAt });
+                e.HasOne(x => x.Customer)
+                    .WithMany(x => x.Notifications)
+                    .HasForeignKey(x => x.CustomerId)
+                    .OnDelete(DeleteBehavior.Restrict);
+                e.HasOne(x => x.Booking)
+                    .WithMany(x => x.Notifications)
+                    .HasForeignKey(x => x.BookingId)
+                    .OnDelete(DeleteBehavior.SetNull);
+            });
+
+            model.Entity<EmailDeliveryAttempt>(e =>
+            {
+                e.ToTable("EmailDeliveryAttempts");
+                e.HasKey(x => x.Id);
+                e.Property(x => x.RecipientEmail).HasMaxLength(256).IsRequired();
+                e.Property(x => x.Subject).HasMaxLength(200).IsRequired();
+                e.Property(x => x.MessageType).HasMaxLength(50).IsRequired();
+                e.Property(x => x.Status).HasMaxLength(30).IsRequired();
+                e.Property(x => x.ProviderMessage).HasMaxLength(2000);
+                e.HasIndex(x => new { x.BookingId, x.MessageType, x.Status });
+                e.HasOne(x => x.Booking)
+                    .WithMany(x => x.EmailDeliveryAttempts)
+                    .HasForeignKey(x => x.BookingId)
+                    .OnDelete(DeleteBehavior.SetNull);
+                e.HasOne(x => x.Customer)
+                    .WithMany()
+                    .HasForeignKey(x => x.CustomerId)
+                    .OnDelete(DeleteBehavior.SetNull);
             });
 
 

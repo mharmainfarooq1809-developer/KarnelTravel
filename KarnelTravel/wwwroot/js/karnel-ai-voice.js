@@ -15,6 +15,11 @@
     var speechIndex = 0;
     var speechRun = 0;
     var latestRequestId = null;
+    var voiceSessionActive = false;
+    var voiceTurnPending = false;
+    var recognitionRun = 0;
+    var voiceConversationKey = sessionStorage.getItem('karnel-ai-conversation') || crypto.randomUUID();
+    sessionStorage.setItem('karnel-ai-conversation', voiceConversationKey);
 
     var stage = root.querySelector('.kai-voice__stage');
     var stateLabel = document.getElementById('kai-voice-state');
@@ -22,6 +27,7 @@
     var status = document.getElementById('kai-voice-status');
     var microphone = document.getElementById('kai-voice-microphone');
     var stop = document.getElementById('kai-voice-stop');
+    var end = document.getElementById('kai-voice-end');
     var pause = document.getElementById('kai-voice-pause');
     var resume = document.getElementById('kai-voice-resume');
     var enabled = document.getElementById('kai-voice-enabled');
@@ -42,6 +48,7 @@
             pause.hidden = true;
             resume.hidden = true;
         }
+        if (end) { end.hidden = !voiceSessionActive; }
     }
 
     function setStatus(message, isError) {
@@ -55,6 +62,7 @@
 
     function stopRecognition() {
         if (!recognition || !isListening) { return; }
+        recognitionRun += 1;
         recognition.stop();
     }
 
@@ -68,6 +76,8 @@
             stopRecognition();
             return;
         }
+        voiceSessionActive = true;
+        voiceTurnPending = false;
         if (window.speechSynthesis) { window.speechSynthesis.cancel(); }
 
         recognition = new Recognition();
@@ -77,10 +87,12 @@
         recognition.maxAlternatives = 1;
 
         var transcript = '';
+        var finalSubmitted = false;
+        var currentRun = ++recognitionRun;
         recognition.onstart = function () {
             isListening = true;
-            setState('listening', 'Listening…', 'Speak naturally. Your words will appear in the question box for review.');
-            setStatus('Microphone is active. Click again to stop listening.');
+            setState('listening', 'Listening…', 'Speak naturally. I will process each completed turn automatically.');
+            setStatus('Microphone is active.');
             microphone.innerHTML = '<span aria-hidden="true">■</span> Stop listening';
             microphone.setAttribute('aria-label', 'Stop voice input');
         };
@@ -91,11 +103,13 @@
                 var phrase = event.results[index][0].transcript;
                 if (event.results[index].isFinal) { transcript += phrase; } else { interim += phrase; }
             }
-            input.value = (transcript + interim).trim();
-            updatingRecognizedInput = true;
-            input.dispatchEvent(new Event('input', { bubbles: true }));
-            updatingRecognizedInput = false;
-            if (inputMode) { inputMode.value = 'voice'; }
+            if (voiceSessionActive && interim) { setStatus('Listening: ' + interim.trim()); }
+            if (voiceSessionActive && transcript.trim() && !finalSubmitted) {
+                finalSubmitted = true;
+                voiceTurnPending = true;
+                stopRecognition();
+                submitVoiceTurn(transcript.trim());
+            }
         };
         recognition.onerror = function (event) {
             var messages = {
@@ -105,16 +119,21 @@
                 'audio-capture': 'No working microphone was found.',
                 'network': 'The browser speech service is unavailable right now.'
             };
-            setState('error', 'Voice input needs attention', messages[event.error] || 'Voice input could not be completed.');
+            if (event.error === 'no-speech' && voiceSessionActive) {
+                setState('listening', 'Listening…', 'No speech detected. Speak when ready.');
+            } else {
+                voiceSessionActive = false;
+                setState('error', 'Voice input needs attention', messages[event.error] || 'Voice input could not be completed.');
+            }
             setStatus(messages[event.error] || 'Speech recognition failed.', true);
         };
         recognition.onend = function () {
             isListening = false;
             microphone.innerHTML = '<span aria-hidden="true">●</span> Start listening';
             microphone.setAttribute('aria-label', 'Start voice input');
-            if (stage.dataset.voiceState === 'listening') {
-                setState('idle', transcript.trim() ? 'Question ready to review' : 'Ready when you are', transcript.trim() ? 'Review or edit the recognized question, then press Ask.' : 'Use the microphone to dictate a question.');
-                setStatus(transcript.trim() ? 'Your recognized question is ready in the text box.' : '');
+            if (currentRun !== recognitionRun) { return; }
+            if (voiceSessionActive && !voiceTurnPending && stage.dataset.voiceState === 'listening') {
+                setTimeout(function () { if (voiceSessionActive && !isListening && !voiceTurnPending) { beginRecognition(); } }, 250);
             }
         };
 
@@ -128,6 +147,31 @@
                 ? 'Microphone permission was denied. Allow microphone access and try again.'
                 : 'Voice input could not be started. Try again.', true);
         }
+
+    async function submitVoiceTurn(message) {
+        var requestId = crypto.randomUUID();
+        latestRequestId = requestId;
+        setState('processing', 'Processing…', 'Karnel AI is preparing a spoken answer.');
+        setStatus('Understanding: ' + message);
+        try {
+            var token = document.querySelector('input[name="__RequestVerificationToken"]');
+            var response = await fetch('/KarnelAI/Chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'RequestVerificationToken': token ? token.value : '' },
+                body: JSON.stringify({ message: message, conversationKey: voiceConversationKey, inputMode: 'voice', requestId: requestId })
+            });
+            var data = await response.json();
+            if (!response.ok || !data.success || data.requestId !== requestId) { throw new Error(data.error || 'The assistant could not respond.'); }
+            voiceTurnPending = false;
+            if (typeof window.karnelAiSpeak === 'function') { window.karnelAiSpeak(data.reply); }
+            else { speak(data.reply); }
+        } catch (error) {
+            voiceTurnPending = false;
+            voiceSessionActive = false;
+            setState('error', 'Voice conversation failed', 'You can try again or use Text Chat.');
+            setStatus(error.message || 'The assistant could not respond.', true);
+        }
+    }
     }
 
     function refreshVoices() {
@@ -185,8 +229,15 @@
         if (runId !== speechRun || speechIndex >= speechQueue.length) {
             if (runId === speechRun) {
                 resetSpeechControls();
-                setState('idle', 'Ready when you are', 'Use the microphone to dictate another question.');
+                if (voiceSessionActive) {
+                    setState('listening', 'Listening…', 'Speak your next question.');
+                    beginRecognition();
+                } else {
+                    setState('idle', 'Ready when you are', 'Start a voice conversation when you are ready.');
+                }
             }
+
+    window.karnelAiSpeak = speak;
             return;
         }
 
@@ -257,13 +308,32 @@
         setStatus('Spoken replies are not supported in this browser. Text chat remains available.', true);
     }
 
-    microphone.addEventListener('click', beginRecognition);
+    microphone.addEventListener('click', function () {
+        if (voiceSessionActive) {
+            voiceSessionActive = false;
+            voiceTurnPending = false;
+            stopRecognition();
+            cancelSpeech(false);
+            setState('idle', 'Voice conversation ended', 'Start a new voice conversation when you are ready.');
+            return;
+        }
+        beginRecognition();
+    });
     input.addEventListener('input', function () {
         if (!updatingRecognizedInput && inputMode) { inputMode.value = 'text'; }
     });
     stop.addEventListener('click', function () {
-        cancelSpeech(true);
+        cancelSpeech(false);
+        if (voiceSessionActive) { beginRecognition(); }
     });
+    if (end) { end.addEventListener('click', function () {
+        voiceSessionActive = false;
+        voiceTurnPending = false;
+        stopRecognition();
+        cancelSpeech(false);
+        setState('idle', 'Voice conversation ended', 'Start a new voice conversation when you are ready.');
+        setStatus('');
+    }); }
     pause.addEventListener('click', function () { if (window.speechSynthesis) { window.speechSynthesis.pause(); } });
     resume.addEventListener('click', function () { if (window.speechSynthesis) { window.speechSynthesis.resume(); } });
     enabled.addEventListener('change', function () {

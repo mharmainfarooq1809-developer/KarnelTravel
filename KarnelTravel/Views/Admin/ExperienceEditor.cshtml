@@ -1,0 +1,22 @@
+@model KarnelTravel.ViewModels.AdminExperienceFormViewModel
+@{ Layout = "~/Views/Shared/_AdminLayout.cshtml"; ViewData["Title"] = Model.Id == 0 ? "Create Experience" : "Edit Experience"; ViewData["Section"] = "Experiences"; }
+
+<section class="admin-page">
+    <div class="admin-page-header"><div><p class="admin-eyebrow">Experience management</p><h1>@ViewData["Title"]</h1></div><a asp-action="Experiences" class="admin-button">Back to experiences</a></div>
+    <form asp-action="@(Model.Id == 0 ? "CreateExperience" : "EditExperience")" asp-route-id="@Model.Id" method="post" class="setting-card" style="max-width:900px">
+        @Html.AntiForgeryToken()<div asp-validation-summary="ModelOnly" class="validation-summary-errors"></div>
+        <div class="field"><label asp-for="Name"></label><input asp-for="Name" class="input" /><span asp-validation-for="Name"></span></div>
+        <div class="field"><label asp-for="Category"></label><input asp-for="Category" class="input" placeholder="Adventure" /><span asp-validation-for="Category"></span></div>
+        <div class="field"><label asp-for="Location"></label><input asp-for="Location" class="input" /><span asp-validation-for="Location"></span></div>
+        <div class="field"><label asp-for="Duration"></label><input asp-for="Duration" class="input" placeholder="1–2 days" /><span asp-validation-for="Duration"></span></div>
+        <div class="field"><label asp-for="ImageUrl"></label><input asp-for="ImageUrl" class="input" /><span asp-validation-for="ImageUrl"></span></div>
+        <div class="field"><label asp-for="StartingPrice"></label><input asp-for="StartingPrice" class="input" /></div>
+        <div class="field"><label asp-for="ShortDescription"></label><textarea asp-for="ShortDescription" class="input"></textarea></div>
+        <div class="field"><label asp-for="Description"></label><textarea asp-for="Description" class="input" rows="6"></textarea></div>
+        <div class="field"><label asp-for="Includes"></label><textarea asp-for="Includes" class="input"></textarea></div>
+        <div class="field"><label asp-for="Excludes"></label><textarea asp-for="Excludes" class="input"></textarea></div>
+        <div class="field"><label asp-for="DisplayOrder"></label><input asp-for="DisplayOrder" class="input" /></div>
+        <div class="field"><label><input asp-for="IsPublished" /> Published</label><label><input asp-for="IsFeatured" /> Featured</label></div>
+        <button class="admin-button admin-button-primary" type="submit">Save experience</button>
+    </form>
+</section>

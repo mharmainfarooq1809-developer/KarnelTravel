@@ -24,6 +24,13 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 //  Admin authentication
 // ----------------------------------------------------------------
 builder.Services.AddSingleton<IPasswordHasher<AdminUser>, PasswordHasher<AdminUser>>();
+builder.Services.AddSingleton<IPasswordHasher<CustomerAccount>, PasswordHasher<CustomerAccount>>();
+builder.Services.AddScoped<ICustomerAccountService, CustomerAccountService>();
+builder.Services.AddScoped<IBookingStatusService, BookingStatusService>();
+builder.Services.AddScoped<IQrCodeService, QrCodeService>();
+builder.Services.AddScoped<ITicketPdfService, TicketPdfService>();
+builder.Services.AddScoped<IBookingTicketService, BookingTicketService>();
+builder.Services.AddScoped<IBookingConfirmationEmailService, BookingConfirmationEmailService>();
 
 // ✅ CHANGED: Now using the SQL Server database service instead of In-Memory
 builder.Services.AddScoped<IAdminAuthService, EfAdminAuthService>();

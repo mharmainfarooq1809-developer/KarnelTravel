@@ -1,0 +1,23 @@
+@model KarnelTravel.Models.TripInquiry
+@{
+    ViewData["Title"] = "Custom Trip Request Received";
+}
+<h1>Request received</h1>
+<p>Your custom trip request reference is <strong>@Model.ReferenceNumber</strong>.</p>
+<p>This is a request for review, not a confirmed booking. Our team will prepare an offer and contact you.</p>
+@if (Model.Status == "Offer Prepared" && !string.IsNullOrWhiteSpace(Model.ProposedOffer))
+{
+    <h2>Proposed offer</h2>
+    <p>@Model.ProposedOffer</p>
+    <form asp-action="AcceptOffer" asp-route-id="@Model.Id" method="post" style="display:inline">
+        <button type="submit">Accept offer and create booking request</button>
+    </form>
+    <form asp-action="RejectOffer" asp-route-id="@Model.Id" method="post" style="display:inline">
+        <button type="submit">Reject offer</button>
+    </form>
+}
+@if (Model.Status == "Accepted")
+{
+    <p>Your offer was accepted and converted into a booking request. It is not confirmed until the team confirms it.</p>
+}
+<a asp-controller="Destinations" asp-action="Details" asp-route-slug="@Model.Destinations">Return to destination</a>
