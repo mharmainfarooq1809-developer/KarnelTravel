@@ -16,12 +16,15 @@ namespace KarnelTravel.Models
         public string? ImageUrl { get; set; }
 
         public int? PassengerCapacity { get; set; }
+        [Obsolete("Route pricing belongs to TransportRoute.")]
         public decimal? StartingPrice { get; set; }
 
         public string? ContactPhone { get; set; }
 
         public bool IsPublished { get; set; }
         public bool IsFeatured { get; set; }
+        public bool IsArchived { get; set; }
+        public DateTime? ArchivedAt { get; set; }
 
         public int DisplayOrder { get; set; }
 
@@ -30,5 +33,7 @@ namespace KarnelTravel.Models
 
         public int? DestinationId { get; set; }
         public Destination? Destination { get; set; }
+
+        public ICollection<TransportRouteVehicle> RouteLinks { get; set; } = new List<TransportRouteVehicle>();
     }
 }

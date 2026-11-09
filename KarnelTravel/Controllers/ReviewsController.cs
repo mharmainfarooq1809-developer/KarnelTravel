@@ -158,7 +158,7 @@ namespace KarnelTravel.Controllers
 
                 case "transport":
                     return await _context.TransportServices
-                        .Where(x => x.Id == id && x.IsPublished)
+                        .Where(x => x.Id == id && x.IsPublished && !x.IsArchived)
                         .Select(x => x.Name)
                         .FirstOrDefaultAsync();
 

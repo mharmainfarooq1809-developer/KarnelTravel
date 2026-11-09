@@ -22,12 +22,13 @@ public class CustomerLoginViewModel
 
 public class ForgotPasswordViewModel
 {
-    [Required, EmailAddress] public string Email { get; set; } = string.Empty;
+    [Required, EmailAddress, StringLength(256)] public string Email { get; set; } = string.Empty;
 }
 
 public class ResetPasswordViewModel
 {
-    [Required] public string Token { get; set; } = string.Empty;
+    [Required, EmailAddress, StringLength(256)] public string Email { get; set; } = string.Empty;
+    [Required, RegularExpression("^[0-9]{6}$", ErrorMessage = "Enter the six-digit code from your email.")] public string Code { get; set; } = string.Empty;
     [Required, StringLength(100, MinimumLength = 8), DataType(DataType.Password)] public string Password { get; set; } = string.Empty;
     [Required, Compare(nameof(Password)), DataType(DataType.Password)] public string ConfirmPassword { get; set; } = string.Empty;
 }

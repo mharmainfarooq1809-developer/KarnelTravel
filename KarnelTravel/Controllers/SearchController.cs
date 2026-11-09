@@ -74,7 +74,7 @@ public class SearchController : Controller
         var hotels = new List<Hotel>();
         var restaurants = new List<Restaurant>();
         var resorts = new List<Resort>();
-        var transport = new List<TransportService>();
+        var transport = new List<TransportRoute>();
         var packages = new List<TourPackage>();
 
         int destinationCount = 0;
@@ -121,7 +121,7 @@ public class SearchController : Controller
         {
             var query = _context.Hotels
                 .AsNoTracking()
-                .Where(x => x.IsPublished);
+                .Where(x => x.IsPublished && !x.IsArchived);
 
             if (keyword != null)
             {
@@ -167,7 +167,7 @@ public class SearchController : Controller
         {
             var query = _context.Restaurants
                 .AsNoTracking()
-                .Where(x => x.IsPublished);
+                .Where(x => x.IsPublished && !x.IsArchived);
 
             if (keyword != null)
             {
@@ -211,7 +211,7 @@ public class SearchController : Controller
         {
             var query = _context.Resorts
                 .AsNoTracking()
-                .Where(x => x.IsPublished);
+                .Where(x => x.IsPublished && !x.IsArchived);
 
             if (keyword != null)
             {
@@ -253,47 +253,40 @@ public class SearchController : Controller
         // TRANSPORT
         if (all || category == "transport")
         {
-            var query = _context.TransportServices
+            var query = _context.TransportRoutes
                 .AsNoTracking()
-                .Where(x => x.IsPublished);
+                .Where(x => x.IsPublished && x.IsActive && !x.IsArchived &&
+                    x.VehicleLinks.Any(link => link.IsActive && !link.IsArchived &&
+                        link.TransportService != null && link.TransportService.IsPublished && !link.TransportService.IsArchived));
 
             if (keyword != null)
             {
                 query = query.Where(x =>
                     x.Name.Contains(keyword) ||
-                    (x.VehicleType != null &&
-                     x.VehicleType.Contains(keyword)) ||
-                    (x.StartingCity != null &&
-                     x.StartingCity.Contains(keyword)) ||
-                    (x.DestinationCity != null &&
-                     x.DestinationCity.Contains(keyword)) ||
-                    (x.Destination != null &&
-                     x.Destination.Name.Contains(keyword)));
+                    x.StartingCity.Contains(keyword) ||
+                    x.DestinationCity.Contains(keyword) ||
+                    (x.Description != null && x.Description.Contains(keyword)));
             }
 
             if (location != null)
             {
                 query = query.Where(x =>
-                    (x.StartingCity != null &&
-                     x.StartingCity.Contains(location)) ||
-                    (x.DestinationCity != null &&
-                     x.DestinationCity.Contains(location)) ||
-                    (x.Destination != null &&
-                     x.Destination.Name.Contains(location)));
+                    x.StartingCity.Contains(location) ||
+                    x.DestinationCity.Contains(location));
             }
 
             if (minBudget.HasValue)
                 query = query.Where(x =>
-                    x.StartingPrice >= minBudget.Value);
+                    x.StartingPricePKR >= minBudget.Value);
 
             if (budget.HasValue)
                 query = query.Where(x =>
-                    x.StartingPrice <= budget.Value);
+                    x.StartingPricePKR <= budget.Value);
 
             transportCount = await query.CountAsync();
 
             transport = await ApplyOrdering(
-                    query, sort, x => x.StartingPrice ?? 0)
+                    query, sort, x => x.StartingPricePKR)
                 .ThenBy(x => x.DisplayOrder)
                 .Skip((page - 1) * PageSize)
                 .Take(PageSize)

@@ -23,19 +23,22 @@ public class AccountController : Controller
     private readonly ApplicationDbContext _db;
     private readonly ICustomerAccountService _customers;
     private readonly IBookingStatusService _bookingStatusService;
+    private readonly IAccountEmailService _accountEmail;
 
     public AccountController(
         IAdminAuthService auth,
         ILogger<AccountController> log,
         ApplicationDbContext db,
         ICustomerAccountService customers,
-        IBookingStatusService bookingStatusService)
+        IBookingStatusService bookingStatusService,
+        IAccountEmailService accountEmail)
     {
         _auth = auth;
         _log = log;
         _db = db;
         _customers = customers;
         _bookingStatusService = bookingStatusService;
+        _accountEmail = accountEmail;
     }
 
     [HttpGet("Login")]
@@ -49,37 +52,28 @@ public class AccountController : Controller
     [HttpPost("Login")]
     [AllowAnonymous]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Login(
-        string email,
-        string password,
-        bool rememberMe = false,
-        string? returnUrl = null)
+    public async Task<IActionResult> Login(CustomerLoginViewModel model)
     {
-        ViewData["ReturnUrl"] = returnUrl;
-        ViewData["Email"] = email;
-        ViewData["RememberMe"] = rememberMe;
+        ViewData["ReturnUrl"] = model.ReturnUrl;
+        ViewData["Email"] = model.Email;
+        ViewData["RememberMe"] = model.RememberMe;
 
-        if (string.IsNullOrWhiteSpace(email) ||
-            string.IsNullOrWhiteSpace(password))
+        if (!ModelState.IsValid)
         {
-            ModelState.AddModelError(
-                string.Empty,
-                "Email and password are required.");
-
-            return View();
+            return View(model);
         }
 
-        var user = await _auth.ValidateCredentialsAsync(email, password);
+        var user = await _auth.ValidateCredentialsAsync(model.Email, model.Password);
 
         if (user is null)
         {
-            var customer = await _customers.ValidateCredentialsAsync(email, password);
-            if (customer is null || !customer.EmailConfirmed)
+            var customer = await _customers.ValidateCredentialsAsync(model.Email, model.Password);
+            if (customer is null)
             {
                 _log.LogWarning("Failed customer login attempt");
 
-                ModelState.AddModelError(string.Empty, "Those credentials don't match our records, or the email has not been verified.");
-                return View();
+                ModelState.AddModelError(string.Empty, "The email address or password is incorrect.");
+                return View(model);
             }
 
             var customerClaims = new List<Claim>
@@ -93,9 +87,9 @@ public class AccountController : Controller
             await HttpContext.SignInAsync(
                 CookieAuthenticationDefaults.AuthenticationScheme,
                 new ClaimsPrincipal(new ClaimsIdentity(customerClaims, CookieAuthenticationDefaults.AuthenticationScheme)),
-                new AuthenticationProperties { IsPersistent = rememberMe });
+                new AuthenticationProperties { IsPersistent = model.RememberMe });
 
-            return RedirectToAction("Dashboard", "Customer");
+            return RedirectAfterLogin(model.ReturnUrl, "Customer", "Dashboard");
         }
 
         var claims = new List<Claim>
@@ -117,7 +111,7 @@ public class AccountController : Controller
             principal,
             new AuthenticationProperties
             {
-                IsPersistent = rememberMe
+                IsPersistent = model.RememberMe
             });
 
         _log.LogInformation(
@@ -130,17 +124,11 @@ public class AccountController : Controller
             "Admin",
             StringComparison.OrdinalIgnoreCase))
         {
-            if (!string.IsNullOrWhiteSpace(returnUrl) &&
-                Url.IsLocalUrl(returnUrl))
-            {
-                return Redirect(returnUrl);
-            }
-
-            return RedirectToAction("Dashboard", "Admin");
+            return RedirectAfterLogin(model.ReturnUrl, "Admin", "Dashboard");
         }
 
         if (string.Equals(user.Role, "User", StringComparison.OrdinalIgnoreCase))
-            return RedirectToAction("Dashboard", "Customer");
+            return RedirectAfterLogin(model.ReturnUrl, "Customer", "Dashboard");
 
         // Other non-administrator users go to the public homepage.
         return RedirectToAction("Index", "Home");
@@ -163,6 +151,13 @@ public class AccountController : Controller
             return View(model);
         }
 
+        var normalizedEmail = model.Email.Trim().ToLowerInvariant();
+        if (await _db.AdminUsers.AnyAsync(x => x.Email.ToLower() == normalizedEmail))
+        {
+            ModelState.AddModelError(string.Empty, "An account with this email already exists.");
+            return View(model);
+        }
+
         var user = await _customers.CreateAsync(
             model.DisplayName,
             model.Email,
@@ -178,33 +173,7 @@ public class AccountController : Controller
             return View(model);
         }
 
-        await _customers.CreateEmailVerificationTokenAsync(user);
-        TempData["AccountMessage"] = "Your account was created. Check your email to verify it before signing in.";
-        return RedirectToAction(nameof(Login));
-    }
-
-    [HttpGet("VerifyEmail")]
-    [AllowAnonymous]
-    public async Task<IActionResult> VerifyEmail(string token, CancellationToken cancellationToken)
-    {
-        var verified = !string.IsNullOrWhiteSpace(token) && await _customers.VerifyEmailAsync(token, cancellationToken);
-        TempData["AccountMessage"] = verified ? "Your email has been verified. You can now sign in." : "This verification link is invalid or expired.";
-        return RedirectToAction(nameof(Login));
-    }
-
-    [HttpGet("ResendVerification")]
-    [AllowAnonymous]
-    public IActionResult ResendVerification() => View();
-
-    [HttpPost("ResendVerification")]
-    [AllowAnonymous]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> ResendVerification(string email, CancellationToken cancellationToken)
-    {
-        var account = await _db.CustomerAccounts.FirstOrDefaultAsync(x => x.Email == email.Trim().ToLowerInvariant(), cancellationToken);
-        if (account is not null && !account.EmailConfirmed)
-            await _customers.CreateEmailVerificationTokenAsync(account, cancellationToken);
-        TempData["AccountMessage"] = "If the account exists and is not verified, a new verification message will be sent.";
+        TempData["AccountMessage"] = "Your account was created. You can now sign in.";
         return RedirectToAction(nameof(Login));
     }
 
@@ -218,21 +187,30 @@ public class AccountController : Controller
     public async Task<IActionResult> ForgotPassword(ForgotPasswordViewModel model, CancellationToken cancellationToken)
     {
         if (ModelState.IsValid)
-            await _customers.CreatePasswordResetTokenAsync(model.Email, cancellationToken);
-        TempData["AccountMessage"] = "If an account matches that address, password reset instructions will be sent shortly.";
-        return RedirectToAction(nameof(Login));
+        {
+            var code = await _customers.CreatePasswordResetCodeAsync(model.Email, cancellationToken);
+            if (code is not null)
+            {
+                var account = await _customers.FindByEmailAsync(model.Email, cancellationToken);
+                if (account is not null)
+                    await _accountEmail.SendPasswordResetCodeAsync(account, code, cancellationToken);
+            }
+        }
+
+        TempData["AccountMessage"] = "If an account matches that address, a password reset code will be sent shortly.";
+        return RedirectToAction(nameof(ResetPassword));
     }
 
     [HttpGet("ResetPassword")]
     [AllowAnonymous]
-    public IActionResult ResetPassword(string token) => View(new ResetPasswordViewModel { Token = token });
+    public IActionResult ResetPassword() => View(new ResetPasswordViewModel());
 
     [HttpPost("ResetPassword")]
     [AllowAnonymous]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> ResetPassword(ResetPasswordViewModel model, CancellationToken cancellationToken)
     {
-        if (!ModelState.IsValid || !await _customers.ResetPasswordAsync(model.Token, model.Password, cancellationToken))
+        if (!ModelState.IsValid || !await _customers.ResetPasswordWithCodeAsync(model.Email, model.Code, model.Password, cancellationToken))
         {
             ModelState.AddModelError(string.Empty, "This reset link is invalid or expired.");
             return View(model);
@@ -309,5 +287,12 @@ public class AccountController : Controller
     public IActionResult Denied()
     {
         return View();
+    }
+
+    private IActionResult RedirectAfterLogin(string? returnUrl, string controller, string action)
+    {
+        return !string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl)
+            ? Redirect(returnUrl)
+            : RedirectToAction(action, controller)!;
     }
 }

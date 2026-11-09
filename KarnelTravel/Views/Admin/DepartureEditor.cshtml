@@ -1,232 +1,350 @@
-﻿
-@model KarnelTravel.ViewModels.AdminTourDepartureFormViewModel
+﻿@model KarnelTravel.ViewModels.AdminTourDepartureFormViewModel
 
 @{
-     Layout = "_AdminLayout";
+    Layout = "_AdminLayout";
     var isEdit = Model.Id > 0;
     ViewData["Title"] = isEdit ? "Edit Departure" : "Create Departure";
+    ViewData["Section"] = "Experiences";
 }
 
 <style>
+    /* ============================================================
+       DESIGN TOKENS — Premium Editorial Theme
+       ============================================================ */
     .departure-editor-page {
-        padding: 28px;
-        color: #25372d;
+        --ink-900: #0c1118; --ink-800: #131a24; --ink-700: #1c2530;
+        --ink-600: #2a3442; --ink-500: #465363; --ink-400: #6b7788;
+        --ink-300: #93a0b0; --ink-200: #c3ccd6; --ink-100: #e5eaef;
+        --ink-50:  #f3f6f9;
+
+        --gold-600: #a9852f; --gold-500: #c39a3e;
+        --gold-400: #d4b264; --gold-100: #f6edd6;
+
+        --emerald-600: #1f7a52; --emerald-100: #e6f5ec;
+        --rose-600: #b54848;    --rose-100: #fbeaea;
+
+        --accent: var(--gold-600);
+        --surface: #ffffff;
+        --border: #e7ebef;
+        --border-strong: #d6dde5;
+        --text: var(--ink-900);
+        --text-muted: var(--ink-400);
+
+        --shadow-xs: 0 1px 2px rgba(12,17,24,.04);
+        --shadow-sm: 0 2px 6px rgba(12,17,24,.05), 0 1px 2px rgba(12,17,24,.04);
+        --shadow-md: 0 10px 28px -12px rgba(12,17,24,.16), 0 4px 10px -6px rgba(12,17,24,.08);
+
+        --r-sm: 10px; --r-md: 14px; --r-lg: 20px;
+        --ease: cubic-bezier(.22,.61,.36,1);
+
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
         max-width: 1050px;
+        color: var(--text);
+        font-feature-settings: "ss01" on, "cv11" on;
+        position: relative;
     }
 
-    .editor-heading {
-        margin-bottom: 25px;
+    .departure-editor-page::before {
+        content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 0;
+        background:
+            radial-gradient(900px 500px at 8% -6%, rgba(212,178,100,.10), transparent 60%),
+            radial-gradient(800px 460px at 100% 0%, rgba(47,95,179,.05), transparent 55%);
     }
+    .departure-editor-page > * { position: relative; z-index: 1; }
+
+    /* ============================================================
+       HEADING
+       ============================================================ */
+    .editor-heading {
+        padding: 32px 36px;
+        border: 1px solid var(--border);
+        border-radius: var(--r-lg);
+        background: linear-gradient(135deg, #ffffff 0%, #fdfcf9 55%, #faf6ec 100%);
+        box-shadow: var(--shadow-md);
+        overflow: hidden;
+        position: relative;
+    }
+    .editor-heading::before {
+        content: ""; position: absolute; top: -50%; right: -6%;
+        width: 360px; height: 360px; border-radius: 50%;
+        background: radial-gradient(circle, rgba(196,154,62,.20), transparent 68%);
+        pointer-events: none;
+    }
+    .editor-heading::after {
+        content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 1px;
+        background: linear-gradient(90deg, transparent, rgba(196,154,62,.45), transparent);
+    }
+    .editor-heading > * { position: relative; }
 
     .editor-eyebrow {
-        color: #819087;
-        font-size: 11px;
-        font-weight: 800;
-        letter-spacing: 1.8px;
-        text-transform: uppercase;
-        margin-bottom: 9px;
+        display: inline-flex; align-items: center; gap: 8px;
+        margin-bottom: 14px; padding: 6px 12px;
+        border: 1px solid rgba(196,154,62,.28); border-radius: 999px;
+        background: rgba(246,237,214,.55);
+        color: var(--gold-600);
+        font-size: 10px; font-weight: 700;
+        letter-spacing: 2px; text-transform: uppercase;
     }
 
     .editor-title {
-        font-size: 32px;
-        font-weight: 750;
-        letter-spacing: -1px;
-        color: #20372a;
         margin: 0;
+        font-size: clamp(28px, 4vw, 40px);
+        font-weight: 700;
+        letter-spacing: -0.035em;
+        line-height: 1.05;
+        background: linear-gradient(180deg, var(--ink-900) 0%, var(--ink-600) 130%);
+        -webkit-background-clip: text; background-clip: text;
+        color: transparent;
     }
 
     .editor-description {
-        color: #859188;
-        font-size: 13px;
-        margin-top: 8px;
+        margin: 12px 0 0;
+        max-width: 540px;
+        color: var(--text-muted);
+        font-size: 14px;
+        line-height: 1.8;
     }
 
+    /* ============================================================
+       CARD
+       ============================================================ */
     .editor-card {
-        background: #fff;
-        border: 1px solid #e5ebe6;
-        border-radius: 12px;
         overflow: hidden;
+        border: 1px solid var(--border);
+        border-radius: var(--r-lg);
+        background: var(--surface);
+        box-shadow: var(--shadow-xs);
+        transition: box-shadow .3s var(--ease), border-color .3s var(--ease);
+    }
+    .editor-card:hover {
+        border-color: var(--border-strong);
+        box-shadow: var(--shadow-sm);
     }
 
     .editor-card-header {
-        padding: 20px 23px;
-        border-bottom: 1px solid #edf0ed;
+        padding: 20px 24px;
+        border-bottom: 1px solid var(--border);
+        background: var(--ink-50);
     }
-
     .editor-card-header h2 {
-        color: #2b4034;
-        font-size: 16px;
-        font-weight: 750;
         margin: 0;
+        color: var(--ink-900);
+        font-size: 15px;
+        font-weight: 700;
+        letter-spacing: -.01em;
     }
-
     .editor-card-header p {
-        color: #89958d;
-        font-size: 12px;
         margin: 6px 0 0;
+        color: var(--text-muted);
+        font-size: 11.5px;
+        line-height: 1.6;
     }
 
-    .editor-card-body {
-        padding: 25px;
-    }
+    .editor-card-body { padding: 26px; }
 
     .editor-grid {
         display: grid;
         grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 21px;
+        gap: 22px;
     }
 
     .editor-field {
         display: flex;
         flex-direction: column;
         gap: 8px;
+        min-width: 0;
     }
-
-    .editor-field.full {
-        grid-column: 1 / -1;
-    }
+    .editor-field.full { grid-column: 1 / -1; }
 
     .editor-label {
-        color: #40564a;
+        color: var(--ink-800);
         font-size: 12px;
-        font-weight: 750;
+        font-weight: 650;
+        letter-spacing: -.005em;
     }
 
     .editor-input {
         width: 100%;
         min-height: 45px;
-        padding: 11px 13px;
-        color: #314539;
-        background: #fff;
-        border: 1px solid #dfe7e1;
-        border-radius: 7px;
+        padding: 11px 14px;
+        color: var(--ink-800);
+        background: var(--ink-50);
+        border: 1px solid var(--border);
+        border-radius: 10px;
         outline: none;
+        font: inherit;
         font-size: 13px;
-        transition: border-color .2s, box-shadow .2s;
+        transition: border-color .22s var(--ease), background .22s var(--ease), box-shadow .22s var(--ease);
     }
-
+    .editor-input:hover { border-color: var(--border-strong); }
     .editor-input:focus {
-        border-color: #6d9277;
-        box-shadow: 0 0 0 3px rgba(90, 130, 101, .10);
+        border-color: var(--gold-500);
+        background: #fff;
+        box-shadow: 0 0 0 3px rgba(196,154,62,.15);
     }
-
     .editor-input[readonly] {
-        background: #f7f9f7;
-        color: #748278;
+        background: var(--ink-100);
+        color: var(--ink-500);
+        cursor: not-allowed;
+    }
+    .editor-input.input-validation-error {
+        border-color: #cf7777 !important;
+        background: #fff7f7;
     }
 
     .editor-hint {
-        color: #929e95;
-        font-size: 11px;
+        color: var(--text-muted);
+        font-size: 10.5px;
         line-height: 1.6;
     }
 
     .editor-validation {
-        color: #b64c46;
+        color: var(--rose-600);
         font-size: 11px;
+        font-weight: 500;
     }
 
     .editor-validation-summary {
-        color: #a3433e;
-        background: #fff2f0;
-        border: 1px solid #f1d9d6;
-        border-radius: 7px;
-        padding: 12px 15px;
-        margin-bottom: 20px;
+        color: var(--rose-600);
+        background: var(--rose-100);
+        border: 1px solid rgba(181,72,72,.25);
+        border-radius: 12px;
+        padding: 13px 16px;
+        margin-bottom: 22px;
         font-size: 12px;
+        font-weight: 500;
     }
+    .editor-validation-summary ul { margin: 6px 0 0; padding-left: 18px; }
+    .editor-validation-summary.validation-summary-valid { display: none; }
 
+    /* ============================================================
+       TOGGLE
+       ============================================================ */
     .editor-toggle {
         display: flex;
         align-items: flex-start;
         gap: 12px;
-        padding: 15px;
-        border: 1px solid #e4ebe5;
-        background: #f9fbf9;
-        border-radius: 8px;
+        padding: 16px;
+        border: 1px solid var(--border);
+        background: linear-gradient(180deg, #fbfaf7 0%, #fdfcf9 100%);
+        border-radius: var(--r-md);
+        cursor: pointer;
+        transition: all .22s var(--ease);
+    }
+    .editor-toggle:hover {
+        border-color: rgba(196,154,62,.4);
+        background: rgba(246,237,214,.35);
     }
 
     .editor-toggle input {
-        width: 17px;
-        height: 17px;
-        accent-color: #315c40;
+        width: 17px; height: 17px;
         margin-top: 2px;
+        accent-color: var(--gold-600);
+        cursor: pointer;
+        flex-shrink: 0;
     }
+
+    .editor-toggle > span { display: flex; flex-direction: column; }
 
     .editor-toggle strong {
         display: block;
-        color: #354b3c;
-        font-size: 12px;
+        color: var(--ink-800);
+        font-size: 12.5px;
+        font-weight: 650;
     }
-
-    .editor-toggle span {
+    .editor-toggle span > span {
         display: block;
-        color: #89958d;
+        color: var(--text-muted);
         font-size: 11px;
         margin-top: 4px;
+        line-height: 1.55;
     }
 
+    /* ============================================================
+       FOOTER
+       ============================================================ */
     .editor-footer {
         display: flex;
         justify-content: space-between;
         align-items: center;
         gap: 12px;
         flex-wrap: wrap;
-        padding: 18px 25px;
-        border-top: 1px solid #edf0ed;
-        background: #fbfcfb;
+        padding: 18px 24px;
+        border-top: 1px solid var(--border);
+        background: linear-gradient(180deg, #ffffff 0%, #fdfcf9 100%);
     }
 
     .editor-btn {
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        padding: 11px 19px;
-        border-radius: 7px;
-        border: 1px solid #dfe7e1;
-        color: #41574a;
-        background: #fff;
+        min-height: 42px;
+        padding: 0 18px;
+        border-radius: 10px;
+        border: 1px solid var(--border);
+        color: var(--ink-700);
+        background: var(--surface);
         text-decoration: none;
-        font-size: 12px;
-        font-weight: 750;
+        font: inherit;
+        font-size: 12.5px;
+        font-weight: 650;
         cursor: pointer;
+        transition: all .22s var(--ease);
+        white-space: nowrap;
     }
-
     .editor-btn:hover {
-        background: #f1f5f1;
-        color: #263d2e;
+        border-color: var(--border-strong);
+        color: var(--ink-900);
+        transform: translateY(-1px);
     }
 
     .editor-btn.primary {
-        background: #244b38;
-        border-color: #244b38;
-        color: #fff;
+        border-color: rgba(196,154,62,.5);
+        background: linear-gradient(180deg, #d4b264 0%, #b8892f 100%);
+        color: #241a06;
+        box-shadow: 0 8px 20px -10px rgba(196,154,62,.7), inset 0 1px 0 rgba(255,255,255,.35);
     }
-
     .editor-btn.primary:hover {
-        background: #183827;
-        color: #fff;
+        filter: brightness(1.05);
+        box-shadow: 0 12px 26px -10px rgba(196,154,62,.8), inset 0 1px 0 rgba(255,255,255,.4);
+        transform: translateY(-1px);
     }
 
+    /* ============================================================
+       ENTRANCE
+       ============================================================ */
+    .editor-heading, .editor-card {
+        animation: editorRise .65s var(--ease) both;
+    }
+    .editor-card { animation-delay: .08s; }
+
+    @@keyframes editorRise {
+        from { opacity: 0; transform: translateY(12px); }
+        to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ============================================================
+       RESPONSIVE
+       ============================================================ */
     @@media (max-width: 650px) {
-        .departure-editor-page {
-            padding: 16px;
-        }
+        .editor-heading { padding: 24px; }
+        .editor-card-body { padding: 18px; }
+        .editor-card-header { padding: 16px 18px; }
+        .editor-footer { padding: 14px 18px; flex-direction: column-reverse; align-items: stretch; }
+        .editor-footer .editor-btn { width: 100%; }
 
-        .editor-grid {
-            grid-template-columns: 1fr;
-        }
+        .editor-grid { grid-template-columns: 1fr; }
+        .editor-field.full { grid-column: auto; }
+        .editor-title { font-size: 26px; }
+    }
 
-        .editor-field.full {
-            grid-column: auto;
-        }
-
-        .editor-card-body {
-            padding: 18px;
-        }
-
-        .editor-title {
-            font-size: 26px;
+    @@media (prefers-reduced-motion: reduce) {
+        *, *::before, *::after {
+            animation-duration: .001ms !important;
+            animation-iteration-count: 1 !important;
+            transition-duration: .001ms !important;
         }
     }
 </style>

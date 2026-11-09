@@ -1,6 +1,7 @@
 ﻿
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 
 namespace KarnelTravel.Models;
 
@@ -20,6 +21,7 @@ public class Destination
 
     public string? ImageUrl { get; set; }
 
+    [StringLength(2000)]
     public string? BestTimeToVisit { get; set; }
 
     public bool IsPublished { get; set; }

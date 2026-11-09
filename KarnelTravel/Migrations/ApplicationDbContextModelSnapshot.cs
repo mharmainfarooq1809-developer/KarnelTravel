@@ -775,6 +775,13 @@ namespace KarnelTravel.Migrations
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<int?>("TransportRouteId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("TransportRouteName")
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
                     b.Property<int?>("TransportServiceId")
                         .HasColumnType("int");
 
@@ -807,6 +814,8 @@ namespace KarnelTravel.Migrations
                     b.HasIndex("TourDepartureId");
 
                     b.HasIndex("TourPackageId");
+
+                    b.HasIndex("TransportRouteId");
 
                     b.HasIndex("TransportServiceId");
 
@@ -986,16 +995,6 @@ namespace KarnelTravel.Migrations
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");
 
-                    b.Property<bool>("EmailConfirmed")
-                        .HasColumnType("bit");
-
-                    b.Property<DateTime?>("EmailVerificationTokenExpiresAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("EmailVerificationTokenHash")
-                        .HasMaxLength(128)
-                        .HasColumnType("nvarchar(128)");
-
                     b.Property<int>("FailedLoginAttempts")
                         .HasColumnType("int");
 
@@ -1011,6 +1010,13 @@ namespace KarnelTravel.Migrations
                         .IsRequired()
                         .HasMaxLength(512)
                         .HasColumnType("nvarchar(512)");
+
+                    b.Property<DateTime?>("PasswordResetCodeExpiresAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("PasswordResetCodeHash")
+                        .HasMaxLength(128)
+                        .HasColumnType("nvarchar(128)");
 
                     b.Property<DateTime?>("PasswordResetTokenExpiresAt")
                         .HasColumnType("datetime2");
@@ -1031,6 +1037,8 @@ namespace KarnelTravel.Migrations
 
                     b.HasIndex("Email")
                         .IsUnique();
+
+                    b.HasIndex("PasswordResetCodeHash");
 
                     b.ToTable("CustomerAccounts", (string)null);
                 });
@@ -1092,8 +1100,8 @@ namespace KarnelTravel.Migrations
 
                     b.Property<string>("BestTimeToVisit")
                         .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -1325,6 +1333,9 @@ namespace KarnelTravel.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
 
+                    b.Property<bool>("IsArchived")
+                        .HasColumnType("bit");
+
                     b.Property<bool>("IsFeatured")
                         .HasColumnType("bit");
 
@@ -1407,6 +1418,9 @@ namespace KarnelTravel.Migrations
                         .IsRequired()
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
+
+                    b.Property<bool>("IsArchived")
+                        .HasColumnType("bit");
 
                     b.Property<bool>("IsFeatured")
                         .HasColumnType("bit");
@@ -1496,6 +1510,9 @@ namespace KarnelTravel.Migrations
                         .IsRequired()
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
+
+                    b.Property<bool>("IsArchived")
+                        .HasColumnType("bit");
 
                     b.Property<bool>("IsFeatured")
                         .HasColumnType("bit");
@@ -1770,7 +1787,7 @@ namespace KarnelTravel.Migrations
                     b.ToTable("TourPackages", (string)null);
                 });
 
-            modelBuilder.Entity("KarnelTravel.Models.TransportRoutePricing", b =>
+            modelBuilder.Entity("KarnelTravel.Models.TransportRoute", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -1778,28 +1795,121 @@ namespace KarnelTravel.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<DateTime?>("ArchivedAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("DropoffCity")
+                    b.Property<string>("Description")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<string>("DestinationCity")
                         .IsRequired()
                         .HasMaxLength(150)
                         .HasColumnType("nvarchar(150)");
+
+                    b.Property<int>("DisplayOrder")
+                        .HasColumnType("int");
+
+                    b.Property<decimal?>("EstimatedDistanceKm")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("decimal(10,2)");
+
+                    b.Property<int?>("EstimatedDurationMinutes")
+                        .HasColumnType("int");
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
 
-                    b.Property<decimal>("OneWayFarePKR")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
+                    b.Property<bool>("IsArchived")
+                        .HasColumnType("bit");
 
-                    b.Property<string>("PickupCity")
+                    b.Property<bool>("IsFeatured")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsPublished")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(150)
                         .HasColumnType("nvarchar(150)");
 
-                    b.Property<decimal?>("ReturnFarePKR")
+                    b.Property<decimal?>("ReturnPricePKR")
+                        .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("Slug")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<string>("StartingCity")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<decimal>("StartingPricePKR")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Slug")
+                        .IsUnique();
+
+                    b.HasIndex("IsPublished", "IsArchived", "DisplayOrder");
+
+                    b.ToTable("TransportRoutes", (string)null);
+                });
+
+            modelBuilder.Entity("KarnelTravel.Models.TransportRouteVehicle", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime?>("ArchivedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsArchived")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("LegacyDropoffCity")
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)")
+                        .HasColumnName("DropoffCity");
+
+                    b.Property<decimal>("LegacyOneWayFarePKR")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)")
+                        .HasColumnName("OneWayFarePKR");
+
+                    b.Property<string>("LegacyPickupCity")
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)")
+                        .HasColumnName("PickupCity");
+
+                    b.Property<decimal?>("LegacyReturnFarePKR")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)")
+                        .HasColumnName("ReturnFarePKR");
+
+                    b.Property<int>("TransportRouteId")
+                        .HasColumnType("int");
 
                     b.Property<int>("TransportServiceId")
                         .HasColumnType("int");
@@ -1809,7 +1919,9 @@ namespace KarnelTravel.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("TransportServiceId", "PickupCity", "DropoffCity")
+                    b.HasIndex("TransportServiceId");
+
+                    b.HasIndex("TransportRouteId", "TransportServiceId")
                         .IsUnique();
 
                     b.ToTable("TransportRoutePricings", (string)null);
@@ -1822,6 +1934,9 @@ namespace KarnelTravel.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime?>("ArchivedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("ContactPhone")
                         .IsRequired()
@@ -1851,6 +1966,9 @@ namespace KarnelTravel.Migrations
                         .IsRequired()
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
+
+                    b.Property<bool>("IsArchived")
+                        .HasColumnType("bit");
 
                     b.Property<bool>("IsFeatured")
                         .HasColumnType("bit");
@@ -1891,6 +2009,8 @@ namespace KarnelTravel.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("DestinationId");
+
+                    b.HasIndex("IsArchived");
 
                     b.ToTable("TransportServices", (string)null);
                 });
@@ -2156,6 +2276,11 @@ namespace KarnelTravel.Migrations
                         .HasForeignKey("TourPackageId")
                         .OnDelete(DeleteBehavior.Restrict);
 
+                    b.HasOne("KarnelTravel.Models.TransportRoute", "TransportRoute")
+                        .WithMany()
+                        .HasForeignKey("TransportRouteId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("KarnelTravel.Models.TransportService", null)
                         .WithMany()
                         .HasForeignKey("TransportServiceId")
@@ -2164,6 +2289,8 @@ namespace KarnelTravel.Migrations
                     b.Navigation("Customer");
 
                     b.Navigation("TourDeparture");
+
+                    b.Navigation("TransportRoute");
                 });
 
             modelBuilder.Entity("KarnelTravel.Models.BookingStatusHistory", b =>
@@ -2327,13 +2454,21 @@ namespace KarnelTravel.Migrations
                     b.Navigation("Destination");
                 });
 
-            modelBuilder.Entity("KarnelTravel.Models.TransportRoutePricing", b =>
+            modelBuilder.Entity("KarnelTravel.Models.TransportRouteVehicle", b =>
                 {
+                    b.HasOne("KarnelTravel.Models.TransportRoute", "TransportRoute")
+                        .WithMany("VehicleLinks")
+                        .HasForeignKey("TransportRouteId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.HasOne("KarnelTravel.Models.TransportService", "TransportService")
-                        .WithMany()
+                        .WithMany("RouteLinks")
                         .HasForeignKey("TransportServiceId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.Navigation("TransportRoute");
 
                     b.Navigation("TransportService");
                 });
@@ -2385,6 +2520,16 @@ namespace KarnelTravel.Migrations
                     b.Navigation("Departures");
 
                     b.Navigation("ItineraryDays");
+                });
+
+            modelBuilder.Entity("KarnelTravel.Models.TransportRoute", b =>
+                {
+                    b.Navigation("VehicleLinks");
+                });
+
+            modelBuilder.Entity("KarnelTravel.Models.TransportService", b =>
+                {
+                    b.Navigation("RouteLinks");
                 });
 #pragma warning restore 612, 618
         }

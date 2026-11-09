@@ -15,6 +15,7 @@ public class Hotel
     public int? StarRating { get; set; }
     public string? ContactPhone { get; set; }
     public bool IsPublished { get; set; }
+    public bool IsArchived { get; set; }
     public bool IsFeatured { get; set; }
     public int DisplayOrder { get; set; }
     public DateTime CreatedAt { get; set; }

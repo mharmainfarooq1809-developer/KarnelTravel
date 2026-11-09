@@ -18,19 +18,18 @@ public class CustomerAccount
     [Required, StringLength(512)]
     public string PasswordHash { get; set; } = string.Empty;
 
-    public bool EmailConfirmed { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime? UpdatedAt { get; set; }
     public int FailedLoginAttempts { get; set; }
     public DateTime? LockoutEndUtc { get; set; }
 
     [StringLength(128)]
-    public string? EmailVerificationTokenHash { get; set; }
-    public DateTime? EmailVerificationTokenExpiresAt { get; set; }
-
-    [StringLength(128)]
     public string? PasswordResetTokenHash { get; set; }
     public DateTime? PasswordResetTokenExpiresAt { get; set; }
+
+    [StringLength(128)]
+    public string? PasswordResetCodeHash { get; set; }
+    public DateTime? PasswordResetCodeExpiresAt { get; set; }
 
     public ICollection<Booking> Bookings { get; set; } = new List<Booking>();
     public ICollection<CustomerNotification> Notifications { get; set; } = new List<CustomerNotification>();

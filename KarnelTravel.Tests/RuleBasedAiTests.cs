@@ -67,4 +67,20 @@ public sealed class RuleBasedAiTests
         Assert.NotEqual(AIIntent.Unsupported, detector.Detect("Hi, my name is Harman"));
         Assert.NotEqual(AIIntent.Unsupported, detector.Detect("Thank you"));
     }
+
+    [Fact]
+    public void Published_destination_reply_is_selected_when_previous_turn_requests_choice()
+    {
+        var context = new AIConversationContext(null, null, "Based on published destinations, choose a destination.", AIIntent.DestinationRecommendation);
+
+        Assert.True(ContextualFollowUpDetector.IsDestinationSelection("Skardu", context, "Skardu"));
+    }
+
+    [Fact]
+    public void Unrelated_follow_up_does_not_override_current_intent()
+    {
+        var context = new AIConversationContext(null, null, "Based on published destinations, choose a destination.", AIIntent.DestinationRecommendation);
+
+        Assert.False(ContextualFollowUpDetector.IsDestinationSelection("What is the weather?", context, null));
+    }
 }

@@ -1,22 +1,623 @@
 @model KarnelTravel.ViewModels.AdminExperienceFormViewModel
-@{ Layout = "~/Views/Shared/_AdminLayout.cshtml"; ViewData["Title"] = Model.Id == 0 ? "Create Experience" : "Edit Experience"; ViewData["Section"] = "Experiences"; }
 
-<section class="admin-page">
-    <div class="admin-page-header"><div><p class="admin-eyebrow">Experience management</p><h1>@ViewData["Title"]</h1></div><a asp-action="Experiences" class="admin-button">Back to experiences</a></div>
-    <form asp-action="@(Model.Id == 0 ? "CreateExperience" : "EditExperience")" asp-route-id="@Model.Id" method="post" class="setting-card" style="max-width:900px">
-        @Html.AntiForgeryToken()<div asp-validation-summary="ModelOnly" class="validation-summary-errors"></div>
-        <div class="field"><label asp-for="Name"></label><input asp-for="Name" class="input" /><span asp-validation-for="Name"></span></div>
-        <div class="field"><label asp-for="Category"></label><input asp-for="Category" class="input" placeholder="Adventure" /><span asp-validation-for="Category"></span></div>
-        <div class="field"><label asp-for="Location"></label><input asp-for="Location" class="input" /><span asp-validation-for="Location"></span></div>
-        <div class="field"><label asp-for="Duration"></label><input asp-for="Duration" class="input" placeholder="1–2 days" /><span asp-validation-for="Duration"></span></div>
-        <div class="field"><label asp-for="ImageUrl"></label><input asp-for="ImageUrl" class="input" /><span asp-validation-for="ImageUrl"></span></div>
-        <div class="field"><label asp-for="StartingPrice"></label><input asp-for="StartingPrice" class="input" /></div>
-        <div class="field"><label asp-for="ShortDescription"></label><textarea asp-for="ShortDescription" class="input"></textarea></div>
-        <div class="field"><label asp-for="Description"></label><textarea asp-for="Description" class="input" rows="6"></textarea></div>
-        <div class="field"><label asp-for="Includes"></label><textarea asp-for="Includes" class="input"></textarea></div>
-        <div class="field"><label asp-for="Excludes"></label><textarea asp-for="Excludes" class="input"></textarea></div>
-        <div class="field"><label asp-for="DisplayOrder"></label><input asp-for="DisplayOrder" class="input" /></div>
-        <div class="field"><label><input asp-for="IsPublished" /> Published</label><label><input asp-for="IsFeatured" /> Featured</label></div>
-        <button class="admin-button admin-button-primary" type="submit">Save experience</button>
+@{
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    var isEdit = Model.Id > 0;
+    ViewData["Title"] = isEdit ? "Edit Experience" : "Create Experience";
+    ViewData["Section"] = "Experiences";
+}
+
+<style>
+    /* ============================================================
+       DESIGN TOKENS — Premium Editorial Theme
+       ============================================================ */
+    .experience-editor {
+        --ink-900: #0c1118; --ink-800: #131a24; --ink-700: #1c2530;
+        --ink-600: #2a3442; --ink-500: #465363; --ink-400: #6b7788;
+        --ink-300: #93a0b0; --ink-200: #c3ccd6; --ink-100: #e5eaef;
+        --ink-50:  #f3f6f9;
+
+        --gold-600: #a9852f; --gold-500: #c39a3e;
+        --gold-400: #d4b264; --gold-100: #f6edd6;
+
+        --emerald-600: #1f7a52; --emerald-100: #e6f5ec;
+        --rose-600: #b54848;    --rose-100: #fbeaea;
+
+        --accent: var(--gold-600);
+        --surface: #ffffff;
+        --border: #e7ebef;
+        --border-strong: #d6dde5;
+        --text: var(--ink-900);
+        --text-muted: var(--ink-400);
+
+        --shadow-xs: 0 1px 2px rgba(12,17,24,.04);
+        --shadow-sm: 0 2px 6px rgba(12,17,24,.05), 0 1px 2px rgba(12,17,24,.04);
+        --shadow-md: 0 10px 28px -12px rgba(12,17,24,.16), 0 4px 10px -6px rgba(12,17,24,.08);
+
+        --r-sm: 10px; --r-md: 14px; --r-lg: 20px;
+        --ease: cubic-bezier(.22,.61,.36,1);
+
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+        max-width: 1100px;
+        color: var(--text);
+        font-feature-settings: "ss01" on, "cv11" on;
+        position: relative;
+    }
+
+    .experience-editor::before {
+        content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 0;
+        background:
+            radial-gradient(900px 500px at 8% -6%, rgba(212,178,100,.10), transparent 60%),
+            radial-gradient(800px 460px at 100% 0%, rgba(47,95,179,.05), transparent 55%);
+    }
+    .experience-editor > * { position: relative; z-index: 1; }
+
+    /* ============================================================
+       HEADING
+       ============================================================ */
+    .editor-heading {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        gap: 20px;
+        flex-wrap: wrap;
+        padding: 32px 36px;
+        border: 1px solid var(--border);
+        border-radius: var(--r-lg);
+        background: linear-gradient(135deg, #ffffff 0%, #fdfcf9 55%, #faf6ec 100%);
+        box-shadow: var(--shadow-md);
+        overflow: hidden;
+        position: relative;
+    }
+    .editor-heading::before {
+        content: ""; position: absolute; top: -50%; right: -6%;
+        width: 380px; height: 380px; border-radius: 50%;
+        background: radial-gradient(circle, rgba(196,154,62,.20), transparent 68%);
+        pointer-events: none;
+    }
+    .editor-heading::after {
+        content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 1px;
+        background: linear-gradient(90deg, transparent, rgba(196,154,62,.45), transparent);
+    }
+    .editor-heading > div { position: relative; }
+
+    .editor-eyebrow {
+        display: inline-flex; align-items: center; gap: 8px;
+        margin-bottom: 14px; padding: 6px 12px;
+        border: 1px solid rgba(196,154,62,.28); border-radius: 999px;
+        background: rgba(246,237,214,.55);
+        color: var(--gold-600);
+        font-size: 10px; font-weight: 700;
+        letter-spacing: 2px; text-transform: uppercase;
+    }
+
+    .editor-heading h1 {
+        margin: 0;
+        font-size: clamp(28px, 4vw, 42px);
+        font-weight: 700;
+        letter-spacing: -0.035em;
+        line-height: 1.05;
+        background: linear-gradient(180deg, var(--ink-900) 0%, var(--ink-600) 130%);
+        -webkit-background-clip: text; background-clip: text;
+        color: transparent;
+    }
+
+    .editor-heading p {
+        margin: 12px 0 0;
+        max-width: 540px;
+        color: var(--text-muted);
+        font-size: 14px;
+        line-height: 1.8;
+    }
+
+    .back-link {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 11px 16px;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        background: var(--surface);
+        color: var(--ink-600);
+        text-decoration: none;
+        font-size: 12.5px;
+        font-weight: 600;
+        box-shadow: var(--shadow-xs);
+        transition: all .22s var(--ease);
+    }
+    .back-link:hover {
+        border-color: rgba(196,154,62,.45);
+        color: var(--gold-600);
+        background: rgba(246,237,214,.35);
+        transform: translateY(-1px);
+    }
+
+    /* ============================================================
+       LAYOUT
+       ============================================================ */
+    .editor-layout {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 330px;
+        align-items: start;
+        gap: 22px;
+    }
+
+    .editor-main, .editor-sidebar {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        min-width: 0;
+    }
+
+    .editor-card {
+        overflow: hidden;
+        border: 1px solid var(--border);
+        border-radius: var(--r-lg);
+        background: var(--surface);
+        box-shadow: var(--shadow-xs);
+        transition: box-shadow .3s var(--ease), border-color .3s var(--ease);
+    }
+    .editor-card:hover {
+        border-color: var(--border-strong);
+        box-shadow: var(--shadow-sm);
+    }
+
+    .card-heading {
+        padding: 20px 24px;
+        border-bottom: 1px solid var(--border);
+        background: var(--ink-50);
+    }
+    .card-heading h2 {
+        margin: 0;
+        color: var(--ink-900);
+        font-size: 15px;
+        font-weight: 700;
+        letter-spacing: -.01em;
+    }
+    .card-heading p {
+        margin: 6px 0 0;
+        color: var(--text-muted);
+        font-size: 11.5px;
+        line-height: 1.6;
+    }
+
+    .card-body {
+        display: flex;
+        flex-direction: column;
+        gap: 18px;
+        padding: 24px;
+    }
+
+    .field-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 18px;
+    }
+
+    /* ============================================================
+       FIELDS
+       ============================================================ */
+    .field {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        min-width: 0;
+    }
+    .field.full { grid-column: 1 / -1; }
+
+    .field label, .field-label {
+        color: var(--ink-800);
+        font-size: 12px;
+        font-weight: 650;
+        letter-spacing: -.005em;
+    }
+
+    .field input, .field select, .field textarea {
+        width: 100%;
+        min-height: 44px;
+        padding: 12px 14px;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        outline: none;
+        background: var(--ink-50);
+        color: var(--text);
+        font: inherit;
+        font-size: 13px;
+        transition: border-color .22s var(--ease), background .22s var(--ease), box-shadow .22s var(--ease);
+    }
+    .field input:hover, .field textarea:hover { border-color: var(--border-strong); }
+    .field input:focus, .field textarea:focus {
+        border-color: var(--gold-500);
+        background: #fff;
+        box-shadow: 0 0 0 3px rgba(196,154,62,.15);
+    }
+    .field input::placeholder, .field textarea::placeholder { color: var(--ink-300); }
+
+    .field textarea {
+        min-height: 110px;
+        resize: vertical;
+        line-height: 1.7;
+    }
+
+    .field input.input-validation-error,
+    .field textarea.input-validation-error {
+        border-color: #cf7777 !important;
+        background: #fff7f7;
+    }
+
+    .field-hint {
+        color: var(--text-muted);
+        font-size: 10.5px;
+        line-height: 1.55;
+    }
+
+    .field-validation, .validation-summary-errors {
+        color: var(--rose-600);
+        font-size: 11px;
+        font-weight: 500;
+    }
+    .field-validation ul, .validation-summary-errors ul {
+        margin: 5px 0 0; padding-left: 18px;
+    }
+
+    .validation-summary-valid { display: none; }
+
+    .validation-summary-errors {
+        padding: 13px 16px;
+        border: 1px solid rgba(181,72,72,.25);
+        border-radius: 12px;
+        background: var(--rose-100);
+        margin-bottom: 4px;
+    }
+
+    /* ============================================================
+       TOGGLES
+       ============================================================ */
+    .toggle-list {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .toggle-option {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        padding: 14px 16px;
+        border: 1px solid var(--border);
+        border-radius: var(--r-md);
+        background: linear-gradient(180deg, #fbfaf7 0%, #fdfcf9 100%);
+        cursor: pointer;
+        transition: all .22s var(--ease);
+    }
+    .toggle-option:hover {
+        border-color: rgba(196,154,62,.4);
+        background: rgba(246,237,214,.35);
+    }
+    .toggle-option input {
+        width: 17px; height: 17px;
+        margin-top: 2px;
+        accent-color: var(--gold-600);
+        cursor: pointer;
+        flex-shrink: 0;
+    }
+    .toggle-option span { display: flex; flex-direction: column; gap: 4px; }
+    .toggle-option strong { color: var(--ink-800); font-size: 12.5px; font-weight: 650; }
+    .toggle-option small { color: var(--text-muted); font-size: 10.5px; line-height: 1.55; }
+
+    /* ============================================================
+       SIDEBAR NOTE
+       ============================================================ */
+    .sidebar-note {
+        padding: 15px 16px;
+        border-left: 3px solid var(--gold-500);
+        border-radius: 8px;
+        background: rgba(246,237,214,.45);
+        color: var(--ink-600);
+        font-size: 11.5px;
+        line-height: 1.75;
+    }
+
+    /* ============================================================
+       ACTIONS
+       ============================================================ */
+    .editor-actions {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 10px;
+        padding: 18px 24px;
+        border-top: 1px solid var(--border);
+        background: linear-gradient(180deg, #ffffff 0%, #fdfcf9 100%);
+    }
+
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 42px;
+        padding: 0 18px;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        background: var(--surface);
+        color: var(--ink-700);
+        font: inherit;
+        font-size: 12.5px;
+        font-weight: 650;
+        text-decoration: none;
+        cursor: pointer;
+        transition: all .22s var(--ease);
+        white-space: nowrap;
+    }
+    .btn:hover {
+        border-color: var(--border-strong);
+        color: var(--ink-900);
+        transform: translateY(-1px);
+    }
+
+    .btn-primary {
+        border-color: rgba(196,154,62,.5);
+        background: linear-gradient(180deg, #d4b264 0%, #b8892f 100%);
+        color: #241a06;
+        box-shadow: 0 8px 20px -10px rgba(196,154,62,.7), inset 0 1px 0 rgba(255,255,255,.35);
+    }
+    .btn-primary:hover {
+        filter: brightness(1.05);
+        box-shadow: 0 12px 26px -10px rgba(196,154,62,.8), inset 0 1px 0 rgba(255,255,255,.4);
+        transform: translateY(-1px);
+    }
+
+    /* ============================================================
+       ENTRANCE
+       ============================================================ */
+    .editor-heading, .editor-card {
+        animation: editorRise .65s var(--ease) both;
+    }
+    .editor-card:nth-child(1) { animation-delay: .04s; }
+    .editor-card:nth-child(2) { animation-delay: .09s; }
+    .editor-card:nth-child(3) { animation-delay: .14s; }
+
+    @@keyframes editorRise {
+        from { opacity: 0; transform: translateY(12px); }
+        to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ============================================================
+       RESPONSIVE
+       ============================================================ */
+    @@media (max-width: 900px) {
+        .editor-layout { grid-template-columns: 1fr; }
+        .editor-sidebar {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+
+    @@media (max-width: 600px) {
+        .editor-heading { padding: 24px; align-items: flex-start; }
+        .editor-heading h1 { font-size: 28px; }
+        .back-link { width: 100%; justify-content: center; }
+
+        .field-grid { grid-template-columns: 1fr; }
+        .field.full { grid-column: auto; }
+
+        .editor-sidebar { display: flex; }
+        .card-body { padding: 18px; }
+        .card-heading { padding: 16px 18px; }
+
+        .editor-actions { padding: 14px 18px; flex-direction: column-reverse; align-items: stretch; }
+        .editor-actions .btn { width: 100%; }
+    }
+
+    @@media (prefers-reduced-motion: reduce) {
+        *, *::before, *::after {
+            animation-duration: .001ms !important;
+            animation-iteration-count: 1 !important;
+            transition-duration: .001ms !important;
+        }
+    }
+</style>
+
+<div class="experience-editor">
+
+    <!-- HEADER -->
+    <div class="editor-heading">
+        <div>
+            <div class="editor-eyebrow">Experience management</div>
+
+            <h1>@ViewData["Title"]</h1>
+
+            <p>
+                @(isEdit
+                    ? "Update the details of this experience."
+                    : "Create a new bookable experience for your customers.")
+            </p>
+        </div>
+
+        <a asp-action="Experiences" class="back-link">
+            <span aria-hidden="true">←</span> Back to experiences
+        </a>
+    </div>
+
+    <form asp-action="@(isEdit ? "EditExperience" : "CreateExperience")"
+          asp-route-id="@Model.Id"
+          method="post">
+
+        @Html.AntiForgeryToken()
+
+        @if (isEdit)
+        {
+            <input asp-for="Id" type="hidden" />
+        }
+
+        <div class="editor-layout">
+
+            <!-- MAIN -->
+            <div class="editor-main">
+
+                <!-- BASICS -->
+                <section class="editor-card">
+                    <div class="card-heading">
+                        <h2>01. Experience details</h2>
+                        <p>Name, category and location shown on the public site.</p>
+                    </div>
+
+                    <div class="card-body">
+
+                        <div asp-validation-summary="ModelOnly" class="validation-summary-errors"></div>
+
+                        <div class="field">
+                            <label asp-for="Name"></label>
+                            <input asp-for="Name" placeholder="e.g. Skardu Valley Trek" />
+                            <span asp-validation-for="Name" class="field-validation"></span>
+                        </div>
+
+                        <div class="field-grid">
+                            <div class="field">
+                                <label asp-for="Category"></label>
+                                <input asp-for="Category" placeholder="Adventure" />
+                                <span asp-validation-for="Category" class="field-validation"></span>
+                            </div>
+
+                            <div class="field">
+                                <label asp-for="Location"></label>
+                                <input asp-for="Location" placeholder="Skardu, Gilgit-Baltistan" />
+                                <span asp-validation-for="Location" class="field-validation"></span>
+                            </div>
+
+                            <div class="field">
+                                <label asp-for="Duration"></label>
+                                <input asp-for="Duration" placeholder="1–2 days" />
+                                <span asp-validation-for="Duration" class="field-validation"></span>
+                            </div>
+
+                            <div class="field">
+                                <label asp-for="StartingPrice"></label>
+                                <input asp-for="StartingPrice" type="number" min="0" step="0.01" placeholder="15000" />
+                            </div>
+                        </div>
+
+                        <div class="field">
+                            <label asp-for="ImageUrl"></label>
+                            <input asp-for="ImageUrl" placeholder="/uploads/experiences/skardu-trek.jpg" />
+                            <span class="field-hint">Path or URL to a cover image.</span>
+                            <span asp-validation-for="ImageUrl" class="field-validation"></span>
+                        </div>
+
+                    </div>
+                </section>
+
+                <!-- DESCRIPTIONS -->
+                <section class="editor-card">
+                    <div class="card-heading">
+                        <h2>02. Descriptions</h2>
+                        <p>A short summary for listings and a longer description for the detail page.</p>
+                    </div>
+
+                    <div class="card-body">
+
+                        <div class="field">
+                            <label asp-for="ShortDescription"></label>
+                            <textarea asp-for="ShortDescription" rows="3" maxlength="500" placeholder="One or two sentences that capture this experience..."></textarea>
+                            <span class="field-hint">Shown on experience cards and listing pages.</span>
+                        </div>
+
+                        <div class="field">
+                            <label asp-for="Description"></label>
+                            <textarea asp-for="Description" rows="7" maxlength="4000" placeholder="Full description, itinerary highlights, what makes this experience special..."></textarea>
+                        </div>
+
+                    </div>
+                </section>
+
+                <!-- INCLUDES / EXCLUDES -->
+                <section class="editor-card">
+                    <div class="card-heading">
+                        <h2>03. What's included?</h2>
+                        <p>Clarify what travelers receive and what they must arrange themselves.</p>
+                    </div>
+
+                    <div class="card-body">
+
+                        <div class="field">
+                            <label asp-for="Includes"></label>
+                            <textarea asp-for="Includes" rows="5" maxlength="2000" placeholder="Professional guide&#10;Transport&#10;Meals&#10;Equipment"></textarea>
+                            <span class="field-hint">Enter each inclusion on a separate line.</span>
+                        </div>
+
+                        <div class="field">
+                            <label asp-for="Excludes"></label>
+                            <textarea asp-for="Excludes" rows="5" maxlength="2000" placeholder="Personal expenses&#10;Travel insurance&#10;Optional activities"></textarea>
+                            <span class="field-hint">Enter each exclusion on a separate line.</span>
+                        </div>
+
+                    </div>
+                </section>
+
+            </div>
+
+            <!-- SIDEBAR -->
+            <aside class="editor-sidebar">
+
+                <!-- PUBLISHING -->
+                <section class="editor-card">
+                    <div class="card-heading">
+                        <h2>04. Publishing</h2>
+                        <p>Control how this experience appears on your website.</p>
+                    </div>
+
+                    <div class="card-body">
+
+                        <div class="toggle-list">
+
+                            <label class="toggle-option">
+                                <input asp-for="IsPublished" type="checkbox" />
+                                <span>
+                                    <strong>Publish experience</strong>
+                                    <small>Make this experience visible on the public website.</small>
+                                </span>
+                            </label>
+
+                            <label class="toggle-option">
+                                <input asp-for="IsFeatured" type="checkbox" />
+                                <span>
+                                    <strong>Feature experience</strong>
+                                    <small>Highlight this experience on homepage or featured sections.</small>
+                                </span>
+                            </label>
+
+                        </div>
+
+                        <div class="field">
+                            <label asp-for="DisplayOrder"></label>
+                            <input asp-for="DisplayOrder" type="number" min="0" placeholder="0" />
+                            <span class="field-hint">Lower numbers appear earlier when sorted by display order.</span>
+                        </div>
+
+                    </div>
+
+                    <div class="editor-actions">
+                        <a asp-action="Experiences" class="btn">Cancel</a>
+
+                        <button type="submit" class="btn btn-primary">
+                            Save experience
+                        </button>
+                    </div>
+
+                </section>
+
+                <div class="sidebar-note">
+                    <strong>Before publishing:</strong>
+                    Review the name, description, cover image and price.
+                    The experience will not appear on the public site until it is published.
+                </div>
+
+            </aside>
+
+        </div>
     </form>
-</section>
+
+</div>

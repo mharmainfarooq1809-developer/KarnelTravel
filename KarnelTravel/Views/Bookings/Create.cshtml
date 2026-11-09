@@ -27,19 +27,14 @@
     var isScheduledTour =
         isTour && Model.TourBookingType == "Scheduled";
 
-    var transportRoutes =
-        ViewBag.TransportRoutes as IEnumerable<KarnelTravel.Models.TransportRoutePricing>
-        ?? Enumerable.Empty<KarnelTravel.Models.TransportRoutePricing>();
+    var transportRoute = ViewBag.TransportRoute as KarnelTravel.Models.TransportRoute;
+    var transportVehicles = ViewBag.TransportVehicles as IEnumerable<KarnelTravel.Models.TransportService>
+        ?? Enumerable.Empty<KarnelTravel.Models.TransportService>();
 
     var tourDepartures =
         ViewBag.TourDepartures as IEnumerable<KarnelTravel.Models.TourDeparture>
         ?? Enumerable.Empty<KarnelTravel.Models.TourDeparture>();
 
-    var pickupCities = transportRoutes
-        .Select(x => x.PickupCity)
-        .Distinct()
-        .OrderBy(x => x)
-        .ToList();
 }
 
 <style>
@@ -502,33 +497,23 @@
 
                 @if (isTransport)
                 {
-                    <div class="booking-field">
-                        <label asp-for="PickupLocation">Pickup city</label>
-
-                        <select asp-for="PickupLocation" id="pickupCity">
-                            <option value="">Select pickup city</option>
-
-                            @foreach (var city in pickupCities)
-                            {
-                                <option value="@city">@city</option>
-                            }
-                        </select>
-
-                        <span asp-validation-for="PickupLocation"
-                              class="booking-validation"></span>
+                    <input type="hidden" asp-for="PickupLocation" value="@transportRoute?.StartingCity" />
+                    <input type="hidden" asp-for="DropoffLocation" value="@transportRoute?.DestinationCity" />
+                    <div class="booking-field full">
+                        <label>Route</label>
+                        <strong>@transportRoute?.StartingCity → @transportRoute?.DestinationCity</strong>
                     </div>
 
-                    <div class="booking-field">
-                        <label asp-for="DropoffLocation">Drop-off city</label>
-
-                        <select asp-for="DropoffLocation"
-                                id="dropoffCity"
-                                disabled>
-                            <option value="">Select drop-off city</option>
+                    <div class="booking-field full">
+                        <label asp-for="TransportVehicleId">Vehicle</label>
+                        <select asp-for="TransportVehicleId" required>
+                            <option value="">Select an available vehicle</option>
+                            @foreach (var vehicle in transportVehicles)
+                            {
+                                <option value="@vehicle.Id">@vehicle.Name — @vehicle.VehicleType (@vehicle.PassengerCapacity passengers)</option>
+                            }
                         </select>
-
-                        <span asp-validation-for="DropoffLocation"
-                              class="booking-validation"></span>
+                        <span asp-validation-for="TransportVehicleId" class="booking-validation"></span>
                     </div>
 
                     <div class="booking-field full">
@@ -827,17 +812,6 @@
     <script>
         document.addEventListener("DOMContentLoaded", function () {
 
-            const routes = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
-                transportRoutes.Select(x => new {
-                    pickup = x.PickupCity,
-                    dropoff = x.DropoffCity,
-                    fare = x.OneWayFarePKR,
-                    returnFare = x.ReturnFarePKR ?? x.OneWayFarePKR
-                })
-            ));
-
-            const pickupSelect = document.getElementById("pickupCity");
-            const dropoffSelect = document.getElementById("dropoffCity");
             const tripType = document.getElementById("tripType");
 
             const returnField = document.getElementById("returnDateField");
@@ -851,44 +825,15 @@
             const fareMessage = document.getElementById("fareMessage");
             const routeWarning = document.getElementById("routeWarning");
 
-            const savedPickup = pickupSelect.value;
-            const savedDropoff = @Html.Raw(
-                System.Text.Json.JsonSerializer.Serialize(Model.DropoffLocation ?? "")
-            );
+            const route = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(new {
+                fare = transportRoute?.StartingPricePKR ?? 0,
+                returnFare = transportRoute?.ReturnPricePKR ?? transportRoute?.StartingPricePKR ?? 0
+            }));
 
             function formatPKR(amount) {
                 return "PKR " + Number(amount).toLocaleString("en-PK", {
                     maximumFractionDigits: 2
                 });
-            }
-
-            function updateDropoffOptions() {
-                const selectedPickup = pickupSelect.value;
-                const previousDropoff = dropoffSelect.value || savedDropoff;
-
-                dropoffSelect.innerHTML =
-                    '<option value="">Select drop-off city</option>';
-
-                const destinations = [...new Set(
-                    routes
-                        .filter(route => route.pickup === selectedPickup)
-                        .map(route => route.dropoff)
-                )].sort();
-
-                destinations.forEach(city => {
-                    const option = document.createElement("option");
-                    option.value = city;
-                    option.textContent = city;
-                    dropoffSelect.appendChild(option);
-                });
-
-                dropoffSelect.disabled = destinations.length === 0;
-
-                if (destinations.includes(previousDropoff)) {
-                    dropoffSelect.value = previousDropoff;
-                }
-
-                updateFare();
             }
 
             function updateReturnDate() {
@@ -905,19 +850,11 @@
             }
 
             function updateFare() {
-                const pickup = pickupSelect.value;
-                const dropoff = dropoffSelect.value;
-
-                const selectedRoute = routes.find(route =>
-                    route.pickup === pickup &&
-                    route.dropoff === dropoff
-                );
-
                 const isRoundTrip = tripType.value === "RoundTrip";
 
                 routeWarning.textContent = "";
 
-                if (!selectedRoute) {
+                if (!route) {
                     oneWayFareElement.textContent = formatPKR(0);
                     returnFareElement.textContent = formatPKR(0);
                     totalFareElement.textContent = formatPKR(0);
@@ -925,18 +862,13 @@
                     fareMessage.textContent =
                         "Select a valid pickup and drop-off route to view its fare.";
 
-                    if (pickup && dropoff) {
-                        routeWarning.textContent =
-                            "This route is not currently available.";
-                    }
-
                     return;
                 }
 
-                const outbound = Number(selectedRoute.fare);
+                const outbound = Number(route.fare);
 
                 const returning = isRoundTrip
-                    ? Number(selectedRoute.returnFare)
+                    ? Number(route.returnFare)
                     : 0;
 
                 const total = outbound + returning;
@@ -950,22 +882,11 @@
                     : "This is the configured one-way route fare.";
             }
 
-            pickupSelect.addEventListener("change", function () {
-                updateDropoffOptions();
-            });
-
-            dropoffSelect.addEventListener("change", updateFare);
-
             tripType.addEventListener("change", function () {
                 updateReturnDate();
                 updateFare();
             });
 
-            if (savedPickup) {
-                pickupSelect.value = savedPickup;
-            }
-
-            updateDropoffOptions();
             updateReturnDate();
             updateFare();
         });

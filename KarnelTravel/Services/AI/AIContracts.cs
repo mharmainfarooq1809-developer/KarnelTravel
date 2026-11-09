@@ -11,7 +11,7 @@ public enum AIIntent
     Gratitude, Acknowledgement, Farewell, Clarification, GeneralConversation, Unsupported
 }
 
-public sealed record AIConversationContext(string? UserName, string? LastDestination);
+public sealed record AIConversationContext(string? UserName, string? LastDestination, string? LastAssistantMessage = null, AIIntent? LastIntent = null);
 
 public interface IAICapabilityService
 {

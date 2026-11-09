@@ -36,9 +36,14 @@ public class Booking
     public int? TourPackageId { get; set; }
     public int? TourDepartureId { get; set; }
     public int? TransportServiceId { get; set; }
+    public int? TransportRouteId { get; set; }
+    public TransportRoute? TransportRoute { get; set; }
 
     [Required, StringLength(150)]
     public string ServiceName { get; set; } = string.Empty;
+
+    [StringLength(150)]
+    public string? TransportRouteName { get; set; }
 
     [Required]
     public DateTime BookingDate { get; set; }
@@ -109,4 +114,8 @@ public class Booking
             _ => false
         };
     }
+
+    public static bool CanAdminDelete(string? status) =>
+        string.Equals(status, "Completed", StringComparison.OrdinalIgnoreCase) ||
+        string.Equals(status, "Cancelled", StringComparison.OrdinalIgnoreCase);
 }

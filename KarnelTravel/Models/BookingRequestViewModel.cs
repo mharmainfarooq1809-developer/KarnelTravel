@@ -14,6 +14,9 @@ public class BookingRequestViewModel
     [Range(1, int.MaxValue)]
     public int ServiceId { get; set; }
 
+    [Range(1, int.MaxValue)]
+    public int? TransportVehicleId { get; set; }
+
     // =========================================================
     // TOUR BOOKING FIELDS
     // =========================================================

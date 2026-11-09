@@ -16,6 +16,17 @@
     <a href="/Admin/Bookings" class="btn btn-quiet">
         ← Back to bookings
     </a>
+    @if (Model.Status is "Completed" or "Cancelled")
+    {
+        <form asp-controller="Admin"
+              asp-action="DeleteBooking"
+              asp-route-id="@Model.Id"
+              method="post"
+              onsubmit="return confirm('Delete this completed or cancelled booking permanently? This action cannot be undone.');">
+            @Html.AntiForgeryToken()
+            <button type="submit" class="btn btn-danger">Delete booking</button>
+        </form>
+    }
 </div>
 
 @if (TempData["BookingSuccess"] is string success)

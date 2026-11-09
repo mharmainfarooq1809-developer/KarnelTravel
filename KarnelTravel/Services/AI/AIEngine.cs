@@ -47,6 +47,16 @@ public sealed class IntentDetector
     private static bool HasDestinationPair(string text) => Regex.Matches(text, "\\b(hunza(?: valley)?|skardu(?: valley)?|lahore|islamabad|naran|kaghan|swat|murree)\\b", RegexOptions.IgnoreCase).Count >= 2;
 }
 
+public static class ContextualFollowUpDetector
+{
+    public static bool IsDestinationSelection(string text, AIConversationContext context, string? destination) =>
+        destination != null &&
+        text.Trim().Length <= 80 &&
+        context.LastIntent == AIIntent.DestinationRecommendation &&
+        context.LastAssistantMessage != null &&
+        Regex.IsMatch(context.LastAssistantMessage, "choose a destination|select a destination|pick a destination", RegexOptions.IgnoreCase);
+}
+
 public sealed class EntityExtractor
 {
     private static readonly Regex Budget = new("(?:under|below|max(?:imum)?|budget\\s*(?:is|of)?)\\s*(?:PKR\\s*)?(\\d[\\d,]*)", RegexOptions.IgnoreCase | RegexOptions.Compiled);
@@ -82,15 +92,18 @@ public sealed class ConversationManager
     public async Task<AIConversationContext> GetContextAsync(string conversationKey, string? ownerEmail, bool isAdmin, string? anonymousOwnerKey, CancellationToken cancellationToken)
     {
         var messages = await _db.AIMessages.AsNoTracking()
-            .Where(x => x.Conversation != null && x.Conversation.ConversationKey == conversationKey && x.Role == "user" &&
+            .Where(x => x.Conversation != null && x.Conversation.ConversationKey == conversationKey &&
                 (isAdmin || x.Conversation.OwnerEmail == ownerEmail || (x.Conversation.IsAnonymous && x.Conversation.AnonymousOwnerKey == anonymousOwnerKey)))
             .OrderByDescending(x => x.Id)
             .Take(12)
-            .Select(x => x.Content)
             .ToListAsync(cancellationToken);
-        var name = messages.Select(ExtractName).FirstOrDefault(x => x != null);
-        var destination = messages.SelectMany(x => DestinationNames().Where(d => Regex.IsMatch(x, $"\\b{Regex.Escape(d)}\\b", RegexOptions.IgnoreCase))).FirstOrDefault();
-        return new AIConversationContext(name, destination);
+        var userMessages = messages.Where(x => x.Role == "user").Select(x => x.Content).ToList();
+        var assistantMessage = messages.FirstOrDefault(x => x.Role == "assistant");
+        var name = userMessages.Select(ExtractName).FirstOrDefault(x => x != null);
+        var publishedDestinations = await _db.Destinations.AsNoTracking().Where(x => x.IsPublished).Select(x => x.Name).ToListAsync(cancellationToken);
+        var destination = userMessages.SelectMany(x => publishedDestinations.Where(d => Regex.IsMatch(x, $"\\b{Regex.Escape(d)}\\b", RegexOptions.IgnoreCase))).FirstOrDefault();
+        Enum.TryParse<AIIntent>(assistantMessage?.Intent, true, out var lastIntent);
+        return new AIConversationContext(name, destination, assistantMessage?.Content, assistantMessage == null ? null : lastIntent);
     }
     public async Task SaveAsync(AIRequest request, AIResponse response, CancellationToken cancellationToken)
     {
@@ -111,7 +124,6 @@ public sealed class ConversationManager
         return match.Success ? match.Groups[1].Value : null;
     }
 
-    private static IEnumerable<string> DestinationNames() => new[] { "Hunza", "Skardu", "Lahore", "Islamabad", "Naran", "Kaghan", "Swat", "Murree" };
 }
 
 public sealed class ResponseBuilder
@@ -254,6 +266,9 @@ public sealed class AIEngine : IAIEngine
         if (string.IsNullOrWhiteSpace(text)) return new AIResponse("Please tell me what you would like to explore.", AIIntent.Unsupported, false, Array.Empty<TravelAiListing>(), request.ConversationKey);
         var context = await _conversation.GetContextAsync(request.ConversationKey, request.OwnerEmail, request.IsAdmin, request.AnonymousOwnerKey, cancellationToken);
         var intent = _intent.Detect(text);
+        var contextualDestination = await FindPublishedDestinationAsync(text, cancellationToken);
+        if (ContextualFollowUpDetector.IsDestinationSelection(text, context, contextualDestination))
+            intent = AIIntent.TripPlanning;
         var contextualText = string.IsNullOrWhiteSpace(context.LastDestination) || !Regex.IsMatch(text, "\\b(there|that destination|this destination)\\b", RegexOptions.IgnoreCase)
             ? text
             : $"{text} {context.LastDestination}";
@@ -267,7 +282,7 @@ public sealed class AIEngine : IAIEngine
         var knowledge = intent == AIIntent.DestinationComparison
             ? await SearchComparisonKnowledgeAsync(entities, text, cancellationToken)
             : await _knowledge.SearchAsync(text, cancellationToken);
-        var location = await FindPublishedLocationAsync(text, cancellationToken);
+        var location = contextualDestination ?? await FindPublishedLocationAsync(text, cancellationToken);
         entities = _entities.WithLocation(entities, location);
         var capability = intent switch { AIIntent.DestinationSearch => "destination-search", AIIntent.HotelSearch => "hotel-search", AIIntent.RestaurantSearch => "restaurant-search", AIIntent.ResortSearch => "resort-search", AIIntent.TransportSearch => "transport-search", AIIntent.DestinationComparison => "destination-comparison", AIIntent.TripPlanning => "trip-planning", AIIntent.BudgetEstimation => "budget-estimation", AIIntent.BookingInquiry => "booking-inquiry", AIIntent.ContactInquiry => "contact-inquiry", AIIntent.BookingStatus => "booking-status", _ => null };
         if (capability != null && !await _capabilities.IsEnabledAsync(capability, cancellationToken))
@@ -276,6 +291,7 @@ public sealed class AIEngine : IAIEngine
             await _conversation.SaveAsync(request, disabled, cancellationToken);
             return disabled;
         }
+
         var category = intent switch
         {
             AIIntent.HotelSearch or AIIntent.HotelPriceInquiry => "hotel",
@@ -310,6 +326,20 @@ public sealed class AIEngine : IAIEngine
         var response = new AIResponse(_responses.Build(intent, entities, search.Items, plan, knowledge, text, context), intent, intent != AIIntent.Unsupported || knowledge.Count > 0, search.Items, request.ConversationKey);
         await _conversation.SaveAsync(request, response, cancellationToken);
         return response;
+    }
+
+    private async Task<string?> FindPublishedDestinationAsync(string text, CancellationToken cancellationToken)
+    {
+        var destinations = await _db.Destinations.AsNoTracking()
+            .Where(x => x.IsPublished)
+            .Select(x => x.Name)
+            .ToListAsync(cancellationToken);
+
+        return destinations
+            .Where(name => string.Equals(name.Trim(), text.Trim(), StringComparison.OrdinalIgnoreCase) ||
+                          Regex.IsMatch(text, $"\\b{Regex.Escape(name.Trim())}\\b", RegexOptions.IgnoreCase))
+            .OrderByDescending(name => name.Length)
+            .FirstOrDefault();
     }
 
     private async Task<string?> FindPublishedLocationAsync(string text, CancellationToken cancellationToken)

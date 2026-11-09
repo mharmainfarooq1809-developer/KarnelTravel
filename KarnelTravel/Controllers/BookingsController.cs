@@ -65,7 +65,7 @@ public class BookingsController : Controller
 
         if (service.Type == "Transport")
         {
-            await LoadTransportRoutes(service.Id);
+            await LoadTransportVehicles(service.Id);
         }
 
         if (service.Type == "Tour")
@@ -342,6 +342,23 @@ public class BookingsController : Controller
 
         if (service.Type == "Transport")
         {
+            var route = await _context.TransportRoutes
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x => x.Id == service.Id && x.IsPublished && x.IsActive && !x.IsArchived);
+            var selectedVehicleId = model.TransportVehicleId;
+            var selectedVehicle = route == null || !selectedVehicleId.HasValue
+                ? null
+                : await _context.TransportServices.AsNoTracking().FirstOrDefaultAsync(x =>
+                    x.Id == selectedVehicleId.Value && x.IsPublished && !x.IsArchived &&
+                    x.RouteLinks.Any(link => link.TransportRouteId == service.Id && link.IsActive && !link.IsArchived));
+
+            if (route == null)
+                return NotFound("The selected route is unavailable.");
+            if (selectedVehicle == null)
+                ModelState.AddModelError(nameof(model.TransportVehicleId), "Select an available vehicle for this route.");
+
+            model.PickupLocation = route.StartingCity;
+            model.DropoffLocation = route.DestinationCity;
             var pickupCity = model.PickupLocation?.Trim();
             var dropoffCity = model.DropoffLocation?.Trim();
 
@@ -382,17 +399,7 @@ public class BookingsController : Controller
 
             // CHECK VEHICLE
 
-            var transportService = await _context.TransportServices
-                .AsNoTracking()
-                .FirstOrDefaultAsync(x =>
-                    x.Id == service.Id &&
-                    x.IsPublished);
-
-            if (transportService == null)
-            {
-                return NotFound(
-                    "The selected vehicle is unavailable.");
-            }
+            var transportService = selectedVehicle;
 
             // PASSENGER CAPACITY
 
@@ -412,7 +419,7 @@ public class BookingsController : Controller
                     "At least one passenger is required.");
             }
 
-            if (transportService.PassengerCapacity.HasValue &&
+            if (transportService != null && transportService.PassengerCapacity.HasValue &&
                 totalPassengers > transportService.PassengerCapacity.Value)
             {
                 ModelState.AddModelError(
@@ -452,7 +459,7 @@ public class BookingsController : Controller
                     await _context.Bookings
                         .AsNoTracking()
                         .AnyAsync(b =>
-                            b.TransportServiceId == service.Id &&
+                            b.TransportServiceId == selectedVehicle!.Id &&
                             b.ServiceType == "Transport" &&
                             (
                                 b.Status == "Pending" ||
@@ -489,31 +496,18 @@ public class BookingsController : Controller
                 }
                 else
                 {
-                    var routePricing =
-                        await _context.TransportRoutePricings
-                            .AsNoTracking()
-                            .FirstOrDefaultAsync(x =>
-                                x.TransportServiceId == service.Id &&
-                                x.PickupCity == pickupCity &&
-                                x.DropoffCity == dropoffCity &&
-                                x.IsActive);
-
-                    if (routePricing == null)
+                    if (route == null || route.StartingCity != pickupCity || route.DestinationCity != dropoffCity)
                     {
-                        ModelState.AddModelError(
-                            nameof(model.DropoffLocation),
-                            "This route is not currently available " +
-                            "for the selected vehicle.");
+                        ModelState.AddModelError(nameof(model.DropoffLocation), "The selected route is not valid.");
                     }
                     else
                     {
-                        oneWayFare = routePricing.OneWayFarePKR;
+                        oneWayFare = route.StartingPricePKR;
 
                         if (model.TripType == "RoundTrip")
                         {
                             returnFare =
-                                routePricing.ReturnFarePKR
-                                ?? routePricing.OneWayFarePKR;
+                                route.ReturnPricePKR ?? route.StartingPricePKR;
                         }
                         else
                         {
@@ -544,7 +538,7 @@ public class BookingsController : Controller
                 .AsNoTracking()
                 .FirstOrDefaultAsync(x =>
                     x.Id == service.Id &&
-                    x.IsPublished);
+                    x.IsPublished && !x.IsArchived);
 
             if (hotel?.StartingPricePerNight is > 0)
             {
@@ -579,7 +573,7 @@ public class BookingsController : Controller
                 .AsNoTracking()
                 .FirstOrDefaultAsync(x =>
                     x.Id == service.Id &&
-                    x.IsPublished);
+                    x.IsPublished && !x.IsArchived);
 
             if (resort?.StartingPricePerNight is > 0)
             {
@@ -621,7 +615,7 @@ public class BookingsController : Controller
                     .AsNoTracking()
                     .FirstOrDefaultAsync(x =>
                         x.Id == service.Id &&
-                        x.IsPublished);
+                        x.IsPublished && !x.IsArchived);
 
                 if (restaurant?.AverageMealPrice is > 0)
                 {
@@ -700,7 +694,7 @@ public class BookingsController : Controller
         {
             if (service.Type == "Transport")
             {
-                await LoadTransportRoutes(service.Id);
+                await LoadTransportVehicles(service.Id);
             }
 
             if (service.Type == "Tour")
@@ -748,6 +742,7 @@ public class BookingsController : Controller
             ServiceType = service.Type,
 
             ServiceName = service.Name,
+            TransportRouteName = service.Type == "Transport" ? service.Name : null,
 
             BookingDate = model.BookingDate.Date,
 
@@ -828,7 +823,8 @@ public class BookingsController : Controller
                 break;
 
             case "Transport":
-                booking.TransportServiceId = service.Id;
+                booking.TransportRouteId = service.Id;
+                booking.TransportServiceId = model.TransportVehicleId;
                 break;
         }
 
@@ -881,16 +877,20 @@ public class BookingsController : Controller
     // LOAD ACTIVE TRANSPORT ROUTES
     // =========================================================
 
-    private async Task LoadTransportRoutes(int transportServiceId)
+    private async Task LoadTransportVehicles(int transportRouteId)
     {
-        ViewBag.TransportRoutes =
-            await _context.TransportRoutePricings
+        ViewBag.TransportRoute = await _context.TransportRoutes
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.Id == transportRouteId);
+        ViewBag.TransportVehicles =
+            await _context.TransportRouteVehicles
                 .AsNoTracking()
                 .Where(x =>
-                    x.TransportServiceId == transportServiceId &&
-                    x.IsActive)
-                .OrderBy(x => x.PickupCity)
-                .ThenBy(x => x.DropoffCity)
+                    x.TransportRouteId == transportRouteId && x.IsActive && !x.IsArchived &&
+                    x.TransportService != null && x.TransportService.IsPublished && !x.TransportService.IsArchived)
+                .Include(x => x.TransportService)
+                .Select(x => x.TransportService!)
+                .OrderBy(x => x.Name)
                 .ToListAsync();
     }
 
@@ -933,7 +933,8 @@ public class BookingsController : Controller
                         .AsNoTracking()
                         .FirstOrDefaultAsync(x =>
                             x.Id == serviceId &&
-                            x.IsPublished);
+                            x.IsPublished &&
+                            !x.IsArchived);
 
                     return item == null
                         ? null
@@ -992,11 +993,11 @@ public class BookingsController : Controller
 
             case "transport":
                 {
-                    var item = await _context.TransportServices
+                    var item = await _context.TransportRoutes
                         .AsNoTracking()
                         .FirstOrDefaultAsync(x =>
                             x.Id == serviceId &&
-                            x.IsPublished);
+                            x.IsPublished && x.IsActive && !x.IsArchived);
 
                     return item == null
                         ? null

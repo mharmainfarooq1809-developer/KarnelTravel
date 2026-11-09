@@ -61,6 +61,571 @@ public class AdminController : Controller
         return View(model);
     }
 
+    [HttpGet("Tours")]
+    public async Task<IActionResult> Tours()
+    {
+        var packages = await _context.TourPackages
+            .AsNoTracking()
+            .Select(x => new AdminTourPackageRowViewModel
+            {
+                Id = x.Id,
+                Name = x.Name,
+                Slug = x.Slug,
+                DestinationName = x.DestinationName,
+                ImageUrl = x.ImageUrl,
+                DurationDays = x.DurationDays,
+                PricePerAdult = x.PricePerAdult,
+                PricePerChild = x.PricePerChild,
+                IsPublished = x.IsPublished,
+                IsFeatured = x.IsFeatured,
+                DisplayOrder = x.DisplayOrder,
+                DepartureCount = x.Departures.Count()
+            })
+            .OrderBy(x => x.DisplayOrder)
+            .ThenBy(x => x.Name)
+            .ToListAsync();
+
+        return View(packages);
+    }
+
+    [HttpGet("Tours/Create")]
+    public async Task<IActionResult> CreateTour()
+    {
+        await LoadTourDestinationsAsync();
+        return View("TourEditor", new AdminTourPackageFormViewModel { IsPublished = true });
+    }
+
+    [HttpPost("Tours/Create")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> CreateTour(AdminTourPackageFormViewModel model)
+    {
+        await ValidateTourModelAsync(model);
+        if (!ModelState.IsValid)
+        {
+            await LoadTourDestinationsAsync();
+            return View("TourEditor", model);
+        }
+
+        var package = new TourPackage();
+        ApplyTourModel(package, model);
+        _context.TourPackages.Add(package);
+        await _context.SaveChangesAsync();
+
+        TempData["SuccessMessage"] = "Tour package created successfully.";
+        return RedirectToAction(nameof(Tours));
+    }
+
+    [HttpGet("Tours/Edit/{id:int}")]
+    public async Task<IActionResult> EditTour(int id)
+    {
+        var package = await _context.TourPackages.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id);
+        if (package is null)
+            return NotFound();
+
+        await LoadTourDestinationsAsync();
+        return View("TourEditor", new AdminTourPackageFormViewModel
+        {
+            Id = package.Id,
+            Name = package.Name,
+            Slug = package.Slug,
+            DestinationId = package.DestinationId,
+            ShortDescription = package.ShortDescription,
+            Description = package.Description,
+            ImageUrl = package.ImageUrl,
+            DurationDays = package.DurationDays,
+            PricePerAdult = package.PricePerAdult,
+            PricePerChild = package.PricePerChild,
+            Inclusions = package.Inclusions,
+            Exclusions = package.Exclusions,
+            IsPublished = package.IsPublished,
+            IsFeatured = package.IsFeatured,
+            DisplayOrder = package.DisplayOrder
+        });
+    }
+
+    [HttpPost("Tours/Edit/{id:int}")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> EditTour(int id, AdminTourPackageFormViewModel model)
+    {
+        if (id != model.Id)
+            return BadRequest();
+
+        await ValidateTourModelAsync(model, id);
+        if (!ModelState.IsValid)
+        {
+            await LoadTourDestinationsAsync();
+            return View("TourEditor", model);
+        }
+
+        var package = await _context.TourPackages.FirstOrDefaultAsync(x => x.Id == id);
+        if (package is null)
+            return NotFound();
+
+        ApplyTourModel(package, model);
+        package.UpdatedAt = DateTime.UtcNow;
+        await _context.SaveChangesAsync();
+
+        TempData["SuccessMessage"] = "Tour package updated successfully.";
+        return RedirectToAction(nameof(Tours));
+    }
+
+    [HttpPost("Tours/Delete/{id:int}")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> DeleteTour(int id)
+    {
+        var package = await _context.TourPackages.FirstOrDefaultAsync(x => x.Id == id);
+        if (package is null)
+            return NotFound();
+
+        if (await _context.Bookings.AnyAsync(x => x.TourPackageId == id)
+            || await _context.TourDepartures.AnyAsync(x => x.TourPackageId == id))
+        {
+            package.IsPublished = false;
+            package.UpdatedAt = DateTime.UtcNow;
+            await _context.SaveChangesAsync();
+            TempData["ErrorMessage"] = "This tour has bookings or departures, so it was unpublished instead of deleted.";
+        }
+        else
+        {
+            _context.TourPackages.Remove(package);
+            await _context.SaveChangesAsync();
+            TempData["SuccessMessage"] = "Tour package deleted successfully.";
+        }
+
+        return RedirectToAction(nameof(Tours));
+    }
+
+    private async Task LoadTourDestinationsAsync()
+    {
+        ViewBag.Destinations = await _context.Destinations
+            .AsNoTracking()
+            .OrderBy(x => x.Name)
+            .Select(x => new SelectListItem { Value = x.Id.ToString(), Text = x.Name })
+            .ToListAsync();
+    }
+
+    private async Task ValidateTourModelAsync(AdminTourPackageFormViewModel model, int? excludeId = null)
+    {
+        var slug = model.Slug.Trim().ToLowerInvariant();
+        if (await _context.TourPackages.AnyAsync(x => x.Slug == slug && (!excludeId.HasValue || x.Id != excludeId.Value)))
+            ModelState.AddModelError(nameof(model.Slug), "This URL slug is already in use.");
+
+        if (model.DestinationId.HasValue
+            && !await _context.Destinations.AnyAsync(x => x.Id == model.DestinationId.Value))
+            ModelState.AddModelError(nameof(model.DestinationId), "Select an existing destination.");
+    }
+
+    private static void ApplyTourModel(TourPackage package, AdminTourPackageFormViewModel model)
+    {
+        package.Name = model.Name.Trim();
+        package.Slug = model.Slug.Trim().ToLowerInvariant();
+        package.DestinationId = model.DestinationId;
+        package.ShortDescription = model.ShortDescription?.Trim();
+        package.Description = model.Description?.Trim();
+        package.ImageUrl = model.ImageUrl?.Trim();
+        package.DurationDays = model.DurationDays;
+        package.PricePerAdult = model.PricePerAdult;
+        package.PricePerChild = model.PricePerChild;
+        package.Inclusions = model.Inclusions?.Trim();
+        package.Exclusions = model.Exclusions?.Trim();
+        package.IsPublished = model.IsPublished;
+        package.IsFeatured = model.IsFeatured;
+        package.DisplayOrder = model.DisplayOrder;
+    }
+
+    [HttpGet("Transport")]
+    public async Task<IActionResult> Transport(int? editId = null)
+    {
+        var routes = await _context.TransportRoutes
+            .AsNoTracking()
+            .Include(x => x.VehicleLinks)
+            .OrderBy(x => x.DisplayOrder)
+            .ThenBy(x => x.Name)
+            .ToListAsync();
+
+        ViewBag.TransportServices = await _context.TransportServices
+            .AsNoTracking()
+            .Where(x => !x.IsArchived)
+            .OrderBy(x => x.Name)
+            .ToListAsync();
+
+        if (editId.HasValue)
+        {
+            var route = routes.FirstOrDefault(x => x.Id == editId.Value);
+            if (route != null)
+            {
+                ViewBag.EditRoute = new AdminTransportRouteViewModel
+                {
+                    Id = route.Id,
+                    Name = route.Name,
+                    Slug = route.Slug,
+                    StartingCity = route.StartingCity,
+                    DestinationCity = route.DestinationCity,
+                    StartingPricePKR = route.StartingPricePKR,
+                    ReturnPricePKR = route.ReturnPricePKR,
+                    Description = route.Description,
+                    EstimatedDistanceKm = route.EstimatedDistanceKm,
+                    EstimatedDurationMinutes = route.EstimatedDurationMinutes,
+                    DisplayOrder = route.DisplayOrder,
+                    IsPublished = route.IsPublished,
+                    IsFeatured = route.IsFeatured,
+                    IsActive = route.IsActive,
+                    VehicleIds = route.VehicleLinks.Where(x => !x.IsArchived).Select(x => x.TransportServiceId).ToArray()
+                };
+            }
+        }
+
+        return View(routes);
+    }
+
+    [HttpPost("Transport/Save")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> SaveTransportRoute(AdminTransportRouteViewModel model)
+    {
+        model.Name = model.Name.Trim();
+        model.Slug = CreatePropertySlug(model.Slug);
+        model.StartingCity = model.StartingCity.Trim();
+        model.DestinationCity = model.DestinationCity.Trim();
+        model.VehicleIds = model.VehicleIds.Where(x => x > 0).Distinct().ToArray();
+
+        if (await _context.TransportRoutes.AnyAsync(x => x.Slug == model.Slug && x.Id != model.Id))
+            ModelState.AddModelError(nameof(model.Slug), "This route slug is already in use.");
+
+        var vehicles = await _context.TransportServices
+            .Where(x => model.VehicleIds.Contains(x.Id) && !x.IsArchived)
+            .ToListAsync();
+
+        if (model.VehicleIds.Length == 0)
+            ModelState.AddModelError(nameof(model.VehicleIds), "Select at least one available vehicle.");
+        else if (vehicles.Count != model.VehicleIds.Length)
+            ModelState.AddModelError(nameof(model.VehicleIds), "One or more selected vehicles are unavailable.");
+
+        if (!ModelState.IsValid)
+        {
+            ViewBag.TransportServices = await _context.TransportServices
+                .AsNoTracking().Where(x => !x.IsArchived).OrderBy(x => x.Name).ToListAsync();
+            ViewBag.EditRoute = model.Id > 0 ? model : null;
+            var routes = await _context.TransportRoutes.AsNoTracking()
+                .Include(x => x.VehicleLinks)
+                .OrderBy(x => x.DisplayOrder).ThenBy(x => x.Name).ToListAsync();
+            return View("Transport", routes);
+        }
+
+        TransportRoute route;
+        if (model.Id > 0)
+        {
+            route = await _context.TransportRoutes
+                .Include(x => x.VehicleLinks)
+                .FirstOrDefaultAsync(x => x.Id == model.Id) ?? throw new InvalidOperationException("Route not found.");
+        }
+        else
+        {
+            route = new TransportRoute { CreatedAt = DateTime.UtcNow };
+            _context.TransportRoutes.Add(route);
+        }
+
+        route.Name = model.Name;
+        route.Slug = model.Slug;
+        route.StartingCity = model.StartingCity;
+        route.DestinationCity = model.DestinationCity;
+        route.StartingPricePKR = model.StartingPricePKR;
+        route.ReturnPricePKR = model.ReturnPricePKR;
+        route.Description = model.Description?.Trim();
+        route.EstimatedDistanceKm = model.EstimatedDistanceKm;
+        route.EstimatedDurationMinutes = model.EstimatedDurationMinutes;
+        route.DisplayOrder = model.DisplayOrder;
+        route.IsPublished = model.IsPublished;
+        route.IsFeatured = model.IsFeatured;
+        route.IsActive = model.IsActive;
+        route.UpdatedAt = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync();
+
+        var selectedIds = model.VehicleIds.ToHashSet();
+        foreach (var link in route.VehicleLinks)
+        {
+            link.IsArchived = !selectedIds.Contains(link.TransportServiceId);
+            link.IsActive = selectedIds.Contains(link.TransportServiceId);
+            link.ArchivedAt = link.IsArchived ? DateTime.UtcNow : null;
+            link.UpdatedAt = DateTime.UtcNow;
+        }
+
+        var existingIds = route.VehicleLinks.Select(x => x.TransportServiceId).ToHashSet();
+        foreach (var vehicle in vehicles.Where(x => !existingIds.Contains(x.Id)))
+        {
+            route.VehicleLinks.Add(new TransportRouteVehicle
+            {
+                TransportServiceId = vehicle.Id,
+                IsActive = true,
+                CreatedAt = DateTime.UtcNow
+            });
+        }
+
+        await _context.SaveChangesAsync();
+        TempData["SuccessMessage"] = model.Id > 0 ? "Transport route updated successfully." : "Transport route published successfully.";
+        return RedirectToAction(nameof(Transport));
+    }
+
+    [HttpPost("Transport/Archive/{id:int}")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ArchiveTransportRoute(int id)
+    {
+        var route = await _context.TransportRoutes.Include(x => x.VehicleLinks).FirstOrDefaultAsync(x => x.Id == id);
+        if (route == null) return NotFound();
+
+        var now = DateTime.UtcNow;
+        route.IsArchived = true;
+        route.IsPublished = false;
+        route.IsActive = false;
+        route.ArchivedAt = now;
+        route.UpdatedAt = now;
+        foreach (var link in route.VehicleLinks)
+        {
+            link.IsArchived = true;
+            link.IsActive = false;
+            link.ArchivedAt = now;
+            link.UpdatedAt = now;
+        }
+
+        await _context.SaveChangesAsync();
+        TempData["SuccessMessage"] = "Transport route archived successfully.";
+        return RedirectToAction(nameof(Transport));
+    }
+
+    [HttpPost("Transport/Restore/{id:int}")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> RestoreTransportRoute(int id)
+    {
+        var route = await _context.TransportRoutes.Include(x => x.VehicleLinks).FirstOrDefaultAsync(x => x.Id == id);
+        if (route == null) return NotFound();
+
+        var now = DateTime.UtcNow;
+        route.IsArchived = false;
+        route.IsActive = true;
+        route.IsPublished = false;
+        route.ArchivedAt = null;
+        route.UpdatedAt = now;
+        foreach (var link in route.VehicleLinks.Where(x => x.TransportService != null || x.TransportServiceId > 0))
+        {
+            link.IsArchived = false;
+            link.IsActive = true;
+            link.ArchivedAt = null;
+            link.UpdatedAt = now;
+        }
+
+        await _context.SaveChangesAsync();
+        TempData["SuccessMessage"] = "Transport route restored as unpublished.";
+        return RedirectToAction(nameof(Transport));
+    }
+
+    [HttpPost("Transport/Delete/{id:int}")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> DeleteTransportRoute(int id)
+    {
+        var route = await _context.TransportRoutes.Include(x => x.VehicleLinks).FirstOrDefaultAsync(x => x.Id == id);
+        if (route == null) return NotFound();
+
+        if (await _context.Bookings.AnyAsync(x => x.TransportRouteId == id))
+        {
+            TempData["ErrorMessage"] = "This route has booking history and can only be archived.";
+            return RedirectToAction(nameof(Transport));
+        }
+
+        _context.TransportRouteVehicles.RemoveRange(route.VehicleLinks);
+        _context.TransportRoutes.Remove(route);
+        await _context.SaveChangesAsync();
+        TempData["SuccessMessage"] = "Transport route deleted permanently.";
+        return RedirectToAction(nameof(Transport));
+    }
+
+    [HttpGet("Bookings")]
+    public async Task<IActionResult> Bookings(string? status = null, string? search = null)
+    {
+        var query = _context.Bookings.AsNoTracking();
+        if (!string.IsNullOrWhiteSpace(status) && !status.Equals("all", StringComparison.OrdinalIgnoreCase))
+            query = query.Where(x => x.Status == status);
+        if (!string.IsNullOrWhiteSpace(search))
+            query = query.Where(x => x.ReferenceNumber.Contains(search) || x.CustomerName.Contains(search) || (x.Email != null && x.Email.Contains(search)));
+
+        var bookings = await query.OrderByDescending(x => x.CreatedAt).ToListAsync();
+        ViewBag.StatusFilter = status ?? "all";
+        ViewBag.SearchTerm = search ?? string.Empty;
+        ViewBag.TotalBookings = await _context.Bookings.CountAsync();
+        ViewBag.PendingBookings = await _context.Bookings.CountAsync(x => x.Status == "Pending");
+        ViewBag.ConfirmedBookings = await _context.Bookings.CountAsync(x => x.Status == "Confirmed");
+        ViewBag.CompletedBookings = await _context.Bookings.CountAsync(x => x.Status == "Completed");
+        ViewBag.CancelledBookings = await _context.Bookings.CountAsync(x => x.Status == "Cancelled");
+        return View(bookings);
+    }
+
+    [HttpGet("BookingDetails/{id:int}")]
+    public async Task<IActionResult> BookingDetails(int id)
+    {
+        var booking = await _context.Bookings
+            .Include(x => x.Customer)
+            .Include(x => x.TransportRoute)
+            .Include(x => x.TourDeparture)
+            .Include(x => x.Tickets)
+            .Include(x => x.StatusHistory)
+            .FirstOrDefaultAsync(x => x.Id == id);
+
+        return booking == null ? NotFound() : View(booking);
+    }
+
+    [HttpPost("BookingDetails/{id:int}/Update")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> UpdateBookingDetails(
+        int id,
+        string status,
+        string? adminNotes)
+    {
+        var booking = await _context.Bookings.FirstOrDefaultAsync(x => x.Id == id);
+        if (booking == null) return NotFound();
+
+        var changed = await _bookingStatusService.ChangeStatusAsync(
+            booking,
+            status,
+            User.FindFirstValue(ClaimTypes.NameIdentifier),
+            "Admin",
+            adminNotes,
+            HttpContext.RequestAborted);
+
+        if (!changed)
+        {
+            TempData["BookingError"] = "The selected booking status is not valid.";
+            return RedirectToAction(nameof(BookingDetails), new { id });
+        }
+
+        booking.AdminNotes = string.IsNullOrWhiteSpace(adminNotes) ? null : adminNotes.Trim();
+        booking.UpdatedAt = DateTime.UtcNow;
+        await _context.SaveChangesAsync();
+
+        TempData["BookingSuccess"] = "Booking changes saved successfully.";
+        return RedirectToAction(nameof(BookingDetails), new { id });
+    }
+
+    [HttpPost("BookingDetails/{id:int}/Delete")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> DeleteBooking(int id)
+    {
+        var booking = await _context.Bookings.FirstOrDefaultAsync(x => x.Id == id);
+        if (booking == null) return NotFound();
+
+        if (booking.Status is not ("Completed" or "Cancelled"))
+        {
+            TempData["BookingError"] = "Only completed or cancelled bookings can be deleted.";
+            return RedirectToAction(nameof(BookingDetails), new { id });
+        }
+
+        _context.Bookings.Remove(booking);
+        await _context.SaveChangesAsync();
+        TempData["SuccessMessage"] = "Booking deleted successfully.";
+        return RedirectToAction(nameof(Bookings));
+    }
+
+    [HttpGet("Customers")]
+    public async Task<IActionResult> Customers()
+    {
+        var registeredCustomers = await _context.CustomerAccounts
+            .AsNoTracking()
+            .Select(x => new AdminCustomerViewModel
+            {
+                Name = x.FullName,
+                Email = x.Email,
+                PhoneNumber = x.PhoneNumber,
+                AccountType = "Registered",
+                EmailConfirmed = true,
+                CreatedAt = x.CreatedAt,
+                BookingCount = x.Bookings.Count()
+            })
+            .OrderBy(x => x.Name)
+            .ToListAsync();
+
+        var bookingOwners = await _context.Bookings
+            .AsNoTracking()
+            .Where(x => !string.IsNullOrWhiteSpace(x.CustomerName))
+            .GroupBy(x => new { x.Email, x.Phone, x.CustomerName })
+            .Select(x => new AdminCustomerViewModel
+            {
+                Name = x.Key.CustomerName,
+                Email = x.Key.Email ?? string.Empty,
+                PhoneNumber = x.Key.Phone,
+                AccountType = "Booking owner",
+                EmailConfirmed = false,
+                CreatedAt = x.Min(b => b.CreatedAt),
+                BookingCount = x.Count()
+            })
+            .ToListAsync();
+
+        var registeredKeys = registeredCustomers
+            .Select(GetCustomerKey)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var owner in bookingOwners)
+        {
+            var key = GetCustomerKey(owner);
+            if (registeredKeys.Contains(key))
+            {
+                var registered = registeredCustomers.First(x =>
+                    string.Equals(GetCustomerKey(x), key, StringComparison.OrdinalIgnoreCase));
+                registered.BookingCount += owner.BookingCount;
+            }
+            else
+            {
+                registeredCustomers.Add(owner);
+                registeredKeys.Add(key);
+            }
+        }
+
+        var customers = registeredCustomers
+            .OrderBy(x => x.Name)
+            .ToList();
+
+        return View(customers);
+    }
+
+    private static string GetCustomerKey(AdminCustomerViewModel customer) =>
+        !string.IsNullOrWhiteSpace(customer.Email)
+            ? $"email:{customer.Email.Trim()}"
+            : $"phone:{customer.PhoneNumber.Trim()}|name:{customer.Name.Trim()}";
+
+    [HttpGet("Inquiries")]
+    public async Task<IActionResult> Inquiries()
+    {
+        var inquiries = await _context.ContactInquiries
+            .AsNoTracking()
+            .OrderByDescending(x => x.SubmittedAt)
+            .ToListAsync();
+        return View(inquiries);
+    }
+
+    [HttpGet("Reviews")]
+    public async Task<IActionResult> Reviews(string? status = null, string? search = null)
+    {
+        IQueryable<Review> query = _context.Reviews
+            .AsNoTracking()
+            .Include(x => x.Destination)
+            .Include(x => x.Hotel)
+            .Include(x => x.Restaurant)
+            .Include(x => x.Resort)
+            .Include(x => x.TransportService)
+            .Include(x => x.TourPackage);
+
+        if (Enum.TryParse<ReviewStatus>(status, true, out var parsedStatus))
+            query = query.Where(x => x.Status == parsedStatus);
+        if (!string.IsNullOrWhiteSpace(search))
+            query = query.Where(x => x.ReviewerName.Contains(search) || x.Title.Contains(search) || x.Comment.Contains(search));
+
+        var reviews = await query.OrderByDescending(x => x.CreatedAt).ToListAsync();
+        ViewBag.StatusFilter = status ?? "All";
+        ViewBag.SearchTerm = search ?? string.Empty;
+        ViewBag.TotalReviews = await _context.Reviews.CountAsync();
+        ViewBag.PendingReviews = await _context.Reviews.CountAsync(x => x.Status == ReviewStatus.Pending);
+        ViewBag.ApprovedReviews = await _context.Reviews.CountAsync(x => x.Status == ReviewStatus.Approved);
+        ViewBag.RejectedReviews = await _context.Reviews.CountAsync(x => x.Status == ReviewStatus.Rejected);
+        return View(reviews);
+    }
+
     [HttpGet("Experiences/Create")]
     public IActionResult CreateExperience() => View("ExperienceEditor", new AdminExperienceFormViewModel { IsPublished = true });
 
@@ -578,6 +1143,36 @@ public class AdminController : Controller
         return $"/uploads/destinations/{fileName}";
     }
 
+    private async Task<string> SavePropertyImageAsync(IFormFile imageFile)
+    {
+        const long maxFileSize = 5 * 1024 * 1024;
+        if (imageFile.Length <= 0 || imageFile.Length > maxFileSize)
+            throw new InvalidOperationException("Image size must not exceed 5 MB.");
+
+        if (string.IsNullOrWhiteSpace(_environment.WebRootPath))
+            throw new IOException("The website's wwwroot folder could not be located.");
+
+        var header = new byte[12];
+        int bytesRead;
+        await using (var input = imageFile.OpenReadStream())
+        {
+            bytesRead = await input.ReadAsync(header, 0, header.Length);
+        }
+
+        var isJpeg = bytesRead >= 3 && header[0] == 0xFF && header[1] == 0xD8 && header[2] == 0xFF;
+        var isPng = bytesRead >= 8 && header[0] == 0x89 && header[1] == 0x50 && header[2] == 0x4E && header[3] == 0x47 && header[4] == 0x0D && header[5] == 0x0A && header[6] == 0x1A && header[7] == 0x0A;
+        var isWebp = bytesRead >= 12 && header[0] == 'R' && header[1] == 'I' && header[2] == 'F' && header[3] == 'F' && header[8] == 'W' && header[9] == 'E' && header[10] == 'B' && header[11] == 'P';
+        var extension = isJpeg ? ".jpg" : isPng ? ".png" : isWebp ? ".webp" : throw new InvalidOperationException("Choose a valid JPG, PNG, or WebP image.");
+
+        var uploadsFolder = Path.Combine(_environment.WebRootPath, "uploads", "properties");
+        Directory.CreateDirectory(uploadsFolder);
+        var fileName = $"{Guid.NewGuid():N}{extension}";
+        var filePath = Path.Combine(uploadsFolder, fileName);
+        await using var output = new FileStream(filePath, FileMode.CreateNew, FileAccess.Write, FileShare.None);
+        await imageFile.CopyToAsync(output);
+        return $"/uploads/properties/{fileName}";
+    }
+
     // =========================================================
     // PROPERTIES - LIST
     // =========================================================
@@ -599,6 +1194,7 @@ public class AdminController : Controller
                 ImageUrl = h.ImageUrl,
                 Price = h.StartingPricePerNight,
                 IsPublished = h.IsPublished,
+                 IsArchived = h.IsArchived,
                 IsFeatured = h.IsFeatured,
                 DestinationName = h.Destination != null
                     ? h.Destination.Name
@@ -617,6 +1213,7 @@ public class AdminController : Controller
                 ImageUrl = r.ImageUrl,
                 Price = r.AverageMealPrice,
                 IsPublished = r.IsPublished,
+                 IsArchived = r.IsArchived,
                 IsFeatured = r.IsFeatured,
                 DestinationName = r.Destination != null
                     ? r.Destination.Name
@@ -635,6 +1232,7 @@ public class AdminController : Controller
                 ImageUrl = r.ImageUrl,
                 Price = r.StartingPricePerNight,
                 IsPublished = r.IsPublished,
+                 IsArchived = r.IsArchived,
                 IsFeatured = r.IsFeatured,
                 DestinationName = r.Destination != null
                     ? r.Destination.Name
@@ -696,6 +1294,21 @@ public class AdminController : Controller
             return View("PropertyForm", model);
         }
 
+        if (model.ImageFile != null && model.ImageFile.Length > 0)
+        {
+            try
+            {
+                model.ImageUrl = await SavePropertyImageAsync(model.ImageFile);
+            }
+            catch (Exception ex) when (ex is InvalidOperationException or IOException)
+            {
+                ModelState.AddModelError(nameof(model.ImageFile), ex.Message);
+                return View("PropertyForm", model);
+            }
+        }
+
+        model.ImageUrl ??= string.Empty;
+
         if (!await ValidatePropertyDestinationAsync(model))
             return View("PropertyForm", model);
 
@@ -708,6 +1321,20 @@ public class AdminController : Controller
                 "A property with this name already exists in this category.");
 
             return View("PropertyForm", model);
+        }
+
+        string? uploadedImageUrl = null;
+        if (model.ImageFile != null && model.ImageFile.Length > 0)
+        {
+            try
+            {
+                uploadedImageUrl = await SavePropertyImageAsync(model.ImageFile);
+            }
+            catch (Exception ex) when (ex is InvalidOperationException or IOException)
+            {
+                ModelState.AddModelError(nameof(model.ImageFile), ex.Message);
+                return View("PropertyForm", model);
+            }
         }
 
         var now = DateTime.UtcNow;
@@ -803,6 +1430,13 @@ public class AdminController : Controller
         string category)
     {
         category = (category ?? string.Empty).Trim();
+
+        var dependencyMessage = await GetPropertyDependencyMessageAsync(id, category);
+        if (dependencyMessage != null)
+        {
+            TempData["ErrorMessage"] = dependencyMessage + " Use Archive to preserve its history.";
+            return RedirectToAction(nameof(Properties));
+        }
 
         AdminPropertyFormViewModel model;
 
@@ -940,6 +1574,20 @@ public class AdminController : Controller
             return View("PropertyForm", model);
         }
 
+        string? uploadedImageUrl = null;
+        if (model.ImageFile != null && model.ImageFile.Length > 0)
+        {
+            try
+            {
+                uploadedImageUrl = await SavePropertyImageAsync(model.ImageFile);
+            }
+            catch (Exception ex) when (ex is InvalidOperationException or IOException)
+            {
+                ModelState.AddModelError(nameof(model.ImageFile), ex.Message);
+                return View("PropertyForm", model);
+            }
+        }
+
         switch (model.Category)
         {
             case "Hotel":
@@ -954,7 +1602,7 @@ public class AdminController : Controller
                     item.Address = model.Address.Trim();
                     item.ShortDescription = model.ShortDescription.Trim();
                     item.Description = model.Description.Trim();
-                    item.ImageUrl = model.ImageUrl.Trim();
+                     if (uploadedImageUrl != null) item.ImageUrl = uploadedImageUrl;
                     item.StartingPricePerNight = model.Price;
                     item.StarRating = model.StarRating;
                     item.ContactPhone = model.ContactPhone.Trim();
@@ -977,7 +1625,7 @@ public class AdminController : Controller
                     item.Address = model.Address.Trim();
                     item.ShortDescription = model.ShortDescription.Trim();
                     item.Description = model.Description.Trim();
-                    item.ImageUrl = model.ImageUrl.Trim();
+                     if (uploadedImageUrl != null) item.ImageUrl = uploadedImageUrl;
                     item.AverageMealPrice = model.Price;
                     item.CuisineType = model.CuisineType!.Trim();
                     item.ContactPhone = model.ContactPhone.Trim();
@@ -1000,7 +1648,7 @@ public class AdminController : Controller
                     item.Address = model.Address.Trim();
                     item.ShortDescription = model.ShortDescription.Trim();
                     item.Description = model.Description.Trim();
-                    item.ImageUrl = model.ImageUrl.Trim();
+                     if (uploadedImageUrl != null) item.ImageUrl = uploadedImageUrl;
                     item.StartingPricePerNight = model.Price;
                     item.ContactPhone = model.ContactPhone.Trim();
                     item.IsPublished = model.IsPublished;
@@ -1028,6 +1676,100 @@ public class AdminController : Controller
             $"{model.Category} updated successfully.";
 
         return RedirectToAction(nameof(Properties));
+    }
+
+    [HttpPost("Properties/Archive/{id:int}")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ArchiveProperty(int id, string category)
+    {
+        var updated = await SetPropertyLifecycleAsync(id, category, archived: true, published: false);
+        TempData[updated ? "SuccessMessage" : "ErrorMessage"] = updated
+            ? $"{category} archived successfully. Historical bookings were preserved."
+            : $"{category} was not found.";
+        return RedirectToAction(nameof(Properties));
+    }
+
+    [HttpPost("Properties/Restore/{id:int}")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> RestoreProperty(int id, string category)
+    {
+        var updated = await SetPropertyLifecycleAsync(id, category, archived: false, published: false);
+        TempData[updated ? "SuccessMessage" : "ErrorMessage"] = updated
+            ? $"{category} restored as inactive. Activate it when it is ready for new bookings."
+            : $"{category} was not found.";
+        return RedirectToAction(nameof(Properties));
+    }
+
+    [HttpPost("Properties/ToggleActive/{id:int}")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> TogglePropertyActive(int id, string category)
+    {
+        var updated = await TogglePropertyActiveAsync(id, category);
+        TempData[updated ? "SuccessMessage" : "ErrorMessage"] = updated
+            ? $"{category} activation status updated."
+            : $"{category} was not found or is archived.";
+        return RedirectToAction(nameof(Properties));
+    }
+
+    private async Task<string?> GetPropertyDependencyMessageAsync(int id, string category)
+    {
+        return category switch
+        {
+            "Hotel" when await _context.Bookings.AnyAsync(x => x.HotelId == id) || await _context.Reviews.AnyAsync(x => x.HotelId == id) => "This hotel cannot be permanently deleted because bookings or reviews reference it.",
+            "Restaurant" when await _context.Bookings.AnyAsync(x => x.RestaurantId == id) || await _context.Reviews.AnyAsync(x => x.RestaurantId == id) => "This restaurant cannot be permanently deleted because bookings or reviews reference it.",
+            "Resort" when await _context.Bookings.AnyAsync(x => x.ResortId == id) || await _context.Reviews.AnyAsync(x => x.ResortId == id) => "This resort cannot be permanently deleted because bookings or reviews reference it.",
+            _ => null
+        };
+    }
+
+    private async Task<bool> SetPropertyLifecycleAsync(int id, string category, bool archived, bool published)
+    {
+        switch (category)
+        {
+            case "Hotel":
+                var hotel = await _context.Hotels.FindAsync(id);
+                if (hotel == null) return false;
+                hotel.IsArchived = archived; hotel.IsPublished = published;
+                break;
+            case "Restaurant":
+                var restaurant = await _context.Restaurants.FindAsync(id);
+                if (restaurant == null) return false;
+                restaurant.IsArchived = archived; restaurant.IsPublished = published;
+                break;
+            case "Resort":
+                var resort = await _context.Resorts.FindAsync(id);
+                if (resort == null) return false;
+                resort.IsArchived = archived; resort.IsPublished = published;
+                break;
+            default: return false;
+        }
+        await _context.SaveChangesAsync();
+        return true;
+    }
+
+    private async Task<bool> TogglePropertyActiveAsync(int id, string category)
+    {
+        switch (category)
+        {
+            case "Hotel":
+                var hotel = await _context.Hotels.FindAsync(id);
+                if (hotel == null || hotel.IsArchived) return false;
+                hotel.IsPublished = !hotel.IsPublished;
+                break;
+            case "Restaurant":
+                var restaurant = await _context.Restaurants.FindAsync(id);
+                if (restaurant == null || restaurant.IsArchived) return false;
+                restaurant.IsPublished = !restaurant.IsPublished;
+                break;
+            case "Resort":
+                var resort = await _context.Resorts.FindAsync(id);
+                if (resort == null || resort.IsArchived) return false;
+                resort.IsPublished = !resort.IsPublished;
+                break;
+            default: return false;
+        }
+        await _context.SaveChangesAsync();
+        return true;
     }
 
     // =========================================================
@@ -1105,422 +1847,6 @@ public class AdminController : Controller
         }
 
         return RedirectToAction(nameof(Properties));
-    }
-
-    // =========================================================
-    // PROPERTY FORM VALIDATION
-    // =========================================================
-
-    private bool ValidatePropertyForm(
-        AdminPropertyFormViewModel model)
-    {
-        var allowedCategories = new[]
-        {
-            "Hotel", "Restaurant", "Resort"
-        };
-
-        if (!allowedCategories.Contains(model.Category))
-        {
-            ModelState.AddModelError(
-                nameof(model.Category),
-                "Select a valid property type.");
-
-            return false;
-        }
-
-        if (model.Price is null or < 0)
-        {
-            ModelState.AddModelError(
-                nameof(model.Price),
-                "Enter a valid price.");
-        }
-
-        if (model.Category == "Hotel" &&
-            model.StarRating is null or < 1 or > 5)
-        {
-            ModelState.AddModelError(
-                nameof(model.StarRating),
-                "Select a star rating from 1 to 5.");
-        }
-
-        if (model.Category == "Restaurant" &&
-            string.IsNullOrWhiteSpace(model.CuisineType))
-        {
-            ModelState.AddModelError(
-                nameof(model.CuisineType),
-                "Enter the cuisine type.");
-        }
-
-        return ModelState.IsValid;
-    }
-
-    private async Task<bool> ValidatePropertyDestinationAsync(AdminPropertyFormViewModel model)
-    {
-        if (model.DestinationId <= 0 || !await _context.Destinations.AnyAsync(x => x.Id == model.DestinationId))
-        {
-            ModelState.AddModelError(nameof(model.DestinationId), "Select an existing destination or leave this field empty.");
-            return false;
-        }
-
-        return true;
-    }
-
-    private Task<List<Destination>> GetPropertyDestinationsAsync() =>
-        _context.Destinations
-            .AsNoTracking()
-            .OrderBy(x => x.Name)
-            .ToListAsync();
-
-    // =========================================================
-    // PROPERTY SLUG VALIDATION
-    // =========================================================
-
-    private async Task<bool> PropertySlugExistsAsync(
-        string category,
-        string slug,
-        int? excludeId = null)
-    {
-        return category switch
-        {
-            "Hotel" => await _context.Hotels.AnyAsync(
-                x => x.Slug == slug &&
-                     (!excludeId.HasValue || x.Id != excludeId.Value)),
-
-            "Restaurant" => await _context.Restaurants.AnyAsync(
-                x => x.Slug == slug &&
-                     (!excludeId.HasValue || x.Id != excludeId.Value)),
-
-            "Resort" => await _context.Resorts.AnyAsync(
-                x => x.Slug == slug &&
-                     (!excludeId.HasValue || x.Id != excludeId.Value)),
-
-            _ => true
-        };
-    }
-
-    private static string CreatePropertySlug(string name)
-    {
-        var slug = (name ?? string.Empty).Trim().ToLowerInvariant();
-        slug = Regex.Replace(slug, @"[^a-z0-9\s-]", "");
-        slug = Regex.Replace(slug, @"[\s-]+", "-");
-
-        return slug.Trim('-');
-    }
-
-    // =========================================================
-    // TOURS - TOUR PACKAGE MANAGEMENT
-    // =========================================================
-
-    [HttpGet("Tours")]
-    public async Task<IActionResult> Tours()
-    {
-        ViewData["Title"] = "Tour Packages";
-        ViewData["Section"] = "Experiences";
-
-        var packages = await _context.TourPackages
-            .AsNoTracking()
-            .Include(t => t.Destination)
-            .Include(t => t.Departures)
-            .OrderBy(t => t.DisplayOrder)
-            .ThenBy(t => t.Name)
-            .Select(t => new AdminTourPackageRowViewModel
-            {
-                Id = t.Id,
-                Name = t.Name,
-                Slug = t.Slug,
-                DestinationName = t.Destination != null
-                    ? t.Destination.Name
-                    : t.DestinationName,
-                ImageUrl = t.ImageUrl,
-                DurationDays = t.DurationDays,
-                PricePerAdult = t.PricePerAdult,
-                PricePerChild = t.PricePerChild,
-                IsPublished = t.IsPublished,
-                IsFeatured = t.IsFeatured,
-                DepartureCount = t.Departures.Count,
-                DisplayOrder = t.DisplayOrder
-            })
-            .ToListAsync();
-
-        return View("Tours", packages);
-    }
-
-
-    // ---------------------------------------------------------
-    // CREATE TOUR - GET
-    // ---------------------------------------------------------
-
-    [HttpGet("Tours/Create")]
-    public async Task<IActionResult> CreateTour()
-    {
-        ViewData["Title"] = "Create Tour Package";
-        ViewData["Section"] = "Experiences";
-
-        await PopulateTourDestinationsAsync();
-
-        return View("TourEditor", new AdminTourPackageFormViewModel
-        {
-            DurationDays = 1
-        });
-    }
-
-
-    // ---------------------------------------------------------
-    // CREATE TOUR - POST
-    // ---------------------------------------------------------
-
-    [HttpPost("Tours/Create")]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> CreateTour(
-        AdminTourPackageFormViewModel model)
-    {
-        ViewData["Title"] = "Create Tour Package";
-        ViewData["Section"] = "Experiences";
-
-        model.Name = model.Name?.Trim() ?? string.Empty;
-        model.Slug = string.IsNullOrWhiteSpace(model.Slug)
-            ? CreateTourSlug(model.Name)
-            : CreateTourSlug(model.Slug);
-
-        if (await _context.TourPackages.AnyAsync(t => t.Slug == model.Slug))
-        {
-            ModelState.AddModelError(
-                nameof(model.Slug),
-                "This URL slug is already being used.");
-        }
-
-        var destination = await GetTourDestinationAsync(model.DestinationId);
-
-        if (model.DestinationId.HasValue && destination == null)
-        {
-            ModelState.AddModelError(
-                nameof(model.DestinationId),
-                "Please select a valid destination.");
-        }
-
-        if (!ModelState.IsValid)
-        {
-            await PopulateTourDestinationsAsync(model.DestinationId);
-            return View("TourEditor", model);
-        }
-
-        var imageUrl = await SaveTourImageAsync(model.ImageFile);
-
-        if (model.ImageFile != null && imageUrl == null)
-        {
-            ModelState.AddModelError(
-                nameof(model.ImageFile),
-                "The image could not be uploaded. Use a JPG, PNG or WebP image under 5 MB.");
-
-            await PopulateTourDestinationsAsync(model.DestinationId);
-            return View("TourEditor", model);
-        }
-
-        var package = new TourPackage
-        {
-            Name = model.Name,
-            Slug = model.Slug,
-            DestinationId = model.DestinationId,
-            DestinationName = destination?.Name,
-            ShortDescription = model.ShortDescription?.Trim(),
-            Description = model.Description?.Trim(),
-            DurationDays = model.DurationDays,
-            PricePerAdult = model.PricePerAdult,
-            PricePerChild = model.PricePerChild,
-            Inclusions = model.Inclusions?.Trim(),
-            Exclusions = model.Exclusions?.Trim(),
-            ImageUrl = imageUrl ?? model.ImageUrl?.Trim(),
-            IsPublished = model.IsPublished,
-            IsFeatured = model.IsFeatured,
-            DisplayOrder = model.DisplayOrder,
-            CreatedAt = DateTime.UtcNow
-        };
-
-        _context.TourPackages.Add(package);
-        await _context.SaveChangesAsync();
-
-        TempData["Success"] = "Tour package created successfully.";
-
-        return RedirectToAction(nameof(Tours));
-    }
-
-
-    // ---------------------------------------------------------
-    // EDIT TOUR - GET
-    // ---------------------------------------------------------
-
-    [HttpGet("Tours/Edit/{id:int}")]
-    public async Task<IActionResult> EditTour(int id)
-    {
-        var package = await _context.TourPackages
-            .AsNoTracking()
-            .FirstOrDefaultAsync(t => t.Id == id);
-
-        if (package == null)
-            return NotFound();
-
-        ViewData["Title"] = $"Edit {package.Name}";
-        ViewData["Section"] = "Experiences";
-
-        await PopulateTourDestinationsAsync(package.DestinationId);
-
-        var model = new AdminTourPackageFormViewModel
-        {
-            Id = package.Id,
-            Name = package.Name,
-            Slug = package.Slug,
-            DestinationId = package.DestinationId,
-            ShortDescription = package.ShortDescription,
-            Description = package.Description,
-            DurationDays = package.DurationDays,
-            PricePerAdult = package.PricePerAdult,
-            PricePerChild = package.PricePerChild,
-            Inclusions = package.Inclusions,
-            Exclusions = package.Exclusions,
-            ImageUrl = package.ImageUrl,
-            IsPublished = package.IsPublished,
-            IsFeatured = package.IsFeatured,
-            DisplayOrder = package.DisplayOrder
-        };
-
-        return View("TourEditor", model);
-    }
-
-
-    // ---------------------------------------------------------
-    // EDIT TOUR - POST
-    // ---------------------------------------------------------
-
-    [HttpPost("Tours/Edit/{id:int}")]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> EditTour(
-        int id,
-        AdminTourPackageFormViewModel model)
-    {
-        if (id != model.Id)
-            return BadRequest();
-
-        var package = await _context.TourPackages
-            .FirstOrDefaultAsync(t => t.Id == id);
-
-        if (package == null)
-            return NotFound();
-
-        ViewData["Title"] = $"Edit {package.Name}";
-        ViewData["Section"] = "Experiences";
-
-        model.Name = model.Name?.Trim() ?? string.Empty;
-        model.Slug = string.IsNullOrWhiteSpace(model.Slug)
-            ? CreateTourSlug(model.Name)
-            : CreateTourSlug(model.Slug);
-
-        if (await _context.TourPackages.AnyAsync(
-            t => t.Slug == model.Slug && t.Id != id))
-        {
-            ModelState.AddModelError(
-                nameof(model.Slug),
-                "This URL slug is already being used.");
-        }
-
-        var destination = await GetTourDestinationAsync(model.DestinationId);
-
-        if (model.DestinationId.HasValue && destination == null)
-        {
-            ModelState.AddModelError(
-                nameof(model.DestinationId),
-                "Please select a valid destination.");
-        }
-
-        if (!ModelState.IsValid)
-        {
-            await PopulateTourDestinationsAsync(model.DestinationId);
-            return View("TourEditor", model);
-        }
-
-        string? newImageUrl = null;
-
-        if (model.ImageFile != null)
-        {
-            newImageUrl = await SaveTourImageAsync(model.ImageFile);
-
-            if (newImageUrl == null)
-            {
-                ModelState.AddModelError(
-                    nameof(model.ImageFile),
-                    "The image could not be uploaded. Use a JPG, PNG or WebP image under 5 MB.");
-
-                await PopulateTourDestinationsAsync(model.DestinationId);
-                return View("TourEditor", model);
-            }
-        }
-
-        package.Name = model.Name;
-        package.Slug = model.Slug;
-        package.DestinationId = model.DestinationId;
-        package.DestinationName = destination?.Name;
-        package.ShortDescription = model.ShortDescription?.Trim();
-        package.Description = model.Description?.Trim();
-        package.DurationDays = model.DurationDays;
-        package.PricePerAdult = model.PricePerAdult;
-        package.PricePerChild = model.PricePerChild;
-        package.Inclusions = model.Inclusions?.Trim();
-        package.Exclusions = model.Exclusions?.Trim();
-        package.IsPublished = model.IsPublished;
-        package.IsFeatured = model.IsFeatured;
-        package.DisplayOrder = model.DisplayOrder;
-        package.UpdatedAt = DateTime.UtcNow;
-
-        if (newImageUrl != null)
-            package.ImageUrl = newImageUrl;
-        else if (!string.IsNullOrWhiteSpace(model.ImageUrl))
-            package.ImageUrl = model.ImageUrl.Trim();
-
-        await _context.SaveChangesAsync();
-
-        TempData["Success"] = "Tour package updated successfully.";
-
-        return RedirectToAction(nameof(Tours));
-    }
-
-
-    // ---------------------------------------------------------
-    // DELETE TOUR - POST
-    // ---------------------------------------------------------
-
-    [HttpPost("Tours/Delete/{id:int}")]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> DeleteTour(int id)
-    {
-        var package = await _context.TourPackages
-            .Include(t => t.Departures)
-            .FirstOrDefaultAsync(t => t.Id == id);
-
-        if (package == null)
-            return NotFound();
-
-        var hasBookings = await _context.Bookings.AnyAsync(
-            b => b.TourPackageId == id ||
-                 (b.TourDeparture != null &&
-                  b.TourDeparture.TourPackageId == id));
-
-        if (hasBookings)
-        {
-            TempData["Error"] =
-                "This package cannot be deleted because it has booking records. Unpublish it instead to preserve booking history.";
-
-            return RedirectToAction(nameof(Tours));
-        }
-
-        var oldImageUrl = package.ImageUrl;
-
-        _context.TourPackages.Remove(package);
-        await _context.SaveChangesAsync();
-
-        DeleteTourImage(oldImageUrl);
-
-        TempData["Success"] = "Tour package deleted successfully.";
-
-        return RedirectToAction(nameof(Tours));
     }
 
     // =========================================================
@@ -1806,435 +2132,51 @@ public class AdminController : Controller
         return RedirectToAction(nameof(Departures), new { packageId });
     }
 
-
-    // =========================================================
-    // TOUR PACKAGE HELPERS
-    // =========================================================
-
-    private async Task PopulateTourDestinationsAsync(int? selectedId = null)
+    private bool ValidatePropertyForm(AdminPropertyFormViewModel model)
     {
-        var destinations = await _context.Destinations
-            .AsNoTracking()
-            .OrderBy(d => d.Name)
-            .Select(d => new SelectListItem
-            {
-                Value = d.Id.ToString(),
-                Text = d.Name,
-                Selected = selectedId == d.Id
-            })
-            .ToListAsync();
-
-        ViewBag.Destinations = destinations;
-    }
-
-
-    private async Task<Destination?> GetTourDestinationAsync(int? destinationId)
-    {
-        if (!destinationId.HasValue)
-            return null;
-
-        return await _context.Destinations
-            .FirstOrDefaultAsync(d => d.Id == destinationId.Value);
-    }
-
-
-    private static string CreateTourSlug(string value)
-    {
-        value = value.Trim().ToLowerInvariant();
-
-        value = Regex.Replace(value, @"[^a-z0-9]+", "-");
-
-        return value.Trim('-');
-    }
-
-
-    private async Task<string?> SaveTourImageAsync(IFormFile? file)
-    {
-        if (file == null || file.Length == 0)
-            return null;
-
-        if (file.Length > 5 * 1024 * 1024)
-            return null;
-
-        var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
-
-        var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".webp" };
-
-        if (!allowedExtensions.Contains(extension))
-            return null;
-
-        var allowedContentTypes = new[]
+        var allowedCategories = new[] { "Hotel", "Restaurant", "Resort" };
+        if (!allowedCategories.Contains(model.Category))
         {
-        "image/jpeg",
-        "image/png",
-        "image/webp"
+            ModelState.AddModelError(nameof(model.Category), "Select a valid property type.");
+            return false;
+        }
+        if (model.Price is null or < 0)
+            ModelState.AddModelError(nameof(model.Price), "Enter a valid price.");
+        if (model.Category == "Hotel" && (model.StarRating is null or < 1 or > 5))
+            ModelState.AddModelError(nameof(model.StarRating), "Select a star rating from 1 to 5.");
+        if (model.Category == "Restaurant" && string.IsNullOrWhiteSpace(model.CuisineType))
+            ModelState.AddModelError(nameof(model.CuisineType), "Enter the cuisine type.");
+        return ModelState.IsValid;
+    }
+
+    private async Task<bool> ValidatePropertyDestinationAsync(AdminPropertyFormViewModel model)
+    {
+        if (model.DestinationId <= 0 || !await _context.Destinations.AnyAsync(x => x.Id == model.DestinationId))
+        {
+            ModelState.AddModelError(nameof(model.DestinationId), "Select an existing destination or leave this field empty.");
+            return false;
+        }
+        return true;
+    }
+
+    private Task<List<Destination>> GetPropertyDestinationsAsync() =>
+        _context.Destinations.AsNoTracking().OrderBy(x => x.Name).ToListAsync();
+
+    private async Task<bool> PropertySlugExistsAsync(string category, string slug, int? excludeId = null) => category switch
+    {
+        "Hotel" => await _context.Hotels.AnyAsync(x => x.Slug == slug && (!excludeId.HasValue || x.Id != excludeId.Value)),
+        "Restaurant" => await _context.Restaurants.AnyAsync(x => x.Slug == slug && (!excludeId.HasValue || x.Id != excludeId.Value)),
+        "Resort" => await _context.Resorts.AnyAsync(x => x.Slug == slug && (!excludeId.HasValue || x.Id != excludeId.Value)),
+        _ => true
     };
 
-        if (!allowedContentTypes.Contains(file.ContentType.ToLowerInvariant()))
-            return null;
-
-        var uploadDirectory = Path.Combine(
-            _environment.WebRootPath,
-            "uploads",
-            "tours");
-
-        Directory.CreateDirectory(uploadDirectory);
-
-        var fileName = $"{Guid.NewGuid():N}{extension}";
-        var filePath = Path.Combine(uploadDirectory, fileName);
-
-        await using (var stream = new FileStream(filePath, FileMode.Create))
-        {
-            await file.CopyToAsync(stream);
-        }
-
-        return $"/uploads/tours/{fileName}";
-    }
-
-
-    private void DeleteTourImage(string? imageUrl)
+    private static string CreatePropertySlug(string name)
     {
-        if (string.IsNullOrWhiteSpace(imageUrl) ||
-            !imageUrl.StartsWith("/uploads/tours/", StringComparison.OrdinalIgnoreCase))
-        {
-            return;
-        }
-
-        var fileName = Path.GetFileName(imageUrl);
-
-        if (string.IsNullOrWhiteSpace(fileName))
-            return;
-
-        var filePath = Path.Combine(
-            _environment.WebRootPath,
-            "uploads",
-            "tours",
-            fileName);
-
-        if (System.IO.File.Exists(filePath))
-            System.IO.File.Delete(filePath);
-    }
-    // =========================================================
-    // BOOKINGS
-    // =========================================================
-
-    [HttpGet("Bookings")]
-    public async Task<IActionResult> Bookings(
-        string? status,
-        string? search)
-    {
-        var query = _context.Bookings
-            .AsNoTracking()
-            .AsQueryable();
-
-        if (!string.IsNullOrWhiteSpace(status) &&
-            !status.Equals(
-                "all",
-                StringComparison.OrdinalIgnoreCase))
-        {
-            query = query.Where(b => b.Status == status);
-        }
-
-        if (!string.IsNullOrWhiteSpace(search))
-        {
-            var term = search.Trim();
-
-            query = query.Where(b =>
-                b.ReferenceNumber.Contains(term) ||
-                b.CustomerName.Contains(term) ||
-                b.Phone.Contains(term) ||
-                b.ServiceName.Contains(term));
-        }
-
-        ViewBag.StatusFilter = status ?? "all";
-        ViewBag.SearchTerm = search ?? "";
-
-        ViewBag.TotalBookings =
-            await _context.Bookings.CountAsync();
-
-        ViewBag.PendingBookings =
-            await _context.Bookings
-                .CountAsync(b => b.Status == "Pending");
-
-        ViewBag.ConfirmedBookings =
-            await _context.Bookings
-                .CountAsync(b => b.Status == "Confirmed");
-
-        ViewBag.CompletedBookings =
-            await _context.Bookings
-                .CountAsync(b => b.Status == "Completed");
-
-        ViewBag.CancelledBookings =
-            await _context.Bookings
-                .CountAsync(b => b.Status == "Cancelled");
-
-        var bookings = await query
-            .OrderByDescending(b => b.CreatedAt)
-            .ToListAsync();
-
-        return View(bookings);
+        var slug = Regex.Replace((name ?? string.Empty).Trim().ToLowerInvariant(), @"[^a-z0-9\s-]", "");
+        return Regex.Replace(slug, @"[\s-]+", "-").Trim('-');
     }
 
-    [HttpGet("Customers")]
-    public async Task<IActionResult> Customers(CancellationToken cancellationToken)
-    {
-        var customers = await _context.CustomerAccounts
-            .AsNoTracking()
-            .Select(customer => new AdminCustomerViewModel
-            {
-                Name = customer.FullName,
-                Email = customer.Email,
-                PhoneNumber = customer.PhoneNumber,
-                AccountType = "Customer account",
-                EmailConfirmed = customer.EmailConfirmed,
-                CreatedAt = customer.CreatedAt,
-                BookingCount = customer.Bookings.Count()
-            })
-            .ToListAsync(cancellationToken);
 
-        var legacyCustomers = await _context.AdminUsers
-            .AsNoTracking()
-            .Where(user => user.Role != "Admin")
-            .Select(user => new AdminCustomerViewModel
-            {
-                Name = user.DisplayName,
-                Email = user.Email,
-                AccountType = "Legacy customer account",
-                EmailConfirmed = true,
-                CreatedAt = DateTime.MinValue,
-                BookingCount = _context.Bookings.Count(booking => booking.OwnerEmail == user.Email.ToLower())
-            })
-            .ToListAsync(cancellationToken);
-
-        customers.AddRange(legacyCustomers);
-        return View(customers.OrderBy(x => x.Name).ToList());
-    }
-
-    // =========================================================
-    // BOOKING DETAILS
-    // =========================================================
-
-    [HttpGet("BookingDetails/{id:int}")]
-    public async Task<IActionResult> BookingDetails(int id)
-    {
-        var booking = await _context.Bookings
-                .Include(b => b.Customer)
-                .Include(b => b.Tickets)
-                .Include(b => b.StatusHistory)
-            .AsNoTracking()
-            .FirstOrDefaultAsync(b => b.Id == id);
-
-        if (booking == null)
-        {
-            return NotFound();
-        }
-
-        return View(booking);
-    }
-
-    // =========================================================
-    // UPDATE BOOKING STATUS AND ADMIN NOTES
-    // =========================================================
-
-    [HttpPost("BookingDetails/{id:int}/Update")]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> UpdateBooking(
-        int id,
-        string status,
-        string? adminNotes)
-    {
-        var allowedStatuses = new[]
-        {
-        "Pending",
-        "Confirmed",
-        "Rejected",
-        "Completed",
-        "Cancelled"
-    };
-
-        if (string.IsNullOrWhiteSpace(status) ||
-            !allowedStatuses.Contains(status))
-        {
-            TempData["BookingError"] = "Invalid booking status.";
-
-            return RedirectToAction(
-                nameof(BookingDetails),
-                new { id });
-        }
-
-        if (adminNotes?.Length > 1000)
-        {
-            TempData["BookingError"] =
-                "Admin notes cannot exceed 1000 characters.";
-
-            return RedirectToAction(
-                nameof(BookingDetails),
-                new { id });
-        }
-
-        await using var transaction =
-            await _context.Database.BeginTransactionAsync(
-                IsolationLevel.Serializable);
-
-        try
-        {
-            var booking = await _context.Bookings
-                .FirstOrDefaultAsync(b => b.Id == id);
-
-            if (booking == null)
-            {
-                await transaction.RollbackAsync();
-                return NotFound();
-            }
-
-            if (!Booking.CanTransition(booking.Status, status))
-            {
-                await transaction.RollbackAsync();
-                TempData["BookingError"] = $"A booking cannot move from {booking.Status} to {status}.";
-                return RedirectToAction(nameof(BookingDetails), new { id });
-            }
-
-            // Only tour bookings linked to a scheduled departure
-            // participate in departure capacity management.
-            if (booking.ServiceType == "Tour" &&
-                booking.TourDepartureId.HasValue)
-            {
-                var departure = await _context.TourDepartures
-                    .FirstOrDefaultAsync(d =>
-                        d.Id == booking.TourDepartureId.Value);
-
-                if (departure == null ||
-                    !booking.TourPackageId.HasValue ||
-                    departure.TourPackageId != booking.TourPackageId.Value)
-                {
-                    await transaction.RollbackAsync();
-
-                    TempData["BookingError"] =
-                        "The linked tour departure is invalid. " +
-                        "Please review this booking.";
-
-                    return RedirectToAction(
-                        nameof(BookingDetails),
-                        new { id });
-                }
-
-                bool targetOccupiesSeats =
-                    status == "Confirmed" ||
-                    status == "Completed";
-
-                if (status == "Confirmed" && !departure.IsActive)
-                {
-                    await transaction.RollbackAsync();
-
-                    TempData["BookingError"] =
-                        "This departure is inactive and cannot receive " +
-                        "new confirmations.";
-
-                    return RedirectToAction(
-                        nameof(BookingDetails),
-                        new { id });
-                }
-
-                int requestedSeats =
-                    booking.Adults + booking.Children;
-
-                if (requestedSeats < 1)
-                {
-                    await transaction.RollbackAsync();
-
-                    TempData["BookingError"] =
-                        "This booking has an invalid passenger count.";
-
-                    return RedirectToAction(
-                        nameof(BookingDetails),
-                        new { id });
-                }
-
-                // Count reservations belonging to OTHER bookings.
-                int occupiedByOtherBookings =
-                    await _context.Bookings
-                        .Where(b =>
-                            b.Id != booking.Id &&
-                            b.TourDepartureId == departure.Id &&
-                            (
-                                b.Status == "Confirmed" ||
-                                b.Status == "Completed"
-                            ))
-                        .SumAsync(b =>
-                            (int?)(b.Adults + b.Children)) ?? 0;
-
-                int newOccupiedSeats =
-                    occupiedByOtherBookings +
-                    (targetOccupiesSeats ? requestedSeats : 0);
-
-                if (newOccupiedSeats > departure.MaximumGroupSize)
-                {
-                    await transaction.RollbackAsync();
-
-                    int remainingSeats =
-                        departure.MaximumGroupSize -
-                        occupiedByOtherBookings;
-
-                    TempData["BookingError"] =
-                        $"Cannot confirm this booking. Only " +
-                        $"{Math.Max(0, remainingSeats)} seats remain, " +
-                        $"but this booking requires {requestedSeats}.";
-
-                    return RedirectToAction(
-                        nameof(BookingDetails),
-                        new { id });
-                }
-
-                // Keep the stored availability synchronized.
-                departure.AvailableSeats =
-                    departure.MaximumGroupSize - newOccupiedSeats;
-
-                departure.UpdatedAt = DateTime.UtcNow;
-            }
-
-            booking.AdminNotes = adminNotes?.Trim();
-            var changedByUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (!await _bookingStatusService.ChangeStatusAsync(
-                    booking,
-                    status,
-                    changedByUserId,
-                    "Admin",
-                    adminNotes,
-                    HttpContext.RequestAborted))
-            {
-                await transaction.RollbackAsync();
-                TempData["BookingError"] = $"A booking cannot move from {booking.Status} to {status}.";
-                return RedirectToAction(nameof(BookingDetails), new { id });
-            }
-
-            await _auditLogService.RecordAsync(
-                User.Identity?.Name,
-                "Booking status changed",
-                $"Booking {booking.ReferenceNumber} changed to {booking.Status}.",
-                "Booking",
-                booking.Id.ToString());
-
-            await transaction.CommitAsync();
-
-            TempData["BookingSuccess"] =
-                "Booking updated successfully.";
-
-            return RedirectToAction(
-                nameof(BookingDetails),
-                new { id });
-        }
-        catch
-        {
-            await transaction.RollbackAsync();
-
-            TempData["BookingError"] =
-                "The booking could not be updated. Please try again.";
-
-            return RedirectToAction(
-                nameof(BookingDetails),
-                new { id });
-        }
-    }
     // =========================================================
     // TRANSPORT - VEHICLE MANAGEMENT
     // =========================================================
@@ -2247,6 +2189,8 @@ public class AdminController : Controller
 
         var vehicles = await _context.TransportServices
             .AsNoTracking()
+            .Include(x => x.RouteLinks)
+                .ThenInclude(x => x.TransportRoute)
             .OrderBy(x => x.DisplayOrder)
             .ThenBy(x => x.Name)
             .ToListAsync();
@@ -2291,9 +2235,6 @@ public class AdminController : Controller
         if (model.PassengerCapacity.HasValue && model.PassengerCapacity <= 0)
             ModelState.AddModelError(nameof(model.PassengerCapacity), "Passenger capacity must be greater than zero.");
 
-        if (model.StartingPrice.HasValue && model.StartingPrice < 0)
-            ModelState.AddModelError(nameof(model.StartingPrice), "Starting price cannot be negative.");
-
         if (!string.IsNullOrWhiteSpace(model.Slug) &&
             await _context.TransportServices.AnyAsync(x => x.Slug == model.Slug))
         {
@@ -2323,6 +2264,13 @@ public class AdminController : Controller
 
         model.CreatedAt = DateTime.UtcNow;
         model.UpdatedAt = null;
+
+        // Route ownership now belongs to TransportRoute. These legacy columns
+        // remain non-nullable in existing databases, so keep a compatibility
+        // value when creating a reusable vehicle without a route.
+        model.StartingCity = "Unassigned";
+        model.DestinationCity = "Unassigned";
+        model.StartingPrice ??= 0;
 
         _context.TransportServices.Add(model);
         await _context.SaveChangesAsync();
@@ -2375,9 +2323,6 @@ public class AdminController : Controller
         if (model.PassengerCapacity.HasValue && model.PassengerCapacity <= 0)
             ModelState.AddModelError(nameof(model.PassengerCapacity), "Passenger capacity must be greater than zero.");
 
-        if (model.StartingPrice.HasValue && model.StartingPrice < 0)
-            ModelState.AddModelError(nameof(model.StartingPrice), "Starting price cannot be negative.");
-
         if (!string.IsNullOrWhiteSpace(model.Slug) &&
             await _context.TransportServices.AnyAsync(
                 x => x.Slug == model.Slug && x.Id != id))
@@ -2421,11 +2366,8 @@ public class AdminController : Controller
         vehicle.Name = model.Name;
         vehicle.Slug = model.Slug;
         vehicle.VehicleType = model.VehicleType;
-        vehicle.StartingCity = model.StartingCity;
-        vehicle.DestinationCity = model.DestinationCity;
         vehicle.Description = model.Description;
         vehicle.PassengerCapacity = model.PassengerCapacity;
-        vehicle.StartingPrice = model.StartingPrice;
         vehicle.ContactPhone = model.ContactPhone;
         vehicle.IsPublished = model.IsPublished;
         vehicle.IsFeatured = model.IsFeatured;
@@ -2476,15 +2418,35 @@ public class AdminController : Controller
         if (vehicle == null)
             return NotFound();
 
-        var hasRoutes = await _context.TransportRoutePricings
+        var hasRoutes = await _context.TransportRouteVehicles
             .AnyAsync(route => route.TransportServiceId == id);
         var hasBookings = await _context.Bookings
             .AnyAsync(booking => booking.TransportServiceId == id);
 
         if (hasRoutes || hasBookings)
         {
-            TempData["ErrorMessage"] =
-                "This vehicle cannot be deleted because it has routes or booking history. Unpublish it instead.";
+            var archivedAt = DateTime.UtcNow;
+            var routes = await _context.TransportRouteVehicles
+                .Where(route => route.TransportServiceId == id)
+                .ToListAsync();
+
+            vehicle.IsArchived = true;
+            vehicle.IsPublished = false;
+            vehicle.ArchivedAt = archivedAt;
+            vehicle.UpdatedAt = archivedAt;
+
+            foreach (var route in routes)
+            {
+                route.IsArchived = true;
+                route.IsActive = false;
+                route.ArchivedAt = archivedAt;
+                route.UpdatedAt = archivedAt;
+            }
+
+            await _context.SaveChangesAsync();
+
+            TempData["SuccessMessage"] =
+                "Vehicle and its routes were archived. Booking history was preserved.";
             return RedirectToAction(nameof(Vehicles));
         }
 
@@ -2493,6 +2455,39 @@ public class AdminController : Controller
         await _context.SaveChangesAsync();
 
         TempData["SuccessMessage"] = "Vehicle deleted successfully.";
+        return RedirectToAction(nameof(Vehicles));
+    }
+
+    [HttpPost("Transport/Vehicles/Restore/{id:int}")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> RestoreVehicle(int id)
+    {
+        var vehicle = await _context.TransportServices.FindAsync(id);
+
+        if (vehicle == null)
+            return NotFound();
+
+        var now = DateTime.UtcNow;
+            var routes = await _context.TransportRouteVehicles
+            .Where(route => route.TransportServiceId == id && route.IsArchived)
+            .ToListAsync();
+
+        vehicle.IsArchived = false;
+        vehicle.ArchivedAt = null;
+        vehicle.IsPublished = false;
+        vehicle.UpdatedAt = now;
+
+        foreach (var route in routes)
+        {
+            route.IsArchived = false;
+            route.IsActive = true;
+            route.ArchivedAt = null;
+            route.UpdatedAt = now;
+        }
+
+        await _context.SaveChangesAsync();
+
+        TempData["SuccessMessage"] = "Vehicle and its routes were restored successfully.";
         return RedirectToAction(nameof(Vehicles));
     }
 
@@ -2602,433 +2597,6 @@ public class AdminController : Controller
         if (System.IO.File.Exists(fullPath))
             System.IO.File.Delete(fullPath);
     }
-
-
-    // =========================================================
-    // TRANSPORT - ROUTE PRICING MANAGEMENT
-    // =========================================================
-
-    [HttpGet("Transport")]
-    public async Task<IActionResult> Transport(int? editId)
-    {
-        ViewData["Title"] = "Transport & Route Pricing";
-        ViewData["Section"] = "Transport";
-
-        ViewBag.TransportServices = await _context.TransportServices
-            .AsNoTracking()
-            .OrderBy(x => x.Name)
-            .ToListAsync();
-
-        if (editId.HasValue)
-        {
-            var editRoute = await _context.TransportRoutePricings
-                .AsNoTracking()
-                .FirstOrDefaultAsync(x => x.Id == editId.Value);
-
-            if (editRoute == null)
-            {
-                return NotFound();
-            }
-
-            ViewBag.EditRoute = editRoute;
-        }
-
-        var routes = await _context.TransportRoutePricings
-            .AsNoTracking()
-            .Include(x => x.TransportService)
-            .OrderBy(x => x.TransportService!.Name)
-            .ThenBy(x => x.PickupCity)
-            .ToListAsync();
-
-        return View(routes);
-    }
-
-    // =========================================================
-    // TRANSPORT - CREATE / UPDATE ROUTE
-    // =========================================================
-
-    [HttpPost("Transport/SaveRoute")]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> SaveTransportRoute(
-        TransportRoutePricing model)
-    {
-        model.PickupCity = (model.PickupCity ?? "").Trim();
-        model.DropoffCity = (model.DropoffCity ?? "").Trim();
-
-        if (string.IsNullOrWhiteSpace(model.PickupCity))
-        {
-            ModelState.AddModelError(
-                nameof(model.PickupCity),
-                "Pickup city is required.");
-        }
-
-        if (string.IsNullOrWhiteSpace(model.DropoffCity))
-        {
-            ModelState.AddModelError(
-                nameof(model.DropoffCity),
-                "Drop-off city is required.");
-        }
-
-        if (model.PickupCity.Equals(
-            model.DropoffCity,
-            StringComparison.OrdinalIgnoreCase))
-        {
-            ModelState.AddModelError(
-                nameof(model.DropoffCity),
-                "Pickup and drop-off cities must be different.");
-        }
-
-        if (model.OneWayFarePKR <= 0)
-        {
-            ModelState.AddModelError(
-                nameof(model.OneWayFarePKR),
-                "Enter a one-way fare greater than zero.");
-        }
-
-        // Return fare is optional.
-        // If empty, the booking system uses the one-way fare.
-        if (model.ReturnFarePKR.HasValue &&
-            model.ReturnFarePKR.Value <= 0)
-        {
-            ModelState.AddModelError(
-                nameof(model.ReturnFarePKR),
-                "Return fare must be greater than zero, or leave it empty.");
-        }
-
-        var vehicleExists = await _context.TransportServices
-            .AnyAsync(x => x.Id == model.TransportServiceId);
-
-        if (!vehicleExists)
-        {
-            ModelState.AddModelError(
-                nameof(model.TransportServiceId),
-                "Select a valid vehicle.");
-        }
-
-        var duplicate = await _context.TransportRoutePricings
-            .AnyAsync(x =>
-                x.TransportServiceId == model.TransportServiceId &&
-                x.PickupCity == model.PickupCity &&
-                x.DropoffCity == model.DropoffCity &&
-                x.Id != model.Id);
-
-        if (duplicate)
-        {
-            ModelState.AddModelError(
-                nameof(model.DropoffCity),
-                "This route already exists for the selected vehicle.");
-        }
-
-        if (!ModelState.IsValid)
-        {
-            TempData["ErrorMessage"] =
-                string.Join(" ", ModelState.Values
-                    .SelectMany(v => v.Errors)
-                    .Select(e => e.ErrorMessage));
-
-            return RedirectToAction(nameof(Transport));
-        }
-
-        // Remember whether this is a new record before EF assigns its ID.
-        bool isNewRoute = model.Id == 0;
-
-        if (isNewRoute)
-        {
-            model.CreatedAt = DateTime.UtcNow;
-            model.UpdatedAt = null;
-
-            _context.TransportRoutePricings.Add(model);
-        }
-        else
-        {
-            var existing = await _context.TransportRoutePricings
-                .FirstOrDefaultAsync(x => x.Id == model.Id);
-
-            if (existing == null)
-            {
-                return NotFound();
-            }
-
-            existing.TransportServiceId = model.TransportServiceId;
-            existing.PickupCity = model.PickupCity;
-            existing.DropoffCity = model.DropoffCity;
-
-            // Save both fares.
-            existing.OneWayFarePKR = model.OneWayFarePKR;
-            existing.ReturnFarePKR = model.ReturnFarePKR;
-
-            existing.IsActive = model.IsActive;
-            existing.UpdatedAt = DateTime.UtcNow;
-        }
-
-        try
-        {
-            await _context.SaveChangesAsync();
-
-            TempData["SuccessMessage"] = isNewRoute
-                ? "Transport route added successfully."
-                : "Transport route updated successfully.";
-        }
-        catch (DbUpdateException)
-        {
-            TempData["ErrorMessage"] =
-                "The route could not be saved. Check whether this vehicle and route already exist, and verify that the database has the ReturnFarePKR column.";
-        }
-
-        return RedirectToAction(nameof(Transport));
-    }
-
-    // =========================================================
-    // TRANSPORT - ACTIVATE / DEACTIVATE ROUTE
-    // =========================================================
-
-    [HttpPost("Transport/Toggle/{id:int}")]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> ToggleTransportRoute(int id)
-    {
-        var route = await _context.TransportRoutePricings
-            .FirstOrDefaultAsync(x => x.Id == id);
-
-        if (route == null)
-        {
-            return NotFound();
-        }
-
-        route.IsActive = !route.IsActive;
-        route.UpdatedAt = DateTime.UtcNow;
-
-        await _context.SaveChangesAsync();
-
-        TempData["SuccessMessage"] = route.IsActive
-            ? "Route activated successfully."
-            : "Route deactivated successfully.";
-
-        return RedirectToAction(nameof(Transport));
-    }
-
-
-    // =========================================================
-    // OTHER ADMIN PAGES
-    // =========================================================
-
-    [HttpGet("Calendar")]
-    public IActionResult Calendar()
-    {
-        ViewData["Title"] = "Calendar";
-        ViewData["Section"] = "Calendar";
-
-        return View("ComingSoon");
-    }
-
-    [HttpGet("Inquiries")]
-    public async Task<IActionResult> Inquiries()
-    {
-        ViewData["Title"] = "Inquiries";
-        ViewData["Section"] = "Inquiries";
-
-        var inquiries = await _context.ContactInquiries
-            .AsNoTracking()
-            .OrderByDescending(x => x.SubmittedAt)
-            .ToListAsync();
-
-        return View(inquiries);
-    }
-
-    [HttpGet("InquiryDetails/{id:int}")]
-    public async Task<IActionResult> InquiryDetails(int id)
-    {
-        var inquiry = await _context.ContactInquiries
-            .AsNoTracking()
-            .FirstOrDefaultAsync(x => x.Id == id);
-
-        if (inquiry == null)
-        {
-            return NotFound();
-        }
-
-        ViewData["Title"] = "Inquiry Details";
-        ViewData["Section"] = "Inquiries";
-
-        return View(inquiry);
-    }
-
-    [HttpGet("CustomTripRequests")]
-    public async Task<IActionResult> CustomTripRequests(string? status, string? search)
-    {
-        var query = _context.TripInquiries.AsNoTracking().AsQueryable();
-
-        if (!string.IsNullOrWhiteSpace(status) && !string.Equals(status, "all", StringComparison.OrdinalIgnoreCase))
-            query = query.Where(x => x.Status == status);
-
-        if (!string.IsNullOrWhiteSpace(search))
-        {
-            var term = search.Trim();
-            query = query.Where(x => x.ReferenceNumber.Contains(term) || x.CustomerName.Contains(term) || x.Destinations.Contains(term));
-        }
-
-        ViewData["Title"] = "Custom Trip Requests";
-        ViewData["Section"] = "Inquiries";
-        return View(await query.OrderByDescending(x => x.CreatedAt).ToListAsync());
-    }
-
-    [HttpGet("CustomTripRequests/{id:int}")]
-    public async Task<IActionResult> CustomTripRequestDetails(int id)
-    {
-        var inquiry = await _context.TripInquiries.FirstOrDefaultAsync(x => x.Id == id);
-        if (inquiry == null)
-            return NotFound();
-
-        ViewData["Title"] = "Custom Trip Request";
-        ViewData["Section"] = "Inquiries";
-        return View(inquiry);
-    }
-
-    [HttpPost("CustomTripRequests/{id:int}/Update")]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> UpdateCustomTripRequest(int id, string status, string? adminNotes, string? proposedOffer)
-    {
-        var allowedStatuses = new[] { "Pending", "In Progress", "Offer Prepared", "Accepted", "Declined", "Cancelled" };
-        if (!allowedStatuses.Contains(status) || adminNotes?.Length > 2000 || proposedOffer?.Length > 2000)
-        {
-            TempData["InquiryError"] = "Invalid custom request update.";
-            return RedirectToAction(nameof(CustomTripRequestDetails), new { id });
-        }
-
-        var inquiry = await _context.TripInquiries.FirstOrDefaultAsync(x => x.Id == id);
-        if (inquiry == null)
-            return NotFound();
-
-        inquiry.Status = status;
-        inquiry.AdminNotes = string.IsNullOrWhiteSpace(adminNotes) ? null : adminNotes.Trim();
-        inquiry.ProposedOffer = string.IsNullOrWhiteSpace(proposedOffer) ? null : proposedOffer.Trim();
-        await _context.SaveChangesAsync();
-        TempData["InquirySuccess"] = "Custom trip request updated.";
-        return RedirectToAction(nameof(CustomTripRequestDetails), new { id });
-    }
-
-    // =========================================================
-    // REVIEWS - MODERATION DASHBOARD
-    // =========================================================
-
-    [HttpGet("Reviews")]
-    public async Task<IActionResult> Reviews(
-        string? status,
-        string? search)
-    {
-        var query = _context.Reviews
-            .AsNoTracking()
-            .Include(r => r.Destination)
-            .Include(r => r.Hotel)
-            .Include(r => r.Restaurant)
-            .Include(r => r.Resort)
-            .Include(r => r.TransportService)
-            .Include(r => r.TourPackage)
-            .AsQueryable();
-
-        if (!string.IsNullOrWhiteSpace(status) &&
-            Enum.TryParse<ReviewStatus>(
-                status, true, out var selectedStatus))
-        {
-            query = query.Where(r => r.Status == selectedStatus);
-        }
-        else
-        {
-            status = "All";
-        }
-
-        if (!string.IsNullOrWhiteSpace(search))
-        {
-            var term = search.Trim();
-
-            query = query.Where(r =>
-                r.ReviewerName.Contains(term) ||
-                r.Title.Contains(term) ||
-                r.Comment.Contains(term));
-        }
-
-        ViewData["Title"] = "Review Moderation";
-        ViewData["Section"] = "Reviews";
-
-        ViewBag.StatusFilter = status ?? "All";
-        ViewBag.SearchTerm = search ?? "";
-
-        ViewBag.TotalReviews = await _context.Reviews.CountAsync();
-
-        ViewBag.PendingReviews = await _context.Reviews
-            .CountAsync(r => r.Status == ReviewStatus.Pending);
-
-        ViewBag.ApprovedReviews = await _context.Reviews
-            .CountAsync(r => r.Status == ReviewStatus.Approved);
-
-        ViewBag.RejectedReviews = await _context.Reviews
-            .CountAsync(r => r.Status == ReviewStatus.Rejected);
-
-        var reviews = await query
-            .OrderByDescending(r => r.CreatedAt)
-            .ToListAsync();
-
-        return View(reviews);
-    }
-
-    // =========================================================
-    // REVIEWS - CHANGE MODERATION STATUS
-    // =========================================================
-
-    [HttpPost("Reviews/{id:int}/SetStatus")]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> SetReviewStatus(
-        int id,
-        string status,
-        string? returnStatus,
-        string? search)
-    {
-        if (!Enum.TryParse<ReviewStatus>(
-                status, true, out var newStatus) ||
-            !Enum.IsDefined(typeof(ReviewStatus), newStatus))
-        {
-            TempData["ErrorMessage"] = "Invalid review status.";
-
-            return RedirectToAction(
-                nameof(Reviews),
-                new { status = returnStatus, search });
-        }
-
-        var review = await _context.Reviews
-            .FirstOrDefaultAsync(r => r.Id == id);
-
-        if (review == null)
-        {
-            TempData["ErrorMessage"] = "Review not found.";
-
-            return RedirectToAction(
-                nameof(Reviews),
-                new { status = returnStatus, search });
-        }
-
-        review.Status = newStatus;
-
-        await _context.SaveChangesAsync();
-
-        TempData["SuccessMessage"] = newStatus switch
-        {
-            ReviewStatus.Approved =>
-                "Review approved. It can now appear publicly.",
-
-            ReviewStatus.Rejected =>
-                "Review rejected. It will not appear publicly.",
-
-            ReviewStatus.Pending =>
-                "Review returned to pending moderation.",
-
-            _ => "Review status updated."
-        };
-
-        return RedirectToAction(
-            nameof(Reviews),
-            new { status = returnStatus, search });
-    }
-
-
 
 
     // ============================================================
@@ -3396,10 +2964,7 @@ public class AdminController : Controller
             fileName
         );
 
-        await using (var stream = new FileStream(
-            filePath,
-            FileMode.CreateNew,
-            FileAccess.Write))
+        await using (var stream = new FileStream(filePath, FileMode.CreateNew, FileAccess.Write))
         {
             await file.CopyToAsync(stream);
         }
@@ -3651,6 +3216,44 @@ public class AdminController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> SaveSettings(SettingsViewModel model)
     {
+        // The form intentionally edits only operational settings. Do not let
+        // validation for legacy fields that are no longer shown prevent the
+        // availability switches from being saved.
+        foreach (var property in new[]
+        {
+            nameof(ApplicationSettings.ApplicationName),
+            nameof(ApplicationSettings.OrganizationName),
+            nameof(ApplicationSettings.DefaultLanguage),
+            nameof(ApplicationSettings.DefaultCountry),
+            nameof(ApplicationSettings.Currency),
+            nameof(ApplicationSettings.TimeZone),
+            nameof(ApplicationSettings.DateFormat),
+            nameof(ApplicationSettings.TimeFormat),
+            nameof(ApplicationSettings.CountryCallingCode),
+            nameof(ApplicationSettings.ContactEmail),
+            nameof(ApplicationSettings.ContactPhone),
+            nameof(ApplicationSettings.ShowDemoContentNotice),
+            nameof(ApplicationSettings.DefaultSeoTitle),
+            nameof(ApplicationSettings.DefaultSeoDescription),
+            nameof(ApplicationSettings.DefaultAdults),
+            nameof(ApplicationSettings.BookingCurrency),
+            nameof(ApplicationSettings.BookingConfirmationBehavior),
+            nameof(ApplicationSettings.AdminNotificationIndicators),
+            nameof(ApplicationSettings.NotifyNewBooking),
+            nameof(ApplicationSettings.NotifyNewContact),
+            nameof(ApplicationSettings.NotifyNewFeedback),
+            nameof(ApplicationSettings.NotifyBookingStatusChange),
+            nameof(ApplicationSettings.NotificationEmail),
+            nameof(ApplicationSettings.NotificationSubjectPrefix),
+            nameof(ApplicationSettings.SidebarBehavior),
+            nameof(ApplicationSettings.DashboardDateRange),
+            nameof(ApplicationSettings.TablePageSize),
+            nameof(ApplicationSettings.DashboardLayout)
+        })
+        {
+            ModelState.Remove($"Settings.{property}");
+        }
+
         if (!ModelState.IsValid)
         {
             model.AuditLogs = await _auditLogService.RecentAsync();
@@ -3659,8 +3262,26 @@ public class AdminController : Controller
         }
 
         var administrator = User.Identity?.Name;
-        await _settingsService.SaveAsync(model.Settings, administrator);
-        await _auditLogService.RecordAsync(administrator, "Settings updated", "Application, website, booking, notification, and appearance settings were updated.", "ApplicationSettings", "1");
+        var stored = await _settingsService.GetAsync();
+        stored.PublicWebsiteVisible = model.Settings.PublicWebsiteVisible;
+        stored.MaintenanceMode = model.Settings.MaintenanceMode;
+        stored.AllowBookingInquiries = model.Settings.AllowBookingInquiries;
+        stored.AllowContactSubmissions = model.Settings.AllowContactSubmissions;
+        stored.AllowFeedbackSubmissions = model.Settings.AllowFeedbackSubmissions;
+        stored.BookingEnabled = model.Settings.BookingEnabled;
+        stored.DefaultBookingStatus = model.Settings.DefaultBookingStatus;
+        stored.BookingReferencePrefix = model.Settings.BookingReferencePrefix;
+        stored.AllowGuestBookings = model.Settings.AllowGuestBookings;
+        stored.RequirePhone = model.Settings.RequirePhone;
+        stored.RequireEmail = model.Settings.RequireEmail;
+        stored.MinimumAdvanceBookingDays = model.Settings.MinimumAdvanceBookingDays;
+        stored.MaximumAdvanceBookingDays = model.Settings.MaximumAdvanceBookingDays;
+        stored.MaximumAdults = model.Settings.MaximumAdults;
+        stored.MaximumChildren = model.Settings.MaximumChildren;
+        stored.AdminTheme = model.Settings.AdminTheme;
+        stored.InterfaceDensity = model.Settings.InterfaceDensity;
+        await _settingsService.SaveAsync(stored, administrator);
+        await _auditLogService.RecordAsync(administrator, "Settings updated", "Website availability, submissions, booking rules, and admin workspace settings were updated.", "ApplicationSettings", "1");
         TempData["SettingsSuccess"] = "Settings saved successfully.";
         return RedirectToAction(nameof(Settings));
     }

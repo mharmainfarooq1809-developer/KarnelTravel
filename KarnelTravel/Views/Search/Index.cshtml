@@ -19,8 +19,8 @@
         ?? Enumerable.Empty<Resort>();
 
     var transport =
-        ViewBag.Transport as IEnumerable<TransportService>
-        ?? Enumerable.Empty<TransportService>();
+        ViewBag.Transport as IEnumerable<TransportRoute>
+        ?? Enumerable.Empty<TransportRoute>();
 
     var packages =
         ViewBag.Packages as IEnumerable<TourPackage>
@@ -1710,18 +1710,9 @@
                             {
                                 <article class="dest-support">
                                     <div class="dest-support__media">
-                                        @if (!string.IsNullOrWhiteSpace(item.ImageUrl))
-                                        {
-                                            <img src="@item.ImageUrl"
-                                                 alt="@item.Name"
-                                                 loading="lazy" decoding="async" />
-                                        }
-                                        else
-                                        {
-                                            <div class="media--fallback" aria-hidden="true">
-                                                <span>@item.Name</span>
-                                            </div>
-                                        }
+                                         <div class="media--fallback" aria-hidden="true">
+                                             <span>@item.Name</span>
+                                         </div>
                                     </div>
                                     <div class="dest-support__body">
                                         <span class="tag">@item.Region</span>
@@ -1753,18 +1744,9 @@
                             {
                                 <li class="hotel-row">
                                     <div class="hotel-row__media">
-                                        @if (!string.IsNullOrWhiteSpace(item.ImageUrl))
-                                        {
-                                            <img src="@item.ImageUrl"
-                                                 alt="@item.Name"
-                                                 loading="lazy" decoding="async" />
-                                        }
-                                        else
-                                        {
-                                            <div class="media--fallback" aria-hidden="true">
-                                                <span>@item.Name</span>
-                                            </div>
-                                        }
+                                         <div class="media--fallback" aria-hidden="true">
+                                             <span>@item.Name</span>
+                                         </div>
                                     </div>
                                     <div class="hotel-row__body">
                                         <span class="tag">@item.City · Hotel</span>
@@ -1902,18 +1884,9 @@
                             {
                                 <li class="route-row">
                                     <div class="route-row__media">
-                                        @if (!string.IsNullOrWhiteSpace(item.ImageUrl))
-                                        {
-                                            <img src="@item.ImageUrl"
-                                                 alt="@item.Name"
-                                                 loading="lazy" decoding="async" />
-                                        }
-                                        else
-                                        {
-                                            <div class="media--fallback" aria-hidden="true">
-                                                <span>@item.Name</span>
-                                            </div>
-                                        }
+                                        <div class="media--fallback" aria-hidden="true">
+                                            <span>@item.Name</span>
+                                        </div>
                                     </div>
                                     <div class="route-row__body">
                                         <div class="route-line">
@@ -1926,12 +1899,10 @@
                                         <div class="row-foot">
                                             <span class="price">
                                                 <small>Starting price</small>
-                                                @(item.StartingPrice.HasValue
-                                                    ? $"PKR {item.StartingPrice.Value:N0}"
-                                                    : "Price on request")
+                                                 PKR @item.StartingPricePKR.ToString("N0")
                                             </span>
                                             <a class="link-arrow"
-                                               href="@Url.Action("Index", "Transport")">View route</a>
+                                                href="@Url.Action("Details", "Transport", new { id = item.Id })">View route</a>
                                         </div>
                                     </div>
                                 </li>
@@ -2015,8 +1986,7 @@
                                             <span class="tag">
                                                 @item.DestinationName · @item.DurationDays day(s)
                                             </span>
-                                            <h3>@item.Name</h3>
-                                            <p>@item.ShortDescription</p>
+                                            <h3>@item.Name</h3                                            <p>@item.ShortDescription</p>
                                             <div class="package-card__foot">
                                                 <span class="price">
                                                     <small>Per adult</small>

@@ -1,3 +1,666 @@
-@{ Layout = "_AdminLayout"; ViewData["Title"] = "System Information"; }
-<div class="page-heading"><div><div class="eyebrow">Read-only diagnostics</div><h1>System information</h1><p>Safe operational details and live database counts. Credentials and connection strings are never displayed.</p></div></div>
-<div class="settings-grid"><section class="setting-card"><h2>Application</h2><p><strong>Application:</strong> @ViewBag.ApplicationName</p><p><strong>Environment:</strong> @Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT")</p><p><strong>Server time:</strong> @DateTimeOffset.Now</p><p><strong>Application time zone:</strong> @ViewBag.TimeZone</p><p><strong>Administrator:</strong> @ViewBag.CurrentAdministrator</p><p><strong>Database provider:</strong> @ViewBag.Provider</p><p><strong>Database status:</strong> @(ViewBag.DatabaseConnected ? "Connected" : "Unavailable")</p></section><section class="setting-card"><h2>Content totals</h2><p><strong>Bookings:</strong> @ViewBag.Bookings</p><p><strong>Destinations:</strong> @ViewBag.Destinations</p><p><strong>Hotels:</strong> @ViewBag.Hotels</p><p><strong>Restaurants:</strong> @ViewBag.Restaurants</p><p><strong>Resorts:</strong> @ViewBag.Resorts</p><p><strong>Transport listings:</strong> @ViewBag.Transport</p></section></div>
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "System Information";
+
+    var environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
+    var dbConnected = ViewBag.DatabaseConnected is bool b && b;
+
+    // Read-only counts, coerced safely so nothing renders as "null".
+    string Fmt(object? v) => v?.ToString() ?? "—";
+
+    var counts = new (string Label, object? Value, string Icon)[]
+    {
+        ("Bookings",           ViewBag.Bookings,     "calendar"),
+        ("Destinations",       ViewBag.Destinations, "pin"),
+        ("Hotels",             ViewBag.Hotels,       "hotel"),
+        ("Restaurants",        ViewBag.Restaurants,  "dining"),
+        ("Resorts",            ViewBag.Resorts,      "resort"),
+        ("Transport listings", ViewBag.Transport,    "truck")
+    };
+}
+
+<svg class="sys-sprite" aria-hidden="true" focusable="false" width="0" height="0" style="position:absolute;overflow:hidden">
+    <symbol id="sys-calendar" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="5" width="18" height="16" rx="2.5" />
+        <path d="M8 3v4M16 3v4M3 10h18" />
+    </symbol>
+    <symbol id="sys-pin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 21s7-5.6 7-11a7 7 0 1 0-14 0c0 5.4 7 11 7 11z" />
+        <circle cx="12" cy="10" r="2.6" />
+    </symbol>
+    <symbol id="sys-hotel" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 21h18" />
+        <path d="M5 21V7l7-3 7 3v14" />
+        <path d="M9.5 21v-4h5v4" />
+        <path d="M9 11h.01M15 11h.01" />
+    </symbol>
+    <symbol id="sys-dining" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M6 3v8a2 2 0 0 0 2 2v8" />
+        <path d="M6 3v6" />
+        <path d="M18 3c-1.7 0-3 1.3-3 3v5a2 2 0 0 0 2 2h1v8" />
+        <path d="M18 13V3" />
+    </symbol>
+    <symbol id="sys-resort" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 21h18" />
+        <path d="M4 21V10l8-6 8 6v11" />
+        <path d="M9 21v-5a3 3 0 0 1 6 0v5" />
+    </symbol>
+    <symbol id="sys-truck" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 7.5h10.5v9H3z" />
+        <path d="M13.5 10.5h3.8l3.2 3.2v2.8h-7z" />
+        <circle cx="7" cy="18" r="1.5" />
+        <circle cx="17" cy="18" r="1.5" />
+    </symbol>
+    <symbol id="sys-db" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+        <ellipse cx="12" cy="5.5" rx="8" ry="2.8" />
+        <path d="M4 5.5v6c0 1.5 3.6 2.8 8 2.8s8-1.3 8-2.8v-6" />
+        <path d="M4 11.5v6c0 1.5 3.6 2.8 8 2.8s8-1.3 8-2.8v-6" />
+    </symbol>
+    <symbol id="sys-shield" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 3 5 6v5c0 4.4 3 8.3 7 10 4-1.7 7-5.6 7-10V6z" />
+        <path d="m9.3 11.8 2 2 3.6-4" />
+    </symbol>
+</svg>
+
+<div class="sys-page">
+
+    <!-- ================= PAGE HEADER ================= -->
+    <header class="page-heading sys-heading">
+        <div>
+            <p class="eyebrow">Read-only diagnostics</p>
+            <h1>System information</h1>
+            <p>Monitor application configuration, database connectivity, and published content totals.</p>
+        </div>
+
+        <span class="sys-heading-tag" aria-label="Read-only page">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2.2"
+                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <use href="#sys-shield" />
+            </svg>
+            Read-only
+        </span>
+    </header>
+
+    <!-- ================= APPLICATION + DB STATUS ================= -->
+    <div class="sys-top-grid">
+
+        <!-- Application overview -->
+        <section class="sys-card" aria-labelledby="sys-app-title">
+            <header class="sys-card-head">
+                <p class="sys-card-eyebrow">Application</p>
+                <h2 id="sys-app-title">Application overview</h2>
+            </header>
+
+            <dl class="sys-dl">
+                <div class="sys-dl-row">
+                    <dt>Application</dt>
+                    <dd>@Fmt(ViewBag.ApplicationName)</dd>
+                </div>
+
+                <div class="sys-dl-row">
+                    <dt>Environment</dt>
+                    <dd>
+                        @if (string.IsNullOrWhiteSpace(environment))
+                        {
+                            <span class="sys-muted">Not set</span>
+                        }
+                        else
+                        {
+                            <span class="sys-env-badge">@environment</span>
+                        }
+                    </dd>
+                </div>
+
+                <div class="sys-dl-row">
+                    <dt>Server time</dt>
+                    <dd class="sys-num">@DateTimeOffset.Now</dd>
+                </div>
+
+                <div class="sys-dl-row">
+                    <dt>Application time zone</dt>
+                    <dd>@Fmt(ViewBag.TimeZone)</dd>
+                </div>
+
+                <div class="sys-dl-row">
+                    <dt>Administrator</dt>
+                    <dd>@Fmt(ViewBag.CurrentAdministrator)</dd>
+                </div>
+
+                <div class="sys-dl-row">
+                    <dt>Database provider</dt>
+                    <dd><code class="sys-code">@Fmt(ViewBag.Provider)</code></dd>
+                </div>
+            </dl>
+        </section>
+
+        <!-- Database status -->
+        <section class="sys-card sys-db-card" aria-labelledby="sys-db-title">
+            <header class="sys-card-head">
+                <p class="sys-card-eyebrow">Connectivity</p>
+                <h2 id="sys-db-title">Database status</h2>
+            </header>
+
+            <div class="sys-db @(dbConnected ? "is-ok" : "is-warn")"
+                 role="status"
+                 aria-live="polite">
+
+                <span class="sys-db-icon" aria-hidden="true">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="1.7"
+                         stroke-linecap="round" stroke-linejoin="round">
+                        <use href="#sys-db" />
+                    </svg>
+                </span>
+
+                <div class="sys-db-text">
+                    <strong class="sys-db-state">
+                        @(dbConnected ? "Connected" : "Unavailable")
+                    </strong>
+                    <span class="sys-db-label">
+                        @(dbConnected
+                            ? "The application can reach the configured database."
+                            : "The application could not reach the configured database.")
+                    </span>
+                </div>
+
+                <span class="sys-db-dot" aria-hidden="true"></span>
+            </div>
+
+            <p class="sys-db-note">
+                Connection strings, credentials, and secret keys are intentionally not displayed on this page.
+            </p>
+        </section>
+    </div>
+
+    <!-- ================= CONTENT TOTALS ================= -->
+    <section class="sys-card sys-totals" aria-labelledby="sys-totals-title">
+        <header class="sys-card-head sys-totals-head">
+            <div>
+                <p class="sys-card-eyebrow">Records</p>
+                <h2 id="sys-totals-title">Content totals</h2>
+            </div>
+            <p class="sys-totals-note">
+                Live record counts across published content categories.
+            </p>
+        </header>
+
+        <div class="sys-totals-grid">
+            @foreach (var c in counts)
+            {
+                <article class="sys-stat">
+                    <span class="sys-stat-icon" aria-hidden="true">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                             stroke="currentColor" stroke-width="1.7"
+                             stroke-linecap="round" stroke-linejoin="round">
+                            <use href="#sys-@c.Icon" />
+                        </svg>
+                    </span>
+                    <div class="sys-stat-body">
+                        <span class="sys-stat-value">@Fmt(c.Value)</span>
+                        <span class="sys-stat-label">@c.Label</span>
+                    </div>
+                </article>
+            }
+        </div>
+    </section>
+
+</div>
+
+<style>
+    /* ============================================================
+       SYSTEM INFORMATION — page-scoped styles
+       Uses Karnel Admin design tokens from _AdminLayout.
+       ============================================================ */
+
+    .sys-page { display: block; max-width: 1180px; }
+
+    /* ---------- Heading ---------- */
+    .sys-page .sys-heading {
+        align-items: flex-end;
+        margin-bottom: 30px;
+    }
+
+    .sys-page .sys-heading h1 {
+        font-size: clamp(32px, 3.6vw, 48px);
+    }
+
+    .sys-page .sys-heading p {
+        margin-top: 8px;
+        max-width: 62ch;
+    }
+
+    .sys-page .sys-heading-tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 12px;
+        border-radius: 999px;
+        border: 1px solid var(--line);
+        background: var(--white);
+        color: var(--muted);
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: .12em;
+        text-transform: uppercase;
+        flex-shrink: 0;
+    }
+
+    .sys-page .sys-heading-tag svg {
+        color: var(--accent);
+        opacity: .9;
+    }
+
+    /* ---------- Top grid ---------- */
+    .sys-page .sys-top-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+        gap: 20px;
+        align-items: start;
+        margin-bottom: 20px;
+    }
+
+    /* ---------- Card ---------- */
+    .sys-page .sys-card {
+        background: var(--white);
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        padding: 24px 26px 26px;
+        min-width: 0;
+        transition: border-color var(--dur) var(--ease),
+                    box-shadow var(--dur) var(--ease);
+    }
+
+    .sys-page .sys-card:hover {
+        border-color: var(--line-hi);
+        box-shadow: var(--shadow-sm);
+    }
+
+    .sys-page .sys-card-head {
+        margin-bottom: 18px;
+    }
+
+    .sys-page .sys-card-eyebrow {
+        margin: 0 0 6px;
+        font-size: 10.5px;
+        font-weight: 700;
+        letter-spacing: .16em;
+        text-transform: uppercase;
+        color: var(--accent);
+    }
+
+    .sys-page .sys-card-head h2 {
+        margin: 0;
+        font-family: var(--serif);
+        font-weight: 400;
+        font-size: 24px;
+        line-height: 1.15;
+        letter-spacing: -.012em;
+        color: var(--forest);
+    }
+
+    /* ---------- Definition list ---------- */
+    .sys-page .sys-dl {
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .sys-page .sys-dl-row {
+        display: grid;
+        grid-template-columns: minmax(150px, 210px) minmax(0, 1fr);
+        align-items: baseline;
+        gap: 16px;
+        padding: 12px 0;
+        border-bottom: 1px solid var(--line);
+    }
+
+    .sys-page .sys-dl-row:last-child { border-bottom: 0; }
+
+    .sys-page .sys-dl-row dt {
+        margin: 0;
+        font-size: 12px;
+        font-weight: 600;
+        letter-spacing: .04em;
+        text-transform: uppercase;
+        color: var(--muted);
+        line-height: 1.4;
+    }
+
+    .sys-page .sys-dl-row dd {
+        margin: 0;
+        font-size: 14px;
+        line-height: 1.55;
+        color: var(--ink);
+        overflow-wrap: anywhere;
+        word-break: break-word;
+        min-width: 0;
+    }
+
+    .sys-page .sys-num {
+        font-variant-numeric: tabular-nums;
+        letter-spacing: -.003em;
+    }
+
+    .sys-page .sys-muted {
+        color: var(--muted);
+        font-size: 13px;
+    }
+
+    .sys-page .sys-env-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 3px 10px;
+        border-radius: 999px;
+        background: rgba(143, 168, 136, .16);
+        color: var(--forest);
+        font-size: 11.5px;
+        font-weight: 700;
+        letter-spacing: .04em;
+        text-transform: uppercase;
+    }
+
+    .sys-page .sys-code {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 6px;
+        background: var(--surface-sunken, #fbfcfa);
+        border: 1px solid var(--line);
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 12.5px;
+        color: var(--ink);
+        line-height: 1.5;
+    }
+
+    /* ---------- Database status ---------- */
+    .sys-page .sys-db {
+        display: flex;
+        align-items: flex-start;
+        gap: 14px;
+        padding: 18px 18px;
+        border-radius: 12px;
+        border: 1px solid var(--line);
+        background: var(--surface-sunken, #fbfcfa);
+        position: relative;
+    }
+
+    .sys-page .sys-db.is-ok {
+        background: rgba(60, 145, 105, .08);
+        border-color: rgba(60, 145, 105, .28);
+    }
+
+    .sys-page .sys-db.is-warn {
+        background: rgba(174, 93, 80, .07);
+        border-color: rgba(174, 93, 80, .28);
+    }
+
+    .sys-page .sys-db-icon {
+        flex-shrink: 0;
+        width: 42px;
+        height: 42px;
+        display: grid;
+        place-items: center;
+        border-radius: 10px;
+        background: var(--white);
+        border: 1px solid var(--line);
+        color: var(--forest);
+    }
+
+    .sys-page .sys-db.is-ok .sys-db-icon {
+        color: #276a4a;
+        border-color: rgba(60, 145, 105, .32);
+    }
+
+    .sys-page .sys-db.is-warn .sys-db-icon {
+        color: #8b4137;
+        border-color: rgba(174, 93, 80, .32);
+    }
+
+    .sys-page .sys-db-text {
+        min-width: 0;
+        flex: 1 1 auto;
+    }
+
+    .sys-page .sys-db-state {
+        display: block;
+        font-family: var(--sans);
+        font-size: 15px;
+        font-weight: 700;
+        line-height: 1.2;
+        letter-spacing: -.005em;
+        color: var(--ink);
+    }
+
+    .sys-page .sys-db.is-ok .sys-db-state { color: #1f5a3f; }
+    .sys-page .sys-db.is-warn .sys-db-state { color: #8b4137; }
+
+    .sys-page .sys-db-label {
+        display: block;
+        margin-top: 4px;
+        font-size: 12.5px;
+        line-height: 1.55;
+        color: var(--muted);
+    }
+
+    .sys-page .sys-db-dot {
+        align-self: flex-start;
+        width: 9px;
+        height: 9px;
+        flex-shrink: 0;
+        margin-top: 8px;
+        border-radius: 50%;
+        background: var(--muted);
+        box-shadow: 0 0 0 3px rgba(117, 128, 120, .15);
+    }
+
+    .sys-page .sys-db.is-ok .sys-db-dot {
+        background: #3c9169;
+        box-shadow: 0 0 0 3px rgba(60, 145, 105, .18);
+    }
+
+    .sys-page .sys-db.is-warn .sys-db-dot {
+        background: #ae5d50;
+        box-shadow: 0 0 0 3px rgba(174, 93, 80, .18);
+    }
+
+    .sys-page .sys-db-note {
+        margin: 14px 0 0;
+        padding-top: 14px;
+        border-top: 1px solid var(--line);
+        font-size: 12px;
+        line-height: 1.55;
+        color: var(--muted);
+    }
+
+    /* ---------- Totals ---------- */
+    .sys-page .sys-totals { padding-bottom: 22px; }
+
+    .sys-page .sys-totals-head {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 16px;
+        flex-wrap: wrap;
+        margin-bottom: 20px;
+        padding-bottom: 18px;
+        border-bottom: 1px solid var(--line);
+    }
+
+    .sys-page .sys-totals-note {
+        margin: 0;
+        font-size: 12.5px;
+        line-height: 1.55;
+        color: var(--muted);
+        max-width: 46ch;
+    }
+
+    .sys-page .sys-totals-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 12px;
+    }
+
+    .sys-page .sys-stat {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 16px 18px;
+        border-radius: 12px;
+        border: 1px solid var(--line);
+        background: var(--surface-sunken, #fbfcfa);
+        min-width: 0;
+        transition: border-color var(--dur) var(--ease),
+                    background var(--dur) var(--ease),
+                    transform var(--dur) var(--ease);
+    }
+
+    .sys-page .sys-stat:hover {
+        border-color: var(--line-hi);
+        background: var(--white);
+        transform: translateY(-1px);
+    }
+
+    .sys-page .sys-stat-icon {
+        flex-shrink: 0;
+        width: 38px;
+        height: 38px;
+        display: grid;
+        place-items: center;
+        border-radius: 10px;
+        background: rgba(143, 168, 136, .14);
+        color: var(--forest);
+    }
+
+    .sys-page .sys-stat-body {
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+    }
+
+    .sys-page .sys-stat-value {
+        font-family: var(--sans);
+        font-size: 22px;
+        font-weight: 600;
+        line-height: 1.05;
+        letter-spacing: -.012em;
+        color: var(--forest);
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .sys-page .sys-stat-label {
+        font-size: 11.5px;
+        font-weight: 600;
+        letter-spacing: .04em;
+        text-transform: uppercase;
+        color: var(--muted);
+        line-height: 1.35;
+    }
+
+    /* ============================================================
+       RESPONSIVE
+       ============================================================ */
+    @@media (max-width: 980px) {
+        .sys-page .sys-top-grid { grid-template-columns: 1fr; }
+        .sys-page .sys-totals-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+
+    @@media (max-width: 640px) {
+        .sys-page .sys-heading {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 14px;
+        }
+
+        .sys-page .sys-card { padding: 20px 18px 22px; border-radius: 14px; }
+
+        .sys-page .sys-dl-row {
+            grid-template-columns: 1fr;
+            gap: 4px;
+            padding: 10px 0;
+        }
+
+        .sys-page .sys-dl-row dt { font-size: 10.5px; }
+
+        .sys-page .sys-db {
+            padding: 14px;
+            gap: 12px;
+        }
+
+        .sys-page .sys-db-icon { width: 36px; height: 36px; }
+        .sys-page .sys-db-state { font-size: 14px; }
+
+        .sys-page .sys-totals-grid { grid-template-columns: 1fr; gap: 10px; }
+        .sys-page .sys-stat { padding: 14px 16px; }
+        .sys-page .sys-stat-value { font-size: 20px; }
+    }
+
+    /* ============================================================
+       DARK THEME TUNING
+       ============================================================ */
+    html[data-admin-theme="dark"] .sys-page .sys-db.is-ok {
+        background: rgba(60, 145, 105, .14);
+        border-color: rgba(60, 145, 105, .32);
+    }
+
+    html[data-admin-theme="dark"] .sys-page .sys-db.is-warn {
+        background: rgba(174, 93, 80, .14);
+        border-color: rgba(174, 93, 80, .32);
+    }
+
+    html[data-admin-theme="dark"] .sys-page .sys-db.is-ok .sys-db-state { color: #b7e2c8; }
+    html[data-admin-theme="dark"] .sys-page .sys-db.is-warn .sys-db-state { color: #f0c3ba; }
+
+    html[data-admin-theme="dark"] .sys-page .sys-env-badge {
+        background: rgba(143, 168, 136, .20);
+        color: #d8ead9;
+    }
+
+    html[data-admin-theme="dark"] .sys-page .sys-code,
+    html[data-admin-theme="dark"] .sys-page .sys-stat {
+        background: rgba(255, 255, 255, .03);
+    }
+
+    html[data-admin-theme="dark"] .sys-page .sys-stat:hover {
+        background: rgba(255, 255, 255, .05);
+    }
+
+    @@media (prefers-color-scheme: dark) {
+        html[data-admin-theme="system"] .sys-page .sys-db.is-ok {
+            background: rgba(60, 145, 105, .14);
+            border-color: rgba(60, 145, 105, .32);
+        }
+
+        html[data-admin-theme="system"] .sys-page .sys-db.is-warn {
+            background: rgba(174, 93, 80, .14);
+            border-color: rgba(174, 93, 80, .32);
+        }
+
+        html[data-admin-theme="system"] .sys-page .sys-db.is-ok .sys-db-state { color: #b7e2c8; }
+        html[data-admin-theme="system"] .sys-page .sys-db.is-warn .sys-db-state { color: #f0c3ba; }
+
+        html[data-admin-theme="system"] .sys-page .sys-env-badge {
+            background: rgba(143, 168, 136, .20);
+            color: #d8ead9;
+        }
+
+        html[data-admin-theme="system"] .sys-page .sys-code,
+        html[data-admin-theme="system"] .sys-page .sys-stat {
+            background: rgba(255, 255, 255, .03);
+        }
+    }
+
+    /* ============================================================
+       REDUCED MOTION
+       ============================================================ */
+    @@media (prefers-reduced-motion: reduce) {
+        .sys-page .sys-card,
+        .sys-page .sys-stat {
+            transition: none !important;
+        }
+        .sys-page .sys-stat:hover { transform: none; }
+    }
+</style>

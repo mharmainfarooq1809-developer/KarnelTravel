@@ -61,9 +61,40 @@ public sealed class BookingConfirmationEmailService : IBookingConfirmationEmailS
             var username = smtp["Username"];
             var password = smtp["Password"];
             var ticketUrl = BuildTicketUrl(ticket.Id);
-            var body = $"Hello {booking.CustomerName},\n\nYour booking has been confirmed.\n\nBooking reference: {booking.ReferenceNumber}\nService: {booking.ServiceName}\nTravel date: {booking.BookingDate:dd MMM yyyy}\nTicket reference: {ticket.TicketReference}\n\nView your QR ticket: {ticketUrl}\n\nPlease keep this ticket available for your journey.\n\nKarnel Travel Guide";
+            var qrContentId = $"karnel-qr-{ticket.Id}@karneltravel";
+            var htmlBody = $"""
+                <!doctype html>
+                <html><body style="font-family:Arial,sans-serif;color:#1b2922;line-height:1.6">
+                <h2>Your booking has been confirmed</h2>
+                <p>Hello {WebUtility.HtmlEncode(booking.CustomerName)},</p>
+                <p><strong>Booking reference:</strong> {WebUtility.HtmlEncode(booking.ReferenceNumber)}<br>
+                <strong>Service:</strong> {WebUtility.HtmlEncode(booking.ServiceName)}<br>
+                <strong>Travel date:</strong> {booking.BookingDate:dd MMM yyyy}<br>
+                <strong>Ticket reference:</strong> {WebUtility.HtmlEncode(ticket.TicketReference)}</p>
+                <p>Present this QR code when requested:</p>
+                <p><img src="cid:{qrContentId}" alt="Booking QR code" width="280" height="280" style="display:block;border:0"></p>
+                <p>If the QR image is not visible, open your ticket here:<br>
+                <a href="{WebUtility.HtmlEncode(ticketUrl)}">View your QR ticket</a></p>
+                <p>Please keep this email available for your journey.</p>
+                <p>Karnel Travel Guide</p>
+                </body></html>
+                """;
 
-            using var message = new MailMessage(from, booking.Email.Trim(), attempt.Subject, body);
+            using var message = new MailMessage(from, booking.Email.Trim())
+            {
+                Subject = attempt.Subject,
+                Body = htmlBody,
+                IsBodyHtml = true
+            };
+            using var qrStream = new MemoryStream(ticket.QrCodePng, writable: false);
+            using var qrAttachment = new Attachment(qrStream, "booking-qr.png", "image/png")
+            {
+                ContentId = qrContentId,
+                TransferEncoding = System.Net.Mime.TransferEncoding.Base64
+            };
+            qrAttachment.ContentDisposition.Inline = true;
+            qrAttachment.ContentDisposition.DispositionType = "inline";
+            message.Attachments.Add(qrAttachment);
             using var client = new SmtpClient(host, port)
             {
                 EnableSsl = enableSsl,

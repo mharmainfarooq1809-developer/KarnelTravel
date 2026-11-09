@@ -58,7 +58,7 @@ public class HomeController : Controller
             .ToListAsync();
 
         ViewBag.FeaturedTransport = await _db.TransportServices
-            .Where(x => x.IsPublished)
+            .Where(x => x.IsPublished && !x.IsArchived)
             .OrderBy(x => x.Name)
             .Take(3)
             .AsNoTracking()

@@ -1,1130 +1,1398 @@
-@model IEnumerable<KarnelTravel.Models.TransportRoutePricing>
-
+@model IEnumerable<KarnelTravel.Models.TransportRoute>
+@using System.Globalization
 @using KarnelTravel.Models
+@using KarnelTravel.ViewModels
 
 @{
     Layout = "_AdminLayout";
-    ViewData["Title"] = "Transport";
+    ViewData["Title"] = "Transport Routes";
+    ViewData["Section"] = "Transport";
 
-    var services = ViewBag.TransportServices as IEnumerable<TransportService>
-                   ?? Enumerable.Empty<TransportService>();
+    var vehicles = ViewBag.TransportServices as IEnumerable<TransportService> ?? Enumerable.Empty<TransportService>();
+    var edit = ViewBag.EditRoute as AdminTransportRouteViewModel;
+    var routes = Model?.ToList() ?? new List<TransportRoute>();
 
-    var editRoute = ViewBag.EditRoute as TransportRoutePricing;
-    var routes = Model?.ToList() ?? new List<TransportRoutePricing>();
+    var culture = CultureInfo.CurrentCulture;
 
-    var activeCount = routes.Count(x => x.IsActive);
-    var inactiveCount = routes.Count(x => !x.IsActive);
+    var totalRoutes = routes.Count;
+    var publishedRoutes = routes.Count(r => !r.IsArchived && r.IsPublished && r.IsActive);
+    var archivedRoutes = routes.Count(r => r.IsArchived);
+    var unpublishedRoutes = totalRoutes - publishedRoutes - archivedRoutes;
+    var vehiclesAssigned = routes.Where(r => !r.IsArchived).Sum(r => r.VehicleLinks.Count(x => !x.IsArchived));
 }
 
-<style>
-   
+<div class="tr-page">
 
-    .transport-page {
-        color: var(--ink, #1b2922);
-        padding-bottom: 36px;
-    }
-
-    /* ---------- Header ---------- */
-    .transport-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-end;
-        gap: 24px;
-        margin-bottom: 26px;
-    }
-    .transport-eyebrow {
-        margin: 0 0 8px;
-        color: var(--accent, #3c9169);
-        font-size: 11px;
-        font-weight: 700;
-        letter-spacing: .16em;
-        text-transform: uppercase;
-    }
-    .transport-header h1 {
-        font-family: var(--serif, Georgia, serif);
-        font-weight: 400;
-        color: var(--forest, #164734);
-        font-size: clamp(28px, 3.2vw, 42px);
-        line-height: 1.1;
-        letter-spacing: -.02em;
-        margin: 0;
-    }
-    .transport-header p {
-        margin: 10px 0 0;
-        color: var(--muted, #758078);
-        font-size: 13.5px;
-        line-height: 1.6;
-        max-width: 62ch;
-    }
-
-    /* ---------- Buttons ---------- */
-    .transport-btn {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        gap: 8px;
-        padding: 11px 18px;
-        border: 1px solid transparent;
-        border-radius: 10px;
-        font: inherit;
-        font-size: 13px;
-        font-weight: 700;
-        text-decoration: none;
-        cursor: pointer;
-        white-space: nowrap;
-        transition: background .14s ease, border-color .14s ease, color .14s ease, box-shadow .14s ease, transform .14s ease;
-    }
-    .transport-btn-primary {
-        background: var(--forest, #164734);
-        color: #fff;
-        border-color: var(--forest, #164734);
-        box-shadow: 0 2px 10px -4px rgba(22,71,52,.4);
-    }
-    .transport-btn-primary:hover {
-        background: var(--green, #236b4d);
-        border-color: var(--green, #236b4d);
-        color: #fff;
-        box-shadow: 0 6px 20px -8px rgba(22,71,52,.5);
-        transform: translateY(-1px);
-    }
-    .transport-btn-secondary {
-        background: var(--white, #fff);
-        color: var(--ink, #1b2922);
-        border-color: var(--line, #e5e9e3);
-    }
-    .transport-btn-secondary:hover {
-        background: var(--soft, #edf2ed);
-        border-color: var(--line-hi, #d6dcd4);
-        color: var(--forest, #164734);
-    }
-    .transport-btn-ghost {
-        background: var(--soft, #edf2ed);
-        color: var(--forest, #164734);
-    }
-    .transport-btn-ghost:hover {
-        background: var(--soft-2, #e3ece5);
-        color: var(--forest, #164734);
-    }
-    .transport-btn-warn {
-        background: rgba(220,164,61,.10);
-        color: #8a6516;
-        border-color: rgba(220,164,61,.28);
-    }
-    .transport-btn-warn:hover {
-        background: rgba(220,164,61,.20);
-        border-color: rgba(220,164,61,.44);
-    }
-
-    /* ---------- Alerts ---------- */
-    .transport-alert {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        padding: 13px 16px;
-        margin-bottom: 18px;
-        border-radius: 10px;
-        font-size: 13px;
-        font-weight: 500;
-    }
-    .transport-alert svg { flex-shrink: 0; }
-    .transport-alert-success {
-        background: rgba(60,145,105,.10);
-        border: 1px solid rgba(60,145,105,.22);
-        color: #236b4d;
-    }
-    .transport-alert-error {
-        background: rgba(174,93,80,.10);
-        border: 1px solid rgba(174,93,80,.22);
-        color: #8b4137;
-    }
-
-    /* ---------- Stat tiles ---------- */
-    .transport-stats {
-        display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-        gap: 16px;
-        margin-bottom: 18px;
-    }
-    .transport-stat {
-        padding: 20px 22px;
-        background: var(--white, #fff);
-        border: 1px solid var(--line, #e5e9e3);
-        border-radius: 14px;
-        transition: border-color .18s ease, box-shadow .18s ease;
-    }
-    .transport-stat:hover {
-        border-color: var(--line-hi, #d6dcd4);
-        box-shadow: 0 2px 6px -2px rgba(22,71,52,.08);
-    }
-    .transport-stat-label {
-        display: block;
-        color: var(--muted, #758078);
-        font-size: 11.5px;
-        font-weight: 600;
-        letter-spacing: .04em;
-        text-transform: uppercase;
-        margin-bottom: 6px;
-    }
-    .transport-stat-value {
-        display: block;
-        font-family: var(--serif, Georgia, serif);
-        font-weight: 400;
-        font-size: 28px;
-        color: var(--forest, #164734);
-        line-height: 1.15;
-        letter-spacing: -.01em;
-        font-variant-numeric: tabular-nums;
-    }
-    .transport-stat-dot {
-        display: inline-block;
-        width: 7px;
-        height: 7px;
-        border-radius: 50%;
-        margin-right: 6px;
-        vertical-align: middle;
-    }
-    .transport-stat-dot.active   { background: #28b485; box-shadow: 0 0 0 3px rgba(40,180,133,.15); }
-    .transport-stat-dot.inactive { background: #dca43d; box-shadow: 0 0 0 3px rgba(220,164,61,.15); }
-
-    /* ---------- Panel ---------- */
-    .transport-panel {
-        background: var(--white, #fff);
-        border: 1px solid var(--line, #e5e9e3);
-        border-radius: 14px;
-        overflow: hidden;
-    }
-    .transport-panel-head {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 15px;
-        padding: 20px 24px;
-        border-bottom: 1px solid var(--line, #e5e9e3);
-    }
-    .transport-panel-head h2 {
-        font-family: var(--serif, Georgia, serif);
-        font-weight: 400;
-        font-size: 20px;
-        color: var(--forest, #164734);
-        letter-spacing: -.01em;
-        margin: 0;
-    }
-    .transport-panel-head p {
-        margin: 6px 0 0;
-        color: var(--muted, #758078);
-        font-size: 12.5px;
-        line-height: 1.5;
-    }
-    .transport-panel-count {
-        padding: 6px 11px;
-        border: 1px solid var(--line, #e5e9e3);
-        border-radius: 999px;
-        background: var(--surface-sunken, #fbfcfa);
-        color: var(--muted, #758078);
-        font-size: 11.5px;
-        font-weight: 500;
-        white-space: nowrap;
-    }
-
-    /* ---------- Toolbar ---------- */
-    .transport-toolbar {
-        display: flex;
-        gap: 10px;
-        padding: 16px 24px;
-        border-bottom: 1px solid var(--line, #e5e9e3);
-        background: var(--surface-sunken, #fbfcfa);
-    }
-    .transport-search {
-        display: flex;
-        align-items: center;
-        gap: 9px;
-        flex: 1;
-        min-width: 150px;
-        height: 42px;
-        padding: 0 14px;
-        border: 1px solid var(--line, #e5e9e3);
-        border-radius: 10px;
-        background: var(--white, #fff);
-        color: var(--muted, #758078);
-        transition: border-color .14s ease, box-shadow .14s ease;
-    }
-    .transport-search:focus-within {
-        border-color: var(--accent, #3c9169);
-        box-shadow: 0 0 0 3px rgba(60,145,105,.20);
-    }
-    .transport-search > svg {
-        width: 16px;
-        height: 16px;
-        flex-shrink: 0;
-        fill: none;
-        stroke: currentColor;
-        stroke-width: 1.8;
-        stroke-linecap: round;
-        stroke-linejoin: round;
-    }
-    .transport-search input {
-        width: 100%;
-        min-width: 0;
-        height: 100%;
-        border: 0;
-        outline: 0;
-        background: transparent;
-        color: var(--ink, #1b2922);
-        font: inherit;
-        font-size: 13px;
-    }
-    .transport-search input::placeholder { color: var(--muted, #758078); }
-
-    .transport-toolbar select {
-        height: 42px;
-        padding: 0 34px 0 14px;
-        border: 1px solid var(--line, #e5e9e3);
-        border-radius: 10px;
-        background: var(--white, #fff) url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23758078' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>") no-repeat right 12px center / 14px;
-        color: var(--ink, #1b2922);
-        font: inherit;
-        font-size: 13px;
-        cursor: pointer;
-        appearance: none;
-        -webkit-appearance: none;
-        transition: border-color .14s ease, box-shadow .14s ease;
-        max-width: 200px;
-    }
-    .transport-toolbar select:focus {
-        outline: none;
-        border-color: var(--accent, #3c9169);
-        box-shadow: 0 0 0 3px rgba(60,145,105,.20);
-    }
-
-    /* ---------- CARD GRID ---------- */
-    .transport-card-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(min(340px, 100%), 1fr));
-        gap: 18px;
-        padding: 24px;
-    }
-
-    .transport-card {
-        display: flex;
-        flex-direction: column;
-        background: var(--white, #fff);
-        border: 1px solid var(--line, #e5e9e3);
-        border-radius: 14px;
-        overflow: hidden;
-        contain: layout;
-        transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease;
-    }
-    .transport-card:hover {
-        border-color: var(--line-hi, #d6dcd4);
-        box-shadow: 0 8px 20px -12px rgba(22,71,52,.22);
-        transform: translateY(-2px);
-    }
-    .transport-card[hidden] { display: none; }
-
-    /* Card header */
-    .transport-card-head {
-        position: relative;
-        padding: 20px 20px 16px;
-        background:
-            linear-gradient(135deg, rgba(60,145,105,.06), rgba(22,71,52,.02)),
-            repeating-linear-gradient(45deg, transparent 0 14px, rgba(60,145,105,.03) 14px 15px);
-        border-bottom: 1px solid var(--line, #e5e9e3);
-    }
-    .transport-route-name {
-        font-family: var(--serif, Georgia, serif);
-        font-weight: 400;
-        font-size: 19px;
-        line-height: 1.25;
-        letter-spacing: -.01em;
-        color: var(--forest, #164734);
-        margin: 0 0 4px;
-        display: flex;
-        align-items: center;
-        flex-wrap: wrap;
-        gap: 6px;
-    }
-    .transport-route-name svg {
-        width: 15px;
-        height: 15px;
-        flex-shrink: 0;
-        stroke: currentColor;
-        fill: none;
-        stroke-width: 2;
-        stroke-linecap: round;
-        stroke-linejoin: round;
-        opacity: .55;
-    }
-    .transport-route-sub {
-        font-size: 11.5px;
-        color: var(--muted, #758078);
-        letter-spacing: .02em;
-    }
-
-    .transport-status {
-        position: absolute;
-        top: 16px;
-        right: 16px;
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        padding: 4px 10px;
-        border-radius: 999px;
-        font-size: 10.5px;
-        font-weight: 700;
-        letter-spacing: .04em;
-        text-transform: uppercase;
-    }
-    .transport-status.active {
-        background: rgba(40,180,133,.12);
-        color: #1c8a64;
-    }
-    .transport-status.inactive {
-        background: rgba(220,164,61,.16);
-        color: #8a6516;
-    }
-    .transport-status i {
-        width: 6px;
-        height: 6px;
-        border-radius: 50%;
-        flex-shrink: 0;
-    }
-    .transport-status.active i   { background: #28b485; }
-    .transport-status.inactive i { background: #dca43d; }
-
-    /* Card body */
-    .transport-card-body {
-        display: flex;
-        flex-direction: column;
-        flex: 1;
-        padding: 16px 20px 18px;
-    }
-    .transport-vehicle {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        padding: 10px 12px;
-        border-radius: 10px;
-        background: var(--surface-sunken, #fbfcfa);
-        border: 1px solid var(--line, #e5e9e3);
-        margin-bottom: 14px;
-    }
-    .transport-vehicle-icon {
-        width: 32px;
-        height: 32px;
-        flex-shrink: 0;
-        border-radius: 8px;
-        background: var(--soft, #edf2ed);
-        color: var(--forest, #164734);
-        display: grid;
-        place-items: center;
-    }
-    .transport-vehicle-icon svg {
-        width: 16px;
-        height: 16px;
-        stroke: currentColor;
-        fill: none;
-        stroke-width: 1.8;
-        stroke-linecap: round;
-        stroke-linejoin: round;
-    }
-    .transport-vehicle-info { min-width: 0; }
-    .transport-vehicle-name {
-        display: block;
-        font-size: 12.5px;
-        font-weight: 700;
-        color: var(--ink, #1b2922);
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-    .transport-vehicle-meta {
-        display: block;
-        font-size: 11px;
-        color: var(--muted, #758078);
-        margin-top: 1px;
-    }
-
-    /* Fare grid */
-    .transport-fares {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 10px;
-        padding: 12px 14px;
-        border-radius: 10px;
-        background: rgba(60,145,105,.05);
-        border: 1px dashed rgba(60,145,105,.20);
-        margin-bottom: 14px;
-    }
-    .transport-fare-label {
-        display: block;
-        font-size: 10px;
-        font-weight: 600;
-        letter-spacing: .08em;
-        text-transform: uppercase;
-        color: var(--muted, #758078);
-        margin-bottom: 3px;
-    }
-    .transport-fare-value {
-        display: block;
-        font-size: 14px;
-        font-weight: 700;
-        color: var(--forest, #164734);
-        font-variant-numeric: tabular-nums;
-        line-height: 1.2;
-    }
-    .transport-fare-value.empty {
-        font-size: 11.5px;
-        font-weight: 500;
-        font-style: italic;
-        color: var(--muted, #758078);
-    }
-
-    /* Actions */
-    .transport-actions {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        margin-top: auto;
-    }
-    .transport-actions form {
-        display: inline-flex;
-        margin: 0;
-    }
-
-    /* ---------- Empty / no results ---------- */
-    .transport-empty {
-        padding: 56px 24px;
-        text-align: center;
-    }
-    .transport-empty-icon {
-        width: 56px;
-        height: 56px;
-        margin: 0 auto 16px;
-        border-radius: 50%;
-        background: var(--soft, #edf2ed);
-        color: var(--accent, #3c9169);
-        display: grid;
-        place-items: center;
-    }
-    .transport-empty-icon svg {
-        width: 26px;
-        height: 26px;
-        stroke: currentColor;
-        fill: none;
-        stroke-width: 1.7;
-        stroke-linecap: round;
-        stroke-linejoin: round;
-    }
-    .transport-empty h3 {
-        margin: 0 0 8px;
-        font-family: var(--serif, Georgia, serif);
-        font-weight: 400;
-        font-size: 22px;
-        color: var(--forest, #164734);
-    }
-    .transport-empty p {
-        max-width: 430px;
-        margin: 0 auto 18px;
-        color: var(--muted, #758078);
-        font-size: 13px;
-        line-height: 1.6;
-    }
-    .transport-no-results[hidden] { display: none; }
-
-    .transport-panel-footer {
-        padding: 14px 24px;
-        border-top: 1px solid var(--line, #e5e9e3);
-        background: var(--surface-sunken, #fbfcfa);
-        color: var(--muted, #758078);
-        font-size: 12px;
-    }
-
-    /* ---------- Add/Edit form ---------- */
-    .transport-form-panel {
-        margin-top: 26px;
-        padding: 28px;
-        background: var(--white, #fff);
-        border: 1px solid var(--line, #e5e9e3);
-        border-radius: 16px;
-        scroll-margin-top: 90px;
-        contain: layout;
-    }
-    .transport-form-head {
-        margin-bottom: 22px;
-        padding-bottom: 18px;
-        border-bottom: 1px solid var(--line, #e5e9e3);
-    }
-    .transport-form-head h2 {
-        font-family: var(--serif, Georgia, serif);
-        font-weight: 400;
-        font-size: 22px;
-        color: var(--forest, #164734);
-        letter-spacing: -.01em;
-        margin: 6px 0 6px;
-        line-height: 1.2;
-    }
-    .transport-form-head p {
-        margin: 0;
-        color: var(--muted, #758078);
-        font-size: 12.5px;
-        line-height: 1.55;
-        max-width: 62ch;
-    }
-
-    .transport-form-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-        gap: 18px;
-        margin-bottom: 20px;
-    }
-    .transport-field {
-        display: flex;
-        flex-direction: column;
-        gap: 7px;
-    }
-    .transport-field label {
-        font-size: 12px;
-        font-weight: 700;
-        color: var(--ink, #1b2922);
-        letter-spacing: .01em;
-    }
-    .transport-field label .optional {
-        font-weight: 500;
-        color: var(--muted, #758078);
-        font-size: 11px;
-        margin-left: 6px;
-    }
-
-    .transport-input,
-    .transport-select,
-    .transport-textarea {
-        width: 100%;
-        border: 1px solid var(--line, #e5e9e3);
-        border-radius: 10px;
-        background: var(--white, #fff);
-        color: var(--ink, #1b2922);
-        font: inherit;
-        font-size: 13.5px;
-        box-sizing: border-box;
-        transition: border-color .14s ease, box-shadow .14s ease;
-    }
-    .transport-input,
-    .transport-select {
-        height: 44px;
-        padding: 0 14px;
-    }
-    .transport-select {
-        appearance: none;
-        -webkit-appearance: none;
-        padding-right: 34px;
-        background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23758078' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");
-        background-repeat: no-repeat;
-        background-position: right 12px center;
-        background-size: 14px;
-        cursor: pointer;
-    }
-    .transport-textarea {
-        min-height: 100px;
-        padding: 12px 14px;
-        resize: vertical;
-        line-height: 1.6;
-    }
-    .transport-input:hover,
-    .transport-select:hover,
-    .transport-textarea:hover {
-        border-color: var(--line-hi, #d6dcd4);
-    }
-    .transport-input:focus,
-    .transport-select:focus,
-    .transport-textarea:focus {
-        outline: none;
-        border-color: var(--accent, #3c9169);
-        box-shadow: 0 0 0 3px rgba(60,145,105,.20);
-    }
-    .transport-input::placeholder,
-    .transport-textarea::placeholder {
-        color: var(--muted, #758078);
-    }
-
-    .transport-help {
-        font-size: 11.5px;
-        color: var(--muted, #758078);
-        line-height: 1.5;
-        margin-top: 2px;
-    }
-
-    .transport-checkbox-row {
-        display: flex;
-        align-items: flex-start;
-        gap: 12px;
-        padding: 14px 16px;
-        border: 1px solid var(--line, #e5e9e3);
-        border-radius: 11px;
-        background: var(--surface-sunken, #fbfcfa);
-        cursor: pointer;
-        transition: border-color .14s ease, background .14s ease;
-    }
-    .transport-checkbox-row:hover {
-        border-color: var(--line-hi, #d6dcd4);
-        background: var(--white, #fff);
-    }
-    .transport-checkbox-row:has(input:checked) {
-        border-color: var(--accent, #3c9169);
-        background: rgba(60,145,105,.05);
-    }
-    .transport-checkbox-row input[type="checkbox"] {
-        width: 18px;
-        height: 18px;
-        margin: 2px 0 0;
-        accent-color: var(--accent, #3c9169);
-        cursor: pointer;
-        flex-shrink: 0;
-    }
-    .transport-checkbox-row span {
-        font-size: 13px;
-        color: var(--ink, #1b2922);
-        line-height: 1.5;
-    }
-
-    .transport-form-actions {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 10px;
-        margin-top: 22px;
-        padding-top: 20px;
-        border-top: 1px solid var(--line, #e5e9e3);
-    }
-
-    /* ---------- Responsive ---------- */
-    @@media (max-width: 700px) {
-        .transport-header {
-            flex-direction: column;
-            align-items: flex-start;
-        }
-        .transport-header .transport-btn { width: 100%; }
-        .transport-stats { grid-template-columns: 1fr 1fr; gap: 10px; }
-        .transport-stat { padding: 16px; }
-        .transport-stat-value { font-size: 22px; }
-        .transport-toolbar {
-            flex-direction: column;
-            padding: 14px 16px;
-        }
-        .transport-toolbar select { width: 100%; max-width: none; }
-        .transport-panel-head {
-            flex-direction: column;
-            align-items: flex-start;
-            padding: 18px;
-        }
-        .transport-card-grid { padding: 16px; gap: 14px; }
-        .transport-form-panel { padding: 20px; }
-        .transport-actions {
-            flex-wrap: wrap;
-        }
-        .transport-actions .transport-btn { flex: 1; }
-    }
-
-    @@media (prefers-reduced-motion: reduce) {
-        .transport-card,
-        .transport-btn,
-        .transport-input,
-        .transport-select,
-        .transport-textarea {
-            transition-duration: .001ms !important;
-        }
-        .transport-card:hover { transform: none; }
-        .transport-btn-primary:hover { transform: none; }
-    }
-</style>
-
-<div class="transport-page">
-
-    <!-- HEADER -->
-    <div class="transport-header">
+    <!-- ================= PAGE HEADER ================= -->
+    <header class="page-heading">
         <div>
-            <p class="transport-eyebrow">Routes &amp; movement</p>
-            <h1>Make the miles easy.</h1>
-            <p>Manage vehicles, routes and transport fares.</p>
+            <p class="eyebrow">Transport · Routes</p>
+            <h1>Transport routes</h1>
+            <p>Create reusable routes and assign available vehicles to each route.</p>
         </div>
 
-        <a href="@Url.Action("Transport", "Admin")#route-form"
-           class="transport-btn transport-btn-primary">
-            + Add route
+        <a class="btn btn-primary" href="#route-form">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2.2"
+                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M12 5v14" />
+                <path d="M5 12h14" />
+            </svg>
+            Add route
         </a>
-    </div>
+    </header>
 
-    <!-- ALERTS -->
-    @if (TempData["SuccessMessage"] is string successMsg)
+    <!-- ================= ROUTE SNAPSHOT ================= -->
+    <section class="tr-stats" aria-label="Route summary">
+        <article class="tr-stat">
+            <label>Total routes</label>
+            <strong>@totalRoutes</strong>
+            <small>Configured in the system</small>
+        </article>
+
+        <article class="tr-stat">
+            <label>Published</label>
+            <strong>@publishedRoutes</strong>
+            <small>Live and bookable</small>
+        </article>
+
+        <article class="tr-stat">
+            <label>Vehicles assigned</label>
+            <strong>@vehiclesAssigned</strong>
+            <small>Across active routes</small>
+        </article>
+
+        <article class="tr-stat">
+            <label>Archived</label>
+            <strong>@archivedRoutes</strong>
+            <small>Preserved booking history</small>
+        </article>
+    </section>
+
+    <!-- ================= FEEDBACK ================= -->
+    @if (TempData["SuccessMessage"] is string success)
     {
-        <div class="transport-alert transport-alert-success" role="status">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-            <span>@successMsg</span>
+        <div class="tr-alert tr-alert-success" role="status">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2.2"
+                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="m5 12 5 5L20 7" />
+            </svg>
+            <span>@success</span>
         </div>
     }
-    @if (TempData["ErrorMessage"] is string errorMsg)
+
+    @if (TempData["ErrorMessage"] is string error)
     {
-        <div class="transport-alert transport-alert-error" role="alert">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-            <span>@errorMsg</span>
+        <div class="tr-alert tr-alert-danger" role="alert">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2.2"
+                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <circle cx="12" cy="12" r="9" />
+                <path d="M12 8v5" />
+                <path d="M12 16.5h.01" />
+            </svg>
+            <span>@error</span>
         </div>
     }
 
-    <!-- STATS -->
-    <div class="transport-stats">
-        <div class="transport-stat">
-            <span class="transport-stat-label">Total routes</span>
-            <span class="transport-stat-value">@routes.Count</span>
-        </div>
-        <div class="transport-stat">
-            <span class="transport-stat-label">
-                <span class="transport-stat-dot active"></span>Active routes
-            </span>
-            <span class="transport-stat-value">@activeCount</span>
-        </div>
-        <div class="transport-stat">
-            <span class="transport-stat-label">
-                <span class="transport-stat-dot inactive"></span>Inactive routes
-            </span>
-            <span class="transport-stat-value">@inactiveCount</span>
-        </div>
-    </div>
-
-    <!-- PANEL -->
-    <section class="transport-panel">
-        <div class="transport-panel-head">
+    <!-- ================= ROUTES ROSTER ================= -->
+    <section class="panel tr-card" aria-label="Configured routes">
+        <div class="panel-title">
             <div>
-                <h2>Transport routes</h2>
-                <p>Review, edit, or toggle the availability of each route.</p>
+                <h2>Routes</h2>
+                <p class="panel-subtitle">
+                    @if (totalRoutes > 0)
+                    {
+                        <text>@totalRoutes route@(totalRoutes == 1 ? "" : "s") configured · @publishedRoutes published</text>
+                    }
+                    else
+                    {
+                        <text>No routes configured yet</text>
+                    }
+                </p>
             </div>
-            <span class="transport-panel-count">@routes.Count records</span>
+            <span class="tr-count">@totalRoutes</span>
         </div>
 
-        <!-- FILTERS -->
-        <div class="transport-toolbar">
-            <div class="transport-search">
-                <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-                <input type="search"
-                       id="routeSearch"
-                       placeholder="Search route or vehicle..."
-                       aria-label="Search routes" />
-            </div>
-
-            <select id="vehicleFilter" aria-label="Filter by vehicle type">
-                <option value="">All vehicle types</option>
-                @foreach (var type in services
-                    .Where(x => !string.IsNullOrWhiteSpace(x.VehicleType))
-                    .Select(x => x.VehicleType)
-                    .Distinct()
-                    .OrderBy(x => x))
-                {
-                    <option value="@type">@type</option>
-                }
-            </select>
-
-            <select id="statusFilter" aria-label="Filter by status">
-                <option value="">All statuses</option>
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
-            </select>
-        </div>
-
-        <!-- CARDS / EMPTY -->
-        @if (routes.Any())
+        @if (routes.Count == 0)
         {
-            <div class="transport-card-grid" id="route-list">
-                @foreach (var route in routes)
-                {
-                    var vehicle = route.TransportService;
-                    var vehicleType = vehicle?.VehicleType ?? "Unknown";
-                    var vehicleName = vehicle?.Name ?? "Unknown vehicle";
-                    var capacity = vehicle?.PassengerCapacity ?? 0;
-
-                    <article class="transport-card"
-                             data-search="@($"{route.PickupCity} {route.DropoffCity} {vehicleName} {vehicleType}")"
-                             data-vehicle="@vehicleType"
-                             data-status="@(route.IsActive ? "active" : "inactive")">
-
-                        <!-- Head -->
-                        <div class="transport-card-head">
-                            <h3 class="transport-route-name">
-                                @route.PickupCity
-                                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>
-                                @route.DropoffCity
-                            </h3>
-                            <span class="transport-route-sub">Route #@route.Id</span>
-
-                            <span class="transport-status @(route.IsActive ? "active" : "inactive")">
-                                <i></i>
-                                @(route.IsActive ? "Active" : "Inactive")
-                            </span>
-                        </div>
-
-                        <!-- Body -->
-                        <div class="transport-card-body">
-
-                            <div class="transport-vehicle">
-                                <div class="transport-vehicle-icon">
-                                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 16.5V9a3 3 0 0 1 3-3h10a3 3 0 0 1 3 3v7.5"/><path d="M3 16.5h18"/><circle cx="7.5" cy="18.5" r="1.6"/><circle cx="16.5" cy="18.5" r="1.6"/></svg>
-                                </div>
-                                <div class="transport-vehicle-info">
-                                    <span class="transport-vehicle-name">@vehicleName</span>
-                                    <span class="transport-vehicle-meta">@vehicleType · @capacity seats</span>
-                                </div>
-                            </div>
-
-                            <div class="transport-fares">
-                                <div>
-                                    <span class="transport-fare-label">One-way</span>
-                                    <span class="transport-fare-value">PKR @route.OneWayFarePKR.ToString("N0")</span>
-                                </div>
-                                <div>
-                                    <span class="transport-fare-label">Return</span>
-                                    @if (route.ReturnFarePKR.HasValue)
-                                    {
-                                        <span class="transport-fare-value">PKR @route.ReturnFarePKR.Value.ToString("N0")</span>
-                                    }
-                                    else
-                                    {
-                                        <span class="transport-fare-value empty">Same as outbound</span>
-                                    }
-                                </div>
-                            </div>
-
-                            <div class="transport-actions">
-                                <a class="transport-btn transport-btn-secondary"
-                                   href="@Url.Action("Transport", "Admin", new { editId = route.Id })#route-form">
-                                    Edit
-                                </a>
-
-                                <form asp-controller="Admin"
-                                      asp-action="ToggleTransportRoute"
-                                      asp-route-id="@route.Id"
-                                      method="post"
-                                      onsubmit="return confirm('Are you sure you want to @(route.IsActive ? "deactivate" : "activate") this route?');">
-                                    @Html.AntiForgeryToken()
-                                    <button type="submit"
-                                            class="transport-btn @(route.IsActive ? "transport-btn-warn" : "transport-btn-ghost")">
-                                        @(route.IsActive ? "Deactivate" : "Activate")
-                                    </button>
-                                </form>
-                            </div>
-                        </div>
-                    </article>
-                }
-            </div>
-
-            <div id="no-results" class="transport-empty transport-no-results" hidden>
-                <div class="transport-empty-icon">
-                    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-                </div>
-                <h3>No matching routes</h3>
-                <p>Try a different search term or clear the filters to see all routes.</p>
-            </div>
-
-            <div class="transport-panel-footer">
-                <span id="routeResultCount">Showing @routes.Count routes</span>
+            <div class="tr-empty">
+                <span class="tr-empty-icon" aria-hidden="true">
+                    <svg width="26" height="26" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="1.6"
+                         stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 6l6-3 6 3 6-3v15l-6 3-6-3-6 3z" />
+                        <path d="M9 3v15" />
+                        <path d="M15 6v15" />
+                    </svg>
+                </span>
+                <h3>No routes configured</h3>
+                <p>Add your first route below, then assign the vehicles that serve it.</p>
+                <a href="#route-form" class="btn btn-primary">+ Add route</a>
             </div>
         }
         else
         {
-            <div class="transport-empty">
-                <div class="transport-empty-icon">
-                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 16.5V9a3 3 0 0 1 3-3h10a3 3 0 0 1 3 3v7.5"/><path d="M3 16.5h18"/><circle cx="7.5" cy="18.5" r="1.6"/><circle cx="16.5" cy="18.5" r="1.6"/></svg>
+            <!-- FILTER TOOLBAR -->
+            <div class="tr-toolbar">
+                <div class="tr-filters">
+                    <input
+                        type="search"
+                        id="trSearch"
+                        class="tr-filter-input"
+                        placeholder="Search by name, slug or city..."
+                        aria-label="Search routes" />
+
+                    <select id="trStatusFilter" class="tr-filter-input" aria-label="Filter by status">
+                        <option value="all">All routes</option>
+                        <option value="published">Published</option>
+                        <option value="unpublished">Unpublished</option>
+                        <option value="archived">Archived</option>
+                    </select>
                 </div>
-                <h3>No transport routes configured</h3>
-                <p>Add your first route using the form below.</p>
-                <a href="#route-form" class="transport-btn transport-btn-primary">+ Add your first route</a>
+
+                <div class="tr-result-count">
+                    Showing <strong id="trVisibleCount">@totalRoutes</strong>
+                    of @totalRoutes routes
+                </div>
+            </div>
+
+            <div class="tr-table-wrap">
+                <table class="tr-table">
+                    <thead>
+                        <tr>
+                            <th scope="col">Route</th>
+                            <th scope="col">Price</th>
+                            <th scope="col">Vehicles</th>
+                            <th scope="col">Status</th>
+                            <th scope="col" class="tr-col-actions">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var route in routes)
+                        {
+                            var initial = !string.IsNullOrWhiteSpace(route.Name)
+                                ? char.ToUpperInvariant(route.Name.Trim()[0]).ToString()
+                                : "?";
+
+                            var routeSearchText = $"{route.Name} {route.Slug} {route.StartingCity} {route.DestinationCity}".ToLowerInvariant();
+
+                            var routeStatus = route.IsArchived
+                                ? "archived"
+                                : (route.IsPublished && route.IsActive ? "published" : "unpublished");
+
+                            var vehicleCount = route.VehicleLinks.Count(x => !x.IsArchived);
+
+                            <tr class="tr-row"
+                                data-search="@routeSearchText"
+                                data-status="@routeStatus">
+
+                                <td data-label="Route">
+                                    <div class="tr-cell">
+                                        <span class="tr-mono" aria-hidden="true">@initial</span>
+                                        <div class="tr-cell-text">
+                                            <strong>@route.Name</strong>
+                                            <span class="tr-route">
+                                                <span>@route.StartingCity</span>
+                                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
+                                                     stroke="currentColor" stroke-width="2"
+                                                     stroke-linecap="round" stroke-linejoin="round"
+                                                     aria-hidden="true">
+                                                    <path d="M5 12h14" />
+                                                    <path d="m13 6 6 6-6 6" />
+                                                </svg>
+                                                <span>@route.DestinationCity</span>
+                                            </span>
+                                        </div>
+                                    </div>
+                                </td>
+
+                                <td data-label="Price">
+                                    <span class="tr-price">
+                                        <small>PKR</small>@route.StartingPricePKR.ToString("N0", culture)
+                                    </span>
+                                </td>
+
+                                <td data-label="Vehicles">
+                                    <span class="tr-veh">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                                             stroke="currentColor" stroke-width="1.7"
+                                             stroke-linecap="round" stroke-linejoin="round"
+                                             aria-hidden="true">
+                                            <path d="M3 8.5h11v9H3z" />
+                                            <path d="M14 11h3.6l3.4 3.4v3.1h-7z" />
+                                            <circle cx="7" cy="18" r="1.6" />
+                                            <circle cx="17" cy="18" r="1.6" />
+                                        </svg>
+                                        @vehicleCount
+                                        <small>vehicle@(vehicleCount == 1 ? "" : "s")</small>
+                                    </span>
+                                </td>
+
+                                <td data-label="Status">
+                                    @if (route.IsArchived)
+                                    {
+                                        <span class="tr-status is-archived"><i></i>Archived</span>
+                                    }
+                                    else if (route.IsPublished && route.IsActive)
+                                    {
+                                        <span class="tr-status is-live"><i></i>Published</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="tr-status is-draft"><i></i>Unpublished</span>
+                                    }
+                                </td>
+
+                                <td data-label="Actions" class="tr-col-actions">
+                                    <div class="tr-actions">
+                                        <a class="tr-btn"
+                                           href="@Url.Action("Transport", "Admin", new { editId = route.Id })#route-form"
+                                           aria-label="Edit @route.Name">
+                                            Edit
+                                        </a>
+
+                                        @if (route.IsArchived)
+                                        {
+                                            <form asp-action="RestoreTransportRoute" asp-route-id="@route.Id" method="post" class="tr-form-inline">
+                                                @Html.AntiForgeryToken()
+                                                <button type="submit" class="tr-btn tr-btn-success"
+                                                        aria-label="Restore @route.Name">
+                                                    Restore
+                                                </button>
+                                            </form>
+                                        }
+                                        else
+                                        {
+                                            <form asp-action="ArchiveTransportRoute" asp-route-id="@route.Id" method="post" class="tr-form-inline"
+                                                  onsubmit="return confirm('Archive this route and preserve its booking history?');">
+                                                @Html.AntiForgeryToken()
+                                                <button type="submit" class="tr-btn tr-btn-warn"
+                                                        aria-label="Archive @route.Name">
+                                                    Archive
+                                                </button>
+                                            </form>
+                                        }
+
+                                        <form asp-action="DeleteTransportRoute" asp-route-id="@route.Id" method="post" class="tr-form-inline"
+                                              onsubmit="return confirm('Permanently delete this route only if it has no booking history?');">
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit" class="tr-btn tr-btn-danger"
+                                                    aria-label="Delete @route.Name">
+                                                Delete
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <div id="trNoResults" class="tr-no-results">
+                No routes match your search or selected filter.
             </div>
         }
     </section>
 
-    <!-- ADD / EDIT FORM -->
-    <div id="route-form" class="transport-form-panel">
-        <div class="transport-form-head">
-            <div class="transport-eyebrow">
-                @(editRoute == null ? "Create route" : "Update route")
+    <!-- ================= ROUTE FORM ================= -->
+    <section id="route-form" class="panel tr-form-card" aria-labelledby="route-form-title">
+        <div class="tr-form-head">
+            <div>
+                <p class="eyebrow">@(edit == null ? "New route" : "Editing route")</p>
+                <h2 id="route-form-title">
+                    @(edit == null ? "Add transport route" : "Edit transport route")
+                </h2>
+                <p class="panel-subtitle">
+                    @(edit == null
+                        ? "Define the route, pricing, and the vehicles that serve it."
+                        : "Update the route details, then save to apply the changes.")
+                </p>
             </div>
-            <h2>
-                @(editRoute == null ? "Add transport route" : "Edit transport route")
-            </h2>
-            <p>Configure the vehicle, journey cities and one-way and optional return fares.</p>
+
+            @if (edit != null)
+            {
+                <a class="tr-btn" href="@Url.Action("Transport", "Admin")">Cancel editing</a>
+            }
         </div>
 
-        @if (!services.Any())
-        {
-            <div class="transport-alert transport-alert-error" role="alert">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                <span>No transport vehicles were found. Add a transport vehicle first.</span>
-            </div>
-        }
-        else
-        {
-            <form asp-controller="Admin"
-                  asp-action="SaveTransportRoute"
-                  method="post">
+        <form asp-action="SaveTransportRoute" method="post" class="tr-form" novalidate>
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="Id" value="@(edit?.Id ?? 0)" />
 
-                @Html.AntiForgeryToken()
-                <input type="hidden" name="Id" value="@(editRoute?.Id ?? 0)" />
+            <!-- Route identity -->
+            <div class="tr-section">
+                <div class="tr-section-head">
+                    <h3>Route identity</h3>
+                    <p>How travellers will find and recognise this route.</p>
+                </div>
 
-                <div class="transport-form-grid">
-
-                    <!-- Vehicle -->
-                    <div class="transport-field">
-                        <label for="TransportServiceId">Transport vehicle</label>
-                        <select class="transport-select"
-                                id="TransportServiceId"
-                                name="TransportServiceId"
-                                required>
-                            <option value="">Select vehicle</option>
-                            @foreach (var service in services)
-                            {
-                                <option value="@service.Id"
-                                        selected="@(editRoute?.TransportServiceId == service.Id ? "selected" : null)">
-                                    @service.Name — @service.VehicleType (@service.PassengerCapacity seats)
-                                </option>
-                            }
-                        </select>
-                    </div>
-
-                    <!-- Pickup -->
-                    <div class="transport-field">
-                        <label for="PickupCity">Pickup city</label>
-                        <input class="transport-input"
-                               id="PickupCity"
-                               name="PickupCity"
-                               value="@editRoute?.PickupCity"
-                               maxlength="150"
-                               placeholder="e.g. Islamabad"
-                               required />
-                    </div>
-
-                    <!-- Drop-off -->
-                    <div class="transport-field">
-                        <label for="DropoffCity">Drop-off city</label>
-                        <input class="transport-input"
-                               id="DropoffCity"
-                               name="DropoffCity"
-                               value="@editRoute?.DropoffCity"
-                               maxlength="150"
-                               placeholder="e.g. Murree"
-                               required />
-                    </div>
-
-                    <!-- One-way fare -->
-                    <div class="transport-field">
-                        <label for="OneWayFarePKR">One-way fare (PKR)</label>
-                        <input class="transport-input"
-                               type="number"
-                               id="OneWayFarePKR"
-                               name="OneWayFarePKR"
-                               value="@(editRoute?.OneWayFarePKR.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture))"
-                               min="0.01"
-                               step="0.01"
-                               placeholder="5000"
-                               required />
-                    </div>
-
-                    <!-- Return fare -->
-                    <div class="transport-field">
-                        <label for="ReturnFarePKR">
-                            Return fare (PKR)
-                            <span class="optional">· Optional</span>
+                <div class="tr-grid">
+                    <div class="tr-field">
+                        <label class="tr-label" for="RouteName">
+                            Route name <span class="tr-req" aria-hidden="true">*</span>
                         </label>
-                        <input class="transport-input"
-                               type="number"
-                               id="ReturnFarePKR"
-                               name="ReturnFarePKR"
-                               value="@(editRoute?.ReturnFarePKR?.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture))"
-                               min="0.01"
-                               step="0.01"
-                               placeholder="Leave empty to use one-way fare" />
-                        <span class="transport-help">
-                            Empty means the return fare equals the one-way fare.
-                        </span>
+                        <input class="tr-input" id="RouteName" name="Name" value="@edit?.Name"
+                               placeholder="e.g. Karachi to Lahore Express" required aria-required="true" />
+                    </div>
+
+                    <div class="tr-field">
+                        <label class="tr-label" for="RouteSlug">
+                            URL slug <span class="tr-req" aria-hidden="true">*</span>
+                        </label>
+                        <input class="tr-input" id="RouteSlug" name="Slug" value="@edit?.Slug"
+                               placeholder="e.g. karachi-to-lahore" required aria-required="true" />
+                    </div>
+
+                    <div class="tr-field">
+                        <label class="tr-label" for="StartingCity">
+                            Starting city <span class="tr-req" aria-hidden="true">*</span>
+                        </label>
+                        <input class="tr-input" id="StartingCity" name="StartingCity" value="@edit?.StartingCity"
+                               placeholder="e.g. Karachi" required aria-required="true" />
+                    </div>
+
+                    <div class="tr-field">
+                        <label class="tr-label" for="DestinationCity">
+                            Destination city <span class="tr-req" aria-hidden="true">*</span>
+                        </label>
+                        <input class="tr-input" id="DestinationCity" name="DestinationCity" value="@edit?.DestinationCity"
+                               placeholder="e.g. Lahore" required aria-required="true" />
                     </div>
                 </div>
+            </div>
 
-                <!-- Active -->
-                <label class="transport-checkbox-row">
-                    <input type="checkbox"
-                           name="IsActive"
-                           value="true"
-                           checked="@(editRoute == null || editRoute.IsActive)" />
-                    <span>Route is active and available for customer bookings</span>
-                </label>
-
-                <!-- Actions -->
-                <div class="transport-form-actions">
-                    <button type="submit" class="transport-btn transport-btn-primary">
-                        @(editRoute == null ? "Save route" : "Update route")
-                    </button>
-
-                    @if (editRoute != null)
-                    {
-                        <a href="@Url.Action("Transport", "Admin")"
-                           class="transport-btn transport-btn-secondary">
-                            Cancel
-                        </a>
-                    }
+            <!-- Pricing & logistics -->
+            <div class="tr-section">
+                <div class="tr-section-head">
+                    <h3>Pricing &amp; logistics</h3>
+                    <p>Fares, ordering, and travel estimates shown to travellers.</p>
                 </div>
-            </form>
-        }
-    </div>
+
+                <div class="tr-grid tr-grid-3">
+                    <div class="tr-field">
+                        <label class="tr-label" for="StartingPricePKR">
+                            Starting price (PKR) <span class="tr-req" aria-hidden="true">*</span>
+                        </label>
+                        <input class="tr-input" id="StartingPricePKR" name="StartingPricePKR" type="number"
+                               step="0.01" min="0.01" value="@edit?.StartingPricePKR"
+                               placeholder="0.00" required aria-required="true" />
+                    </div>
+
+                    <div class="tr-field">
+                        <label class="tr-label" for="ReturnPricePKR">Return price (PKR)</label>
+                        <input class="tr-input" id="ReturnPricePKR" name="ReturnPricePKR" type="number"
+                               step="0.01" min="0.01" value="@edit?.ReturnPricePKR"
+                               placeholder="0.00" />
+                    </div>
+
+                    <div class="tr-field">
+                        <label class="tr-label" for="DisplayOrder">Display order</label>
+                        <input class="tr-input" id="DisplayOrder" name="DisplayOrder" type="number"
+                               min="0" value="@(edit?.DisplayOrder ?? 0)" />
+                    </div>
+
+                    <div class="tr-field">
+                        <label class="tr-label" for="EstimatedDistanceKm">Estimated distance (km)</label>
+                        <input class="tr-input" id="EstimatedDistanceKm" name="EstimatedDistanceKm" type="number"
+                               step="0.01" min="0" value="@edit?.EstimatedDistanceKm"
+                               placeholder="e.g. 1210" />
+                    </div>
+
+                    <div class="tr-field">
+                        <label class="tr-label" for="EstimatedDurationMinutes">Estimated duration (minutes)</label>
+                        <input class="tr-input" id="EstimatedDurationMinutes" name="EstimatedDurationMinutes" type="number"
+                               min="0" value="@edit?.EstimatedDurationMinutes"
+                               placeholder="e.g. 780" />
+                    </div>
+                </div>
+            </div>
+
+            <!-- Vehicles -->
+            <div class="tr-section">
+                <div class="tr-section-head">
+                    <h3>Associated vehicles</h3>
+                    <p>Select every vehicle that can serve this route.</p>
+                </div>
+
+                <div class="tr-field">
+                    <label class="tr-label" for="VehicleIds">
+                        Vehicles <span class="tr-req" aria-hidden="true">*</span>
+                    </label>
+                    <select class="tr-select" id="VehicleIds" name="VehicleIds" multiple size="6" required
+                            aria-required="true" aria-describedby="vehicleHint">
+                        @foreach (var vehicle in vehicles)
+                        {
+                            <option value="@vehicle.Id"
+                                    selected="@(edit?.VehicleIds.Contains(vehicle.Id) == true ? "selected" : null)">
+                                @vehicle.Name (@vehicle.VehicleType)
+                            </option>
+                        }
+                    </select>
+                    <p class="tr-hint" id="vehicleHint">
+                        Hold <kbd>Ctrl</kbd> or <kbd>⌘</kbd> to select multiple vehicles.
+                        @if (!vehicles.Any())
+                        {
+                            <span class="tr-hint-warn">No vehicles available — add vehicles first.</span>
+                        }
+                    </p>
+                </div>
+            </div>
+
+            <!-- Description -->
+            <div class="tr-section">
+                <div class="tr-section-head">
+                    <h3>Description</h3>
+                    <p>Optional context shown on the public route page.</p>
+                </div>
+
+                <div class="tr-field">
+                    <label class="tr-label" for="Description">Route description</label>
+                    <textarea class="tr-input tr-textarea" id="Description" name="Description"
+                              rows="4" placeholder="Describe the journey, stops, or highlights…">@edit?.Description</textarea>
+                </div>
+            </div>
+
+            <!-- Visibility -->
+            <div class="tr-section">
+                <div class="tr-section-head">
+                    <h3>Visibility</h3>
+                    <p>Control how this route appears across Karnel.</p>
+                </div>
+
+                <div class="tr-checks" role="group" aria-label="Visibility options">
+                    <label class="tr-check">
+                        <input type="checkbox" name="IsPublished" value="true"
+                               @(edit?.IsPublished == true ? "checked" : null) />
+                        <span>Published</span>
+                    </label>
+
+                    <label class="tr-check">
+                        <input type="checkbox" name="IsFeatured" value="true"
+                               @(edit?.IsFeatured == true ? "checked" : null) />
+                        <span>Featured</span>
+                    </label>
+
+                    <label class="tr-check">
+                        <input type="checkbox" name="IsActive" value="true"
+                               @(edit?.IsActive != false ? "checked" : null) />
+                        <span>Active</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="tr-form-foot">
+                <p class="tr-hint"><span class="tr-req">*</span> Required fields</p>
+                <div class="tr-form-actions">
+                    <a class="tr-btn" href="@Url.Action("Transport", "Admin")">Cancel</a>
+                    <button class="btn btn-primary" type="submit">
+                        @(edit == null ? "Add route" : "Save route")
+                    </button>
+                </div>
+            </div>
+        </form>
+    </section>
 </div>
 
 <script>
     (() => {
-        const search = document.getElementById("routeSearch");
-        const vehicleFilter = document.getElementById("vehicleFilter");
-        const statusFilter = document.getElementById("statusFilter");
-        const cardGrid = document.getElementById("route-list");
-        const noResults = document.getElementById("no-results");
-        const resultCount = document.getElementById("routeResultCount");
+        const searchInput = document.getElementById("trSearch");
+        const statusFilter = document.getElementById("trStatusFilter");
+        const rows = Array.from(document.querySelectorAll(".tr-row"));
+        const visibleCount = document.getElementById("trVisibleCount");
+        const noResults = document.getElementById("trNoResults");
 
-        if (!search || !vehicleFilter || !statusFilter || !cardGrid) return;
-
-        const cards = Array.from(cardGrid.querySelectorAll(".transport-card"));
+        if (!searchInput || !statusFilter) return;
 
         function filterRoutes() {
-            const searchValue = search.value.toLowerCase().trim();
-            const vehicleValue = vehicleFilter.value.toLowerCase();
-            const statusValue = statusFilter.value.toLowerCase();
+            const searchTerm = searchInput.value.trim().toLowerCase();
+            const selectedStatus = statusFilter.value;
+
             let visible = 0;
 
-            cards.forEach(card => {
-                const searchText = (card.dataset.search || "").toLowerCase();
-                const vehicle = (card.dataset.vehicle || "").toLowerCase();
-                const status = (card.dataset.status || "").toLowerCase();
+            rows.forEach(row => {
+                const searchText = row.dataset.search || "";
+                const status = row.dataset.status || "";
 
-                const matches =
-                    searchText.includes(searchValue) &&
-                    (!vehicleValue || vehicle === vehicleValue) &&
-                    (!statusValue || status === statusValue);
+                const matchesSearch = searchText.includes(searchTerm);
+                const matchesStatus = selectedStatus === "all" || status === selectedStatus;
 
-                card.hidden = !matches;
-                if (matches) visible++;
+                const show = matchesSearch && matchesStatus;
+                row.style.display = show ? "" : "none";
+                if (show) visible++;
             });
 
-            if (noResults) noResults.hidden = visible !== 0;
-            if (resultCount) {
-                resultCount.textContent = `Showing ${visible} of ${cards.length} routes`;
+            if (visibleCount) visibleCount.textContent = visible;
+
+            if (noResults) {
+                noResults.style.display = visible === 0 ? "block" : "none";
             }
         }
 
-        // rAF throttle — 1 filter per frame
-        let framePending = false;
-        function scheduleFilter() {
-            if (framePending) return;
-            framePending = true;
-            requestAnimationFrame(() => {
-                filterRoutes();
-                framePending = false;
-            });
-        }
-
-        search.addEventListener("input", scheduleFilter);
-        vehicleFilter.addEventListener("change", filterRoutes);
+        searchInput.addEventListener("input", filterRoutes);
         statusFilter.addEventListener("change", filterRoutes);
-
-        filterRoutes();
     })();
 </script>
+
+<style>
+    /* ============================================================
+       TRANSPORT ROUTES — premium refinements
+       Built on Karnel Admin design tokens from _AdminLayout.
+       ============================================================ */
+
+    .tr-page { display: block; }
+
+    /* Smooth in-page anchor scrolling for the "Add route" buttons */
+    html { scroll-behavior: smooth; }
+
+    /* ---------- Heading ---------- */
+    .tr-page .page-heading {
+        align-items: flex-end;
+        margin-bottom: 26px;
+    }
+
+    .tr-page .page-heading h1 { font-size: clamp(30px, 3.4vw, 46px); }
+
+    .tr-page .page-heading p {
+        margin-top: 8px;
+        max-width: 60ch;
+    }
+
+    .tr-page .page-heading .btn { flex-shrink: 0; }
+
+    /* ---------- Stats ---------- */
+    .tr-stats {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 14px;
+        margin-bottom: 22px;
+    }
+
+    .tr-stat {
+        background: var(--surface, var(--white));
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        padding: 16px 18px;
+        transition: border-color var(--dur) var(--ease),
+                    box-shadow var(--dur) var(--ease),
+                    transform var(--dur) var(--ease);
+    }
+
+    .tr-stat:hover {
+        border-color: var(--line-hi);
+        box-shadow: var(--shadow-sm);
+        transform: translateY(-1px);
+    }
+
+    .tr-stat label {
+        display: block;
+        font-size: 10.5px;
+        font-weight: 700;
+        letter-spacing: .13em;
+        text-transform: uppercase;
+        color: var(--muted);
+    }
+
+    .tr-stat strong {
+        display: block;
+        margin: 7px 0 3px;
+        font-family: var(--sans);
+        font-size: 26px;
+        font-weight: 600;
+        line-height: 1.05;
+        letter-spacing: -.015em;
+        color: var(--forest);
+        font-variant-numeric: tabular-nums;
+    }
+
+    .tr-stat small {
+        font-size: 11.5px;
+        color: var(--muted);
+        line-height: 1.4;
+    }
+
+    /* ---------- Alerts ---------- */
+    .tr-alert {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        padding: 12px 16px;
+        margin-bottom: 14px;
+        border-radius: 10px;
+        font-size: 13px;
+        font-weight: 500;
+        line-height: 1.45;
+        border: 1px solid transparent;
+    }
+
+    .tr-alert svg { flex-shrink: 0; margin-top: 1px; }
+
+    .tr-alert-success {
+        background: rgba(60, 145, 105, .10);
+        border-color: rgba(60, 145, 105, .22);
+        color: #1f5a3f;
+    }
+
+    .tr-alert-danger {
+        background: rgba(174, 93, 80, .10);
+        border-color: rgba(174, 93, 80, .22);
+        color: #8b4137;
+    }
+
+    /* ---------- Roster card ---------- */
+    .tr-card {
+        padding: 0;
+        overflow: hidden;
+    }
+
+    .tr-card .panel-title {
+        margin: 0;
+        padding: 22px 24px 18px;
+        border-bottom: 1px solid var(--line);
+    }
+
+    .tr-card .panel-title h2 { font-size: 22px; }
+
+    .tr-count {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 12px;
+        border-radius: var(--radius-pill);
+        background: var(--soft);
+        color: var(--forest);
+        font-size: 11.5px;
+        font-weight: 700;
+        letter-spacing: .03em;
+        font-variant-numeric: tabular-nums;
+    }
+
+    .tr-count::before {
+        content: "";
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--accent);
+        box-shadow: 0 0 0 3px rgba(60, 145, 105, .15);
+    }
+
+    /* ---------- Filter toolbar ---------- */
+    .tr-toolbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 14px;
+        flex-wrap: wrap;
+        padding: 14px 22px;
+        border-bottom: 1px solid var(--line);
+        background: rgba(143, 168, 136, .04);
+    }
+
+    .tr-filters {
+        display: flex;
+        gap: 10px;
+        flex: 1;
+        flex-wrap: wrap;
+    }
+
+    .tr-filter-input {
+        min-height: 40px;
+        padding: 0 12px;
+        border: 1px solid var(--line);
+        border-radius: 9px;
+        background: var(--surface, var(--white));
+        color: var(--ink);
+        font-family: var(--sans);
+        font-size: 13px;
+        outline: none;
+        transition: border-color var(--dur-fast) var(--ease),
+                    box-shadow var(--dur-fast) var(--ease);
+    }
+
+    .tr-filter-input:focus {
+        border-color: var(--accent);
+        box-shadow: var(--ring-accent);
+    }
+
+    .tr-filter-input::placeholder { color: var(--muted); }
+
+    #trSearch { width: min(360px, 100%); min-width: 200px; }
+    #trStatusFilter { min-width: 175px; }
+
+    .tr-result-count {
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 500;
+        white-space: nowrap;
+    }
+
+    .tr-result-count strong { color: var(--forest); font-weight: 700; }
+
+    /* ---------- Table ---------- */
+    .tr-table-wrap {
+        width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: thin;
+        scrollbar-color: var(--line-hi) transparent;
+    }
+
+    .tr-table-wrap::-webkit-scrollbar { height: 8px; }
+    .tr-table-wrap::-webkit-scrollbar-thumb {
+        background: var(--line-hi);
+        border-radius: 99px;
+    }
+    .tr-table-wrap::-webkit-scrollbar-track { background: transparent; }
+
+    .tr-table {
+        width: 100%;
+        min-width: 900px;
+        border-collapse: separate;
+        border-spacing: 0;
+        font-size: 13.5px;
+    }
+
+    .tr-table thead th {
+        padding: 12px 18px;
+        text-align: left;
+        font-size: 10.5px;
+        font-weight: 700;
+        letter-spacing: .13em;
+        text-transform: uppercase;
+        color: var(--muted);
+        background: rgba(143, 168, 136, .08);
+        border-bottom: 1px solid var(--line);
+        white-space: nowrap;
+    }
+
+    .tr-table thead th.tr-col-actions { text-align: right; }
+
+    .tr-table tbody td {
+        padding: 16px 18px;
+        border-bottom: 1px solid var(--line);
+        vertical-align: middle;
+        color: var(--ink);
+    }
+
+    .tr-table tbody tr:last-child td { border-bottom: 0; }
+
+    .tr-table tbody tr {
+        transition: background var(--dur-fast) var(--ease);
+    }
+
+    .tr-table tbody tr:hover {
+        background: rgba(143, 168, 136, .09);
+    }
+
+    .tr-table td.tr-col-actions { text-align: right; }
+
+    /* ---------- Route cell ---------- */
+    .tr-cell {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        min-width: 0;
+    }
+
+    .tr-mono {
+        width: 38px;
+        height: 38px;
+        flex-shrink: 0;
+        display: grid;
+        place-items: center;
+        border-radius: 10px;
+        background: var(--soft-2);
+        color: var(--forest);
+        font-family: var(--serif);
+        font-size: 17px;
+        line-height: 1;
+        letter-spacing: -.01em;
+    }
+
+    .tr-cell-text { min-width: 0; }
+
+    .tr-cell-text strong {
+        display: block;
+        font-weight: 600;
+        color: var(--ink);
+        font-size: 13.5px;
+        line-height: 1.25;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 28ch;
+    }
+
+    .tr-route {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        margin-top: 3px;
+        font-size: 11.5px;
+        color: var(--muted);
+        white-space: nowrap;
+    }
+
+    .tr-route svg {
+        color: var(--accent);
+        flex-shrink: 0;
+        opacity: .85;
+    }
+
+    /* ---------- Price ---------- */
+    .tr-price {
+        font-variant-numeric: tabular-nums;
+        font-weight: 600;
+        color: var(--ink);
+        white-space: nowrap;
+        letter-spacing: -.005em;
+    }
+
+    .tr-price small {
+        margin-right: 4px;
+        font-size: 10.5px;
+        font-weight: 700;
+        letter-spacing: .06em;
+        color: var(--muted);
+        text-transform: uppercase;
+    }
+
+    /* ---------- Vehicles ---------- */
+    .tr-veh {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-variant-numeric: tabular-nums;
+        font-weight: 600;
+        color: var(--ink);
+        white-space: nowrap;
+    }
+
+    .tr-veh svg {
+        color: var(--accent);
+        opacity: .9;
+        flex-shrink: 0;
+    }
+
+    .tr-veh small {
+        margin-left: 1px;
+        font-size: 11px;
+        font-weight: 500;
+        color: var(--muted);
+    }
+
+    /* ---------- Status ---------- */
+    .tr-status {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 10px;
+        border-radius: var(--radius-pill);
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: .02em;
+        white-space: nowrap;
+        background: var(--soft);
+        color: var(--forest);
+    }
+
+    .tr-status i {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: currentColor;
+        flex-shrink: 0;
+        opacity: .85;
+    }
+
+    .tr-status.is-live {
+        background: rgba(60, 145, 105, .12);
+        color: #276a4a;
+    }
+
+    .tr-status.is-draft {
+        background: rgba(185, 133, 60, .12);
+        color: #8a5f22;
+    }
+
+    .tr-status.is-archived {
+        background: rgba(117, 128, 120, .14);
+        color: #5b6660;
+    }
+
+    /* ---------- Actions ---------- */
+    .tr-actions {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        justify-content: flex-end;
+    }
+
+    .tr-form-inline {
+        display: inline;
+        margin: 0;
+    }
+
+    .tr-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 6px 11px;
+        border-radius: 7px;
+        border: 1px solid var(--line);
+        background: var(--surface, var(--white));
+        color: var(--ink);
+        font-size: 12px;
+        font-weight: 600;
+        line-height: 1.2;
+        white-space: nowrap;
+        transition: background var(--dur-fast) var(--ease),
+                    border-color var(--dur-fast) var(--ease),
+                    color var(--dur-fast) var(--ease),
+                    box-shadow var(--dur-fast) var(--ease);
+    }
+
+    .tr-btn:hover {
+        background: var(--soft);
+        border-color: var(--line-hi);
+        color: var(--forest);
+    }
+
+    .tr-btn:active { transform: translateY(.5px); }
+
+    .tr-btn:focus-visible {
+        outline: none;
+        box-shadow: var(--ring-accent);
+        border-color: var(--accent);
+    }
+
+    .tr-btn-success { color: #276a4a; }
+    .tr-btn-success:hover {
+        background: rgba(60, 145, 105, .08);
+        border-color: rgba(60, 145, 105, .35);
+        color: #1f5a3f;
+    }
+
+    .tr-btn-warn { color: #8a5f22; }
+    .tr-btn-warn:hover {
+        background: rgba(185, 133, 60, .09);
+        border-color: rgba(185, 133, 60, .38);
+        color: #7a531c;
+    }
+
+    .tr-btn-danger { color: #8b4137; }
+    .tr-btn-danger:hover {
+        background: rgba(174, 93, 80, .08);
+        border-color: rgba(174, 93, 80, .35);
+        color: #8b4137;
+    }
+
+    /* ---------- Empty state & no-results ---------- */
+    .tr-empty {
+        padding: 64px 24px 72px;
+        text-align: center;
+    }
+
+    .tr-empty-icon {
+        width: 60px;
+        height: 60px;
+        margin: 0 auto 18px;
+        display: grid;
+        place-items: center;
+        border-radius: 18px;
+        background: var(--soft);
+        color: var(--accent);
+        box-shadow: inset 0 0 0 1px var(--line);
+    }
+
+    .tr-empty h3 {
+        margin: 0 0 6px;
+        font-family: var(--serif);
+        font-weight: 400;
+        font-size: 22px;
+        letter-spacing: -.01em;
+        color: var(--forest);
+    }
+
+    .tr-empty p {
+        margin: 0 auto 20px;
+        max-width: 42ch;
+        color: var(--muted);
+        font-size: 13.5px;
+        line-height: 1.55;
+    }
+
+    .tr-no-results {
+        display: none;
+        padding: 42px 18px;
+        color: var(--muted);
+        font-size: 13px;
+        text-align: center;
+    }
+
+    /* ---------- Form card ---------- */
+    .tr-form-card {
+        margin-top: 22px;
+        padding: 0;
+        overflow: hidden;
+        scroll-margin-top: 92px;
+    }
+
+    .tr-form-head {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 18px;
+        padding: 24px 26px 20px;
+        border-bottom: 1px solid var(--line);
+        background: rgba(143, 168, 136, .05);
+    }
+
+    .tr-form-head .eyebrow { margin-bottom: 8px; }
+
+    .tr-form-head h2 {
+        margin: 0;
+        font-family: var(--serif);
+        font-weight: 400;
+        font-size: 26px;
+        line-height: 1.15;
+        letter-spacing: -.012em;
+        color: var(--forest);
+    }
+
+    .tr-form-head .panel-subtitle {
+        margin-top: 6px;
+        max-width: 58ch;
+    }
+
+    .tr-form-head > a { flex-shrink: 0; }
+
+    .tr-form { padding: 6px 26px 26px; }
+
+    /* ---------- Sections ---------- */
+    .tr-section {
+        padding: 20px 0 4px;
+        border-bottom: 1px solid var(--line);
+    }
+
+    .tr-section:last-of-type { border-bottom: 0; }
+
+    .tr-section-head { margin-bottom: 14px; }
+
+    .tr-section-head h3 {
+        margin: 0;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: .15em;
+        text-transform: uppercase;
+        color: var(--accent);
+    }
+
+    .tr-section-head p {
+        margin: 5px 0 0;
+        font-size: 12.5px;
+        color: var(--muted);
+        line-height: 1.5;
+    }
+
+    /* ---------- Grid ---------- */
+    .tr-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 14px 16px;
+        padding-bottom: 18px;
+    }
+
+    .tr-grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+
+    /* ---------- Fields ---------- */
+    .tr-field { min-width: 0; }
+
+    .tr-label {
+        display: block;
+        margin-bottom: 6px;
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--ink);
+        letter-spacing: .005em;
+    }
+
+    .tr-req {
+        color: var(--red, #ae5d50);
+        font-weight: 700;
+    }
+
+    .tr-input,
+    .tr-select {
+        width: 100%;
+        padding: 10px 12px;
+        border-radius: 9px;
+        border: 1px solid var(--line);
+        background: var(--surface, var(--white));
+        color: var(--ink);
+        font-family: var(--sans);
+        font-size: 13.5px;
+        line-height: 1.4;
+        transition: border-color var(--dur-fast) var(--ease),
+                    box-shadow var(--dur-fast) var(--ease),
+                    background var(--dur-fast) var(--ease);
+    }
+
+    .tr-input::placeholder { color: var(--muted); opacity: .85; }
+
+    .tr-input:focus,
+    .tr-select:focus {
+        outline: none;
+        border-color: var(--accent);
+        box-shadow: var(--ring-accent);
+    }
+
+    .tr-textarea {
+        resize: vertical;
+        min-height: 110px;
+        line-height: 1.55;
+    }
+
+    .tr-select { padding: 8px 10px; }
+
+    .tr-select[multiple] {
+        min-height: 168px;
+        padding: 6px;
+    }
+
+    .tr-select[multiple] option {
+        padding: 6px 8px;
+        border-radius: 6px;
+        font-size: 13px;
+    }
+
+    .tr-hint {
+        margin: 7px 0 0;
+        font-size: 11.5px;
+        line-height: 1.5;
+        color: var(--muted);
+    }
+
+    .tr-hint kbd {
+        display: inline-block;
+        padding: 1px 5px;
+        border-radius: 4px;
+        border: 1px solid var(--line-hi);
+        background: var(--soft);
+        font-family: var(--sans);
+        font-size: 10.5px;
+        font-weight: 600;
+        color: var(--forest);
+        line-height: 1.5;
+    }
+
+    .tr-hint-warn {
+        display: inline-block;
+        margin-left: 4px;
+        color: #8a5f22;
+        font-weight: 600;
+    }
+
+    /* ---------- Checkboxes ---------- */
+    .tr-checks {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        padding-bottom: 20px;
+    }
+
+    .tr-check {
+        display: inline-flex;
+        align-items: center;
+        gap: 9px;
+        padding: 9px 14px 9px 12px;
+        border-radius: 9px;
+        border: 1px solid var(--line);
+        background: var(--surface, var(--white));
+        font-size: 12.5px;
+        font-weight: 600;
+        color: var(--ink);
+        cursor: pointer;
+        user-select: none;
+        transition: border-color var(--dur-fast) var(--ease),
+                    background var(--dur-fast) var(--ease),
+                    box-shadow var(--dur-fast) var(--ease);
+    }
+
+    .tr-check:hover {
+        border-color: var(--line-hi);
+        background: var(--soft);
+    }
+
+    .tr-check:has(input:checked) {
+        border-color: rgba(60, 145, 105, .45);
+        background: rgba(60, 145, 105, .08);
+        color: #1f5a3f;
+    }
+
+    .tr-check input[type="checkbox"] {
+        width: 15px;
+        height: 15px;
+        margin: 0;
+        accent-color: var(--accent);
+        cursor: pointer;
+    }
+
+    .tr-check input[type="checkbox"]:focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 2px;
+        border-radius: 4px;
+    }
+
+    /* ---------- Form footer ---------- */
+    .tr-form-foot {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        flex-wrap: wrap;
+        padding-top: 20px;
+        margin-top: 4px;
+        border-top: 1px solid var(--line);
+    }
+
+    .tr-form-foot .tr-hint { margin: 0; }
+
+    .tr-form-actions {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .tr-form-actions .btn { padding: 10px 18px; }
+
+    /* ---------- Responsive ---------- */
+    @@media (max-width: 1050px) {
+        .tr-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .tr-grid-3 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+
+    @@media (max-width: 760px) {
+        .tr-page .page-heading {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 16px;
+        }
+
+        .tr-page .page-heading .btn { align-self: flex-start; }
+
+        .tr-stats {
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .tr-stat { padding: 14px; }
+        .tr-stat strong { font-size: 22px; }
+
+        .tr-card .panel-title { padding: 18px 18px 14px; }
+
+        .tr-toolbar { padding: 12px 16px; }
+        .tr-filters { width: 100%; }
+        #trSearch, #trStatusFilter { width: 100%; }
+        .tr-result-count { width: 100%; text-align: right; }
+
+        .tr-table { min-width: 860px; }
+
+        .tr-table thead th,
+        .tr-table tbody td {
+            padding-left: 14px;
+            padding-right: 14px;
+        }
+
+        .tr-grid,
+        .tr-grid-3 { grid-template-columns: 1fr; }
+
+        .tr-form-head {
+            flex-direction: column;
+            padding: 20px 18px 16px;
+        }
+
+        .tr-form { padding: 4px 18px 20px; }
+
+        .tr-form-foot {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .tr-form-actions {
+            justify-content: flex-end;
+            flex-wrap: wrap;
+        }
+
+        .tr-empty { padding: 48px 16px 56px; }
+    }
+
+    /* ---------- Dark theme tuning ---------- */
+    html[data-admin-theme="dark"] .tr-alert-success {
+        background: rgba(60, 145, 105, .14);
+        color: #b7e2c8;
+        border-color: rgba(60, 145, 105, .30);
+    }
+
+    html[data-admin-theme="dark"] .tr-alert-danger {
+        background: rgba(174, 93, 80, .16);
+        color: #f0c3ba;
+        border-color: rgba(174, 93, 80, .32);
+    }
+
+    html[data-admin-theme="dark"] .tr-status.is-live {
+        background: rgba(60, 145, 105, .18);
+        color: #b7e2c8;
+    }
+
+    html[data-admin-theme="dark"] .tr-status.is-draft {
+        background: rgba(185, 133, 60, .18);
+        color: #f0d3a3;
+    }
+
+    html[data-admin-theme="dark"] .tr-status.is-archived {
+        background: rgba(255, 255, 255, .08);
+        color: #c3cec6;
+    }
+
+    html[data-admin-theme="dark"] .tr-check:has(input:checked) {
+        background: rgba(60, 145, 105, .16);
+        color: #b7e2c8;
+    }
+
+    @@media (prefers-color-scheme: dark) {
+        html[data-admin-theme="system"] .tr-alert-success {
+            background: rgba(60, 145, 105, .14);
+            color: #b7e2c8;
+            border-color: rgba(60, 145, 105, .30);
+        }
+
+        html[data-admin-theme="system"] .tr-alert-danger {
+            background: rgba(174, 93, 80, .16);
+            color: #f0c3ba;
+            border-color: rgba(174, 93, 80, .32);
+        }
+
+        html[data-admin-theme="system"] .tr-status.is-live {
+            background: rgba(60, 145, 105, .18);
+            color: #b7e2c8;
+        }
+
+        html[data-admin-theme="system"] .tr-status.is-draft {
+            background: rgba(185, 133, 60, .18);
+            color: #f0d3a3;
+        }
+
+        html[data-admin-theme="system"] .tr-status.is-archived {
+            background: rgba(255, 255, 255, .08);
+            color: #c3cec6;
+        }
+
+        html[data-admin-theme="system"] .tr-check:has(input:checked) {
+            background: rgba(60, 145, 105, .16);
+            color: #b7e2c8;
+        }
+    }
+</style>

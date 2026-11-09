@@ -13,6 +13,7 @@ public class Resort
     public decimal? StartingPricePerNight { get; set; }
     public string? ContactPhone { get; set; }
     public bool IsPublished { get; set; }
+    public bool IsArchived { get; set; }
     public bool IsFeatured { get; set; }
     public int DisplayOrder { get; set; }
     public DateTime CreatedAt { get; set; }

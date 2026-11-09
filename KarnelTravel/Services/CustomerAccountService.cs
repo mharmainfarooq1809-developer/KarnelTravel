@@ -1,5 +1,6 @@
 using System.Security.Cryptography;
 using System.Text;
+using System.Collections.Concurrent;
 using KarnelTravel.Data;
 using KarnelTravel.Models;
 using Microsoft.AspNetCore.Identity;
@@ -9,7 +10,6 @@ namespace KarnelTravel.Services;
 
 public sealed class CustomerAccountService : ICustomerAccountService
 {
-    private static readonly TimeSpan VerificationLifetime = TimeSpan.FromHours(24);
     private static readonly TimeSpan ResetLifetime = TimeSpan.FromHours(1);
     private readonly ApplicationDbContext _db;
     private readonly IPasswordHasher<CustomerAccount> _hasher;
@@ -63,28 +63,37 @@ public sealed class CustomerAccountService : ICustomerAccountService
         return account;
     }
 
-    public async Task<string?> CreateEmailVerificationTokenAsync(CustomerAccount account, CancellationToken cancellationToken = default)
+    public async Task<string?> CreatePasswordResetCodeAsync(string email, CancellationToken cancellationToken = default)
     {
-        var token = CreateToken();
-        account.EmailVerificationTokenHash = HashToken(token);
-        account.EmailVerificationTokenExpiresAt = DateTime.UtcNow.Add(VerificationLifetime);
+        var account = await _db.CustomerAccounts.FirstOrDefaultAsync(
+            x => x.Email == NormalizeEmail(email), cancellationToken);
+        if (account is null)
+            return null;
+
+        var code = RandomNumberGenerator.GetInt32(100000, 1000000).ToString();
+        account.PasswordResetCodeHash = HashToken(code);
+        account.PasswordResetCodeExpiresAt = DateTime.UtcNow.AddMinutes(15);
+        account.PasswordResetTokenHash = null;
+        account.PasswordResetTokenExpiresAt = null;
         await _db.SaveChangesAsync(cancellationToken);
-        return token;
+        return code;
     }
 
-    public async Task<bool> VerifyEmailAsync(string token, CancellationToken cancellationToken = default)
+    public async Task<bool> ResetPasswordWithCodeAsync(string email, string code, string newPassword, CancellationToken cancellationToken = default)
     {
-        var hash = HashToken(token);
-        var account = await _db.CustomerAccounts.FirstOrDefaultAsync(x =>
-            x.EmailVerificationTokenHash == hash &&
-            x.EmailVerificationTokenExpiresAt > DateTime.UtcNow,
+        var account = await _db.CustomerAccounts.FirstOrDefaultAsync(
+            x => x.Email == NormalizeEmail(email) &&
+                 x.PasswordResetCodeHash == HashToken(code.Trim()) &&
+                 x.PasswordResetCodeExpiresAt > DateTime.UtcNow,
             cancellationToken);
         if (account is null)
             return false;
 
-        account.EmailConfirmed = true;
-        account.EmailVerificationTokenHash = null;
-        account.EmailVerificationTokenExpiresAt = null;
+        account.PasswordHash = _hasher.HashPassword(account, newPassword);
+        account.PasswordResetCodeHash = null;
+        account.PasswordResetCodeExpiresAt = null;
+        account.FailedLoginAttempts = 0;
+        account.LockoutEndUtc = null;
         account.UpdatedAt = DateTime.UtcNow;
         await _db.SaveChangesAsync(cancellationToken);
         return true;
@@ -135,6 +144,9 @@ public sealed class CustomerAccountService : ICustomerAccountService
     public Task<CustomerAccount?> FindByIdAsync(int id, CancellationToken cancellationToken = default) =>
         _db.CustomerAccounts.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
 
+    public Task<CustomerAccount?> FindByEmailAsync(string email, CancellationToken cancellationToken = default) =>
+        _db.CustomerAccounts.FirstOrDefaultAsync(x => x.Email == NormalizeEmail(email), cancellationToken);
+
     public async Task<bool> UpdateProfileAsync(int id, string fullName, string phoneNumber, CancellationToken cancellationToken = default)
     {
         var account = await _db.CustomerAccounts.FindAsync([id], cancellationToken);
@@ -151,6 +163,8 @@ public sealed class CustomerAccountService : ICustomerAccountService
     private static string NormalizeEmail(string email) => email.Trim().ToLowerInvariant();
 
     private static string CreateToken() => Convert.ToBase64String(RandomNumberGenerator.GetBytes(32));
+
+    private static string CreateCode() => RandomNumberGenerator.GetInt32(100000, 1000000).ToString();
 
     private static string HashToken(string token) => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(token)));
 }

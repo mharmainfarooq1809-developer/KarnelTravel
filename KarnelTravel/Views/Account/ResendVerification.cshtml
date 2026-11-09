@@ -1,2 +1,2 @@
-@{ Layout = "_Layout"; ViewData["Title"] = "Resend verification"; }
-<section class="page-section"><div class="container"><h1>Verify your email</h1><form method="post">@Html.AntiForgeryToken() <label for="email">Email</label><input id="email" name="email" type="email" autocomplete="email" required /><button type="submit">Resend verification</button></form></div></section>
+@{ Layout = "_Layout"; ViewData["Title"] = "Account access"; }
+<section class="page-section"><div class="container"><h1>Account access</h1><p>Email verification is not required. You can sign in immediately after registration.</p><a asp-controller="Account" asp-action="Login">Return to login</a></div></section>

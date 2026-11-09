@@ -160,8 +160,9 @@
                     var normalizedType =
                         property.Category?.ToLowerInvariant() ?? "";
 
-                    var normalizedStatus =
-                        property.IsPublished ? "published" : "draft";
+                    var normalizedStatus = property.IsArchived
+                        ? "archived"
+                        : property.IsPublished ? "published" : "draft";
 
                     var price = Convert.ToDecimal(property.Price);
 
@@ -211,7 +212,7 @@
 
                             <span class="property-card-status @normalizedStatus">
                                 <span class="status-dot"></span>
-                                @(property.IsPublished ? "Published" : "Draft")
+                                @(property.IsArchived ? "Archived" : property.IsPublished ? "Published" : "Draft")
                             </span>
                         </div>
 
@@ -268,6 +269,32 @@
                                     </a>
 
                                     <form asp-controller="Admin"
+                                           asp-action="TogglePropertyActive"
+                                           asp-route-id="@property.Id"
+                                           method="post"
+                                           style="display:inline"
+                                           onsubmit="return confirm('@(property.IsPublished ? "Deactivate" : "Activate") @property.Name?');">
+                                         @Html.AntiForgeryToken()
+                                         <input type="hidden" name="category" value="@property.Category" />
+                                         <button type="submit" class="property-card-btn" disabled="@(property.IsArchived)">
+                                             @(property.IsPublished ? "Deactivate" : "Activate")
+                                         </button>
+                                     </form>
+
+                                     <form asp-controller="Admin"
+                                           asp-action="@(property.IsArchived ? "RestoreProperty" : "ArchiveProperty")"
+                                           asp-route-id="@property.Id"
+                                           method="post"
+                                           style="display:inline"
+                                           onsubmit="return confirm('@(property.IsArchived ? "Restore" : "Archive") @property.Name?');">
+                                         @Html.AntiForgeryToken()
+                                         <input type="hidden" name="category" value="@property.Category" />
+                                         <button type="submit" class="property-card-btn">
+                                             @(property.IsArchived ? "Restore" : "Archive")
+                                         </button>
+                                     </form>
+
+                                     <form asp-controller="Admin"
                                           asp-action="DeleteProperty"
                                           asp-route-id="@property.Id"
                                           method="post"

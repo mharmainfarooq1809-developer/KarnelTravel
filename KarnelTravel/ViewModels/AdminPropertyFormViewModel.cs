@@ -1,5 +1,6 @@
 ﻿
 using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Http;
 
 namespace KarnelTravel.ViewModels;
 
@@ -28,10 +29,11 @@ public class AdminPropertyFormViewModel
     [StringLength(2000)]
     public string Description { get; set; } = string.Empty;
 
-    [Required(ErrorMessage = "Image URL is required.")]
     [StringLength(500)]
-    [Url(ErrorMessage = "Enter a valid image URL.")]
-    public string ImageUrl { get; set; } = string.Empty;
+    public string? ImageUrl { get; set; }
+
+    [Display(Name = "Property image")]
+    public IFormFile? ImageFile { get; set; }
 
     [Range(0, 100000000, ErrorMessage = "Enter a valid price.")]
     public decimal? Price { get; set; }

@@ -32,8 +32,11 @@ namespace KarnelTravel.Data
         public DbSet<TransportService> TransportServices
             => Set<TransportService>();
 
-        public DbSet<TransportRoutePricing> TransportRoutePricings
-            => Set<TransportRoutePricing>();
+        public DbSet<TransportRouteVehicle> TransportRouteVehicles
+            => Set<TransportRouteVehicle>();
+
+        public DbSet<TransportRoute> TransportRoutes
+            => Set<TransportRoute>();
 
         public DbSet<TripInquiry> TripInquiries => Set<TripInquiry>();
         public DbSet<ContactInquiry> ContactInquiries => Set<ContactInquiry>();
@@ -161,7 +164,7 @@ namespace KarnelTravel.Data
                 e.Property(x => x.ShortDescription).HasMaxLength(1000).IsRequired();
                 e.Property(x => x.Description).HasMaxLength(2000).IsRequired();
                 e.Property(x => x.ImageUrl).HasMaxLength(500).IsRequired();
-                e.Property(x => x.BestTimeToVisit).HasMaxLength(100).IsRequired();
+                e.Property(x => x.BestTimeToVisit).HasMaxLength(2000).IsRequired();
             });
 
 
@@ -356,40 +359,57 @@ namespace KarnelTravel.Data
                 e.Property(x => x.ImageUrl).HasMaxLength(500).IsRequired();
                 e.Property(x => x.ContactPhone).HasMaxLength(100).IsRequired();
                 e.Property(x => x.StartingPrice).HasPrecision(18, 2);
+                e.HasIndex(x => x.IsArchived);
 
                 ConfigureDestinationRelationship<TransportService>(e);
             });
 
 
             // =================================================
-            // TRANSPORT ROUTE PRICING
+            // TRANSPORT ROUTES
             // =================================================
 
-            model.Entity<TransportRoutePricing>(e =>
+            model.Entity<TransportRoute>(e =>
+            {
+                e.ToTable("TransportRoutes");
+                e.HasKey(x => x.Id);
+
+                e.Property(x => x.Name)
+                    .HasMaxLength(150)
+                    .IsRequired();
+                e.Property(x => x.Slug)
+                    .HasMaxLength(150)
+                    .IsRequired();
+                e.Property(x => x.StartingCity)
+                    .HasMaxLength(150)
+                    .IsRequired();
+                e.Property(x => x.DestinationCity)
+                    .HasMaxLength(150)
+                    .IsRequired();
+                e.Property(x => x.Description).HasMaxLength(2000);
+                e.Property(x => x.StartingPricePKR)
+                    .HasPrecision(18, 2);
+                e.Property(x => x.ReturnPricePKR).HasPrecision(18, 2);
+                e.Property(x => x.EstimatedDistanceKm).HasPrecision(10, 2);
+                e.HasIndex(x => x.Slug).IsUnique();
+                e.HasIndex(x => new { x.IsPublished, x.IsArchived, x.DisplayOrder });
+            });
+
+            model.Entity<TransportRouteVehicle>(e =>
             {
                 e.ToTable("TransportRoutePricings");
                 e.HasKey(x => x.Id);
-
-                e.Property(x => x.PickupCity)
-                    .HasMaxLength(150)
-                    .IsRequired();
-
-                e.Property(x => x.DropoffCity)
-                    .HasMaxLength(150)
-                    .IsRequired();
-
-                e.Property(x => x.OneWayFarePKR)
-                    .HasPrecision(18, 2);
-
-                e.HasIndex(x => new
-                {
-                    x.TransportServiceId,
-                    x.PickupCity,
-                    x.DropoffCity
-                }).IsUnique();
-
+                e.Property(x => x.LegacyPickupCity).HasMaxLength(150);
+                e.Property(x => x.LegacyDropoffCity).HasMaxLength(150);
+                e.Property(x => x.LegacyOneWayFarePKR).HasPrecision(18, 2);
+                e.Property(x => x.LegacyReturnFarePKR).HasPrecision(18, 2);
+                e.HasIndex(x => new { x.TransportRouteId, x.TransportServiceId }).IsUnique();
+                e.HasOne(x => x.TransportRoute)
+                    .WithMany(x => x.VehicleLinks)
+                    .HasForeignKey(x => x.TransportRouteId)
+                    .OnDelete(DeleteBehavior.Restrict);
                 e.HasOne(x => x.TransportService)
-                    .WithMany()
+                    .WithMany(x => x.RouteLinks)
                     .HasForeignKey(x => x.TransportServiceId)
                     .OnDelete(DeleteBehavior.Restrict);
             });
@@ -432,6 +452,11 @@ namespace KarnelTravel.Data
                     .HasForeignKey(x => x.HotelId)
                     .OnDelete(DeleteBehavior.Restrict);
 
+                e.HasOne(x => x.TransportRoute)
+                    .WithMany()
+                    .HasForeignKey(x => x.TransportRouteId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
                 e.HasOne<Restaurant>()
                     .WithMany()
                     .HasForeignKey(x => x.RestaurantId)
@@ -471,9 +496,10 @@ namespace KarnelTravel.Data
                 e.Property(x => x.FullName).HasMaxLength(150).IsRequired();
                 e.Property(x => x.PhoneNumber).HasMaxLength(30).IsRequired();
                 e.Property(x => x.PasswordHash).HasMaxLength(512).IsRequired();
-                e.Property(x => x.EmailVerificationTokenHash).HasMaxLength(128);
                 e.Property(x => x.PasswordResetTokenHash).HasMaxLength(128);
+                e.Property(x => x.PasswordResetCodeHash).HasMaxLength(128);
                 e.HasIndex(x => x.Email).IsUnique();
+                e.HasIndex(x => x.PasswordResetCodeHash);
             });
 
             model.Entity<BookingTicket>(e =>

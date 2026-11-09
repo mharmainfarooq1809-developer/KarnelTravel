@@ -35,16 +35,18 @@ namespace KarnelTravel.Controllers
         [HttpGet("/transport")]
         public async Task<IActionResult> Transport()
         {
-            var transportServices = await _context.TransportServices
+            var transportRoutes = await _context.TransportRoutes
                 .AsNoTracking()
-                .Where(t => t.IsPublished)
+                .Where(t => t.IsPublished && t.IsActive && !t.IsArchived &&
+                    t.VehicleLinks.Any(x => x.IsActive && !x.IsArchived &&
+                        x.TransportService != null && x.TransportService.IsPublished && !x.TransportService.IsArchived))
                 .OrderBy(t => t.DisplayOrder)
                 .ThenBy(t => t.Name)
                 .ToListAsync();
 
             return View(
                 "~/Views/Information/Dropdown/transport.cshtml",
-                transportServices
+                transportRoutes
             );
         }
 

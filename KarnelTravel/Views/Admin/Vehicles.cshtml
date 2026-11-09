@@ -1,111 +1,968 @@
-﻿
-@model IEnumerable<KarnelTravel.Models.TransportService>
+﻿@model IEnumerable<KarnelTravel.Models.TransportService>
+
+@using System.Globalization
+@using KarnelTravel.Models
 
 @{
     ViewData["Title"] = "Vehicle Management";
+    ViewData["Section"] = "Transport";
     Layout = "_AdminLayout";
+
+    var culture = CultureInfo.CurrentCulture;
+    var vehicles = Model?.ToList() ?? new List<TransportService>();
+    var total = vehicles.Count;
+    var published = vehicles.Count(v => v.IsPublished && !v.IsArchived);
+    var archived = vehicles.Count(v => v.IsArchived);
+    var unpublished = total - published - archived;
+
+    var withCapacity = vehicles.Where(v => v.PassengerCapacity.HasValue && v.PassengerCapacity.Value > 0).ToList();
+    var avgCapacity = withCapacity.Count > 0
+        ? (int)Math.Round(withCapacity.Average(v => v.PassengerCapacity!.Value))
+        : 0;
 }
 
-<div class="container-fluid py-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
+<div class="veh-page">
+
+    <!-- ================= PAGE HEADER ================= -->
+    <header class="page-heading">
         <div>
-            <h2>Vehicle Management</h2>
-            <p class="text-muted">Manage transport vehicles and passenger capacity.</p>
+            <p class="eyebrow">Transport · Fleet</p>
+            <h1>Vehicle Management</h1>
+            <p>Manage transport vehicles, routes, and passenger capacity across the Karnel network.</p>
         </div>
 
         <a asp-controller="Admin"
            asp-action="CreateVehicle"
            class="btn btn-primary">
-            + Add Vehicle
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2.2"
+                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M12 5v14" />
+                <path d="M5 12h14" />
+            </svg>
+            Add vehicle
         </a>
-    </div>
+    </header>
 
+    <!-- ================= FLEET SNAPSHOT ================= -->
+    <section class="veh-stats" aria-label="Fleet summary">
+        <article class="veh-stat">
+            <label>Total vehicles</label>
+            <strong>@total</strong>
+            <small>Registered in the fleet</small>
+        </article>
+
+        <article class="veh-stat">
+            <label>Published</label>
+            <strong>@published</strong>
+            <small>Visible to travellers</small>
+        </article>
+
+        <article class="veh-stat">
+            <label>Unpublished</label>
+            <strong>@unpublished</strong>
+            <small>Hidden from the public site</small>
+        </article>
+
+        <article class="veh-stat">
+            <label>Avg. capacity</label>
+            <strong>@(avgCapacity > 0 ? avgCapacity.ToString(culture) : "—")</strong>
+            <small>@(withCapacity.Count > 0 ? $"Across {withCapacity.Count} vehicle(s)" : "No capacity data")</small>
+        </article>
+    </section>
+
+    <!-- ================= FEEDBACK ================= -->
     @if (TempData["SuccessMessage"] != null)
     {
-        <div class="alert alert-success">@TempData["SuccessMessage"]</div>
+        <div class="veh-alert veh-alert-success" role="status">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2.2"
+                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="m5 12 5 5L20 7" />
+            </svg>
+            <span>@TempData["SuccessMessage"]</span>
+        </div>
     }
 
     @if (TempData["ErrorMessage"] != null)
     {
-        <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
+        <div class="veh-alert veh-alert-danger" role="alert">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2.2"
+                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <circle cx="12" cy="12" r="9" />
+                <path d="M12 8v5" />
+                <path d="M12 16.5h.01" />
+            </svg>
+            <span>@TempData["ErrorMessage"]</span>
+        </div>
     }
 
-    <div class="table-responsive">
-        <table class="table table-hover align-middle">
-            <thead>
-                <tr>
-                    <th>Vehicle</th>
-                    <th>Type</th>
-                    <th>Route</th>
-                    <th>Capacity</th>
-                    <th>Starting Price</th>
-                    <th>Visibility</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var vehicle in Model)
-                {
-                    <tr>
-                        <td>
-                            <strong>@vehicle.Name</strong>
-                        </td>
-                        <td>@vehicle.VehicleType</td>
-                        <td>
-                            @vehicle.StartingCity
-                            →
-                            @vehicle.DestinationCity
-                        </td>
-                        <td>@(vehicle.PassengerCapacity?.ToString() ?? "Not set")</td>
-                        <td>
-                            @(vehicle.StartingPrice.HasValue
-                                ? "PKR " + vehicle.StartingPrice.Value.ToString("N0")
-                                : "Not set")
-                        </td>
-                        <td>
-                            @if (vehicle.IsPublished)
-                            {
-                                <span class="badge bg-success">Published</span>
-                            }
-                            else
-                            {
-                                <span class="badge bg-secondary">Unpublished</span>
-                            }
-                        </td>
-                        <td>
-                            <div class="d-flex gap-2">
-                                <a asp-controller="Admin"
-                                   asp-action="EditVehicle"
-                                   asp-route-id="@vehicle.Id"
-                                   class="btn btn-sm btn-outline-primary">
-                                    Edit
-                                </a>
+    <!-- ================= FLEET ROSTER ================= -->
+    <section class="panel veh-card" aria-label="Vehicle roster">
+        <div class="panel-title">
+            <div>
+                <h2>Fleet roster</h2>
+                <p class="panel-subtitle">
+                    @if (total > 0)
+                    {
+                        <text>@total vehicle@(total == 1 ? "" : "s") · @published published</text>
+                    }
+                    else
+                    {
+                        <text>No vehicles registered yet</text>
+                    }
+                </p>
+            </div>
+            <span class="veh-count">@total</span>
+        </div>
 
-                                <form asp-controller="Admin"
-                                      asp-action="ToggleVehicle"
-                                      asp-route-id="@vehicle.Id"
-                                      method="post">
-                                    @Html.AntiForgeryToken()
-                                    <button type="submit" class="btn btn-sm btn-outline-secondary">
-                                        @(vehicle.IsPublished ? "Unpublish" : "Publish")
-                                    </button>
-                                </form>
+        @if (total == 0)
+        {
+            <div class="veh-empty">
+                <span class="veh-empty-icon" aria-hidden="true">
+                    <svg width="26" height="26" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="1.6"
+                         stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 8.5h11v9H3z" />
+                        <path d="M14 11h3.6l3.4 3.4v3.1h-7z" />
+                        <circle cx="7" cy="18" r="1.6" />
+                        <circle cx="17" cy="18" r="1.6" />
+                    </svg>
+                </span>
+                <h3>No vehicles yet</h3>
+                <p>Add your first transport vehicle to start building the fleet.</p>
+                <a asp-controller="Admin"
+                   asp-action="CreateVehicle"
+                   class="btn btn-primary">
+                    + Add vehicle
+                </a>
+            </div>
+        }
+        else
+        {
+            <!-- FILTER TOOLBAR -->
+            <div class="veh-toolbar">
+                <div class="veh-filters">
+                    <input
+                        type="search"
+                        id="vehSearch"
+                        class="veh-filter-input"
+                        placeholder="Search by name, type or route..."
+                        aria-label="Search vehicles" />
 
-                                <form asp-controller="Admin"
-                                      asp-action="DeleteVehicle"
-                                      asp-route-id="@vehicle.Id"
-                                      method="post"
-                                      onsubmit="return confirm('Delete this vehicle?');">
-                                    @Html.AntiForgeryToken()
-                                    <button type="submit" class="btn btn-sm btn-outline-danger">
-                                        Delete
-                                    </button>
-                                </form>
-                            </div>
-                        </td>
-                    </tr>
-                }
-            </tbody>
-        </table>
-    </div>
+                    <select id="vehStatusFilter" class="veh-filter-input" aria-label="Filter by visibility">
+                        <option value="all">All vehicles</option>
+                        <option value="published">Published</option>
+                        <option value="unpublished">Unpublished</option>
+                        <option value="archived">Archived</option>
+                    </select>
+                </div>
+
+                <div class="veh-result-count">
+                    Showing <strong id="vehVisibleCount">@total</strong>
+                    of @total vehicles
+                </div>
+            </div>
+
+            <div class="veh-table-wrap">
+                <table class="veh-table">
+                    <thead>
+                        <tr>
+                            <th scope="col">Vehicle</th>
+                            <th scope="col">Type</th>
+                            <th scope="col">Assigned routes</th>
+                            <th scope="col">Capacity</th>
+                            <th scope="col">Route pricing</th>
+                            <th scope="col">Visibility</th>
+                            <th scope="col" class="veh-col-actions">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var vehicle in vehicles)
+                        {
+                            var initial = !string.IsNullOrWhiteSpace(vehicle.Name)
+                                ? char.ToUpperInvariant(vehicle.Name.Trim()[0]).ToString()
+                                : "?";
+
+                            var assignedRoutes = vehicle.RouteLinks
+                                .Where(x => !x.IsArchived && x.TransportRoute != null)
+                                .Select(x => x.TransportRoute!)
+                                .OrderBy(x => x.DisplayOrder)
+                                .ThenBy(x => x.Name)
+                                .ToList();
+
+                            var visibility = vehicle.IsArchived
+                                ? "archived"
+                                : (vehicle.IsPublished ? "published" : "unpublished");
+
+                            var searchText = $"{vehicle.Name} {vehicle.VehicleType} " +
+                                             string.Join(" ", assignedRoutes.Select(r =>
+                                                 $"{r.StartingCity} {r.DestinationCity} {r.Name}"));
+
+                            <tr class="veh-row"
+                                data-search="@searchText.ToLowerInvariant()"
+                                data-status="@visibility">
+
+                                <td data-label="Vehicle">
+                                    <div class="veh-cell">
+                                        <span class="veh-mono" aria-hidden="true">@initial</span>
+                                        <div class="veh-cell-text">
+                                            <strong>@vehicle.Name</strong>
+                                            <small>ID · @vehicle.Id</small>
+                                        </div>
+                                    </div>
+                                </td>
+
+                                <td data-label="Type">
+                                    @if (!string.IsNullOrWhiteSpace(vehicle.VehicleType))
+                                    {
+                                        <span class="veh-pill">@vehicle.VehicleType</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="veh-muted">—</span>
+                                    }
+                                </td>
+
+                                <td data-label="Assigned routes">
+                                    @if (assignedRoutes.Count == 0)
+                                    {
+                                        <span class="veh-muted">No route assigned</span>
+                                    }
+                                    else
+                                    {
+                                        <div class="veh-route-list">
+                                            @foreach (var route in assignedRoutes)
+                                            {
+                                                <span class="veh-route">
+                                                    <span>@route.StartingCity</span>
+                                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                                        <path d="M5 12h14" />
+                                                        <path d="m13 6 6 6-6 6" />
+                                                    </svg>
+                                                    <span>@route.DestinationCity</span>
+                                                </span>
+                                            }
+                                        </div>
+                                    }
+                                </td>
+
+                                <td data-label="Capacity">
+                                    @if (vehicle.PassengerCapacity.HasValue && vehicle.PassengerCapacity.Value > 0)
+                                    {
+                                        <span class="veh-num">
+                                            @vehicle.PassengerCapacity.Value
+                                            <small>seats</small>
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="veh-muted">Not set</span>
+                                    }
+                                </td>
+
+                                <td data-label="Route pricing">
+                                    @if (assignedRoutes.Count > 0)
+                                    {
+                                        <div class="veh-route-prices">
+                                            @foreach (var route in assignedRoutes)
+                                            {
+                                                <span class="veh-num">
+                                                    <small class="veh-num-currency">PKR</small>@route.StartingPricePKR.ToString("N0", culture)
+                                                </span>
+                                            }
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <span class="veh-muted">Not set</span>
+                                    }
+                                </td>
+
+                                <td data-label="Visibility">
+                                    @if (vehicle.IsArchived)
+                                    {
+                                        <span class="status status-draft"><i></i>Archived</span>
+                                    }
+                                    else if (vehicle.IsPublished)
+                                    {
+                                        <span class="status"><i></i>Published</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="status status-draft"><i></i>Unpublished</span>
+                                    }
+                                </td>
+
+                                <td data-label="Actions" class="veh-col-actions">
+                                    <div class="veh-actions">
+                                        <a asp-controller="Admin"
+                                           asp-action="EditVehicle"
+                                           asp-route-id="@vehicle.Id"
+                                           class="veh-btn"
+                                           aria-label="Edit @vehicle.Name">
+                                            Edit
+                                        </a>
+
+                                        @if (vehicle.IsArchived)
+                                        {
+                                            <form asp-controller="Admin"
+                                                  asp-action="RestoreVehicle"
+                                                  asp-route-id="@vehicle.Id"
+                                                  method="post">
+                                                @Html.AntiForgeryToken()
+                                                <button type="submit" class="veh-btn"
+                                                        aria-label="Restore @vehicle.Name">
+                                                    Restore
+                                                </button>
+                                            </form>
+                                        }
+                                        else
+                                        {
+                                            <form asp-controller="Admin"
+                                                  asp-action="ToggleVehicle"
+                                                  asp-route-id="@vehicle.Id"
+                                                  method="post">
+                                                @Html.AntiForgeryToken()
+                                                <button type="submit" class="veh-btn"
+                                                        aria-label="@(vehicle.IsPublished ? "Unpublish" : "Publish") @vehicle.Name">
+                                                    @(vehicle.IsPublished ? "Unpublish" : "Publish")
+                                                </button>
+                                            </form>
+                                        }
+
+                                        <form asp-controller="Admin"
+                                              asp-action="DeleteVehicle"
+                                              asp-route-id="@vehicle.Id"
+                                              method="post"
+                                              onsubmit="return confirm('@(vehicle.IsArchived ? "Permanently delete this vehicle? This is only allowed when it has no history." : "Archive this vehicle and preserve its history?")');">
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit" class="veh-btn veh-btn-danger"
+                                                    aria-label="Delete @vehicle.Name">
+                                                @(vehicle.IsArchived ? "Delete permanently" : "Delete / Archive")
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <div id="vehNoResults" class="veh-no-results">
+                No vehicles match your search or selected filter.
+            </div>
+        }
+    </section>
 </div>
+
+<script>
+    (() => {
+        const searchInput = document.getElementById("vehSearch");
+        const statusFilter = document.getElementById("vehStatusFilter");
+        const rows = Array.from(document.querySelectorAll(".veh-row"));
+        const visibleCount = document.getElementById("vehVisibleCount");
+        const noResults = document.getElementById("vehNoResults");
+
+        if (!searchInput || !statusFilter) return;
+
+        function filterVehicles() {
+            const searchTerm = searchInput.value.trim().toLowerCase();
+            const selectedStatus = statusFilter.value;
+
+            let visible = 0;
+
+            rows.forEach(row => {
+                const searchText = row.dataset.search || "";
+                const status = row.dataset.status || "";
+
+                const matchesSearch = searchText.includes(searchTerm);
+                const matchesStatus = selectedStatus === "all" || status === selectedStatus;
+
+                const show = matchesSearch && matchesStatus;
+                row.style.display = show ? "" : "none";
+                if (show) visible++;
+            });
+
+            if (visibleCount) visibleCount.textContent = visible;
+
+            if (noResults) {
+                noResults.style.display = visible === 0 ? "block" : "none";
+            }
+        }
+
+        searchInput.addEventListener("input", filterVehicles);
+        statusFilter.addEventListener("change", filterVehicles);
+    })();
+</script>
+
+<style>
+    /* ============================================================
+       VEHICLE MANAGEMENT — page-scoped refinements
+       Built on the Karnel Admin design tokens from _AdminLayout.
+       ============================================================ */
+
+    .veh-page {
+        display: block;
+    }
+
+    /* ---------- Page heading ---------- */
+    .veh-page .page-heading {
+        align-items: flex-end;
+        margin-bottom: 26px;
+    }
+
+    .veh-page .page-heading h1 {
+        font-size: clamp(30px, 3.4vw, 46px);
+    }
+
+    .veh-page .page-heading p {
+        margin-top: 8px;
+        max-width: 60ch;
+    }
+
+    .veh-page .page-heading .btn {
+        flex-shrink: 0;
+    }
+
+    /* ---------- Stats ---------- */
+    .veh-stats {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 14px;
+        margin-bottom: 22px;
+    }
+
+    .veh-stat {
+        background: var(--white);
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        padding: 16px 18px;
+        transition: border-color var(--dur) var(--ease),
+                    box-shadow var(--dur) var(--ease),
+                    transform var(--dur) var(--ease);
+    }
+
+    .veh-stat:hover {
+        border-color: var(--line-hi);
+        box-shadow: var(--shadow-sm);
+        transform: translateY(-1px);
+    }
+
+    .veh-stat label {
+        display: block;
+        font-size: 10.5px;
+        font-weight: 700;
+        letter-spacing: .13em;
+        text-transform: uppercase;
+        color: var(--muted);
+    }
+
+    .veh-stat strong {
+        display: block;
+        margin: 7px 0 3px;
+        font-family: var(--sans);
+        font-size: 26px;
+        font-weight: 600;
+        line-height: 1.05;
+        letter-spacing: -.015em;
+        color: var(--forest);
+        font-variant-numeric: tabular-nums;
+    }
+
+    .veh-stat small {
+        font-size: 11.5px;
+        color: var(--muted);
+        line-height: 1.4;
+    }
+
+    /* ---------- Alerts ---------- */
+    .veh-alert {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        padding: 12px 16px;
+        margin-bottom: 14px;
+        border-radius: 10px;
+        font-size: 13px;
+        font-weight: 500;
+        line-height: 1.45;
+        border: 1px solid transparent;
+    }
+
+    .veh-alert svg { flex-shrink: 0; margin-top: 1px; }
+
+    .veh-alert-success {
+        background: rgba(60, 145, 105, .10);
+        border-color: rgba(60, 145, 105, .22);
+        color: #1f5a3f;
+    }
+
+    .veh-alert-danger {
+        background: rgba(174, 93, 80, .10);
+        border-color: rgba(174, 93, 80, .22);
+        color: #8b4137;
+    }
+
+    /* ---------- Card ---------- */
+    .veh-card {
+        padding: 0;
+        overflow: hidden;
+    }
+
+    .veh-card .panel-title {
+        margin: 0;
+        padding: 22px 24px 18px;
+        border-bottom: 1px solid var(--line);
+    }
+
+    .veh-card .panel-title h2 {
+        font-size: 22px;
+    }
+
+    .veh-count {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 12px;
+        border-radius: var(--radius-pill);
+        background: var(--soft);
+        color: var(--forest);
+        font-size: 11.5px;
+        font-weight: 700;
+        letter-spacing: .03em;
+        font-variant-numeric: tabular-nums;
+    }
+
+    .veh-count::before {
+        content: "";
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--accent);
+        box-shadow: 0 0 0 3px rgba(60, 145, 105, .15);
+    }
+
+    /* ---------- Filter toolbar ---------- */
+    .veh-toolbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 14px;
+        flex-wrap: wrap;
+        padding: 14px 22px;
+        border-bottom: 1px solid var(--line);
+        background: rgba(143, 168, 136, .04);
+    }
+
+    .veh-filters {
+        display: flex;
+        gap: 10px;
+        flex: 1;
+        flex-wrap: wrap;
+    }
+
+    .veh-filter-input {
+        min-height: 40px;
+        padding: 0 12px;
+        border: 1px solid var(--line);
+        border-radius: 9px;
+        background: var(--white);
+        color: var(--ink);
+        font-family: var(--sans);
+        font-size: 13px;
+        outline: none;
+        transition: border-color var(--dur-fast) var(--ease),
+                    box-shadow var(--dur-fast) var(--ease);
+    }
+
+    .veh-filter-input:focus {
+        border-color: var(--accent);
+        box-shadow: var(--ring-accent);
+    }
+
+    .veh-filter-input::placeholder { color: var(--muted); }
+
+    #vehSearch { width: min(360px, 100%); min-width: 200px; }
+    #vehStatusFilter { min-width: 175px; }
+
+    .veh-result-count {
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 500;
+        white-space: nowrap;
+    }
+
+    .veh-result-count strong { color: var(--forest); font-weight: 700; }
+
+    /* ---------- Table ---------- */
+    .veh-table-wrap {
+        width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: thin;
+        scrollbar-color: var(--line-hi) transparent;
+    }
+
+    .veh-table-wrap::-webkit-scrollbar { height: 8px; }
+    .veh-table-wrap::-webkit-scrollbar-thumb {
+        background: var(--line-hi);
+        border-radius: 99px;
+    }
+    .veh-table-wrap::-webkit-scrollbar-track { background: transparent; }
+
+    .veh-table {
+        width: 100%;
+        min-width: 940px;
+        border-collapse: separate;
+        border-spacing: 0;
+        font-size: 13.5px;
+    }
+
+    .veh-table thead th {
+        padding: 12px 18px;
+        text-align: left;
+        font-size: 10.5px;
+        font-weight: 700;
+        letter-spacing: .13em;
+        text-transform: uppercase;
+        color: var(--muted);
+        background: var(--surface-sunken);
+        border-bottom: 1px solid var(--line);
+        white-space: nowrap;
+    }
+
+    .veh-table thead th.veh-col-actions {
+        text-align: right;
+    }
+
+    .veh-table tbody td {
+        padding: 16px 18px;
+        border-bottom: 1px solid var(--line);
+        vertical-align: middle;
+        color: var(--ink);
+    }
+
+    .veh-table tbody tr:last-child td {
+        border-bottom: 0;
+    }
+
+    .veh-table tbody tr {
+        transition: background var(--dur-fast) var(--ease);
+    }
+
+    .veh-table tbody tr:hover {
+        background: var(--surface-sunken);
+    }
+
+    .veh-table td.veh-col-actions {
+        text-align: right;
+    }
+
+    /* ---------- Vehicle cell ---------- */
+    .veh-cell {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        min-width: 0;
+    }
+
+    .veh-mono {
+        width: 38px;
+        height: 38px;
+        flex-shrink: 0;
+        display: grid;
+        place-items: center;
+        border-radius: 10px;
+        background: var(--soft-2);
+        color: var(--forest);
+        font-family: var(--serif);
+        font-size: 17px;
+        line-height: 1;
+        letter-spacing: -.01em;
+    }
+
+    .veh-cell-text {
+        min-width: 0;
+    }
+
+    .veh-cell-text strong {
+        display: block;
+        font-weight: 600;
+        color: var(--ink);
+        font-size: 13.5px;
+        line-height: 1.25;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 22ch;
+    }
+
+    .veh-cell-text small {
+        display: block;
+        margin-top: 2px;
+        font-size: 11px;
+        color: var(--muted);
+        letter-spacing: .02em;
+        font-variant-numeric: tabular-nums;
+    }
+
+    /* ---------- Type pill ---------- */
+    .veh-pill {
+        display: inline-flex;
+        align-items: center;
+        padding: 3px 10px;
+        border-radius: var(--radius-pill);
+        background: var(--soft);
+        color: var(--forest);
+        font-size: 11.5px;
+        font-weight: 600;
+        letter-spacing: .01em;
+        white-space: nowrap;
+    }
+
+    /* ---------- Routes ---------- */
+    .veh-route-list {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .veh-route {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 13px;
+        color: var(--ink);
+        white-space: nowrap;
+    }
+
+    .veh-route svg {
+        color: var(--accent);
+        flex-shrink: 0;
+        opacity: .85;
+    }
+
+    .veh-route-prices {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    /* ---------- Numeric ---------- */
+    .veh-num {
+        font-variant-numeric: tabular-nums;
+        font-weight: 600;
+        color: var(--ink);
+        letter-spacing: -.005em;
+        white-space: nowrap;
+    }
+
+    .veh-num small {
+        margin-left: 4px;
+        font-size: 11px;
+        font-weight: 500;
+        color: var(--muted);
+        letter-spacing: .01em;
+    }
+
+    .veh-num .veh-num-currency {
+        margin: 0 4px 0 0;
+        font-size: 10.5px;
+        font-weight: 700;
+        letter-spacing: .06em;
+        color: var(--muted);
+        text-transform: uppercase;
+    }
+
+    .veh-muted {
+        color: var(--muted);
+        font-size: 12.5px;
+        font-style: italic;
+    }
+
+    /* ---------- Actions ---------- */
+    .veh-actions {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        justify-content: flex-end;
+    }
+
+    .veh-actions form {
+        display: inline;
+        margin: 0;
+    }
+
+    .veh-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 6px 11px;
+        border-radius: 7px;
+        border: 1px solid var(--line);
+        background: var(--white);
+        color: var(--ink);
+        font-size: 12px;
+        font-weight: 600;
+        line-height: 1.2;
+        white-space: nowrap;
+        transition: background var(--dur-fast) var(--ease),
+                    border-color var(--dur-fast) var(--ease),
+                    color var(--dur-fast) var(--ease),
+                    box-shadow var(--dur-fast) var(--ease);
+    }
+
+    .veh-btn:hover {
+        background: var(--soft);
+        border-color: var(--line-hi);
+        color: var(--forest);
+    }
+
+    .veh-btn:active {
+        transform: translateY(.5px);
+    }
+
+    .veh-btn:focus-visible {
+        outline: none;
+        box-shadow: var(--ring-accent);
+        border-color: var(--accent);
+    }
+
+    .veh-btn-danger {
+        color: #8b4137;
+    }
+
+    .veh-btn-danger:hover {
+        background: rgba(174, 93, 80, .08);
+        border-color: rgba(174, 93, 80, .35);
+        color: #8b4137;
+    }
+
+    /* ---------- Empty state & no-results ---------- */
+    .veh-empty {
+        padding: 64px 24px 72px;
+        text-align: center;
+    }
+
+    .veh-empty-icon {
+        width: 60px;
+        height: 60px;
+        margin: 0 auto 18px;
+        display: grid;
+        place-items: center;
+        border-radius: 18px;
+        background: var(--soft);
+        color: var(--accent);
+        box-shadow: inset 0 0 0 1px var(--line);
+    }
+
+    .veh-empty h3 {
+        margin: 0 0 6px;
+        font-family: var(--serif);
+        font-weight: 400;
+        font-size: 22px;
+        letter-spacing: -.01em;
+        color: var(--forest);
+    }
+
+    .veh-empty p {
+        margin: 0 auto 20px;
+        max-width: 40ch;
+        color: var(--muted);
+        font-size: 13.5px;
+        line-height: 1.55;
+    }
+
+    .veh-no-results {
+        display: none;
+        padding: 42px 18px;
+        color: var(--muted);
+        font-size: 13px;
+        text-align: center;
+    }
+
+    /* ---------- Responsive ---------- */
+    @@media (max-width: 1050px) {
+        .veh-stats {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+
+    @@media (max-width: 760px) {
+        .veh-page .page-heading {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 16px;
+        }
+
+        .veh-page .page-heading .btn {
+            align-self: flex-start;
+        }
+
+        .veh-stats {
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .veh-stat {
+            padding: 14px;
+        }
+
+        .veh-stat strong {
+            font-size: 22px;
+        }
+
+        .veh-card .panel-title {
+            padding: 18px 18px 14px;
+        }
+
+        .veh-toolbar { padding: 12px 16px; }
+        .veh-filters { width: 100%; }
+        #vehSearch, #vehStatusFilter { width: 100%; }
+        .veh-result-count { width: 100%; text-align: right; }
+
+        .veh-table {
+            min-width: 860px;
+        }
+
+        .veh-table thead th,
+        .veh-table tbody td {
+            padding-left: 14px;
+            padding-right: 14px;
+        }
+
+        .veh-empty {
+            padding: 48px 16px 56px;
+        }
+    }
+
+    /* Dark theme tuning for alerts */
+    html[data-admin-theme="dark"] .veh-alert-success {
+        background: rgba(60, 145, 105, .14);
+        color: #b7e2c8;
+        border-color: rgba(60, 145, 105, .30);
+    }
+
+    html[data-admin-theme="dark"] .veh-alert-danger {
+        background: rgba(174, 93, 80, .16);
+        color: #f0c3ba;
+        border-color: rgba(174, 93, 80, .32);
+    }
+
+    @@media (prefers-color-scheme: dark) {
+        html[data-admin-theme="system"] .veh-alert-success {
+            background: rgba(60, 145, 105, .14);
+            color: #b7e2c8;
+            border-color: rgba(60, 145, 105, .30);
+        }
+
+        html[data-admin-theme="system"] .veh-alert-danger {
+            background: rgba(174, 93, 80, .16);
+            color: #f0c3ba;
+            border-color: rgba(174, 93, 80, .32);
+        }
+    }
+</style>

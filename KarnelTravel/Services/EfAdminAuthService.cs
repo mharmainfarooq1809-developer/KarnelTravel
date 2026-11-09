@@ -18,7 +18,8 @@ public class EfAdminAuthService : IAdminAuthService
 
     public async Task<AdminUser?> ValidateCredentialsAsync(string email, string password)
     {
-        var user = await _db.AdminUsers.FirstOrDefaultAsync(u => u.Email == email.Trim());
+        var normalizedEmail = email.Trim().ToLowerInvariant();
+        var user = await _db.AdminUsers.FirstOrDefaultAsync(u => u.Email.ToLower() == normalizedEmail);
         if (user is null) return null;
 
         var result = _hasher.VerifyHashedPassword(user, user.PasswordHash, password);
@@ -33,12 +34,13 @@ public class EfAdminAuthService : IAdminAuthService
 
     public async Task<AdminUser?> RegisterUserAsync(string email, string name, string password)
     {
-        var exists = await _db.AdminUsers.AnyAsync(u => u.Email == email.Trim());
+        var normalizedEmail = email.Trim().ToLowerInvariant();
+        var exists = await _db.AdminUsers.AnyAsync(u => u.Email.ToLower() == normalizedEmail);
         if (exists) return null;
 
         var user = new AdminUser
         {
-            Email = email.Trim(),
+            Email = normalizedEmail,
             DisplayName = name.Trim(),
             Role = "User"
         };

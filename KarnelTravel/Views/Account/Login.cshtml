@@ -1,4 +1,5 @@
 ﻿@* Views/Account/Login.cshtml *@
+@model KarnelTravel.ViewModels.CustomerLoginViewModel
 @{
     Layout = null;
 }
@@ -18,37 +19,63 @@
 
     <style>
         /* ============================================================
-           PREMIUM POLISH — LAYERED ON TOP OF admin.css
-           Page-specific only. Does not modify shared stylesheets.
+           KARNEL EDITORIAL COMMAND ENTRANCE
+           Page-specific only. Layered on top of admin.css.
         ============================================================ */
 
-        /* ---------- LEFT PANEL — CINEMATIC VISUAL ---------- */
+        /* ---------- PAGE BASE ---------- */
+        .admin-body {
+            margin: 0;
+            background: #F8F6F0;
+            color: #14271F;
+            font-family: 'DM Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        /* ---------- SPLIT SHELL (55 / 45) ---------- */
+        .admin-body .login-shell {
+            display: grid;
+            grid-template-columns: minmax(0, 55fr) minmax(0, 45fr);
+            min-height: 100vh;
+            min-height: 100dvh;
+            background: #F8F6F0;
+        }
+
+        /* ============================================================
+           LEFT PANEL — CINEMATIC EDITORIAL
+           Replace the photo URLs below with your licensed
+           northern Pakistan (Hunza / Skardu / Karakoram) image.
+           A second URL is declared as a graceful fallback.
+        ============================================================ */
         .admin-body .login-visual {
             position: relative;
-            overflow: hidden;
             isolation: isolate;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            gap: 48px;
+            padding: clamp(28px, 4.2vw, 60px);
             background-color: #14271F;
-            background-image:
-                url('https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=1600&q=80');
-            background-size: cover;
-            background-position: center;
-            background-repeat: no-repeat;
             color: #F8F6F0;
-            animation: kVisualIn 1s ease-out both;
         }
 
         .admin-body .login-visual::before {
             content: '';
             position: absolute;
             inset: 0;
-            z-index: -1;
-            background: linear-gradient(
-                160deg,
-                rgba(20, 39, 31, 0.72) 0%,
-                rgba(20, 39, 31, 0.55) 45%,
-                rgba(20, 39, 31, 0.9) 100%
-            );
-            pointer-events: none;
+            z-index: -2;
+            background-color: #14271F;
+            background-image:
+                url('https://images.unsplash.com/photo-1605649487212-47bdab064df7?auto=format&fit=crop&w=1800&q=80'),
+                url('https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=1800&q=80');
+            background-repeat: no-repeat, no-repeat;
+            background-position: center center, center center;
+            background-size: cover, cover;
+            transform-origin: center center;
+            animation: kImageIn 1.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+            will-change: transform;
         }
 
         .admin-body .login-visual::after {
@@ -56,126 +83,138 @@
             position: absolute;
             inset: 0;
             z-index: -1;
-            background:
-                radial-gradient(ellipse 55% 45% at 12% 18%, rgba(143, 168, 136, 0.2), transparent 65%),
-                radial-gradient(ellipse 40% 40% at 88% 88%, rgba(232, 223, 201, 0.1), transparent 65%);
             pointer-events: none;
+            background:
+                linear-gradient(
+                    165deg,
+                    rgba(20, 39, 31, 0.86) 0%,
+                    rgba(20, 39, 31, 0.46) 48%,
+                    rgba(20, 39, 31, 0.95) 100%
+                ),
+                radial-gradient(
+                    ellipse 62% 52% at 14% 10%,
+                    rgba(143, 168, 136, 0.22),
+                    transparent 62%
+                );
         }
 
-        .admin-body .login-visual .login-brand {
+        /* ---------- BRAND ---------- */
+        .admin-body .login-brand {
             position: relative;
             z-index: 1;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            animation: kFadeUp 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.15s both;
         }
 
-        .admin-body .login-visual .brand-mark {
+        .admin-body .login-brand .brand-mark {
             display: inline-grid;
             place-items: center;
             width: 44px;
             height: 44px;
+            flex: 0 0 auto;
             border-radius: 50%;
-            border: 1px solid rgba(248, 246, 240, 0.4);
-            background: rgba(248, 246, 240, 0.1);
+            border: 1px solid rgba(248, 246, 240, 0.42);
+            background: rgba(248, 246, 240, 0.08);
             color: #F8F6F0;
             font-family: 'DM Serif Display', Georgia, serif;
-            font-size: 1.3rem;
+            font-size: 1.28rem;
             line-height: 1;
-            backdrop-filter: blur(4px);
+            backdrop-filter: blur(3px);
         }
 
-        .admin-body .login-visual .login-quote {
+        .admin-body .login-brand strong {
+            display: block;
+            font-family: 'DM Sans', system-ui, sans-serif;
+            font-size: 0.8rem;
+            font-weight: 600;
+            letter-spacing: 0.26em;
+            text-transform: uppercase;
+            line-height: 1.2;
+            color: #F8F6F0;
+        }
+
+        .admin-body .login-brand small {
+            display: block;
+            margin-top: 4px;
+            font-size: 0.58rem;
+            font-weight: 500;
+            letter-spacing: 0.22em;
+            text-transform: uppercase;
+            color: rgba(248, 246, 240, 0.62);
+        }
+
+        /* ---------- EDITORIAL QUOTE ---------- */
+        .admin-body .login-visual-foot {
             position: relative;
             z-index: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 34px;
+            max-width: 560px;
         }
 
-        .admin-body .login-visual .login-quote .eyebrow {
-            display: inline-flex;
-            align-items: center;
-            gap: 12px;
-            margin: 0 0 20px;
-            font-size: 0.64rem;
-            font-weight: 600;
-            letter-spacing: 0.24em;
-            text-transform: uppercase;
-            color: #8FA888;
-            opacity: 0.92;
+        .admin-body .login-quote {
+            animation: kFadeUp 1s cubic-bezier(0.16, 1, 0.3, 1) 0.35s both;
         }
 
-        .admin-body .login-visual .login-quote .eyebrow::before {
-            content: '';
-            width: 28px;
-            height: 1px;
-            background: currentColor;
-            flex: 0 0 auto;
-            opacity: 0.85;
-        }
-
-        .admin-body .login-visual .login-quote h2 {
+        .admin-body .login-quote h2 {
+            margin: 0 0 18px;
             font-family: 'DM Serif Display', Georgia, serif;
             font-weight: 400;
-            font-size: clamp(1.65rem, 2.7vw, 2.5rem);
-            line-height: 1.08;
-            letter-spacing: -0.012em;
+            font-size: clamp(1.7rem, 2.9vw, 2.65rem);
+            line-height: 1.06;
+            letter-spacing: -0.014em;
             color: #F8F6F0;
-            margin: 0 0 20px;
             text-wrap: balance;
         }
 
-        .admin-body .login-visual .login-quote > p {
-            max-width: 46ch;
-            margin: 0 0 30px;
-            color: rgba(248, 246, 240, 0.78);
+        .admin-body .login-quote p {
+            margin: 0;
+            max-width: 44ch;
             font-size: 0.94rem;
             line-height: 1.72;
+            color: rgba(248, 246, 240, 0.78);
         }
 
-        .admin-body .login-visual .login-quote-meta {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 14px 30px;
-            padding-top: 24px;
-            border-top: 1px solid rgba(248, 246, 240, 0.16);
-        }
-
-        .admin-body .login-visual .login-quote-meta span {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
+        .admin-body .login-signature {
+            margin: 0;
+            padding-top: 22px;
+            border-top: 1px solid rgba(248, 246, 240, 0.18);
             font-size: 0.6rem;
             font-weight: 600;
-            letter-spacing: 0.2em;
+            letter-spacing: 0.26em;
             text-transform: uppercase;
-            color: rgba(248, 246, 240, 0.72);
+            color: rgba(248, 246, 240, 0.66);
+            animation: kFadeUp 1s cubic-bezier(0.16, 1, 0.3, 1) 0.5s both;
         }
 
-        .admin-body .login-visual .login-quote-meta span::before {
-            content: '';
-            width: 5px;
-            height: 5px;
-            border-radius: 50%;
-            background: #E8DFC9;
-            flex: 0 0 auto;
-        }
-
-        /* ---------- RIGHT PANEL — FORM ---------- */
+        /* ============================================================
+           RIGHT PANEL — FORM
+        ============================================================ */
         .admin-body .login-form-wrap {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: clamp(34px, 5vw, 76px) clamp(24px, 4vw, 64px);
             background: #F8F6F0;
-            animation: kFormIn 0.85s cubic-bezier(0.16, 1, 0.3, 1) both;
+            animation: kFormIn 0.95s cubic-bezier(0.16, 1, 0.3, 1) 0.2s both;
         }
 
         .admin-body .login-form {
-            max-width: 440px;
             width: 100%;
-            margin: 0 auto;
+            max-width: 440px;
         }
 
         .admin-body .login-form .eyebrow {
             display: inline-flex;
             align-items: center;
             gap: 12px;
-            margin: 0 0 16px;
-            font-size: 0.62rem;
+            margin: 0 0 18px;
+            font-size: 0.6rem;
             font-weight: 600;
-            letter-spacing: 0.24em;
+            letter-spacing: 0.26em;
             text-transform: uppercase;
             color: #8FA888;
         }
@@ -184,26 +223,27 @@
             content: '';
             width: 26px;
             height: 1px;
+            flex: 0 0 auto;
             background: currentColor;
             opacity: 0.85;
         }
 
         .admin-body .login-form h1 {
+            margin: 0 0 12px;
             font-family: 'DM Serif Display', Georgia, serif;
             font-weight: 400;
-            font-size: clamp(1.9rem, 3vw, 2.6rem);
-            line-height: 1.02;
-            letter-spacing: -0.02em;
+            font-size: clamp(2rem, 3.2vw, 2.7rem);
+            line-height: 1.03;
+            letter-spacing: -0.022em;
             color: #14271F;
-            margin: 0 0 12px;
             text-wrap: balance;
         }
 
-        .admin-body .login-form > p {
-            color: rgba(20, 39, 31, 0.7);
+        .admin-body .login-form .login-lede {
+            margin: 0 0 30px;
             font-size: 0.94rem;
             line-height: 1.65;
-            margin: 0 0 28px;
+            color: #69766D;
         }
 
         .admin-body .login-form .login-link {
@@ -213,24 +253,25 @@
             text-decoration-thickness: 1px;
             text-decoration-color: rgba(143, 168, 136, 0.65);
             text-underline-offset: 3px;
-            transition: color 0.3s ease, text-decoration-color 0.3s ease;
+            transition: text-decoration-color 0.3s ease, color 0.3s ease;
         }
 
         .admin-body .login-form .login-link:hover {
+            color: #14271F;
             text-decoration-color: #8FA888;
         }
 
-        /* ---------- ERROR STATE ---------- */
+        /* ---------- ERROR ---------- */
         .admin-body .login-form .login-error {
             display: flex;
             align-items: flex-start;
             gap: 12px;
-            margin: 0 0 24px;
+            margin: 0 0 26px;
             padding: 14px 16px;
-            border: 1px solid rgba(178, 59, 46, 0.28);
-            border-left: 3px solid #b23b2e;
-            border-radius: 6px;
-            background: rgba(178, 59, 46, 0.06);
+            border: 1px solid rgba(178, 59, 46, 0.26);
+            border-left: 3px solid #B23B2E;
+            border-radius: 8px;
+            background: rgba(178, 59, 46, 0.055);
             color: #6b2018;
             font-size: 0.86rem;
             line-height: 1.55;
@@ -239,7 +280,7 @@
         .admin-body .login-form .login-error svg {
             flex: 0 0 auto;
             margin-top: 1px;
-            color: #b23b2e;
+            color: #B23B2E;
         }
 
         .admin-body .login-form .login-error > div > div + div {
@@ -250,8 +291,8 @@
         .admin-body .login-form .login-field {
             display: flex;
             flex-direction: column;
-            gap: 7px;
-            margin-bottom: 18px;
+            gap: 8px;
+            margin-bottom: 20px;
         }
 
         .admin-body .login-form .login-field label {
@@ -259,23 +300,20 @@
             font-weight: 600;
             letter-spacing: 0.2em;
             text-transform: uppercase;
-            color: rgba(20, 39, 31, 0.66);
+            color: rgba(20, 39, 31, 0.62);
         }
 
         .admin-body .login-form .input {
             width: 100%;
-            height: 52px;
+            height: 54px;
             padding: 0 16px;
             border: 1px solid rgba(20, 39, 31, 0.14);
             border-radius: 8px;
             background: #FFFFFF;
             color: #14271F;
             font: inherit;
-            font-size: 0.94rem;
-            transition:
-                border-color 0.3s ease,
-                box-shadow 0.3s ease,
-                background 0.3s ease;
+            font-size: 0.95rem;
+            transition: border-color 0.28s ease, box-shadow 0.28s ease, background 0.28s ease;
         }
 
         .admin-body .login-form .input::placeholder {
@@ -283,14 +321,14 @@
         }
 
         .admin-body .login-form .input:hover {
-            border-color: rgba(20, 39, 31, 0.28);
+            border-color: rgba(20, 39, 31, 0.26);
         }
 
         .admin-body .login-form .input:focus {
             outline: none;
             border-color: #14271F;
             background: #FFFFFF;
-            box-shadow: 0 0 0 4px rgba(20, 39, 31, 0.1);
+            box-shadow: 0 0 0 3px rgba(20, 39, 31, 0.09);
         }
 
         /* ---------- PASSWORD TOGGLE ---------- */
@@ -299,22 +337,22 @@
         }
 
         .admin-body .login-password-wrap .input {
-            padding-right: 52px;
+            padding-right: 54px;
         }
 
         .admin-body .login-password-toggle {
             position: absolute;
             top: 50%;
-            right: 8px;
+            right: 7px;
             transform: translateY(-50%);
             display: grid;
             place-items: center;
-            width: 38px;
-            height: 38px;
+            width: 40px;
+            height: 40px;
             border: 0;
             border-radius: 6px;
             background: transparent;
-            color: rgba(20, 39, 31, 0.5);
+            color: rgba(20, 39, 31, 0.48);
             cursor: pointer;
             transition: color 0.25s ease, background 0.25s ease;
         }
@@ -329,14 +367,14 @@
             outline-offset: 1px;
         }
 
-        /* ---------- REMEMBER ME + FORGOT ---------- */
+        /* ---------- REMEMBER / FORGOT ---------- */
         .admin-body .login-form .login-row {
             display: flex;
             flex-wrap: wrap;
             align-items: center;
             justify-content: space-between;
             gap: 12px;
-            margin: 6px 0 26px;
+            margin: 6px 0 28px;
         }
 
         .admin-body .login-form .login-check {
@@ -344,7 +382,7 @@
             align-items: center;
             gap: 10px;
             font-size: 0.82rem;
-            color: rgba(20, 39, 31, 0.78);
+            color: rgba(20, 39, 31, 0.76);
             cursor: pointer;
             user-select: none;
         }
@@ -391,7 +429,7 @@
 
         .admin-body .login-form .login-row > a {
             font-size: 0.82rem;
-            color: rgba(20, 39, 31, 0.78);
+            color: rgba(20, 39, 31, 0.76);
             text-decoration: underline;
             text-decoration-thickness: 1px;
             text-decoration-color: rgba(143, 168, 136, 0.55);
@@ -406,12 +444,13 @@
 
         /* ---------- SUBMIT ---------- */
         .admin-body .login-form .login-submit {
-            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
             width: 100%;
-            height: 52px;
+            height: 54px;
             padding: 0 26px;
-            overflow: hidden;
-            isolation: isolate;
             border: 0;
             border-radius: 8px;
             background: #14271F;
@@ -423,85 +462,101 @@
             text-transform: uppercase;
             cursor: pointer;
             transition:
-                transform 0.4s cubic-bezier(0.16, 1, 0.3, 1),
-                box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1),
-                background 0.35s ease;
-        }
-
-        .admin-body .login-form .login-submit::after {
-            content: '';
-            position: absolute;
-            inset: 0;
-            z-index: 1;
-            background: linear-gradient(120deg,
-                transparent 20%,
-                rgba(255, 255, 255, 0.28) 50%,
-                transparent 80%);
-            transform: translateX(-120%);
-            transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
-            pointer-events: none;
+                transform 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+                background 0.3s ease,
+                box-shadow 0.35s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
         .admin-body .login-form .login-submit:hover {
+            background: #1B3329;
             transform: translateY(-2px);
-            box-shadow: 0 18px 30px -18px rgba(20, 39, 31, 0.55);
-        }
-
-        .admin-body .login-form .login-submit:hover::after {
-            transform: translateX(120%);
+            box-shadow: 0 14px 26px -18px rgba(20, 39, 31, 0.6);
         }
 
         .admin-body .login-form .login-submit:active {
             transform: translateY(0);
         }
 
-        /* ---------- DEMO CREDENTIALS ---------- */
-        .admin-body .login-form .login-demo {
-            margin: 26px 0 0;
-            padding: 16px 18px;
-            border: 1px dashed rgba(20, 39, 31, 0.2);
-            border-radius: 8px;
-            background: rgba(232, 223, 201, 0.3);
-            color: rgba(20, 39, 31, 0.8);
-            font-size: 0.82rem;
-            line-height: 1.5;
+        .admin-body .login-form .login-submit:focus-visible {
+            outline: 2px solid #8FA888;
+            outline-offset: 3px;
         }
 
-        .admin-body .login-form .login-demo strong {
-            display: block;
-            margin-bottom: 8px;
-            font-size: 0.58rem;
+        .admin-body .login-form .login-submit:disabled {
+            opacity: 0.55;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .admin-body .login-form .login-submit-arrow {
+            display: inline-block;
+            transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .admin-body .login-form .login-submit:hover .login-submit-arrow {
+            transform: translateX(3px);
+        }
+
+        /* ---------- RESTRICTED NOTE ---------- */
+        .admin-body .login-restricted {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin: 18px 0 0;
+            font-size: 0.6rem;
             font-weight: 600;
-            letter-spacing: 0.22em;
+            letter-spacing: 0.2em;
             text-transform: uppercase;
-            color: rgba(20, 39, 31, 0.55);
+            color: rgba(20, 39, 31, 0.42);
         }
 
-        .admin-body .login-form .login-demo p {
-            margin: 2px 0;
-            font-family: 'DM Sans', ui-monospace, SFMono-Regular, Menlo, monospace;
-            color: #14271F;
+        .admin-body .login-restricted::before,
+        .admin-body .login-restricted::after {
+            content: '';
+            height: 1px;
+            flex: 1 1 auto;
+            max-width: 46px;
+            background: rgba(20, 39, 31, 0.12);
         }
 
         /* ---------- FOOTER ---------- */
         .admin-body .login-form .login-foot {
             margin: 26px 0 0;
-            padding-top: 22px;
+            padding-top: 20px;
             border-top: 1px solid rgba(20, 39, 31, 0.1);
             font-size: 0.72rem;
-            line-height: 1.6;
+            line-height: 1.65;
             color: rgba(20, 39, 31, 0.5);
         }
 
+        .admin-body .login-form .login-foot-link {
+            margin-top: 10px;
+            padding-top: 0;
+            border-top: 0;
+        }
+
         /* ---------- ANIMATIONS ---------- */
-        @@keyframes kVisualIn {
+        @@keyframes kImageIn {
             from {
                 opacity: 0;
-                transform: scale(1.04);
+                transform: scale(1.07);
             }
             to {
                 opacity: 1;
                 transform: scale(1);
+            }
+        }
+
+        @@keyframes kFadeUp {
+            from {
+                opacity: 0;
+                transform: translateY(16px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
             }
         }
 
@@ -512,53 +567,100 @@
             }
             to {
                 opacity: 1;
-                transform: none;
+                transform: translateY(0);
             }
         }
 
         /* ---------- RESPONSIVE ---------- */
-        @@media (max-width: 900px) {
-            .admin-body .login-visual .login-quote h2 {
-                font-size: clamp(1.45rem, 3.6vw, 2rem);
+        @@media (max-width: 1180px) {
+            .admin-body .login-shell {
+                grid-template-columns: minmax(0, 52fr) minmax(0, 48fr);
             }
-            .admin-body .login-form h1 {
-                font-size: clamp(1.7rem, 4vw, 2.2rem);
+            .admin-body .login-visual {
+                padding: clamp(26px, 3.6vw, 44px);
             }
         }
 
-        @@media (max-width: 640px) {
-            .admin-body .login-visual .login-quote h2 {
-                font-size: 1.3rem;
-                margin-bottom: 14px;
+        @@media (max-width: 980px) {
+            .admin-body .login-shell {
+                grid-template-columns: minmax(0, 50fr) minmax(0, 50fr);
             }
-            .admin-body .login-visual .login-quote > p {
-                font-size: 0.85rem;
-                margin-bottom: 20px;
+            .admin-body .login-quote h2 {
+                font-size: clamp(1.5rem, 3.4vw, 2rem);
             }
-            .admin-body .login-visual .login-quote-meta {
-                gap: 10px 18px;
+            .admin-body .login-quote p {
+                font-size: 0.88rem;
+            }
+            .admin-body .login-form h1 {
+                font-size: clamp(1.75rem, 4vw, 2.2rem);
+            }
+        }
+
+        @@media (max-width: 860px) {
+            .admin-body .login-shell {
+                grid-template-columns: minmax(0, 1fr);
+                min-height: 100vh;
+                min-height: 100dvh;
+            }
+            .admin-body .login-visual {
+                min-height: 320px;
+                padding: 26px 24px 32px;
+                gap: 28px;
+            }
+            .admin-body .login-visual-foot {
+                gap: 20px;
+            }
+            .admin-body .login-quote h2 {
+                font-size: clamp(1.4rem, 5.4vw, 1.95rem);
+                margin-bottom: 12px;
+            }
+            .admin-body .login-quote p {
+                font-size: 0.86rem;
+                line-height: 1.6;
+            }
+            .admin-body .login-signature {
                 padding-top: 16px;
+                font-size: 0.54rem;
+                letter-spacing: 0.22em;
             }
-            .admin-body .login-visual .login-quote-meta span {
-                font-size: 0.56rem;
+            .admin-body .login-form-wrap {
+                align-items: flex-start;
+                padding: 38px 22px 48px;
+            }
+            .admin-body .login-form {
+                max-width: 100%;
+            }
+        }
+
+        @@media (max-width: 420px) {
+            .admin-body .login-visual {
+                min-height: 280px;
+                padding: 22px 20px 26px;
             }
             .admin-body .login-form .login-row {
-                margin-bottom: 22px;
+                margin-bottom: 24px;
+            }
+            .admin-body .login-form h1 {
+                font-size: 1.85rem;
             }
         }
 
         /* ---------- REDUCED MOTION ---------- */
         @@media (prefers-reduced-motion: reduce) {
-            .admin-body .login-visual,
+            .admin-body .login-visual::before,
+            .admin-body .login-brand,
+            .admin-body .login-quote,
+            .admin-body .login-signature,
             .admin-body .login-form-wrap,
             .admin-body .login-form .login-submit,
-            .admin-body .login-form .login-submit::after,
+            .admin-body .login-form .login-submit-arrow,
             .admin-body .login-form .input,
             .admin-body .login-password-toggle {
                 animation: none !important;
                 transition: none !important;
             }
-            .admin-body .login-form .login-submit:hover {
+            .admin-body .login-form .login-submit:hover,
+            .admin-body .login-form .login-submit:hover .login-submit-arrow {
                 transform: none !important;
             }
         }
@@ -571,25 +673,22 @@
         <!-- ============ VISUAL SIDE ============ -->
         <aside class="login-visual">
             <div class="login-brand">
-                <span class="brand-mark">K</span>
+                <span class="brand-mark" aria-hidden="true">K</span>
                 <span>
                     <strong>Karnel</strong>
                     <small>Travel Guide</small>
                 </span>
             </div>
 
-            <div class="login-quote">
-                <p class="eyebrow">Operations · Administration</p>
-                <h2>Every journey deserves a well-kept plan.</h2>
-                <p>
-                    Manage destinations, stays, experiences and the operations that bring
-                    every journey together.
-                </p>
-                <div class="login-quote-meta">
-                    <span>24 regions</span>
-                    <span>104 listings</span>
-                    <span>1,284 bookings</span>
+            <div class="login-visual-foot">
+                <div class="login-quote">
+                    <h2>Every journey deserves a well-kept plan.</h2>
+                    <p>
+                        A connected platform for managing destinations, stays,
+                        transport and experiences.
+                    </p>
                 </div>
+                <p class="login-signature">Destinations · Stays · Experiences</p>
             </div>
         </aside>
 
@@ -598,20 +697,15 @@
             <form class="login-form"
                   method="post"
                   asp-controller="Account"
-                  asp-action="Login"
-                  novalidate>
+                  asp-action="Login">
 
                 @Html.AntiForgeryToken()
-                <input type="hidden" name="returnUrl" value="@ViewData["ReturnUrl"]" />
+                <input asp-for="ReturnUrl" type="hidden" />
 
-                <p class="eyebrow">Administration Portal</p>
+                <p class="eyebrow">Karnel / Account access</p>
                 <h1>Welcome back.</h1>
-                <p>
-                    Sign in with your administrator credentials to continue.
-                    Don't have an account?
-                    <a class="login-link"
-                       asp-controller="Account"
-                       asp-action="Register">Sign up</a>.
+                <p class="login-lede">
+                    Your travel plans, all in one place. Sign in to continue.
                 </p>
 
                 @if (!ViewData.ModelState.IsValid)
@@ -633,16 +727,15 @@
                 }
 
                 <div class="login-field">
-                    <label for="email">Email</label>
+                    <label for="email">Email address</label>
                     <input class="input"
                            id="email"
-                           name="email"
+                           asp-for="Email"
                            type="email"
-                           value="@ViewData["Email"]"
                            placeholder="you@karneltravel.co.za"
                            autocomplete="username"
-                           required
                            autofocus />
+                    <span asp-validation-for="Email" class="login-error"></span>
                 </div>
 
                 <div class="login-field">
@@ -650,17 +743,19 @@
                     <div class="login-password-wrap">
                         <input class="input"
                                id="password"
-                               name="password"
+                                asp-for="Password"
                                type="password"
                                placeholder="Enter your password"
                                autocomplete="current-password"
-                               required />
+                                />
                         <button type="button"
                                 class="login-password-toggle"
                                 aria-label="Show password"
+                                aria-pressed="false"
                                 data-password-toggle>
                             <svg viewBox="0 0 24 24" width="17" height="17" fill="none"
-                                 stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                                 stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"
+                                 aria-hidden="true">
                                 <path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12Z" />
                                 <circle cx="12" cy="12" r="2.6" />
                             </svg>
@@ -671,29 +766,27 @@
                 <div class="login-row">
                     <label class="login-check">
                         <input type="checkbox"
-                               name="rememberMe"
-                               value="true"
-                        @(ViewData["RememberMe"] is true ? "checked" : "") />
+                               asp-for="RememberMe" />
                         Remember me for 14 days
                     </label>
-                    <a href="#" data-prototype="Password reset is design-only until email delivery is configured.">
-                        Forgot password?
-                    </a>
+                    <a asp-controller="Account" asp-action="ForgotPassword">Forgot password?</a>
                 </div>
 
                 <button type="submit" class="btn btn-primary login-submit">
-                    Sign in
+                    Sign in to Karnel
+                    <span class="login-submit-arrow" aria-hidden="true">→</span>
                 </button>
 
-                <div class="login-demo">
-                    <strong>Demo credentials</strong>
-                    <p>amara@karneltravel.co.za</p>
-                    <p>Karnel!2025</p>
-                </div>
+                <p class="login-restricted">Secure account access</p>
 
                 <p class="login-foot">
                     Protected area. Access is logged and monitored.<br />
                     &copy; @DateTime.UtcNow.Year Karnel Travel Guide
+                </p>
+
+                <p class="login-foot login-foot-link">
+                    Need an account?
+                    <a class="login-link" asp-controller="Account" asp-action="Register">Sign up</a>
                 </p>
             </form>
         </section>
@@ -702,9 +795,9 @@
 
     <script>
         /* ============================================================
-           PASSWORD VISIBILITY TOGGLE
-           Preserves the original data-password-toggle hook, adds
-           focus management and a prototype-link guard.
+           PASSWORD VISIBILITY TOGGLE + PROTOTYPE LINK GUARD
+           Preserves the original data-password-toggle and
+           a[data-prototype] behaviour.
         ============================================================ */
         (function () {
             'use strict';
@@ -714,7 +807,7 @@
                     event.preventDefault();
 
                     var wrap = btn.closest('.login-password-wrap');
-                    var input = wrap ? wrap.querySelector('input') : btn.parentElement.querySelector('input');
+                    var input = wrap ? wrap.querySelector('input') : null;
                     if (!input) return;
 
                     var show = input.type === 'password';

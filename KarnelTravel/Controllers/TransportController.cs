@@ -1,4 +1,3 @@
-
 using KarnelTravel.Data;
 using KarnelTravel.Models;
 using Microsoft.AspNetCore.Mvc;
@@ -18,16 +17,17 @@ namespace KarnelTravel.Controllers
         // TRANSPORT LISTING
         public async Task<IActionResult> Index()
         {
-            var transportServices = await _context.TransportServices
+            var routes = await _context.TransportRoutes
                 .AsNoTracking()
-                .Where(t => t.IsPublished)
+                .Where(t => t.IsPublished && t.IsActive && !t.IsArchived &&
+                    t.VehicleLinks.Any(x => x.IsActive && !x.IsArchived && x.TransportService != null && x.TransportService.IsPublished && !x.TransportService.IsArchived))
                 .OrderBy(t => t.DisplayOrder)
                 .ThenBy(t => t.Name)
                 .ToListAsync();
 
             return View(
                 "~/Views/Information/Dropdown/Transport.cshtml",
-                transportServices
+                routes
             );
         }
 
@@ -39,12 +39,13 @@ namespace KarnelTravel.Controllers
                 return NotFound();
             }
 
-            var transport = await _context.TransportServices
+            var route = await _context.TransportRoutes
                 .AsNoTracking()
-                .FirstOrDefaultAsync(t =>
-                    t.Id == id && t.IsPublished);
+                .Include(x => x.VehicleLinks)
+                .ThenInclude(x => x.TransportService)
+                .FirstOrDefaultAsync(x => x.Id == id && x.IsPublished && x.IsActive && !x.IsArchived);
 
-            if (transport == null)
+            if (route == null)
             {
                 return NotFound();
             }
@@ -52,17 +53,15 @@ namespace KarnelTravel.Controllers
             var reviews = await _context.Reviews
                 .AsNoTracking()
                 .Where(r =>
-                    r.TransportServiceId == transport.Id &&
+                    route.VehicleLinks.Select(x => x.TransportServiceId).Contains(r.TransportServiceId ?? 0) &&
                     r.Status == ReviewStatus.Approved)
                 .OrderByDescending(r => r.CreatedAt)
                 .ToListAsync();
 
-            var routes = await _context.TransportRoutePricings
-                .AsNoTracking()
-                .Where(route => route.TransportServiceId == transport.Id && route.IsActive)
-                .OrderBy(route => route.PickupCity)
-                .ThenBy(route => route.DropoffCity)
-                .ToListAsync();
+            var vehicles = route.VehicleLinks
+                .Where(x => x.IsActive && !x.IsArchived && x.TransportService != null && x.TransportService.IsPublished && !x.TransportService.IsArchived)
+                .Select(x => x.TransportService!)
+                .ToList();
 
             ViewBag.Reviews = reviews;
             ViewBag.TotalReviews = reviews.Count;
@@ -70,11 +69,11 @@ namespace KarnelTravel.Controllers
             ViewBag.AverageRating = reviews.Count > 0
                 ? Math.Round(reviews.Average(r => r.Rating), 1)
                 : 0;
-            ViewBag.Routes = routes;
+            ViewBag.Vehicles = vehicles;
 
             return View(
                 "~/Views/Transport/Details.cshtml",
-                transport
+                route
             );
         }
     }

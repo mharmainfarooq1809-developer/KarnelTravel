@@ -431,7 +431,7 @@
         </a>
     </div>
 
-    <form method="post" action="@formAction" id="propertyForm" class="property-form">
+    <form method="post" action="@formAction" id="propertyForm" class="property-form" enctype="multipart/form-data">
         @Html.AntiForgeryToken()
 
         <div asp-validation-summary="ModelOnly" class="validation-summary-errors"></div>
@@ -606,13 +606,22 @@
                 <div class="section-number">04</div>
                 <div>
                     <h2>Property Image</h2>
-                    <p>Add a publicly accessible image URL for the listing.</p>
+                    <p>Upload an image from your computer or provide a public image URL.</p>
                 </div>
             </div>
 
             <div class="form-grid">
                 <div class="form-field full-width">
-                    <label asp-for="ImageUrl">Image URL</label>
+                    <label asp-for="ImageFile">Upload image</label>
+                    <input asp-for="ImageFile"
+                           id="ImageFile"
+                           class="control"
+                           type="file"
+                           accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" />
+                    <span asp-validation-for="ImageFile" class="field-error"></span>
+                    <div class="form-help">JPG, PNG, or WebP. Maximum size: 5 MB.</div>
+
+                    <label asp-for="ImageUrl">Or image URL</label>
                     <input asp-for="ImageUrl"
                            id="ImageUrl"
                            class="control"
@@ -621,7 +630,7 @@
                     <span asp-validation-for="ImageUrl" class="field-error"></span>
 
                     <div class="form-help">
-                        Use a direct image URL that can be accessed by website visitors.
+                         A newly uploaded file takes priority over the URL. Existing images are retained when editing unless replaced.
                     </div>
 
                     <div class="image-preview" id="imagePreview">

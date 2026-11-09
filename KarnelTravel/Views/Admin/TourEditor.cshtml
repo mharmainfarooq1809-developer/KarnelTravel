@@ -1,4 +1,3 @@
-
 @model KarnelTravel.ViewModels.AdminTourPackageFormViewModel
 
 @{
@@ -14,288 +13,337 @@
 }
 
 <style>
+    /* ============================================================
+       DESIGN TOKENS — Premium Editorial Theme
+       ============================================================ */
     .tour-editor {
+        --ink-900: #0c1118; --ink-800: #131a24; --ink-700: #1c2530;
+        --ink-600: #2a3442; --ink-500: #465363; --ink-400: #6b7788;
+        --ink-300: #93a0b0; --ink-200: #c3ccd6; --ink-100: #e5eaef;
+        --ink-50:  #f3f6f9;
+
+        --gold-600: #a9852f; --gold-500: #c39a3e;
+        --gold-400: #d4b264; --gold-100: #f6edd6;
+
+        --emerald-600: #1f7a52; --emerald-100: #e6f5ec;
+        --rose-600: #b54848;    --rose-100: #fbeaea;
+
+        --accent: var(--gold-600);
+        --surface: #ffffff;
+        --border: #e7ebef;
+        --border-strong: #d6dde5;
+        --text: var(--ink-900);
+        --text-muted: var(--ink-400);
+
+        --shadow-xs: 0 1px 2px rgba(12,17,24,.04);
+        --shadow-sm: 0 2px 6px rgba(12,17,24,.05), 0 1px 2px rgba(12,17,24,.04);
+        --shadow-md: 0 10px 28px -12px rgba(12,17,24,.16), 0 4px 10px -6px rgba(12,17,24,.08);
+
+        --r-sm: 10px; --r-md: 14px; --r-lg: 20px;
+        --ease: cubic-bezier(.22,.61,.36,1);
+
         display: flex;
         flex-direction: column;
         gap: 24px;
         max-width: 1200px;
         margin: 0 auto;
+        color: var(--text);
+        font-feature-settings: "ss01" on, "cv11" on;
+        position: relative;
     }
 
+    .tour-editor::before {
+        content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 0;
+        background:
+            radial-gradient(900px 500px at 8% -6%, rgba(212,178,100,.10), transparent 60%),
+            radial-gradient(800px 460px at 100% 0%, rgba(47,95,179,.05), transparent 55%);
+    }
+    .tour-editor > * { position: relative; z-index: 1; }
+
+    /* ============================================================
+       HEADING
+       ============================================================ */
     .editor-heading {
         display: flex;
         align-items: flex-end;
         justify-content: space-between;
         flex-wrap: wrap;
         gap: 18px;
+        padding: 32px 36px;
+        border: 1px solid var(--border);
+        border-radius: var(--r-lg);
+        background: linear-gradient(135deg, #ffffff 0%, #fdfcf9 55%, #faf6ec 100%);
+        box-shadow: var(--shadow-md);
+        overflow: hidden;
+        position: relative;
     }
+    .editor-heading::before {
+        content: ""; position: absolute; top: -50%; right: -6%;
+        width: 380px; height: 380px; border-radius: 50%;
+        background: radial-gradient(circle, rgba(196,154,62,.20), transparent 68%);
+        pointer-events: none;
+    }
+    .editor-heading::after {
+        content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 1px;
+        background: linear-gradient(90deg, transparent, rgba(196,154,62,.45), transparent);
+    }
+    .editor-heading > div { position: relative; }
 
     .editor-eyebrow {
-        margin-bottom: 9px;
-        color: var(--accent, #a7b99c);
-        font-size: 10px;
-        font-weight: 750;
-        letter-spacing: 2px;
-        text-transform: uppercase;
+        display: inline-flex; align-items: center; gap: 8px;
+        margin-bottom: 14px; padding: 6px 12px;
+        border: 1px solid rgba(196,154,62,.28); border-radius: 999px;
+        background: rgba(246,237,214,.55);
+        color: var(--gold-600);
+        font-size: 10px; font-weight: 700;
+        letter-spacing: 2px; text-transform: uppercase;
     }
 
     .editor-heading h1 {
         margin: 0;
-        font-size: clamp(27px, 4vw, 39px);
-        font-weight: 650;
-        letter-spacing: -1.3px;
+        font-size: clamp(28px, 4vw, 42px);
+        font-weight: 700;
+        letter-spacing: -0.035em;
+        line-height: 1.05;
+        background: linear-gradient(180deg, var(--ink-900) 0%, var(--ink-600) 130%);
+        -webkit-background-clip: text; background-clip: text;
+        color: transparent;
     }
 
     .editor-heading p {
-        margin: 8px 0 0;
-        color: var(--text-muted, #888);
-        font-size: 13px;
-        line-height: 1.6;
+        margin: 12px 0 0;
+        max-width: 540px;
+        color: var(--text-muted);
+        font-size: 14px;
+        line-height: 1.8;
     }
 
     .back-link {
+        position: relative;
         display: inline-flex;
         align-items: center;
         gap: 8px;
-        padding: 10px 14px;
-        border: 1px solid var(--border, rgba(255,255,255,.12));
-        border-radius: 7px;
-        color: inherit;
+        padding: 11px 16px;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        background: var(--surface);
+        color: var(--ink-600);
         text-decoration: none;
-        font-size: 12px;
-        transition: .2s ease;
+        font-size: 12.5px;
+        font-weight: 600;
+        box-shadow: var(--shadow-xs);
+        transition: all .22s var(--ease);
     }
-
     .back-link:hover {
-        border-color: var(--accent, #a7b99c);
-        color: var(--accent, #a7b99c);
+        border-color: rgba(196,154,62,.45);
+        color: var(--gold-600);
+        background: rgba(246,237,214,.35);
+        transform: translateY(-1px);
     }
 
+    /* ============================================================
+       LAYOUT
+       ============================================================ */
     .editor-layout {
         display: grid;
-        grid-template-columns: minmax(0, 1fr) 320px;
+        grid-template-columns: minmax(0, 1fr) 340px;
         align-items: start;
-        gap: 20px;
+        gap: 22px;
     }
 
-    .editor-main,
-    .editor-sidebar {
+    .editor-main, .editor-sidebar {
         display: flex;
         flex-direction: column;
-        gap: 18px;
+        gap: 20px;
         min-width: 0;
     }
 
     .editor-card {
         overflow: hidden;
-        border: 1px solid var(--border, rgba(255,255,255,.09));
-        border-radius: 10px;
-        background: var(--surface, rgba(255,255,255,.025));
+        border: 1px solid var(--border);
+        border-radius: var(--r-lg);
+        background: var(--surface);
+        box-shadow: var(--shadow-xs);
+        transition: box-shadow .3s var(--ease), border-color .3s var(--ease);
+    }
+    .editor-card:hover {
+        border-color: var(--border-strong);
+        box-shadow: var(--shadow-sm);
     }
 
     .card-heading {
-        padding: 19px 21px;
-        border-bottom: 1px solid var(--border, rgba(255,255,255,.08));
+        padding: 20px 24px;
+        border-bottom: 1px solid var(--border);
+        background: var(--ink-50);
     }
-
     .card-heading h2 {
         margin: 0;
-        font-size: 15px;
-        font-weight: 650;
+        font-size: 14px;
+        font-weight: 700;
+        letter-spacing: -.01em;
+        color: var(--ink-900);
     }
-
     .card-heading p {
         margin: 6px 0 0;
-        color: var(--text-muted, #888);
-        font-size: 11px;
+        color: var(--text-muted);
+        font-size: 11.5px;
         line-height: 1.6;
     }
 
     .card-body {
         display: flex;
         flex-direction: column;
-        gap: 17px;
-        padding: 21px;
+        gap: 18px;
+        padding: 24px;
     }
 
     .field-grid {
         display: grid;
         grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 17px;
+        gap: 18px;
     }
 
     .field {
         display: flex;
         flex-direction: column;
-        gap: 7px;
+        gap: 8px;
         min-width: 0;
     }
+    .field.full { grid-column: 1 / -1; }
 
-    .field.full {
-        grid-column: 1 / -1;
-    }
-
-    .field label,
-    .field-label {
-        color: var(--text, inherit);
+    .field label, .field-label {
+        color: var(--ink-800);
         font-size: 12px;
         font-weight: 650;
+        letter-spacing: -.005em;
     }
 
-    .required {
-        color: #dc9292;
-    }
+    .required { color: var(--rose-600); }
 
-    .field input,
-    .field select,
-    .field textarea {
+    .field input, .field select, .field textarea {
         width: 100%;
-        min-height: 43px;
-        padding: 11px 12px;
-        border: 1px solid var(--border, rgba(255,255,255,.13));
-        border-radius: 7px;
+        min-height: 44px;
+        padding: 12px 14px;
+        border: 1px solid var(--border);
+        border-radius: 10px;
         outline: none;
-        background: var(--input-bg, rgba(255,255,255,.035));
-        color: var(--text, inherit);
+        background: var(--ink-50);
+        color: var(--text);
         font: inherit;
-        font-size: 12px;
-        transition: border-color .2s ease;
+        font-size: 13px;
+        transition: border-color .22s var(--ease), background .22s var(--ease), box-shadow .22s var(--ease);
+    }
+
+    .field input:hover, .field select:hover, .field textarea:hover {
+        border-color: var(--border-strong);
     }
 
     .field textarea {
         min-height: 110px;
         resize: vertical;
-        line-height: 1.65;
+        line-height: 1.7;
     }
 
-    .field input:focus,
-    .field select:focus,
-    .field textarea:focus {
-        border-color: var(--accent, #a7b99c);
+    .field input:focus, .field select:focus, .field textarea:focus {
+        border-color: var(--gold-500);
+        background: #fff;
+        box-shadow: 0 0 0 3px rgba(196,154,62,.15);
     }
 
-    .field input::placeholder,
-    .field textarea::placeholder {
-        color: var(--text-muted, #888);
-        opacity: .7;
+    .field input::placeholder, .field textarea::placeholder {
+        color: var(--ink-300);
     }
 
-    .field select option {
-        color: #222;
-    }
+    .field select option { color: #222; }
 
     .field-hint {
-        color: var(--text-muted, #888);
-        font-size: 10px;
-        line-height: 1.5;
+        color: var(--text-muted);
+        font-size: 10.5px;
+        line-height: 1.55;
     }
 
-    .field-validation,
-    .validation-summary-errors {
-        color: #e49a9a;
+    .field-validation, .validation-summary-errors {
+        color: var(--rose-600);
         font-size: 11px;
+        font-weight: 500;
+    }
+    .field-validation ul, .validation-summary-errors ul {
+        margin: 5px 0 0; padding-left: 18px;
     }
 
-    .field-validation ul,
-    .validation-summary-errors ul {
-        margin: 5px 0 0;
-        padding-left: 18px;
-    }
-
-    .input-validation-error {
-        border-color: #cf7777 !important;
-    }
-
-    .validation-summary-valid {
-        display: none;
-    }
+    .input-validation-error { border-color: #cf7777 !important; }
+    .validation-summary-valid { display: none; }
 
     .validation-summary-errors {
-        padding: 13px 15px;
-        border: 1px solid rgba(210,100,100,.25);
-        border-radius: 7px;
-        background: rgba(210,100,100,.08);
+        padding: 14px 16px;
+        border: 1px solid rgba(181,72,72,.25);
+        border-radius: 12px;
+        background: var(--rose-100);
     }
 
-    .slug-field {
-        position: relative;
-    }
+    /* Slug / price prefixes */
+    .slug-field, .price-input { position: relative; }
 
-    .slug-prefix {
+    .slug-prefix, .price-prefix {
         position: absolute;
         top: 50%;
-        left: 12px;
-        color: var(--text-muted, #888);
+        left: 14px;
+        color: var(--ink-400);
         font-size: 12px;
+        font-weight: 600;
         transform: translateY(-50%);
         pointer-events: none;
     }
+    .slug-field input { padding-left: 30px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12.5px; }
+    .price-input input { padding-left: 50px; font-variant-numeric: tabular-nums; }
 
-    .slug-field input {
-        padding-left: 31px;
-    }
-
-    .price-input {
-        position: relative;
-    }
-
-    .price-prefix {
-        position: absolute;
-        top: 50%;
-        left: 12px;
-        color: var(--text-muted, #888);
-        font-size: 11px;
-        transform: translateY(-50%);
-        pointer-events: none;
-    }
-
-    .price-input input {
-        padding-left: 48px;
-    }
-
+    /* ============================================================
+       UPLOAD ZONE
+       ============================================================ */
     .upload-zone {
         position: relative;
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        min-height: 175px;
-        padding: 20px;
-        border: 1px dashed var(--border, rgba(255,255,255,.2));
-        border-radius: 8px;
-        background: rgba(255,255,255,.015);
+        min-height: 185px;
+        padding: 22px;
+        border: 1.5px dashed var(--border-strong);
+        border-radius: var(--r-md);
+        background: linear-gradient(180deg, #fbfaf7 0%, #fdfcf9 100%);
         text-align: center;
         cursor: pointer;
-        transition: .2s ease;
+        transition: all .25s var(--ease);
     }
-
-    .upload-zone:hover,
-    .upload-zone.drag-over {
-        border-color: var(--accent, #a7b99c);
-        background: rgba(167,185,156,.06);
+    .upload-zone:hover, .upload-zone.drag-over {
+        border-color: var(--gold-500);
+        background: rgba(246,237,214,.35);
+        box-shadow: 0 0 0 4px rgba(196,154,62,.08);
     }
 
     .upload-icon {
-        margin-bottom: 10px;
-        color: var(--accent, #a7b99c);
-        font-size: 27px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 44px; height: 44px;
+        margin-bottom: 12px;
+        border-radius: 12px;
+        background: linear-gradient(135deg, #f6edd6, #ead9ac);
+        border: 1px solid rgba(196,154,62,.3);
+        color: var(--gold-600);
+        font-size: 20px;
+        font-weight: 700;
     }
-
-    .upload-zone strong {
-        font-size: 12px;
-    }
-
+    .upload-zone strong { font-size: 12.5px; font-weight: 650; color: var(--ink-800); }
     .upload-zone span {
         margin-top: 6px;
-        color: var(--text-muted, #888);
-        font-size: 10px;
+        color: var(--text-muted);
+        font-size: 10.5px;
     }
-
     .upload-zone input {
         position: absolute;
         inset: 0;
-        width: 100%;
-        height: 100%;
+        width: 100%; height: 100%;
         opacity: 0;
         cursor: pointer;
     }
@@ -303,160 +351,179 @@
     .image-preview {
         display: none;
         width: 100%;
-        max-height: 210px;
-        margin-top: 13px;
-        border-radius: 7px;
+        max-height: 220px;
+        margin-top: 14px;
+        border-radius: 10px;
         object-fit: cover;
+        border: 1px solid var(--border);
     }
-
-    .image-preview.visible {
-        display: block;
-    }
+    .image-preview.visible { display: block; }
 
     .current-image {
         display: block;
         width: 100%;
-        max-height: 190px;
-        margin-bottom: 12px;
-        border-radius: 7px;
+        max-height: 200px;
+        margin-bottom: 14px;
+        border-radius: 10px;
         object-fit: cover;
+        border: 1px solid var(--border);
     }
 
+    /* ============================================================
+       CHECKBOXES
+       ============================================================ */
     .checkbox-list {
         display: flex;
         flex-direction: column;
-        gap: 13px;
+        gap: 14px;
     }
 
     .check-option {
         display: flex;
         align-items: flex-start;
-        gap: 10px;
+        gap: 11px;
+        padding: 12px;
+        margin: 0 -12px;
+        border-radius: 10px;
         cursor: pointer;
+        transition: background .2s var(--ease);
     }
+    .check-option:hover { background: var(--ink-50); }
 
     .check-option input {
-        width: 16px;
-        height: 16px;
+        width: 16px; height: 16px;
         min-height: 16px;
         margin-top: 2px;
-        accent-color: var(--accent, #a7b99c);
+        accent-color: var(--gold-600);
         cursor: pointer;
     }
 
-    .check-option span {
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
-    }
+    .check-option span { display: flex; flex-direction: column; gap: 4px; }
+    .check-option strong { font-size: 12.5px; font-weight: 650; color: var(--ink-800); }
+    .check-option small { color: var(--text-muted); font-size: 10.5px; line-height: 1.55; }
 
-    .check-option strong {
-        font-size: 12px;
-        font-weight: 650;
-    }
-
-    .check-option small {
-        color: var(--text-muted, #888);
-        font-size: 10px;
-        line-height: 1.5;
-    }
-
+    /* ============================================================
+       SIDEBAR NOTE
+       ============================================================ */
     .sidebar-note {
-        padding: 15px;
-        border-left: 2px solid var(--accent, #a7b99c);
-        border-radius: 5px;
-        background: rgba(167,185,156,.07);
-        color: var(--text-muted, #aaa);
-        font-size: 11px;
-        line-height: 1.7;
+        padding: 15px 16px;
+        border-left: 3px solid var(--gold-500);
+        border-radius: 8px;
+        background: rgba(246,237,214,.45);
+        color: var(--ink-600);
+        font-size: 11.5px;
+        line-height: 1.75;
     }
 
+    /* ============================================================
+       ACTIONS
+       ============================================================ */
     .editor-actions {
         display: flex;
         align-items: center;
         justify-content: flex-end;
         gap: 10px;
-        padding: 17px 20px;
-        border-top: 1px solid var(--border, rgba(255,255,255,.08));
+        padding: 18px 24px;
+        border-top: 1px solid var(--border);
+        background: linear-gradient(180deg, #ffffff 0%, #fdfcf9 100%);
     }
 
     .btn {
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        min-height: 41px;
-        padding: 0 17px;
-        border: 1px solid var(--border, rgba(255,255,255,.13));
-        border-radius: 7px;
-        background: transparent;
-        color: inherit;
+        min-height: 42px;
+        padding: 0 18px;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        background: var(--surface);
+        color: var(--ink-700);
         font: inherit;
-        font-size: 12px;
+        font-size: 12.5px;
         font-weight: 650;
         text-decoration: none;
         cursor: pointer;
-        transition: .2s ease;
+        transition: all .22s var(--ease);
+        white-space: nowrap;
     }
-
     .btn:hover {
-        border-color: var(--accent, #a7b99c);
+        border-color: var(--border-strong);
+        color: var(--ink-900);
+        transform: translateY(-1px);
     }
 
     .btn-primary {
-        border-color: var(--accent, #a7b99c);
-        background: var(--accent, #a7b99c);
-        color: #182019;
+        border-color: rgba(196,154,62,.5);
+        background: linear-gradient(180deg, #d4b264 0%, #b8892f 100%);
+        color: #241a06;
+        box-shadow: 0 8px 20px -10px rgba(196,154,62,.7), inset 0 1px 0 rgba(255,255,255,.35);
     }
-
     .btn-primary:hover {
-        filter: brightness(1.08);
+        filter: brightness(1.05);
+        box-shadow: 0 12px 26px -10px rgba(196,154,62,.8), inset 0 1px 0 rgba(255,255,255,.4);
+        transform: translateY(-1px);
     }
 
     .editor-footer-note {
-        color: var(--text-muted, #888);
-        font-size: 10px;
-        line-height: 1.6;
+        padding: 14px 16px;
+        border: 1px solid var(--border);
+        border-radius: var(--r-sm);
+        background: var(--surface);
+        color: var(--text-muted);
+        font-size: 10.5px;
+        line-height: 1.7;
+        box-shadow: var(--shadow-xs);
+    }
+    .editor-footer-note strong { color: var(--ink-800); font-weight: 650; }
+
+    /* ============================================================
+       ENTRANCE
+       ============================================================ */
+    .editor-heading, .editor-card, .editor-footer-note {
+        animation: editorRise .65s var(--ease) both;
+    }
+    .editor-card:nth-child(1) { animation-delay: .04s; }
+    .editor-card:nth-child(2) { animation-delay: .09s; }
+    .editor-card:nth-child(3) { animation-delay: .14s; }
+
+    @@keyframes editorRise {
+        from { opacity: 0; transform: translateY(12px); }
+        to   { opacity: 1; transform: translateY(0); }
     }
 
-    @@media(max-width: 900px) {
-        .editor-layout {
-            grid-template-columns: 1fr;
-        }
-
+    /* ============================================================
+       RESPONSIVE
+       ============================================================ */
+    @@media (max-width: 900px) {
+        .editor-layout { grid-template-columns: 1fr; }
         .editor-sidebar {
             display: grid;
             grid-template-columns: repeat(2, minmax(0, 1fr));
         }
     }
 
-    @@media(max-width: 600px) {
-        .field-grid {
-            grid-template-columns: 1fr;
-        }
+    @@media (max-width: 600px) {
+        .editor-heading { padding: 24px; align-items: flex-start; }
+        .editor-heading h1 { font-size: 28px; }
 
-        .field.full {
-            grid-column: auto;
-        }
+        .field-grid { grid-template-columns: 1fr; }
+        .field.full { grid-column: auto; }
 
-        .editor-sidebar {
-            display: flex;
-        }
+        .editor-sidebar { display: flex; }
 
-        .card-body {
-            padding: 16px;
-        }
+        .card-body { padding: 18px; }
+        .card-heading { padding: 16px 18px; }
+        .editor-actions { padding: 14px 18px; }
 
-        .card-heading {
-            padding: 16px;
-        }
+        .editor-actions { flex-direction: column-reverse; align-items: stretch; }
+        .editor-actions .btn { width: 100%; }
+    }
 
-        .editor-actions {
-            flex-direction: column-reverse;
-            align-items: stretch;
-        }
-
-        .editor-actions .btn {
-            width: 100%;
+    @@media (prefers-reduced-motion: reduce) {
+        *, *::before, *::after {
+            animation-duration: .001ms !important;
+            animation-iteration-count: 1 !important;
+            transition-duration: .001ms !important;
         }
     }
 </style>
@@ -478,8 +545,8 @@
             </p>
         </div>
 
-        <a href="@Url.Action("Tours", "Admin")" class="back-link">
-            ← Back to packages
+        <a asp-controller="Admin" asp-action="Tours" class="back-link">
+            <span aria-hidden="true">←</span> Back to packages
         </a>
     </div>
 
@@ -552,9 +619,7 @@
                         <div class="field-grid">
 
                             <div class="field">
-                                <label asp-for="DestinationId">
-                                    Destination
-                                </label>
+                                <label asp-for="DestinationId">Destination</label>
 
                                 <select asp-for="DestinationId" asp-items="destinations">
                                     <option value="">Select a destination</option>
@@ -603,9 +668,7 @@
                         </div>
 
                         <div class="field">
-                            <label asp-for="Description">
-                                Full description
-                            </label>
+                            <label asp-for="Description">Full description</label>
 
                             <textarea
                                 asp-for="Description"
@@ -632,9 +695,7 @@
                         <div class="field-grid">
 
                             <div class="field">
-                                <label asp-for="PricePerAdult">
-                                    Adult price (PKR)
-                                </label>
+                                <label asp-for="PricePerAdult">Adult price (PKR)</label>
 
                                 <div class="price-input">
                                     <span class="price-prefix">PKR</span>
@@ -646,17 +707,13 @@
                                         placeholder="25000" />
                                 </div>
 
-                                <span class="field-hint">
-                                    Price per adult.
-                                </span>
+                                <span class="field-hint">Price per adult.</span>
 
                                 <span asp-validation-for="PricePerAdult" class="field-validation"></span>
                             </div>
 
                             <div class="field">
-                                <label asp-for="PricePerChild">
-                                    Child price (PKR)
-                                </label>
+                                <label asp-for="PricePerChild">Child price (PKR)</label>
 
                                 <div class="price-input">
                                     <span class="price-prefix">PKR</span>
@@ -668,9 +725,7 @@
                                         placeholder="18000" />
                                 </div>
 
-                                <span class="field-hint">
-                                    Price per child.
-                                </span>
+                                <span class="field-hint">Price per child.</span>
 
                                 <span asp-validation-for="PricePerChild" class="field-validation"></span>
                             </div>
@@ -696,9 +751,7 @@
                     <div class="card-body">
 
                         <div class="field">
-                            <label asp-for="Inclusions">
-                                Package inclusions
-                            </label>
+                            <label asp-for="Inclusions">Package inclusions</label>
 
                             <textarea
                                 asp-for="Inclusions"
@@ -706,17 +759,13 @@
                                 maxlength="2000"
                                 placeholder="Accommodation&#10;Transport during the tour&#10;Breakfast&#10;Professional tour guide"></textarea>
 
-                            <span class="field-hint">
-                                Enter each inclusion on a separate line.
-                            </span>
+                            <span class="field-hint">Enter each inclusion on a separate line.</span>
 
                             <span asp-validation-for="Inclusions" class="field-validation"></span>
                         </div>
 
                         <div class="field">
-                            <label asp-for="Exclusions">
-                                Package exclusions
-                            </label>
+                            <label asp-for="Exclusions">Package exclusions</label>
 
                             <textarea
                                 asp-for="Exclusions"
@@ -724,9 +773,7 @@
                                 maxlength="2000"
                                 placeholder="Personal expenses&#10;Lunch and dinner&#10;Travel insurance&#10;Optional activities"></textarea>
 
-                            <span class="field-hint">
-                                Enter each exclusion on a separate line.
-                            </span>
+                            <span class="field-hint">Enter each exclusion on a separate line.</span>
 
                             <span asp-validation-for="Exclusions" class="field-validation"></span>
                         </div>
@@ -766,7 +813,7 @@
                             </label>
 
                             <label class="upload-zone" id="uploadZone">
-                                <div class="upload-icon">＋</div>
+                                <div class="upload-icon" aria-hidden="true">＋</div>
                                 <strong>Choose an image</strong>
                                 <span>JPG, PNG or WebP · Maximum 5 MB</span>
 
@@ -832,9 +879,7 @@
                         </div>
 
                         <div class="field">
-                            <label asp-for="DisplayOrder">
-                                Display order
-                            </label>
+                            <label asp-for="DisplayOrder">Display order</label>
 
                             <input
                                 asp-for="DisplayOrder"
@@ -852,7 +897,7 @@
                     </div>
 
                     <div class="editor-actions">
-                        <a href="@Url.Action("Tours", "Admin")" class="btn">
+                        <a asp-controller="Admin" asp-action="Tours" class="btn">
                             Cancel
                         </a>
 

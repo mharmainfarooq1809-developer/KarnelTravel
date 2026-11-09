@@ -95,7 +95,6 @@ public class CustomerController : Controller
                 FullName = customer.FullName,
                 PhoneNumber = customer.PhoneNumber,
                 Email = customer.Email,
-                EmailConfirmed = customer.EmailConfirmed,
                 CreatedAt = customer.CreatedAt
             });
         }
@@ -106,7 +105,6 @@ public class CustomerController : Controller
         {
             FullName = legacyUser.DisplayName,
             Email = legacyUser.Email,
-            EmailConfirmed = true
         });
     }
 
@@ -170,7 +168,6 @@ public class CustomerController : Controller
         {
             FullName = name ?? email,
             Email = email,
-            EmailConfirmed = true
         };
     }
     private Task<CustomerAccount?> GetCustomerAsync(CancellationToken cancellationToken) => GetCustomerId() is int id ? _accounts.FindByIdAsync(id, cancellationToken) : Task.FromResult<CustomerAccount?>(null);
