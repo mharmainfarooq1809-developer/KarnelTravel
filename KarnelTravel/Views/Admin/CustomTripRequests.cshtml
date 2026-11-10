@@ -1,23 +1,582 @@
 @model IEnumerable<KarnelTravel.Models.TripInquiry>
+
+@using System.Globalization
+
 @{
     Layout = "_AdminLayout";
     ViewData["Title"] = "Custom Trip Requests";
-}
-<h1>Custom trip requests</h1>
-<p>These are requests for review, not confirmed bookings.</p>
-<table>
-    <thead><tr><th>Reference</th><th>Customer</th><th>Destination</th><th>Status</th><th>Submitted</th><th></th></tr></thead>
-    <tbody>
-    @foreach (var request in Model)
+    ViewData["Section"] = "Inquiries";
+
+    var culture = CultureInfo.CurrentCulture;
+    var requests = Model?.ToList() ?? new List<KarnelTravel.Models.TripInquiry>();
+
+    var totalRequests = requests.Count;
+    var pendingRequests = requests.Count(r =>
+        string.Equals((r.Status ?? "").Trim(), "Pending", StringComparison.OrdinalIgnoreCase));
+    var reviewedRequests = requests.Count(r =>
+        string.Equals((r.Status ?? "").Trim(), "Reviewed", StringComparison.OrdinalIgnoreCase));
+    var convertedRequests = requests.Count(r =>
+        string.Equals((r.Status ?? "").Trim(), "Converted", StringComparison.OrdinalIgnoreCase));
+
+    string StatusClass(string? status)
     {
-        <tr>
-            <td>@request.ReferenceNumber</td>
-            <td>@request.CustomerName</td>
-            <td>@request.Destinations</td>
-            <td>@request.Status</td>
-            <td>@request.CreatedAt.ToLocalTime().ToString("dd MMM yyyy")</td>
-            <td><a asp-action="CustomTripRequestDetails" asp-route-id="@request.Id">Review</a></td>
-        </tr>
+        var key = (status ?? "unknown").Trim().ToLowerInvariant();
+        return key switch
+        {
+            "pending"   => "pending",
+            "reviewed"  => "reviewed",
+            "converted" => "converted",
+            "rejected"  => "rejected",
+            "cancelled" or "canceled" => "cancelled",
+            _ => "unknown"
+        };
     }
-    </tbody>
-</table>
+
+    string Initials(string? name)
+    {
+        if (string.IsNullOrWhiteSpace(name)) return "•";
+        var parts = name.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        return string.Concat(parts.Take(2).Select(p => char.ToUpperInvariant(p[0])));
+    }
+}
+
+<style>
+    .ctr-page {
+        color: var(--ink, #1b2922);
+        padding-bottom: 36px;
+    }
+
+    /* ---------- Header ---------- */
+    .ctr-header {
+        margin-bottom: 26px;
+        padding: 32px 36px;
+        border: 1px solid var(--line, #e5e9e3);
+        border-radius: 16px;
+        background: linear-gradient(135deg, #ffffff 0%, #fdfcf9 55%, #f7f3e8 100%);
+        box-shadow: 0 2px 6px -2px rgba(22,71,52,.08), 0 1px 2px rgba(22,71,52,.04);
+        overflow: hidden;
+        position: relative;
+    }
+    .ctr-header::before {
+        content: "";
+        position: absolute;
+        top: -50%; right: -6%;
+        width: 360px; height: 360px;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(196,154,62,.18), transparent 68%);
+        pointer-events: none;
+    }
+    .ctr-header::after {
+        content: "";
+        position: absolute;
+        left: 0; right: 0; bottom: 0;
+        height: 1px;
+        background: linear-gradient(90deg, transparent, rgba(196,154,62,.4), transparent);
+    }
+    .ctr-header > * { position: relative; }
+
+    .ctr-eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        margin: 0 0 14px;
+        padding: 6px 12px;
+        border: 1px solid rgba(60,145,105,.28);
+        border-radius: 999px;
+        background: rgba(60,145,105,.08);
+        color: var(--accent, #3c9169);
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+    }
+
+    .ctr-header h1 {
+        font-family: var(--serif, Georgia, serif);
+        font-weight: 400;
+        color: var(--forest, #164734);
+        font-size: clamp(30px, 3.6vw, 44px);
+        line-height: 1.05;
+        letter-spacing: -.025em;
+        margin: 0;
+    }
+
+    .ctr-header p {
+        margin: 12px 0 0;
+        color: var(--muted, #758078);
+        font-size: 14px;
+        line-height: 1.7;
+        max-width: 62ch;
+    }
+
+    /* ---------- Stats ---------- */
+    .ctr-stats {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 14px;
+        margin-bottom: 22px;
+    }
+
+    .ctr-stat {
+        position: relative;
+        overflow: hidden;
+        padding: 20px 22px 22px;
+        background: var(--white, #fff);
+        border: 1px solid var(--line, #e5e9e3);
+        border-radius: 14px;
+        transition: transform .25s ease, border-color .25s ease, box-shadow .25s ease;
+    }
+    .ctr-stat::after {
+        content: "";
+        position: absolute;
+        left: 22px; right: 22px; bottom: 0;
+        height: 3px;
+        border-radius: 999px 999px 0 0;
+        background: var(--rail, var(--accent, #3c9169));
+        opacity: .75;
+    }
+    .ctr-stat:hover {
+        border-color: var(--line-hi, #d6dcd4);
+        box-shadow: 0 8px 20px -14px rgba(22,71,52,.24);
+        transform: translateY(-3px);
+    }
+    .ctr-stat-label {
+        display: block;
+        color: var(--muted, #758078);
+        font-size: 10.5px;
+        font-weight: 700;
+        letter-spacing: .1em;
+        text-transform: uppercase;
+        margin-bottom: 10px;
+    }
+    .ctr-stat-value {
+        display: block;
+        font-weight: 700;
+        font-size: 30px;
+        color: var(--forest, #164734);
+        line-height: 1;
+        letter-spacing: -.03em;
+        font-variant-numeric: tabular-nums;
+    }
+    .ctr-stat.stat-total     { --rail: var(--forest, #164734); }
+    .ctr-stat.stat-pending   { --rail: #dca43d; }
+    .ctr-stat.stat-reviewed  { --rail: #3c9169; }
+    .ctr-stat.stat-converted { --rail: #28b485; }
+
+    /* ---------- Table card ---------- */
+    .ctr-card {
+        background: var(--white, #fff);
+        border: 1px solid var(--line, #e5e9e3);
+        border-radius: 14px;
+        overflow: hidden;
+        box-shadow: 0 1px 2px rgba(22,71,52,.03);
+    }
+    .ctr-card-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+        padding: 20px 24px;
+        border-bottom: 1px solid var(--line, #e5e9e3);
+        background: rgba(143,168,136,.05);
+    }
+    .ctr-card-head h2 {
+        margin: 0;
+        font-size: 15px;
+        font-weight: 700;
+        color: var(--forest, #164734);
+        letter-spacing: -.01em;
+    }
+    .ctr-card-head p {
+        margin: 4px 0 0;
+        font-size: 11.5px;
+        color: var(--muted, #758078);
+    }
+    .ctr-count {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 12px;
+        border-radius: 999px;
+        background: var(--soft, #edf2ed);
+        color: var(--forest, #164734);
+        font-size: 11.5px;
+        font-weight: 700;
+        font-variant-numeric: tabular-nums;
+    }
+    .ctr-count::before {
+        content: "";
+        width: 6px; height: 6px;
+        border-radius: 50%;
+        background: var(--accent, #3c9169);
+        box-shadow: 0 0 0 3px rgba(60,145,105,.15);
+    }
+
+    .ctr-table-wrap {
+        width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .ctr-table {
+        width: 100%;
+        min-width: 880px;
+        border-collapse: separate;
+        border-spacing: 0;
+        font-size: 13.5px;
+    }
+    .ctr-table thead th {
+        padding: 12px 18px;
+        text-align: left;
+        font-size: 10.5px;
+        font-weight: 700;
+        letter-spacing: .13em;
+        text-transform: uppercase;
+        color: var(--muted, #758078);
+        background: var(--surface-sunken, #fbfcfa);
+        border-bottom: 1px solid var(--line, #e5e9e3);
+        white-space: nowrap;
+    }
+    .ctr-table thead th.ctr-col-actions { text-align: right; }
+
+    .ctr-table tbody td {
+        padding: 16px 18px;
+        border-bottom: 1px solid var(--line, #e5e9e3);
+        vertical-align: middle;
+        color: var(--ink, #1b2922);
+    }
+    .ctr-table tbody tr:last-child td { border-bottom: 0; }
+    .ctr-table tbody tr { transition: background .18s ease; }
+    .ctr-table tbody tr:hover { background: var(--surface-sunken, #fbfcfa); }
+    .ctr-table td.ctr-col-actions { text-align: right; }
+
+    /* Customer cell */
+    .ctr-customer {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        min-width: 0;
+    }
+    .ctr-avatar {
+        flex-shrink: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 38px; height: 38px;
+        border-radius: 11px;
+        background: linear-gradient(135deg, rgba(60,145,105,.14), rgba(22,71,52,.08));
+        border: 1px solid rgba(60,145,105,.22);
+        color: var(--forest, #164734);
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: .02em;
+    }
+    .ctr-customer-text { min-width: 0; }
+    .ctr-customer-text strong {
+        display: block;
+        font-size: 13.5px;
+        font-weight: 650;
+        color: var(--ink, #1b2922);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 26ch;
+    }
+    .ctr-customer-text small {
+        display: block;
+        margin-top: 3px;
+        font-size: 11px;
+        color: var(--muted, #758078);
+    }
+
+    .ctr-ref {
+        font-family: ui-monospace, 'SF Mono', 'Cascadia Code', monospace;
+        font-size: 12.5px;
+        font-weight: 700;
+        color: var(--forest, #164734);
+        letter-spacing: .01em;
+    }
+
+    .ctr-destination {
+        color: var(--ink, #1b2922);
+        font-weight: 500;
+    }
+
+    .ctr-date {
+        font-variant-numeric: tabular-nums;
+        color: var(--ink, #1b2922);
+    }
+    .ctr-date small {
+        display: block;
+        font-size: 11px;
+        color: var(--muted, #758078);
+        margin-top: 2px;
+    }
+
+    /* Status pills */
+    .ctr-status {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 10px;
+        border-radius: 999px;
+        font-size: 10.5px;
+        font-weight: 700;
+        letter-spacing: .04em;
+        text-transform: uppercase;
+        white-space: nowrap;
+    }
+    .ctr-status::before {
+        content: "";
+        width: 6px; height: 6px;
+        border-radius: 50%;
+        background: currentColor;
+        opacity: .9;
+    }
+    .ctr-status.pending    { background: rgba(220,164,61,.14); color: #8a6516; }
+    .ctr-status.reviewed   { background: rgba(60,145,105,.14); color: #164734; }
+    .ctr-status.converted  { background: rgba(40,180,133,.14); color: #1c8a64; }
+    .ctr-status.rejected   { background: rgba(174,93,80,.14);  color: #8b4137; }
+    .ctr-status.cancelled  { background: rgba(174,93,80,.14);  color: #8b4137; }
+    .ctr-status.unknown    { background: var(--soft, #edf2ed); color: var(--muted, #758078); }
+
+    /* Actions */
+    .ctr-actions {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        justify-content: flex-end;
+    }
+    .ctr-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        min-height: 32px;
+        padding: 0 12px;
+        border: 1px solid var(--line, #e5e9e3);
+        border-radius: 8px;
+        background: var(--white, #fff);
+        color: var(--ink, #1b2922);
+        font-size: 12px;
+        font-weight: 600;
+        text-decoration: none;
+        white-space: nowrap;
+        cursor: pointer;
+        transition: background .14s ease, border-color .14s ease, color .14s ease, box-shadow .14s ease;
+    }
+    .ctr-btn:hover {
+        background: var(--soft, #edf2ed);
+        border-color: var(--line-hi, #d6dcd4);
+        color: var(--forest, #164734);
+    }
+    .ctr-btn:focus-visible {
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(60,145,105,.2);
+        border-color: var(--accent, #3c9169);
+    }
+    .ctr-btn-primary {
+        background: var(--forest, #164734);
+        border-color: var(--forest, #164734);
+        color: #fff;
+        box-shadow: 0 2px 10px -4px rgba(22,71,52,.4);
+    }
+    .ctr-btn-primary:hover {
+        background: var(--green, #236b4d);
+        border-color: var(--green, #236b4d);
+        color: #fff;
+        box-shadow: 0 6px 20px -8px rgba(22,71,52,.5);
+    }
+
+    /* ---------- Empty ---------- */
+    .ctr-empty {
+        padding: 64px 24px;
+        text-align: center;
+    }
+    .ctr-empty-icon {
+        width: 56px; height: 56px;
+        margin: 0 auto 16px;
+        border-radius: 50%;
+        background: var(--soft, #edf2ed);
+        color: var(--accent, #3c9169);
+        display: grid;
+        place-items: center;
+    }
+    .ctr-empty-icon svg {
+        width: 26px; height: 26px;
+        stroke: currentColor;
+        fill: none;
+        stroke-width: 1.7;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+    }
+    .ctr-empty h3 {
+        margin: 0 0 8px;
+        font-family: var(--serif, Georgia, serif);
+        font-weight: 400;
+        font-size: 22px;
+        color: var(--forest, #164734);
+    }
+    .ctr-empty p {
+        max-width: 430px;
+        margin: 0 auto;
+        color: var(--muted, #758078);
+        font-size: 13px;
+        line-height: 1.6;
+    }
+
+    /* ---------- Responsive ---------- */
+    @@media (max-width: 1050px) {
+        .ctr-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @@media (max-width: 640px) {
+        .ctr-header { padding: 24px; }
+        .ctr-stats { gap: 10px; }
+        .ctr-stat { padding: 16px; }
+        .ctr-stat-value { font-size: 24px; }
+        .ctr-card-head { padding: 16px 18px; }
+        .ctr-table thead th,
+        .ctr-table tbody td { padding-left: 14px; padding-right: 14px; }
+        .ctr-empty { padding: 48px 16px; }
+    }
+
+    @@media (prefers-reduced-motion: reduce) {
+        .ctr-stat, .ctr-table tbody tr, .ctr-btn { transition-duration: .001ms !important; }
+        .ctr-stat:hover { transform: none; }
+    }
+</style>
+
+<div class="ctr-page">
+
+    <!-- HEADER -->
+    <div class="ctr-header">
+        <p class="ctr-eyebrow">Inquiries · Custom trips</p>
+        <h1>Custom trip requests</h1>
+        <p>These are requests for review, not confirmed bookings. Review each request and follow up with the customer.</p>
+    </div>
+
+    @if (totalRequests > 0)
+    {
+        <!-- STATS -->
+        <div class="ctr-stats">
+            <div class="ctr-stat stat-total">
+                <span class="ctr-stat-label">Total requests</span>
+                <span class="ctr-stat-value">@totalRequests</span>
+            </div>
+            <div class="ctr-stat stat-pending">
+                <span class="ctr-stat-label">Pending review</span>
+                <span class="ctr-stat-value">@pendingRequests</span>
+            </div>
+            <div class="ctr-stat stat-reviewed">
+                <span class="ctr-stat-label">Reviewed</span>
+                <span class="ctr-stat-value">@reviewedRequests</span>
+            </div>
+            <div class="ctr-stat stat-converted">
+                <span class="ctr-stat-label">Converted</span>
+                <span class="ctr-stat-value">@convertedRequests</span>
+            </div>
+        </div>
+
+        <!-- TABLE -->
+        <div class="ctr-card">
+            <div class="ctr-card-head">
+                <div>
+                    <h2>Requests for review</h2>
+                    <p>Open a request to review details, respond, or convert it to a booking.</p>
+                </div>
+                <span class="ctr-count">@totalRequests</span>
+            </div>
+
+            <div class="ctr-table-wrap">
+                <table class="ctr-table">
+                    <thead>
+                        <tr>
+                            <th scope="col">Reference</th>
+                            <th scope="col">Customer</th>
+                            <th scope="col">Destination</th>
+                            <th scope="col">Status</th>
+                            <th scope="col">Submitted</th>
+                            <th scope="col" class="ctr-col-actions">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var request in requests)
+                        {
+                            var statusKey = StatusClass(request.Status);
+                            var initials = Initials(request.CustomerName);
+
+                            <tr>
+                                <td data-label="Reference">
+                                    <span class="ctr-ref">@request.ReferenceNumber</span>
+                                </td>
+
+                                <td data-label="Customer">
+                                    <div class="ctr-customer">
+                                        <span class="ctr-avatar" aria-hidden="true">@initials</span>
+                                        <div class="ctr-customer-text">
+                                            <strong>@request.CustomerName</strong>
+                                            <small>Request #@request.Id</small>
+                                        </div>
+                                    </div>
+                                </td>
+
+                                <td data-label="Destination">
+                                    @if (string.IsNullOrWhiteSpace(request.Destinations))
+                                    {
+                                        <span style="color: var(--muted, #758078); font-style: italic;">Not specified</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="ctr-destination">@request.Destinations</span>
+                                    }
+                                </td>
+
+                                <td data-label="Status">
+                                    <span class="ctr-status @statusKey">@request.Status</span>
+                                </td>
+
+                                <td data-label="Submitted">
+                                    <div class="ctr-date">
+                                        @request.CreatedAt.ToLocalTime().ToString("dd MMM yyyy", culture)
+                                        <small>@request.CreatedAt.ToLocalTime().ToString("HH:mm", culture)</small>
+                                    </div>
+                                </td>
+
+                                <td data-label="Actions" class="ctr-col-actions">
+                                    <div class="ctr-actions">
+                                        <a asp-action="CustomTripRequestDetails"
+                                           asp-route-id="@request.Id"
+                                           class="ctr-btn ctr-btn-primary"
+                                           aria-label="Review request @request.ReferenceNumber">
+                                            Review
+                                            <span aria-hidden="true">→</span>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+    else
+    {
+        <!-- EMPTY -->
+        <div class="ctr-card">
+            <div class="ctr-empty">
+                <div class="ctr-empty-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M3 6h18" />
+                        <path d="M3 12h18" />
+                        <path d="M3 18h18" />
+                    </svg>
+                </div>
+                <h3>No custom trip requests yet</h3>
+                <p>When customers submit custom trip requests through your website, they will appear here for review.</p>
+            </div>
+        </div>
+    }
+
+</div>

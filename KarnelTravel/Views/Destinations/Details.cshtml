@@ -27,6 +27,7 @@
 
     <title>@ViewData["Title"]</title>
     <meta name="description" content="@destination.ShortDescription" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
 
     <style>
         :root {
@@ -433,6 +434,7 @@
 </head>
 
 <body>
+    @await Html.PartialAsync("_KarnelCursor")
     <header class="nav">
         <a class="brand" href="/">Karnel Travel Guide</a>
         <a class="back-link" href="/Destinations">← All destinations</a>
@@ -913,5 +915,6 @@
     <footer>
         © @DateTime.Now.Year Karnel Travel Guide. Explore more. Travel better.
     </footer>
+    <script src="~/js/site.js" asp-append-version="true"></script>
 </body>
 </html>

@@ -3,6 +3,8 @@
     var websiteContent = ViewBag.WebsiteContent as KarnelTravel.Models.WebsiteContent ?? new KarnelTravel.Models.WebsiteContent();
     ViewData["Title"] = "Contact Us";
     ViewData["Description"] = "Get in touch with Karnel Travel Guide — ask about destinations, transport, hotels, restaurants, resorts or a complete journey.";
+    var isExperiencePlanning = ViewBag.IsExperiencePlanning is true || string.Equals(Model.Category, "Experience Planning", StringComparison.OrdinalIgnoreCase);
+    var contactHeading = ViewBag.ContactHeading as string ?? (isExperiencePlanning ? "Plan Your Experience" : "Send an inquiry");
 }
 
 @section Styles {
@@ -703,7 +705,7 @@
 
     <div class="container contact-hero__inner">
         <p class="eyebrow eyebrow--light">Contact Karnel</p>
-        <h1>Every journey begins with <em>a conversation.</em></h1>
+        <h1>@(isExperiencePlanning ? "Plan Your Experience" : "Every journey begins with") @if (!isExperiencePlanning) { <em>a conversation.</em> }</h1>
         <p>
             Whether you're exploring destinations, arranging transport, discovering places
             to stay or planning a complete journey, we're here to help you take the next
@@ -760,7 +762,7 @@
                 }
 
                 <div class="inquiry__panel-head">
-                    <h3>Send an inquiry</h3>
+                    <h3>@contactHeading</h3>
                     <span>All fields marked required</span>
                 </div>
 
@@ -790,6 +792,7 @@
                             <select asp-for="Category" id="Category">
                                 <option value="General">General</option>
                                 <option value="Tour or destination inquiry">Tour or destination inquiry</option>
+                                <option value="Experience Planning">Experience Planning</option>
                                 <option value="Destinations">Destinations</option>
                                 <option value="Transport">Transport</option>
                                 <option value="Hotels">Hotels</option>
@@ -799,8 +802,37 @@
                             <span asp-validation-for="Category" class="validation"></span>
                         </div>
 
+                        @if (isExperiencePlanning)
+                        {
+                            <div class="form-field">
+                                <label asp-for="PreferredExperience" for="PreferredExperience"></label>
+                                <input asp-for="PreferredExperience" id="PreferredExperience" placeholder="e.g. guided hike, food tour, cultural experience" />
+                                <span asp-validation-for="PreferredExperience" class="validation"></span>
+                            </div>
+                            <div class="form-field">
+                                <label asp-for="Destination" for="Destination">Destination</label>
+                                <input asp-for="Destination" id="Destination" placeholder="Where would you like to go?" />
+                                <span asp-validation-for="Destination" class="validation"></span>
+                            </div>
+                            <div class="form-field">
+                                <label asp-for="TravelStartDate" for="TravelStartDate">Travel start date</label>
+                                <input asp-for="TravelStartDate" id="TravelStartDate" type="date" />
+                                <span asp-validation-for="TravelStartDate" class="validation"></span>
+                            </div>
+                            <div class="form-field">
+                                <label asp-for="TravelEndDate" for="TravelEndDate">Travel end date</label>
+                                <input asp-for="TravelEndDate" id="TravelEndDate" type="date" />
+                                <span asp-validation-for="TravelEndDate" class="validation"></span>
+                            </div>
+                            <div class="form-field">
+                                <label asp-for="Travellers" for="Travellers"></label>
+                                <input asp-for="Travellers" id="Travellers" type="number" min="1" max="100" placeholder="Number of travellers" />
+                                <span asp-validation-for="Travellers" class="validation"></span>
+                            </div>
+                        }
+
                         <div class="form-field form-field--full">
-                            <label asp-for="Message" for="Message">Message</label>
+                            <label asp-for="Message" for="Message">@(isExperiencePlanning ? "Additional requirements" : "Message")</label>
                             <textarea asp-for="Message" id="Message"
                                       placeholder="Tell us about the destination, dates, or the journey you have in mind."></textarea>
                             <span asp-validation-for="Message" class="validation"></span>

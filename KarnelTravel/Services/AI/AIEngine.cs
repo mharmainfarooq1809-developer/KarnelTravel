@@ -34,7 +34,7 @@ public sealed class IntentDetector
         if (Regex.IsMatch(text, "\\b(show|find|search|list|available)\\b.*\\bresorts?\\b|\\bresorts?\\b.*\\b(in|near|at)\\b", RegexOptions.IgnoreCase)) return AIIntent.ResortSearch;
         if (Regex.IsMatch(text, "\\b(show|find|search|list|available)\\b.*\\b(transport|car|vehicle|transfer)\\b|\\b(transport|cars?|vehicles?|transfers?)\\b.*\\b(in|between|from|to)\\b", RegexOptions.IgnoreCase)) return AIIntent.TransportSearch;
         if (Regex.IsMatch(text, "\\b(show|find|search|list|available)\\b.*\\b(destinations?|places|tours)\\b", RegexOptions.IgnoreCase)) return AIIntent.DestinationSearch;
-        if (Regex.IsMatch(text, "\\b(natural beauty|(?:main|popular) attractions?|best-known travel season|travel seasons?|tell me about|information about|what is .* like|where is .* located|known for)\\b", RegexOptions.IgnoreCase)) return AIIntent.DestinationInformation;
+        if (Regex.IsMatch(text, "\\b(natural beauty|(?:main|popular) attractions?|best-known travel season|travel seasons?|tell me about|(?:want to|would like to|can you) know about|information about|what is .* like|where is .* located|known for)\\b", RegexOptions.IgnoreCase)) return AIIntent.DestinationInformation;
         if (Regex.IsMatch(text, "\\b(explain|what should travellers?|what should travelers?|travel safety|travel preparation|road conditions|travel advisories)\\b", RegexOptions.IgnoreCase)) return AIIntent.GeneralTravelInformation;
         if (Regex.IsMatch(text, "\\b(recommend|suggest|best)\\b", RegexOptions.IgnoreCase)) return AIIntent.DestinationRecommendation;
         if (Regex.IsMatch(text, "\\b(days?|duration)\\b", RegexOptions.IgnoreCase) && !HasKnownDestination(text)) return AIIntent.DestinationRecommendation;

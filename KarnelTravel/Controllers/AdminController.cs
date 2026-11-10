@@ -12,6 +12,7 @@ using System;
 using System.Data;
 using System.IO;
 using System.Linq;
+using System.Net.Mail;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -30,6 +31,7 @@ public class AdminController : Controller
     private readonly ISettingsService _settingsService;
     private readonly IAuditLogService _auditLogService;
     private readonly IBookingStatusService _bookingStatusService;
+    private readonly ITripInquiryEmailService _tripInquiryEmailService;
 
     public AdminController(
         ApplicationDbContext context,
@@ -37,7 +39,8 @@ public class AdminController : Controller
         IWebsiteContentService websiteContentService,
         ISettingsService settingsService,
         IAuditLogService auditLogService,
-        IBookingStatusService bookingStatusService)
+        IBookingStatusService bookingStatusService,
+        ITripInquiryEmailService tripInquiryEmailService)
     {
         _context = context;
         _environment = environment;
@@ -45,20 +48,84 @@ public class AdminController : Controller
         _settingsService = settingsService;
         _auditLogService = auditLogService;
         _bookingStatusService = bookingStatusService;
+        _tripInquiryEmailService = tripInquiryEmailService;
     }
 
-    [HttpGet("Experiences")]
-    public async Task<IActionResult> Experiences()
+    [HttpGet("CustomTripRequests")]
+    public async Task<IActionResult> CustomTripRequests(CancellationToken cancellationToken)
     {
-        var model = await _context.Experiences.AsNoTracking()
-            .OrderBy(x => x.DisplayOrder).ThenBy(x => x.Name)
-            .Select(x => new AdminExperienceRowViewModel
+        var requests = await _context.TripInquiries
+            .AsNoTracking()
+            .OrderByDescending(x => x.CreatedAt)
+            .ToListAsync(cancellationToken);
+        return View(requests);
+    }
+
+    [HttpGet("CustomTripRequests/{id:int}")]
+    public async Task<IActionResult> CustomTripRequestDetails(int id, CancellationToken cancellationToken)
+    {
+        var request = await _context.TripInquiries.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+        return request is null ? NotFound() : View(request);
+    }
+
+    [HttpPost("CustomTripRequests/{id:int}")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> UpdateCustomTripRequest(
+        int id,
+        string status,
+        string? adminNotes,
+        string? proposedOffer,
+        CancellationToken cancellationToken)
+    {
+        var request = await _context.TripInquiries.FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+        if (request is null)
+            return NotFound();
+
+        var allowedStatuses = new[] { "Pending", "In Progress", "Offer Prepared", "Accepted", "Declined", "Cancelled" };
+        if (!allowedStatuses.Contains(status, StringComparer.OrdinalIgnoreCase))
+            ModelState.AddModelError(nameof(status), "Select a valid request status.");
+
+        proposedOffer = string.IsNullOrWhiteSpace(proposedOffer) ? null : proposedOffer.Trim();
+        if (string.Equals(status, "Offer Prepared", StringComparison.OrdinalIgnoreCase) && string.IsNullOrWhiteSpace(proposedOffer))
+            ModelState.AddModelError(nameof(proposedOffer), "Add the plan and management details before preparing the offer.");
+
+        if (!ModelState.IsValid)
+        {
+            request.AdminNotes = adminNotes;
+            request.ProposedOffer = proposedOffer;
+            return View("CustomTripRequestDetails", request);
+        }
+
+        var newOffer = string.Equals(status, "Offer Prepared", StringComparison.OrdinalIgnoreCase) &&
+                       (!string.Equals(request.Status, "Offer Prepared", StringComparison.OrdinalIgnoreCase) ||
+                        !string.Equals(request.ProposedOffer, proposedOffer, StringComparison.Ordinal) ||
+                        string.IsNullOrWhiteSpace(request.OfferIdempotencyKey));
+
+        request.Status = status.Trim();
+        request.AdminNotes = string.IsNullOrWhiteSpace(adminNotes) ? null : adminNotes.Trim();
+        request.ProposedOffer = proposedOffer;
+        await _context.SaveChangesAsync(cancellationToken);
+
+        if (newOffer && !string.IsNullOrWhiteSpace(request.Email))
+        {
+            try
             {
-                Id = x.Id, Name = x.Name, Category = x.Category, Location = x.Location,
-                StartingPrice = x.StartingPrice, IsPublished = x.IsPublished,
-                IsFeatured = x.IsFeatured, DisplayOrder = x.DisplayOrder
-            }).ToListAsync();
-        return View(model);
+                await _tripInquiryEmailService.SendOfferAsync(request, cancellationToken);
+                request.OfferIdempotencyKey = Guid.NewGuid().ToString("N");
+                await _context.SaveChangesAsync(cancellationToken);
+                TempData["SuccessMessage"] = "The trip plan was saved and emailed to the customer.";
+            }
+            catch (Exception exception) when (exception is SmtpException or InvalidOperationException)
+            {
+                TempData["ErrorMessage"] = "The trip plan was saved, but the customer email could not be sent. Check SMTP settings and retry by changing the offer details.";
+            }
+        }
+        else
+        {
+            TempData["SuccessMessage"] = "The custom trip request was updated.";
+        }
+
+        return RedirectToAction(nameof(CustomTripRequestDetails), new { id });
     }
 
     [HttpGet("Tours")]
@@ -466,6 +533,7 @@ public class AdminController : Controller
             .Include(x => x.TransportRoute)
             .Include(x => x.TourDeparture)
             .Include(x => x.Tickets)
+            .Include(x => x.DemoPaymentTransactions)
             .Include(x => x.StatusHistory)
             .FirstOrDefaultAsync(x => x.Id == id);
 
@@ -482,6 +550,16 @@ public class AdminController : Controller
         var booking = await _context.Bookings.FirstOrDefaultAsync(x => x.Id == id);
         if (booking == null) return NotFound();
 
+        var paidDemoPayment = await _context.DemoPaymentTransactions
+            .FirstOrDefaultAsync(x => x.BookingId == id && x.PaymentStatus == "Paid (Demo)");
+        if (string.Equals(status, "Confirmed", StringComparison.OrdinalIgnoreCase)
+            && string.Equals(booking.Status, "Pending Admin Approval", StringComparison.OrdinalIgnoreCase)
+            && paidDemoPayment is null)
+        {
+            TempData["BookingError"] = "A paid demo transaction is required before approving this booking.";
+            return RedirectToAction(nameof(BookingDetails), new { id });
+        }
+
         var changed = await _bookingStatusService.ChangeStatusAsync(
             booking,
             status,
@@ -497,6 +575,12 @@ public class AdminController : Controller
         }
 
         booking.AdminNotes = string.IsNullOrWhiteSpace(adminNotes) ? null : adminNotes.Trim();
+        if (string.Equals(status, "Rejected", StringComparison.OrdinalIgnoreCase)
+            && paidDemoPayment is not null)
+        {
+            paidDemoPayment.RefundStatus = "Refund Pending (Demo)";
+            paidDemoPayment.ProcessedAt = DateTime.UtcNow;
+        }
         booking.UpdatedAt = DateTime.UtcNow;
         await _context.SaveChangesAsync();
 
@@ -514,6 +598,22 @@ public class AdminController : Controller
         if (booking.Status is not ("Completed" or "Cancelled"))
         {
             TempData["BookingError"] = "Only completed or cancelled bookings can be deleted.";
+            return RedirectToAction(nameof(BookingDetails), new { id });
+        }
+
+        var hasProtectedHistory = await _context.BookingStatusHistory
+            .AsNoTracking()
+            .AnyAsync(x => x.BookingId == id)
+            || await _context.BookingTickets
+                .AsNoTracking()
+                .AnyAsync(x => x.BookingId == id)
+            || await _context.DemoPaymentTransactions
+                .AsNoTracking()
+                .AnyAsync(x => x.BookingId == id);
+
+        if (hasProtectedHistory)
+        {
+            TempData["BookingError"] = "This booking has historical records and cannot be deleted. Cancelled or completed bookings must be retained for audit and payment history.";
             return RedirectToAction(nameof(BookingDetails), new { id });
         }
 
@@ -626,76 +726,6 @@ public class AdminController : Controller
         return View(reviews);
     }
 
-    [HttpGet("Experiences/Create")]
-    public IActionResult CreateExperience() => View("ExperienceEditor", new AdminExperienceFormViewModel { IsPublished = true });
-
-    [HttpPost("Experiences/Create")]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> CreateExperience(AdminExperienceFormViewModel model)
-    {
-        if (!ModelState.IsValid) return View("ExperienceEditor", model);
-        _context.Experiences.Add(ToExperience(model));
-        await _context.SaveChangesAsync();
-        TempData["SuccessMessage"] = "Experience created successfully.";
-        return RedirectToAction(nameof(Experiences));
-    }
-
-    [HttpGet("Experiences/Edit/{id:int}")]
-    public async Task<IActionResult> EditExperience(int id)
-    {
-        var experience = await _context.Experiences.FindAsync(id);
-        return experience is null ? NotFound() : View("ExperienceEditor", AdminExperienceFormViewModel.FromEntity(experience));
-    }
-
-    [HttpPost("Experiences/Edit/{id:int}")]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> EditExperience(int id, AdminExperienceFormViewModel model)
-    {
-        if (id != model.Id) return BadRequest();
-        if (!ModelState.IsValid) return View("ExperienceEditor", model);
-        var experience = await _context.Experiences.FindAsync(id);
-        if (experience is null) return NotFound();
-        ApplyExperience(experience, model);
-        await _context.SaveChangesAsync();
-        TempData["SuccessMessage"] = "Experience updated successfully.";
-        return RedirectToAction(nameof(Experiences));
-    }
-
-    [HttpPost("Experiences/Delete/{id:int}")]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> DeleteExperience(int id)
-    {
-        var experience = await _context.Experiences.FindAsync(id);
-        if (experience is null) return NotFound();
-        if (await _context.Bookings.AnyAsync(x => x.ServiceType == "Experience" && x.ServiceName == experience.Name))
-        {
-            TempData["ErrorMessage"] = "This experience cannot be deleted because it has booking records. Unpublish it instead.";
-            return RedirectToAction(nameof(Experiences));
-        }
-        _context.Experiences.Remove(experience);
-        await _context.SaveChangesAsync();
-        TempData["SuccessMessage"] = "Experience deleted successfully.";
-        return RedirectToAction(nameof(Experiences));
-    }
-
-    private static Experience ToExperience(AdminExperienceFormViewModel model)
-    {
-        var entity = new Experience();
-        ApplyExperience(entity, model);
-        return entity;
-    }
-
-    private static void ApplyExperience(Experience entity, AdminExperienceFormViewModel model)
-    {
-        entity.Name = model.Name.Trim(); entity.Category = model.Category.Trim(); entity.Location = model.Location.Trim();
-        entity.Duration = model.Duration.Trim(); entity.ImageUrl = model.ImageUrl?.Trim();
-        entity.ShortDescription = model.ShortDescription?.Trim(); entity.Description = model.Description?.Trim();
-        entity.StartingPrice = model.StartingPrice; entity.Includes = model.Includes?.Trim(); entity.Excludes = model.Excludes?.Trim();
-        entity.IsPublished = model.IsPublished; entity.IsFeatured = model.IsFeatured; entity.DisplayOrder = model.DisplayOrder;
-        entity.UpdatedAt = DateTime.UtcNow;
-    }
-
-
     // =========================================================
     // DASHBOARD
     // =========================================================
@@ -743,6 +773,12 @@ public class AdminController : Controller
                     Children = x.Children,
                     Status = x.Status
                 })
+                .ToListAsync(),
+
+            RecentTripInquiries = await _context.TripInquiries
+                .AsNoTracking()
+                .OrderByDescending(x => x.CreatedAt)
+                .Take(5)
                 .ToListAsync()
         };
 

@@ -1,18 +1,19 @@
 ﻿@* ============================================================
    Views/Shared/_Layout.cshtml — Karnel Travel Guide
    Shared shell: design tokens, header, full-screen overlay
-   navigation, footer, back-to-top, scroll progress, reveal.
+   navigation, footer, back-to-top, scroll progress, reveal,
+   and Karnel Luminous Cursor.
    NOTE: every CSS at-rule is written as @@rule so Razor does
          not try to parse it as C#.
    ============================================================ *@
- @inject KarnelTravel.Services.IWebsiteContentService WebsiteContentService
+@inject KarnelTravel.Services.IWebsiteContentService WebsiteContentService
 
- @functions {
+@functions {
     private string CurrentController =>
         (ViewContext.RouteData.Values["controller"] as string ?? "Home");
 
     private static readonly string[] DiscoverMoreControllers =
-        { "Information", "Destinations", "Transport", "Hotels", "Restaurants", "Resorts", "Experiences", "Tours" };
+        { "Information", "Destinations", "Transport", "Hotels", "Restaurants", "Resorts", "Tours" };
 
     private bool IsDiscoverMore =>
         Array.IndexOf(DiscoverMoreControllers, CurrentController) >= 0;
@@ -45,6 +46,15 @@
 
         return destination;
     }
+
+    // Karnel Luminous Cursor is disabled on the admin area.
+    // If your admin lives under /Admin without an "Area", extend the check:
+    //   && !Context.Request.Path.StartsWithSegments("/Admin")
+    private bool ShowKarnelCursor =>
+        !string.Equals(
+            ViewContext.RouteData.Values["area"] as string ?? string.Empty,
+            "Admin",
+            StringComparison.OrdinalIgnoreCase);
 }
 @{
     var websiteContent = ViewBag.WebsiteContent as KarnelTravel.Models.WebsiteContent
@@ -1851,6 +1861,45 @@
                     white-space: nowrap;
                 }
 
+            .klc.klc--view .klc__halo,
+            .klc.klc--discover .klc__halo,
+            .klc.klc--route .klc__halo,
+            .klc.klc--drag .klc__halo {
+                width: 68px;
+                height: 68px;
+                background: radial-gradient(circle at center,
+                    rgba(143, 168, 136, .42) 0%,
+                    rgba(143, 168, 136, .14) 60%,
+                    rgba(143, 168, 136, 0) 76%);
+                mix-blend-mode: normal;
+            }
+
+            .klc.klc--view .klc__ring,
+            .klc.klc--discover .klc__ring,
+            .klc.klc--route .klc__ring,
+            .klc.klc--drag .klc__ring {
+                width: 68px;
+                height: 68px;
+                opacity: 1;
+                border-color: var(--klc-forest-deep);
+                background: rgba(248, 246, 240, .82);
+            }
+
+            .klc.klc--view .klc__label,
+            .klc.klc--discover .klc__label,
+            .klc.klc--route .klc__label,
+            .klc.klc--drag .klc__label {
+                width: 68px;
+                height: 68px;
+                opacity: 1;
+                color: var(--klc-forest-deep);
+                transform: translate(-50%, -50%) scale(1);
+            }
+
+            .klc.klc--drag .klc__ring {
+                border-style: dashed;
+            }
+
                 .mf__col--menu .mf-col__list {
                     gap: 14px;
                     margin-top: 20px;
@@ -1913,6 +1962,220 @@
                     padding: 0 6px;
                 }
             }
+
+            /* ==========================================================
+               14. KARNEL LUMINOUS CURSOR — scoped styles
+                   (rendered only when ShowKarnelCursor is true)
+               ========================================================== */
+            :root {
+                --klc-ivory: #F8F6F0;
+                --klc-forest-deep: #14271F;
+                --klc-sage: #8FA888;
+                --klc-z: 2147483000;
+            }
+
+            html.klc-active,
+            html.klc-active body {
+                cursor: none;
+            }
+
+            /* Native caret back in text contexts */
+            html.klc-active input:not([type="button"]):not([type="submit"]):not([type="checkbox"]):not([type="radio"]):not([type="reset"]):not([type="file"]):not([type="range"]):not([type="color"]),
+            html.klc-active textarea,
+            html.klc-active [contenteditable="true"],
+            html.klc-active [contenteditable=""] {
+                cursor: text;
+            }
+
+            html.klc-active select,
+            html.klc-active input[type="checkbox"],
+            html.klc-active input[type="radio"],
+            html.klc-active input[type="file"],
+            html.klc-active input[type="range"],
+            html.klc-active input[type="color"] {
+                cursor: pointer;
+            }
+
+            html.klc-active [disabled],
+            html.klc-active [aria-disabled="true"] {
+                cursor: default;
+            }
+
+            .klc {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 0;
+                height: 0;
+                z-index: var(--klc-z);
+                pointer-events: none;
+                contain: layout style;
+                will-change: transform;
+                transform: translate3d(-100px, -100px, 0);
+                opacity: 0;
+                transition: opacity 180ms ease;
+            }
+
+            html.klc-active .klc { opacity: 1; }
+
+            .klc__halo,
+            .klc__dot,
+            .klc__ring,
+            .klc__label {
+                position: absolute;
+                top: 0;
+                left: 0;
+                border-radius: 50%;
+                pointer-events: none;
+                will-change: transform, opacity, background-color, border-color;
+                transform: translate(-50%, -50%);
+            }
+
+            .klc__halo {
+                width: 44px;
+                height: 44px;
+                background: radial-gradient(circle at center,
+                    rgba(248, 246, 240, .28) 0%,
+                    rgba(248, 246, 240, .10) 55%,
+                    rgba(248, 246, 240, 0) 72%);
+                mix-blend-mode: difference;
+                transition: width 220ms ease, height 220ms ease, background 220ms ease, opacity 180ms ease;
+            }
+
+            .klc__dot {
+                width: 8px;
+                height: 8px;
+                background: var(--klc-ivory);
+                box-shadow: 0 0 12px rgba(248, 246, 240, .7);
+                transition: width 180ms ease, height 180ms ease, background 180ms ease, box-shadow 180ms ease, opacity 120ms ease;
+            }
+
+            .klc__ring {
+                width: 30px;
+                height: 30px;
+                border: 1px solid rgba(143, 168, 136, .55);
+                opacity: 0;
+                transition: width 220ms ease, height 220ms ease, opacity 180ms ease, border-color 200ms ease, background 200ms ease;
+            }
+
+            .klc__label {
+                display: grid;
+                place-items: center;
+                font-family: "DM Sans", "Inter", system-ui, sans-serif;
+                font-size: 9px;
+                font-weight: 700;
+                letter-spacing: .22em;
+                text-transform: uppercase;
+                color: var(--klc-forest-deep);
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(.85);
+                transition: opacity 200ms ease, transform 240ms ease;
+                white-space: nowrap;
+            }
+
+            .klc__ripple {
+                position: fixed;
+                top: 0; left: 0;
+                width: 10px; height: 10px;
+                border-radius: 50%;
+                border: 1px solid var(--klc-sage);
+                pointer-events: none;
+                z-index: var(--klc-z);
+                transform: translate(-50%, -50%) scale(.4);
+                opacity: .8;
+                animation: klc-ripple 480ms ease-out forwards;
+                will-change: transform, opacity;
+            }
+
+            @@keyframes klc-ripple {
+                to { transform: translate(-50%, -50%) scale(6); opacity: 0; }
+            }
+
+            /* Link hover */
+            .klc.klc--link .klc__dot {
+                background: var(--klc-sage);
+                box-shadow: 0 0 16px rgba(143, 168, 136, .75);
+            }
+            .klc.klc--link .klc__halo { width: 60px; height: 60px; }
+            .klc.klc--link .klc__ring {
+                width: 40px; height: 40px;
+                opacity: 1;
+                border-color: var(--klc-sage);
+            }
+
+            /* Button hover */
+            .klc.klc--button .klc__dot {
+                background: var(--klc-forest-deep);
+                box-shadow: 0 0 0 2px var(--klc-ivory), 0 0 18px rgba(143, 168, 136, .6);
+            }
+            .klc.klc--button .klc__halo {
+                width: 68px; height: 68px;
+                background: radial-gradient(circle at center,
+                    rgba(143, 168, 136, .55) 0%,
+                    rgba(143, 168, 136, .20) 60%,
+                    rgba(143, 168, 136, 0) 75%);
+            }
+            .klc.klc--button .klc__ring {
+                width: 46px; height: 46px;
+                opacity: 1;
+                border-color: var(--klc-forest-deep);
+            }
+
+            /* Image hover — EXPLORE */
+            .klc.klc--image .klc__halo {
+                width: 72px; height: 72px;
+                background: radial-gradient(circle at center,
+                    rgba(20, 39, 31, .55) 0%,
+                    rgba(20, 39, 31, .20) 62%,
+                    rgba(20, 39, 31, 0) 76%);
+                mix-blend-mode: normal;
+            }
+            .klc.klc--image .klc__dot { width: 0; height: 0; opacity: 0; }
+            .klc.klc--image .klc__ring {
+                width: 72px; height: 72px;
+                opacity: 1;
+                border-color: var(--klc-ivory);
+                background: rgba(20, 39, 31, .35);
+            }
+            .klc.klc--image .klc__label {
+                width: 72px; height: 72px;
+                opacity: 1;
+                color: var(--klc-ivory);
+                transform: translate(-50%, -50%) scale(1);
+            }
+
+            /* Disabled */
+            .klc.klc--disabled .klc__dot {
+                background: rgba(143, 168, 136, .6);
+                box-shadow: none;
+            }
+            .klc.klc--disabled .klc__halo { opacity: .35; }
+            .klc.klc--disabled .klc__ring {
+                width: 26px; height: 26px;
+                opacity: .5;
+                border-color: rgba(143, 168, 136, .4);
+            }
+
+            /* Click press */
+            .klc.klc--press .klc__dot { transform: translate(-50%, -50%) scale(.7); }
+            .klc.klc--press .klc__halo { transform: translate(-50%, -50%) scale(.85); }
+
+            @@media (prefers-reduced-motion: reduce) {
+                html.klc-active,
+                html.klc-active body { cursor: auto; }
+                .klc { display: none !important; }
+                .klc, .klc__halo, .klc__dot, .klc__ring, .klc__label {
+                    transition: none !important;
+                    animation: none !important;
+                }
+                .klc__ripple { display: none; }
+            }
+
+            @@media (hover: none), (pointer: coarse) {
+                html.klc-active,
+                html.klc-active body { cursor: auto; }
+                .klc, .klc__ripple { display: none !important; }
+            }
     </style>
 
     <noscript>
@@ -1921,7 +2184,7 @@
                         opacity: 1 !important;
                         transform: none !important;
             }</style>
-        </noscript>
+    </noscript>
 
         @await RenderSectionAsync("Styles", required: false)
     </head>
@@ -2151,12 +2414,6 @@
                                             </a>
                                         </li>
                                         <li>
-                                            <a class="@SubMenuLinkClass("Experiences")" href="@Url.Action("Index", "Experiences")">
-                                                <span class="menu__sub-title">Experiences</span>
-                                                <span class="menu__sub-note">Activities &amp; adventures</span>
-                                            </a>
-                                        </li>
-                                        <li>
                                             <a class="@SubMenuLinkClass("Tours")" href="@Url.Action("Index", "Tours")">
                                                 <span class="menu__sub-title">Tour Packages</span>
                                                 <span class="menu__sub-note">Curated journeys</span>
@@ -2301,7 +2558,6 @@
                         <li><a href="@FooterLink("Hotels")">Hotels</a></li>
                         <li><a href="@FooterLink("Restaurants")">Restaurants</a></li>
                         <li><a href="@FooterLink("Resorts")">Resorts</a></li>
-                        <li><a href="@FooterLink("Experiences")">Experiences</a></li>
                         <li><a href="@FooterLink("Tours")">Tour Packages</a></li>
                     </ul>
                 </nav>
@@ -2346,6 +2602,16 @@
                 <path d="M8 13V3M3.5 7.5 8 3l4.5 4.5" />
             </svg>
         </button>
+
+        @if (ShowKarnelCursor)
+        {
+            <div class="klc" id="klc" aria-hidden="true">
+                <span class="klc__halo" data-klc="halo"></span>
+                <span class="klc__ring" data-klc="ring"></span>
+                <span class="klc__dot" data-klc="dot"></span>
+                <span class="klc__label" data-klc="label">Explore</span>
+            </div>
+        }
 
         <script>
                 /* ==========================================================
@@ -2405,7 +2671,6 @@
                         menu.setAttribute('aria-hidden', 'false');
                         document.body.classList.add('menu-open');
                         if (menuOpenBtn) { menuOpenBtn.setAttribute('aria-expanded', 'true'); }
-                        // Give the browser a frame so the menu is visible before we focus.
                         window.requestAnimationFrame(function () {
                             var first = menu.querySelector('.menu__link, .menu__close');
                             if (first) { first.focus({ preventScroll: true }); }
@@ -2433,7 +2698,6 @@
                         menuCloseBtn.addEventListener('click', function () { closeMenu(true); });
                     }
 
-                    /* Close when a link inside the overlay is chosen. */
                     if (menu) {
                         menu.addEventListener('click', function (event) {
                             var link = event.target.closest('a');
@@ -2441,7 +2705,6 @@
                         });
                     }
 
-                    /* Escape closes the overlay. */
                     document.addEventListener('keydown', function (event) {
                         if (event.key !== 'Escape') { return; }
                         if (menu && menu.classList.contains('is-open')) {
@@ -2449,7 +2712,7 @@
                         }
                     });
 
-                    /* ---------- 4. Hovering / focusing a row updates the preview ---------- */
+                    /* ---------- 4. Hover/focus updates the preview ---------- */
                     var previewFigures = Array.prototype.slice.call(
                         document.querySelectorAll('[data-preview-item]')
                     );
@@ -2527,7 +2790,7 @@
                         });
                     });
 
-                    /* ---------- 8. Meadow Footer Video Controls ---------- */
+                    /* ---------- 8. Meadow Footer Video ---------- */
                     var video = document.querySelector('.mf__video');
                     if (video) {
                         if (reduceMotion) { video.pause(); }
@@ -2538,6 +2801,264 @@
                     }
                 })();
         </script>
+
+        @if (ShowKarnelCursor)
+        {
+            @* ==========================================================
+               KARNEL LUMINOUS CURSOR — vanilla JS, no dependencies.
+               - only initialises on fine pointers and wide viewports
+               - exposes window.__karnelCursor.dispose() for cleanup
+               - respects prefers-reduced-motion
+               ========================================================== *@
+            <script>
+                (function () {
+                    'use strict';
+                    if (window.__karnelCursor) { return; }
+
+                    var root = document.getElementById('klc');
+                    if (!root) { return; }
+
+                    // Bail out on touch and reduced-motion devices so the native
+                    // pointer remains available as a reliable accessibility aid.
+                    var mqFine   = window.matchMedia('(hover: hover) and (pointer: fine)');
+                    var mqReduce = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+                    if (!mqFine.matches || mqReduce.matches) { return; }
+
+                    var dot   = root.querySelector('[data-klc="dot"]');
+                    var halo  = root.querySelector('[data-klc="halo"]');
+                    var ring  = root.querySelector('[data-klc="ring"]');
+                    var label = root.querySelector('[data-klc="label"]');
+
+                    // ── State ─────────────────────────────────────────────
+                    var target  = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
+                    var pointer = { x: target.x, y: target.y };
+                    var haloPos = { x: target.x, y: target.y };
+                    var visible = false;
+                    var pressed = false;
+                    var state   = 'default';
+                    var rafId   = null;
+                    var disposed = false;
+
+                    var reduce = mqReduce.matches;
+                    var stateLabels = {
+                        image: 'Explore',
+                        view: 'View',
+                        discover: 'Discover',
+                        route: 'View route',
+                        drag: 'Drag'
+                    };
+
+                    function applyClass() {
+                        root.classList.remove('klc--link', 'klc--button', 'klc--image', 'klc--view', 'klc--discover', 'klc--route', 'klc--drag', 'klc--disabled');
+                        if (state === 'link')     { root.classList.add('klc--link'); }
+                        if (state === 'button')   { root.classList.add('klc--button'); }
+                        if (state === 'image')    { root.classList.add('klc--image'); }
+                        if (state === 'view')     { root.classList.add('klc--view'); }
+                        if (state === 'discover') { root.classList.add('klc--discover'); }
+                        if (state === 'route')    { root.classList.add('klc--route'); }
+                        if (state === 'drag')     { root.classList.add('klc--drag'); }
+                        if (state === 'disabled') { root.classList.add('klc--disabled'); }
+                        label.textContent = stateLabels[state] || '';
+                    }
+
+                    // Classify an element into a cursor state.
+                    function classify(el) {
+                        if (!el || !(el instanceof Element)) { return 'default'; }
+                        if (el.closest('[disabled], [aria-disabled="true"]')) { return 'disabled'; }
+
+                        var explicit = el.closest('[data-cursor]');
+                        if (explicit) {
+                            var requested = explicit.getAttribute('data-cursor');
+                            if (requested === 'explore' || requested === 'image') { return 'image'; }
+                            if (requested === 'view' || requested === 'discover' || requested === 'route' || requested === 'drag') {
+                                return requested;
+                            }
+                        }
+
+                        var textCtx = el.closest('input:not([type="button"]):not([type="submit"]):not([type="checkbox"]):not([type="radio"]):not([type="reset"]):not([type="file"]):not([type="range"]):not([type="color"]), textarea, [contenteditable="true"], [contenteditable=""]');
+                        if (textCtx) { return 'text'; }
+
+                        var btn = el.closest('button, a.btn, [role="button"], input[type="button"], input[type="submit"], input[type="reset"]');
+                        if (btn) { return 'button'; }
+
+                        var media = el.closest('img, picture, video, canvas, figure.media');
+                        if (media) {
+                            // Only treat as image hover if it isn't inside an interactive element
+                            if (!media.closest('a, button, [role="button"]')) { return 'image'; }
+                        }
+
+                        var link = el.closest('a[href], summary, label, [role="link"]');
+                        if (link) { return 'link'; }
+
+                        return 'default';
+                    }
+
+                    function setState(next) {
+                        if (next === state) { return; }
+                        state = next;
+                        // Native caret takes over in text contexts:
+                        if (state === 'text') {
+                            root.style.opacity = '0';
+                            return;
+                        }
+                        root.style.opacity = '';
+                        applyClass();
+                    }
+
+                    // ── rAF loop ─────────────────────────────────────────
+                    function tick() {
+                        if (disposed) { return; }
+
+                        // Dot follows pointer exactly.
+                        pointer.x += (target.x - pointer.x) * 0.9;
+                        pointer.y += (target.y - pointer.y) * 0.9;
+
+                        // Halo trails slightly (only if motion is allowed).
+                        var lerp = reduce ? 1 : 0.18;
+                        haloPos.x += (pointer.x - haloPos.x) * lerp;
+                        haloPos.y += (pointer.y - haloPos.y) * lerp;
+
+                        root.style.transform = 'translate3d(' + pointer.x + 'px,' + pointer.y + 'px,0)';
+                        dot.style.transform  = 'translate(-50%,-50%)' + (pressed ? ' scale(.7)' : '');
+                        halo.style.transform = 'translate(-50%,-50%)';
+                        halo.style.left      = (haloPos.x - pointer.x) + 'px';
+                        halo.style.top       = (haloPos.y - pointer.y) + 'px';
+
+                        rafId = window.requestAnimationFrame(tick);
+                    }
+
+                    // ── Events ───────────────────────────────────────────
+                    function onMove(e) {
+                        target.x = e.clientX;
+                        target.y = e.clientY;
+                        if (!visible) {
+                            visible = true;
+                            root.style.opacity = '';
+                        }
+                    }
+
+                    function onOver(e) {
+                        setState(classify(e.target));
+                    }
+
+                    function onOut(e) {
+                        setState(classify(e.relatedTarget));
+                    }
+
+                    function onDown(e) {
+                        if (e.button !== 0) { return; }
+                        pressed = true;
+                        root.classList.add('klc--press');
+                        spawnRipple(e.clientX, e.clientY);
+                    }
+
+                    function onUp() {
+                        if (!pressed) { return; }
+                        pressed = false;
+                        root.classList.remove('klc--press');
+                    }
+
+                    function onLeaveDoc(e) {
+                        if (e.relatedTarget === null) {
+                            visible = false;
+                            root.style.opacity = '0';
+                        }
+                    }
+
+                    function onVisibility() {
+                        if (document.hidden) {
+                            visible = false;
+                            root.style.opacity = '0';
+                        }
+                    }
+
+                    function spawnRipple(x, y) {
+                        if (reduce) { return; }
+                        var r = document.createElement('span');
+                        r.className = 'klc__ripple';
+                        r.style.left = x + 'px';
+                        r.style.top  = y + 'px';
+                        document.body.appendChild(r);
+                        r.addEventListener('animationend', function () {
+                            if (r.parentNode) { r.parentNode.removeChild(r); }
+                        });
+                        // Hard timeout safety net
+                        setTimeout(function () {
+                            if (r.parentNode) { r.parentNode.removeChild(r); }
+                        }, 800);
+                    }
+
+                    // ── Init ─────────────────────────────────────────────
+                    // Only mark the document now that JS is genuinely live.
+                    document.documentElement.classList.add('klc-active');
+                    root.style.left = '0';
+                    root.style.top  = '0';
+
+                    window.addEventListener('mousemove', onMove, { passive: true });
+                    document.addEventListener('mouseover', onOver, true);
+                    document.addEventListener('mouseout', onOut, true);
+                    document.addEventListener('mousedown', onDown, true);
+                    document.addEventListener('mouseup', onUp, true);
+                    document.addEventListener('mouseleave', onLeaveDoc, true);
+                    document.addEventListener('visibilitychange', onVisibility);
+
+                    // Re-classify when the pointer enters a new page (SPA-ish nav)
+                    window.addEventListener('pageshow', function () {
+                        setState('default');
+                    });
+
+                    // Media query change → dispose if the cursor is no longer valid.
+                    function onMqChange() {
+                        if (!mqFine.matches || mqReduce.matches) {
+                            dispose();
+                        }
+                    }
+                    if (mqFine.addEventListener) {
+                        mqFine.addEventListener('change', onMqChange);
+                    } else {
+                        mqFine.addListener(onMqChange);
+                    }
+
+                    rafId = window.requestAnimationFrame(tick);
+
+                    // ── Cleanup ──────────────────────────────────────────
+                    function dispose() {
+                        if (disposed) { return; }
+                        disposed = true;
+
+                        if (rafId) { window.cancelAnimationFrame(rafId); }
+
+                        window.removeEventListener('mousemove', onMove, { passive: true });
+                        document.removeEventListener('mouseover', onOver, true);
+                        document.removeEventListener('mouseout', onOut, true);
+                        document.removeEventListener('mousedown', onDown, true);
+                        document.removeEventListener('mouseup', onUp, true);
+                        document.removeEventListener('mouseleave', onLeaveDoc, true);
+                        document.removeEventListener('visibilitychange', onVisibility);
+
+                        if (mqFine.removeEventListener) {
+                            mqFine.removeEventListener('change', onMqChange);
+                        } else {
+                            mqFine.removeListener(onMqChange);
+                        }
+
+                        document.documentElement.classList.remove('klc-active');
+                        if (root.parentNode) { root.parentNode.removeChild(root); }
+
+                        // Clean up any orphan ripples
+                        document.querySelectorAll('.klc__ripple').forEach(function (n) {
+                            if (n.parentNode) { n.parentNode.removeChild(n); }
+                        });
+
+                        window.__karnelCursor = null;
+                    }
+
+                    // Public handle for teardown (e.g. when swapping SPA layouts).
+                    window.__karnelCursor = { dispose: dispose };
+                })();
+            </script>
+        }
 
         @await RenderSectionAsync("Scripts", required: false)
     </body>

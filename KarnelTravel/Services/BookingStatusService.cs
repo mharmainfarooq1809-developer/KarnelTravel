@@ -8,7 +8,7 @@ public sealed class BookingStatusService : IBookingStatusService
 {
     private static readonly HashSet<string> AllowedStatuses = new(StringComparer.OrdinalIgnoreCase)
     {
-        "Pending", "Confirmed", "Rejected", "Completed", "Cancelled"
+        "PendingPayment", "PaymentFailed", "Pending", "Pending Admin Approval", "Confirmed", "Rejected", "Completed", "Cancelled"
     };
     private readonly ApplicationDbContext _db;
     private readonly IBookingTicketService _tickets;
@@ -32,6 +32,12 @@ public sealed class BookingStatusService : IBookingStatusService
         var previousStatus = booking.Status;
         if (!string.Equals(previousStatus, nextStatus, StringComparison.OrdinalIgnoreCase))
         {
+            var historyReason = string.IsNullOrWhiteSpace(reason)
+                ? null
+                : reason.Length <= 500
+                    ? reason
+                    : reason[..497] + "...";
+
             booking.Status = nextStatus;
             booking.StatusHistory.Add(new BookingStatusHistory
             {
@@ -40,7 +46,7 @@ public sealed class BookingStatusService : IBookingStatusService
                 NewStatus = nextStatus,
                 ChangedByUserId = changedByUserId,
                 ChangedByRole = changedByRole,
-                Reason = reason,
+                Reason = historyReason,
                 ChangedAt = DateTime.UtcNow
             });
 
@@ -57,7 +63,18 @@ public sealed class BookingStatusService : IBookingStatusService
                 });
             }
 
-            if (nextStatus is "Confirmed" or "Completed" or "Cancelled" or "Rejected")
+            if (nextStatus == "Rejected")
+            {
+                var paidDemoPayment = await _db.DemoPaymentTransactions
+                    .FirstOrDefaultAsync(x => x.BookingId == booking.Id && x.PaymentStatus == "Paid (Demo)", cancellationToken);
+                if (paidDemoPayment is not null)
+                {
+                    paidDemoPayment.RefundStatus = "Refund Pending (Demo)";
+                    paidDemoPayment.ProcessedAt = DateTime.UtcNow;
+                }
+            }
+
+            if (nextStatus is "Confirmed" or "Cancelled")
             {
                 var ticket = await _tickets.SyncForStatusAsync(booking, cancellationToken);
                 if (nextStatus == "Confirmed" && ticket is not null)

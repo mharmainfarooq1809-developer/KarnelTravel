@@ -2691,11 +2691,11 @@
     </div>
 </section>
 
-<!-- ==================== SECTION 04 — THE QUIET ATLAS INTRO ==================== -->
+<!-- ==================== SECTION 04 — EXPLORE PLACES INTRO ==================== -->
 <section class="atlas-intro" aria-labelledby="atlas-title">
     <div class="container">
         <div data-reveal>
-            <p class="eyebrow">The Quiet Atlas</p>
+            <p class="eyebrow">Explore places</p>
             <h2 id="atlas-title">A slow atlas of the places that stay with you.</h2>
         </div>
         <div data-reveal>
@@ -2708,11 +2708,11 @@
     </div>
 </section>
 
-<!-- ==================== SECTION 04 — NATURE SPOTS / SPHERE ==================== -->
+<!-- ==================== SECTION 04 — EXPLORE PLACES / SPHERE ==================== -->
 <section class="archive" id="archive" aria-labelledby="arch-headline">
-    <div class="archive__stage" id="arch-stage">
+    <div class="archive__stage" id="arch-stage" data-cursor="drag">
         <div class="archive__label" id="arch-label">
-            <p class="eyebrow">The Quiet Atlas &middot; Twenty-One Nature Spots</p>
+            <p class="eyebrow">Explore places &middot; Twenty-One Nature Spots</p>
         </div>
 
         <div id="arch-world">
@@ -2737,7 +2737,7 @@
     </div>
 
     <button class="archive__gridbtn" id="arch-grid-btn"
-            type="button" aria-label="Toggle grid view" aria-pressed="false">
+            type="button" aria-label="Toggle grid view" aria-pressed="false" data-cursor="view">
         <b></b><b></b><b></b><b></b>
     </button>
 </section>
@@ -2752,7 +2752,7 @@
     <div class="arch-lit__scrim" data-close></div>
     <div class="arch-lit__plate">
         <div class="arch-lit__shot">
-            <img id="arch-lit-img" alt="" />
+            <img id="arch-lit-img" alt="" data-cursor="view" />
             <button class="arch-lit__close" type="button" data-close>Close</button>
         </div>
         <div class="arch-lit__meta">
@@ -3564,10 +3564,6 @@
                     dragging = false;
                     var movedFar = Math.abs(ev.clientX - startX) > slop ||
                                    Math.abs(ev.clientY - startY) > slop;
-                    if (!movedFar && cardEl) {
-                        var idx = parseInt(cardEl.dataset.idx, 10);
-                        if (!isNaN(idx)) openLightbox(idx);
-                    }
                     cleanup();
                 }
 
@@ -3641,12 +3637,6 @@
                 gridEl.setAttribute('aria-hidden', on ? 'false' : 'true');
                 document.body.style.overflow = on ? 'hidden' : '';
                 if (on && !raf) raf = requestAnimationFrame(frame);
-            });
-
-            gridRows.addEventListener('click', function (e) {
-                var fig = e.target.closest('figure[data-idx]');
-                if (!fig) return;
-                openLightbox(parseInt(fig.dataset.idx, 10));
             });
 
             /* ---------- Escape / keys ---------- */

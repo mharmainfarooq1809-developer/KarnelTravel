@@ -676,16 +676,6 @@ public class BookingsController : Controller
             }
         }
 
-        if (service.Type == "Experience")
-        {
-            var experience = await _context.Experiences
-                .AsNoTracking()
-                .FirstOrDefaultAsync(x => x.Id == service.Id && x.IsPublished);
-
-            if (experience?.StartingPrice is > 0)
-                totalFare = experience.StartingPrice.Value * model.Adults;
-        }
-
         // =====================================================
         // RETURN FORM IF VALIDATION FAILS
         // =====================================================
@@ -712,7 +702,7 @@ public class BookingsController : Controller
         var existingBooking = await _context.Bookings.AsNoTracking()
             .FirstOrDefaultAsync(x => x.IdempotencyKey == idempotencyKey && x.OwnerEmail == ownerEmail);
         if (existingBooking != null)
-            return RedirectToAction(nameof(Confirmation), new { reference = existingBooking.ReferenceNumber });
+            return RedirectToAction(nameof(DemoPaymentController.Checkout), "DemoPayment", new { id = existingBooking.Id });
 
         // =====================================================
         // CREATE BOOKING
@@ -786,7 +776,7 @@ public class BookingsController : Controller
                 ? null
                 : model.CustomerNotes.Trim(),
 
-            Status = settings.DefaultBookingStatus,
+            Status = "PendingPayment",
 
             CreatedAt = DateTime.UtcNow
         };
@@ -799,9 +789,6 @@ public class BookingsController : Controller
         {
             case "Hotel":
                 booking.HotelId = service.Id;
-                break;
-
-            case "Experience":
                 break;
 
             case "Resort":
@@ -836,13 +823,7 @@ public class BookingsController : Controller
 
         await _context.SaveChangesAsync();
 
-        return RedirectToAction(
-            nameof(Confirmation),
-            new
-            {
-                reference = booking.ReferenceNumber
-            }
-        );
+        return RedirectToAction(nameof(DemoPaymentController.Checkout), "DemoPayment", new { id = booking.Id });
     }
 
     // =========================================================
@@ -978,17 +959,6 @@ public class BookingsController : Controller
                     return item == null
                         ? null
                         : new ServiceInfo("Tour", item.Id, item.Name);
-                }
-
-            case "experience":
-                {
-                    var item = await _context.Experiences
-                        .AsNoTracking()
-                        .FirstOrDefaultAsync(x => x.Id == serviceId && x.IsPublished);
-
-                    return item == null
-                        ? null
-                        : new ServiceInfo("Experience", item.Id, item.Name);
                 }
 
             case "transport":

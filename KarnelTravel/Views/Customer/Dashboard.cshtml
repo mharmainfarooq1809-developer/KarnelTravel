@@ -10,12 +10,14 @@
     {
         new { Label = "Total bookings", Value = Model.TotalBookings,       Slug = "total"     },
         new { Label = "Pending",        Value = Model.PendingBookings,     Slug = "pending"   },
+        new { Label = "Awaiting approval", Value = Model.PendingApprovalBookings, Slug = "approval" },
         new { Label = "Confirmed",      Value = Model.ConfirmedBookings,   Slug = "confirmed" },
         new { Label = "Completed",      Value = Model.CompletedBookings,   Slug = "completed" },
         new { Label = "Cancelled",      Value = Model.CancelledBookings,   Slug = "cancelled" }
     };
 
     var hasRecentBookings = Model.RecentBookings is not null && Model.RecentBookings.Count > 0;
+    var hasTripInquiries = Model.TripInquiries is not null && Model.TripInquiries.Count > 0;
 }
 
 @* Styles are inlined on purpose so they render regardless of whether
@@ -578,6 +580,49 @@
                                 </span>
 
                                 <span class="kd-sr">View booking details for @booking.ServiceName</span>
+                            </a>
+                        </li>
+                    }
+                </ul>
+            }
+        </section>
+
+        <section class="kd-section kd-anim" style="animation-delay:.12s" aria-labelledby="kdTripRequestsHeading">
+            <h2 class="kd-h2" id="kdTripRequestsHeading">
+                Custom trip requests
+                @if (hasTripInquiries)
+                {
+                    <span class="kd-h2__count">@Model.TripInquiries.Count requests</span>
+                }
+            </h2>
+
+            @if (!hasTripInquiries)
+            {
+                <p class="kd-empty">
+                    You do not have any custom destination trip requests yet.
+                    <a asp-controller="TripRequests" asp-action="Create">Plan a custom trip</a>.
+                </p>
+            }
+            else
+            {
+                <ul class="kd-bookings">
+                    @foreach (var inquiry in Model.TripInquiries)
+                    {
+                        <li class="kd-booking">
+                            <a class="kd-booking__link"
+                               asp-controller="TripRequests"
+                               asp-action="Confirmation"
+                               asp-route-reference="@inquiry.ReferenceNumber">
+                                <div class="kd-booking__body">
+                                    <p class="kd-booking__title">@inquiry.Destinations</p>
+                                    <p class="kd-booking__meta">
+                                        <span>@inquiry.ReferenceNumber</span>
+                                        <span>@inquiry.CreatedAt.ToLocalTime().ToString("dd MMM yyyy")</span>
+                                    </p>
+                                </div>
+                                <span class="kd-booking__status">@inquiry.Status</span>
+                                <span class="kd-booking__arrow" aria-hidden="true">→</span>
+                                <span class="kd-sr">View custom trip request @inquiry.ReferenceNumber</span>
                             </a>
                         </li>
                     }

@@ -32,6 +32,7 @@ builder.Services.AddScoped<ITicketPdfService, TicketPdfService>();
 builder.Services.AddScoped<IBookingTicketService, BookingTicketService>();
 builder.Services.AddScoped<IBookingConfirmationEmailService, BookingConfirmationEmailService>();
 builder.Services.AddScoped<IAccountEmailService, AccountEmailService>();
+builder.Services.AddScoped<ITripInquiryEmailService, TripInquiryEmailService>();
 
 // ✅ CHANGED: Now using the SQL Server database service instead of In-Memory
 builder.Services.AddScoped<IAdminAuthService, EfAdminAuthService>();

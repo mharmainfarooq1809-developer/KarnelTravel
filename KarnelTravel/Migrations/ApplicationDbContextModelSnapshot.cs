@@ -662,8 +662,8 @@ namespace KarnelTravel.Migrations
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<string>("AdminNotes")
-                        .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
+                        .HasMaxLength(4000)
+                        .HasColumnType("nvarchar(4000)");
 
                     b.Property<int>("Adults")
                         .HasColumnType("int");
@@ -747,10 +747,18 @@ namespace KarnelTravel.Migrations
                         .HasMaxLength(150)
                         .HasColumnType("nvarchar(150)");
 
+                    b.Property<string>("ServiceNeeds")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
                     b.Property<string>("ServiceType")
                         .IsRequired()
                         .HasMaxLength(30)
                         .HasColumnType("nvarchar(30)");
+
+                    b.Property<string>("StartingCity")
+                        .HasMaxLength(120)
+                        .HasColumnType("nvarchar(120)");
 
                     b.Property<string>("Status")
                         .IsRequired()
@@ -783,6 +791,9 @@ namespace KarnelTravel.Migrations
                         .HasColumnType("nvarchar(150)");
 
                     b.Property<int?>("TransportServiceId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("TripInquiryId")
                         .HasColumnType("int");
 
                     b.Property<string>("TripType")
@@ -818,6 +829,8 @@ namespace KarnelTravel.Migrations
                     b.HasIndex("TransportRouteId");
 
                     b.HasIndex("TransportServiceId");
+
+                    b.HasIndex("TripInquiryId");
 
                     b.ToTable("Bookings", (string)null);
                 });
@@ -1090,6 +1103,88 @@ namespace KarnelTravel.Migrations
                     b.ToTable("CustomerNotifications", (string)null);
                 });
 
+            modelBuilder.Entity("KarnelTravel.Models.DemoPaymentTransaction", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("BookingId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("CardBrand")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
+
+                    b.Property<int?>("CustomerId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("FailureReason")
+                        .HasMaxLength(80)
+                        .HasColumnType("nvarchar(80)");
+
+                    b.Property<bool>("IsSimulation")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
+
+                    b.Property<string>("MaskedCardNumber")
+                        .HasMaxLength(25)
+                        .HasColumnType("nvarchar(25)");
+
+                    b.Property<string>("PaymentMethod")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<string>("PaymentStatus")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<DateTime?>("ProcessedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("RefundStatus")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<string>("TransactionReference")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BookingId")
+                        .IsUnique()
+                        .HasFilter("[PaymentStatus] = 'Successful'");
+
+                    b.HasIndex("CustomerId");
+
+                    b.HasIndex("TransactionReference")
+                        .IsUnique();
+
+                    b.HasIndex("BookingId", "PaymentStatus");
+
+                    b.ToTable("DemoPaymentTransactions", (string)null);
+                });
+
             modelBuilder.Entity("KarnelTravel.Models.Destination", b =>
                 {
                     b.Property<int>("Id")
@@ -1213,82 +1308,6 @@ namespace KarnelTravel.Migrations
                     b.HasIndex("BookingId", "MessageType", "Status");
 
                     b.ToTable("EmailDeliveryAttempts", (string)null);
-                });
-
-            modelBuilder.Entity("KarnelTravel.Models.Experience", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Category")
-                        .IsRequired()
-                        .HasMaxLength(80)
-                        .HasColumnType("nvarchar(80)");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Description")
-                        .HasMaxLength(4000)
-                        .HasColumnType("nvarchar(4000)");
-
-                    b.Property<int>("DisplayOrder")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Duration")
-                        .IsRequired()
-                        .HasMaxLength(80)
-                        .HasColumnType("nvarchar(80)");
-
-                    b.Property<string>("Excludes")
-                        .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
-
-                    b.Property<string>("ImageUrl")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<string>("Includes")
-                        .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
-
-                    b.Property<bool>("IsFeatured")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("IsPublished")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("Location")
-                        .IsRequired()
-                        .HasMaxLength(150)
-                        .HasColumnType("nvarchar(150)");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(150)
-                        .HasColumnType("nvarchar(150)");
-
-                    b.Property<string>("ShortDescription")
-                        .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
-
-                    b.Property<decimal?>("StartingPrice")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Category");
-
-                    b.HasIndex("IsPublished", "DisplayOrder");
-
-                    b.ToTable("Experiences", (string)null);
                 });
 
             modelBuilder.Entity("KarnelTravel.Models.Hotel", b =>
@@ -2286,11 +2305,18 @@ namespace KarnelTravel.Migrations
                         .HasForeignKey("TransportServiceId")
                         .OnDelete(DeleteBehavior.Restrict);
 
+                    b.HasOne("KarnelTravel.Models.TripInquiry", "TripInquiry")
+                        .WithMany()
+                        .HasForeignKey("TripInquiryId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.Navigation("Customer");
 
                     b.Navigation("TourDeparture");
 
                     b.Navigation("TransportRoute");
+
+                    b.Navigation("TripInquiry");
                 });
 
             modelBuilder.Entity("KarnelTravel.Models.BookingStatusHistory", b =>
@@ -2327,6 +2353,24 @@ namespace KarnelTravel.Migrations
                         .HasForeignKey("CustomerId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.Navigation("Booking");
+
+                    b.Navigation("Customer");
+                });
+
+            modelBuilder.Entity("KarnelTravel.Models.DemoPaymentTransaction", b =>
+                {
+                    b.HasOne("KarnelTravel.Models.Booking", "Booking")
+                        .WithMany("DemoPaymentTransactions")
+                        .HasForeignKey("BookingId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("KarnelTravel.Models.CustomerAccount", "Customer")
+                        .WithMany()
+                        .HasForeignKey("CustomerId")
+                        .OnDelete(DeleteBehavior.SetNull);
 
                     b.Navigation("Booking");
 
@@ -2489,6 +2533,8 @@ namespace KarnelTravel.Migrations
 
             modelBuilder.Entity("KarnelTravel.Models.Booking", b =>
                 {
+                    b.Navigation("DemoPaymentTransactions");
+
                     b.Navigation("EmailDeliveryAttempts");
 
                     b.Navigation("Notifications");

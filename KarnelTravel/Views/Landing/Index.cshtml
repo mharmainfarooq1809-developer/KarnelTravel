@@ -16,6 +16,7 @@
     <title>@ViewData["Title"]</title>
     <meta name="description" content="@landingMetaDescription" />
     <link rel="icon" href="data:," />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <style>
         /* ---------- Intro loader styles (inserted) ---------- */
         :root {
@@ -992,6 +993,7 @@
     </style>
 </head>
 <body>
+    @await Html.PartialAsync("_KarnelCursor")
 
     <main class="intro" id="intro" aria-label="Karnel Travel Guide introduction">
 
@@ -1628,6 +1630,8 @@
         }
     })();
 </script>
+
+<script src="~/js/site.js" asp-append-version="true"></script>
 
 </body>
 </html>

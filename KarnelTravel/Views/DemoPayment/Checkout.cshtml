@@ -1,0 +1,76 @@
+@model KarnelTravel.ViewModels.DemoPaymentCheckoutViewModel
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Complete Your Booking Payment";
+    var booking = Model.Booking;
+    var amount = booking.EstimatedTotalPKR ?? 0m;
+}
+<style>
+    .checkout{max-width:1120px;margin:auto;padding:56px 20px 80px;color:#21392f}.checkout h1{font:600 clamp(2.2rem,5vw,4rem)/1.05 Georgia,serif;margin:16px 0 10px}.checkout-lede{color:#69786f;font-size:1.05rem}.demo-banner{background:#fff4d8;border:1px solid #ecd8a4;color:#795b15;padding:13px 16px;border-radius:10px;font-weight:700;margin:26px 0}.checkout-grid{display:grid;grid-template-columns:1.1fr .9fr;gap:26px}.panel{background:#fffdf8;border:1px solid #dfe7df;border-radius:20px;padding:30px;box-shadow:0 16px 40px #17362a12}.panel h2{font:600 1.65rem Georgia,serif;margin:0 0 20px}.card-preview{background:#1d503b;color:#fff;border-radius:17px;padding:23px;margin:20px 0 25px;min-height:145px;box-sizing:border-box;display:flex;flex-direction:column;justify-content:space-between}.card-preview__number{font:1.35rem monospace;letter-spacing:.1em}.card-preview__bottom{display:flex;justify-content:space-between;gap:15px;text-transform:uppercase;font-size:.78rem}.fields{display:grid;grid-template-columns:1fr 1fr;gap:16px}.field--wide{grid-column:1/-1}.field label{display:block;font-weight:700;font-size:.86rem;margin-bottom:7px}.field input{width:100%;box-sizing:border-box;padding:13px;border:1px solid #ccd9ce;border-radius:9px;background:#fbfdfb;font:inherit}.field input:focus{outline:3px solid #d7eadc;border-color:#286c4e}.field .field-error{display:block;color:#a23f3f;font-size:.8rem;margin-top:6px;min-height:1em}.pay-button{width:100%;border:0;border-radius:10px;background:#286c4e;color:#fff;padding:15px;font-weight:800;font-size:1rem;cursor:pointer;margin-top:10px}.pay-button:disabled{opacity:.65}.summary{display:grid;gap:14px}.summary-row{display:flex;justify-content:space-between;gap:15px;border-bottom:1px solid #e8eee8;padding-bottom:11px}.summary-row span{color:#6d7b71}.summary-row strong{text-align:right}.summary-total{font-size:1.35rem;color:#1d6547;border-bottom:0}.demo-cards{font-size:.82rem;color:#69786f;line-height:1.7;margin-top:22px}.cancel{display:block;text-align:center;margin-top:16px;color:#526259;font-size:.9rem}.validation-summary-errors{color:#a23f3f;margin-bottom:16px}.validation-summary-valid{display:none}.processing{display:none;text-align:center;padding:45px 10px}.processing.is-visible{display:block}.spinner{width:42px;height:42px;border:4px solid #d7eadc;border-top-color:#286c4e;border-radius:50%;animation:spin 1s linear infinite;margin:0 auto 20px}@@keyframes spin{to{transform:rotate(360deg)}}
+    @@media(max-width:760px){.checkout-grid{grid-template-columns:1fr}.fields{grid-template-columns:1fr}.field--wide{grid-column:auto}.checkout{padding-top:35px}.panel{padding:22px}}
+</style>
+<main class="checkout">
+    <span class="demo-banner">DEMO PAYMENT — NO REAL MONEY WILL BE CHARGED</span>
+    <h1>Complete Your Booking Payment</h1>
+    <p class="checkout-lede">Secure demo checkout. Enter test card details to simulate your transaction.</p>
+    <div class="checkout-grid">
+        <section class="panel">
+            <h2>Payment Information</h2>
+            <div class="card-preview" aria-live="polite">
+                <small id="previewBrand">DEMO CARD</small>
+                <div class="card-preview__number" id="previewNumber">•••• •••• •••• ••••</div>
+                <div class="card-preview__bottom"><span id="previewName">CARDHOLDER NAME</span><span id="previewExpiry">MM/YY</span></div>
+            </div>
+            <form asp-action="Pay" asp-route-id="@booking.Id" method="post" id="paymentForm">
+                @Html.AntiForgeryToken()
+                <div asp-validation-summary="ModelOnly" class="validation-summary-errors" role="alert"></div>
+                <div class="fields">
+                    <div class="field field--wide"><label asp-for="Form.CardholderName"></label><input asp-for="Form.CardholderName" autocomplete="cc-name" aria-describedby="nameError" /><span asp-validation-for="Form.CardholderName" class="field-error" id="nameError"></span></div>
+                    <div class="field field--wide"><label asp-for="Form.CardNumber"></label><input asp-for="Form.CardNumber" inputmode="numeric" autocomplete="cc-number" maxlength="23" aria-describedby="numberError" /><span asp-validation-for="Form.CardNumber" class="field-error" id="numberError"></span></div>
+                    <div class="field"><label asp-for="Form.ExpiryDate"></label><input asp-for="Form.ExpiryDate" inputmode="numeric" autocomplete="cc-exp" placeholder="MM/YY" maxlength="5" /><span asp-validation-for="Form.ExpiryDate" class="field-error"></span></div>
+                    <div class="field"><label asp-for="Form.Cvv">CVV / CVC</label><input asp-for="Form.Cvv" inputmode="numeric" autocomplete="off" maxlength="4" /><span asp-validation-for="Form.Cvv" class="field-error"></span></div>
+                    <div class="field field--wide"><label asp-for="Form.PostalCode"></label><input asp-for="Form.PostalCode" autocomplete="postal-code" /><span asp-validation-for="Form.PostalCode" class="field-error"></span></div>
+                </div>
+                <button class="pay-button" type="submit" id="payButton">Pay PKR @amount.ToString("N2")</button>
+            </form>
+            <div class="processing" id="processing" aria-live="assertive"><div class="spinner"></div><h2>Processing Your Payment</h2><p>Please wait while we securely simulate your transaction.</p></div>
+            <form asp-action="Cancel" asp-route-id="@booking.Id" method="post"><button class="cancel" type="submit">Cancel payment</button>@Html.AntiForgeryToken()</form>
+            <p class="demo-cards"><strong>Test cards:</strong> Visa success ending 4242 · Visa failure ending 0002 · insufficient funds ending 9995 · cancelled ending 9987 · Mastercard success ending 4444. Use any future MM/YY and 3-digit CVV.</p>
+        </section>
+        <aside class="panel">
+            <h2>Booking Summary</h2>
+            <div class="summary">
+                <div class="summary-row"><span>Booking reference</span><strong>@booking.ReferenceNumber</strong></div>
+                <div class="summary-row"><span>Selected service</span><strong>@booking.ServiceName</strong></div>
+                @if (!string.IsNullOrWhiteSpace(booking.TransportRouteName)) { <div class="summary-row"><span>Route</span><strong>@booking.TransportRouteName</strong></div> }
+                <div class="summary-row"><span>Customer</span><strong>@booking.CustomerName</strong></div>
+                <div class="summary-row"><span>Booking date</span><strong>@booking.BookingDate.ToString("dd MMM yyyy")</strong></div>
+                <div class="summary-row"><span>Adults</span><strong>@booking.Adults</strong></div>
+                <div class="summary-row"><span>Children</span><strong>@booking.Children</strong></div>
+                @if (booking.TransportOneWayFarePKR.HasValue) { <div class="summary-row"><span>Base fare</span><strong>PKR @booking.TransportOneWayFarePKR.Value.ToString("N2")</strong></div> }
+                @if (booking.TransportReturnFarePKR is > 0) { <div class="summary-row"><span>Return fare</span><strong>PKR @booking.TransportReturnFarePKR.Value.ToString("N2")</strong></div> }
+                @if (booking.TransportDiscountPKR is > 0) { <div class="summary-row"><span>Discount</span><strong>- PKR @booking.TransportDiscountPKR.Value.ToString("N2")</strong></div> }
+                <div class="summary-row summary-total"><span>Total · PKR</span><strong>PKR @amount.ToString("N2")</strong></div>
+            </div>
+        </aside>
+    </div>
+</main>
+<script>
+    const form=document.getElementById('paymentForm'), number=document.getElementById('Form_CardNumber'), nameInput=document.getElementById('Form_CardholderName'), expiry=document.getElementById('Form_ExpiryDate');
+    number.addEventListener('input',e=>{let v=e.target.value.replace(/\D/g,'').slice(0,19);e.target.value=v.replace(/(.{4})/g,'$1 ').trim();document.getElementById('previewNumber').textContent=e.target.value||'•••• •••• •••• ••••';});
+    nameInput.addEventListener('input',e=>document.getElementById('previewName').textContent=e.target.value.toUpperCase()||'CARDHOLDER NAME');
+    expiry.addEventListener('input',e=>{let v=e.target.value.replace(/\D/g,'').slice(0,4);e.target.value=v.length>2?v.slice(0,2)+'/'+v.slice(2):v;document.getElementById('previewExpiry').textContent=e.target.value||'MM/YY';});
+    form.addEventListener('submit',e=>{
+        const card=number.value.replace(/\D/g,'');
+        const expiryValue=expiry.value.trim();
+        const cvv=document.getElementById('Form_Cvv').value.trim();
+        const messages=[];
+        if(!nameInput.value.trim()) messages.push('Enter the cardholder name.');
+        if(!['4242424242424242','4374454878787887','4000000000000002','4000000000009995','4000000000009987','5555555555554444'].includes(card)) messages.push('Use a valid demo card number shown below.');
+        if(!/^\d{2}\/\d{2}$/.test(expiryValue)) messages.push('Enter the expiry date in MM/YY format.');
+        if(!/^\d{3}$/.test(cvv)) messages.push('Enter a 3-digit CVV.');
+        if(messages.length){e.preventDefault();alert(messages.join('\n'));return;}
+        document.getElementById('payButton').disabled=true;document.getElementById('paymentForm').style.display='none';document.getElementById('processing').classList.add('is-visible');
+    });
+</script>
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }

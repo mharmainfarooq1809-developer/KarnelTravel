@@ -2,22 +2,565 @@
 @{
     ViewData["Title"] = "Custom Trip Request Received";
 }
-<h1>Request received</h1>
-<p>Your custom trip request reference is <strong>@Model.ReferenceNumber</strong>.</p>
-<p>This is a request for review, not a confirmed booking. Our team will prepare an offer and contact you.</p>
-@if (Model.Status == "Offer Prepared" && !string.IsNullOrWhiteSpace(Model.ProposedOffer))
-{
-    <h2>Proposed offer</h2>
-    <p>@Model.ProposedOffer</p>
-    <form asp-action="AcceptOffer" asp-route-id="@Model.Id" method="post" style="display:inline">
-        <button type="submit">Accept offer and create booking request</button>
-    </form>
-    <form asp-action="RejectOffer" asp-route-id="@Model.Id" method="post" style="display:inline">
-        <button type="submit">Reject offer</button>
-    </form>
-}
-@if (Model.Status == "Accepted")
-{
-    <p>Your offer was accepted and converted into a booking request. It is not confirmed until the team confirms it.</p>
-}
-<a asp-controller="Destinations" asp-action="Details" asp-route-slug="@Model.Destinations">Return to destination</a>
+
+@* ── Scoped styles ─────────────────────────────────────────────────────────
+   Kept local to this view so no global CSS is affected. Fonts are loaded
+   from Google Fonts (the project already relies on web fonts elsewhere);
+   no JS framework is introduced. *@
+<style>
+    .ktr-page {
+        --deep-forest: #14271F;
+        --forest: #1B3428;
+        --warm-ivory: #F8F6F0;
+        --soft-sage: #8FA888;
+        --warm-sand: #E8DFC9;
+        --white: #FFFFFF;
+        --ink: #1c2a24;
+        --muted: #55635b;
+
+        font-family: "DM Sans", "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+        color: var(--ink);
+        background: var(--warm-ivory);
+        min-height: 100vh;
+        padding: clamp(1.5rem, 4vw, 4rem) 1rem clamp(3rem, 6vw, 5rem);
+        line-height: 1.6;
+        -webkit-font-smoothing: antialiased;
+    }
+
+    .ktr-shell {
+        width: 100%;
+        max-width: 760px;
+        margin: 0 auto;
+    }
+
+    /* ── Hero ─────────────────────────────────────────────────────────── */
+    .ktr-hero {
+        position: relative;
+        padding: clamp(2rem, 5vw, 3.5rem) clamp(1.5rem, 4vw, 3rem);
+        background: var(--deep-forest);
+        color: var(--warm-ivory);
+        border-radius: 18px;
+        overflow: hidden;
+        box-shadow: 0 20px 50px -30px rgba(20, 39, 31, 0.55);
+    }
+
+    .ktr-hero::after {
+        /* subtle editorial rule, not a gradient wash */
+        content: "";
+        position: absolute;
+        inset: auto 0 0 0;
+        height: 3px;
+        background: linear-gradient(90deg, var(--soft-sage), var(--warm-sand));
+        opacity: 0.9;
+    }
+
+    .ktr-eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.6rem;
+        font-size: 0.72rem;
+        font-weight: 600;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: var(--warm-sand);
+        margin: 0 0 1.25rem;
+    }
+
+    .ktr-eyebrow .dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: var(--soft-sage);
+        box-shadow: 0 0 0 3px rgba(143, 168, 136, 0.25);
+    }
+
+    .ktr-hero h1 {
+        font-family: "DM Serif Display", Georgia, "Times New Roman", serif;
+        font-weight: 400;
+        font-size: clamp(1.9rem, 4.4vw, 2.9rem);
+        line-height: 1.15;
+        margin: 0 0 1rem;
+        color: var(--white);
+        letter-spacing: -0.01em;
+    }
+
+    .ktr-hero p {
+        margin: 0;
+        max-width: 46ch;
+        color: rgba(248, 246, 240, 0.82);
+        font-size: clamp(0.98rem, 1.6vw, 1.06rem);
+    }
+
+    /* Numbered confirmation marker — a restrained status indicator */
+    .ktr-step-marker {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin-top: 1.75rem;
+        padding: 0.5rem 0.9rem 0.5rem 0.55rem;
+        border: 1px solid rgba(232, 223, 201, 0.25);
+        border-radius: 999px;
+        background: rgba(27, 52, 40, 0.55);
+        font-size: 0.8rem;
+        letter-spacing: 0.04em;
+        color: var(--warm-sand);
+    }
+
+    .ktr-step-marker .num {
+        display: grid;
+        place-items: center;
+        width: 1.6rem;
+        height: 1.6rem;
+        border-radius: 50%;
+        background: var(--warm-sand);
+        color: var(--deep-forest);
+        font-weight: 700;
+        font-size: 0.78rem;
+    }
+
+    /* ── Reference panel ─────────────────────────────────────────────── */
+    .ktr-reference {
+        margin-top: 1.25rem;
+        background: var(--white);
+        border: 1px solid var(--warm-sand);
+        border-radius: 14px;
+        padding: 1.25rem clamp(1.1rem, 3vw, 1.6rem);
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+    }
+
+    .ktr-reference .label {
+        display: block;
+        font-size: 0.7rem;
+        font-weight: 600;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin-bottom: 0.35rem;
+    }
+
+    .ktr-reference .value {
+        font-family: "DM Serif Display", Georgia, serif;
+        font-size: clamp(1.15rem, 3vw, 1.45rem);
+        color: var(--deep-forest);
+        letter-spacing: 0.04em;
+        word-break: break-all;
+        overflow-wrap: anywhere;
+    }
+
+    .ktr-copy {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        padding: 0.5rem 0.9rem;
+        border-radius: 8px;
+        border: 1px solid var(--soft-sage);
+        background: transparent;
+        color: var(--forest);
+        font: inherit;
+        font-size: 0.82rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.18s ease, color 0.18s ease;
+    }
+
+    .ktr-copy:hover { background: var(--forest); color: var(--warm-ivory); }
+    .ktr-copy:focus-visible,
+    .ktr-btn:focus-visible,
+    .ktr-link:focus-visible {
+        outline: 3px solid var(--soft-sage);
+        outline-offset: 3px;
+    }
+
+    .ktr-copy-feedback {
+        display: block;
+        width: 100%;
+        font-size: 0.78rem;
+        color: var(--forest);
+        min-height: 1em;
+    }
+
+    /* ── Timeline ────────────────────────────────────────────────────── */
+    .ktr-section-title {
+        font-family: "DM Serif Display", Georgia, serif;
+        font-weight: 400;
+        font-size: clamp(1.35rem, 3vw, 1.7rem);
+        color: var(--deep-forest);
+        margin: 0 0 1.25rem;
+    }
+
+    .ktr-timeline {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: grid;
+        gap: 1rem;
+    }
+
+    .ktr-timeline li {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        gap: 1rem;
+        align-items: start;
+        background: var(--white);
+        border: 1px solid var(--warm-sand);
+        border-radius: 14px;
+        padding: 1.1rem 1.25rem;
+    }
+
+    .ktr-timeline .step-num {
+        display: grid;
+        place-items: center;
+        width: 2.1rem;
+        height: 2.1rem;
+        border-radius: 50%;
+        background: var(--warm-ivory);
+        border: 1px solid var(--soft-sage);
+        color: var(--forest);
+        font-weight: 700;
+        font-size: 0.82rem;
+        flex-shrink: 0;
+    }
+
+    .ktr-timeline h3 {
+        margin: 0 0 0.2rem;
+        font-size: 1rem;
+        font-weight: 700;
+        color: var(--forest);
+    }
+
+    .ktr-timeline p {
+        margin: 0;
+        font-size: 0.92rem;
+        color: var(--muted);
+    }
+
+    .ktr-spacer { margin-top: clamp(2rem, 5vw, 3rem); }
+
+    /* ── Offer section ───────────────────────────────────────────────── */
+    .ktr-offer {
+        background: var(--white);
+        border: 1px solid var(--warm-sand);
+        border-radius: 18px;
+        padding: clamp(1.5rem, 4vw, 2.5rem);
+        box-shadow: 0 20px 45px -35px rgba(20, 39, 31, 0.5);
+    }
+
+    .ktr-offer h2 {
+        font-family: "DM Serif Display", Georgia, serif;
+        font-weight: 400;
+        font-size: clamp(1.5rem, 3.4vw, 2rem);
+        color: var(--deep-forest);
+        margin: 0 0 0.35rem;
+    }
+
+    .ktr-offer .offer-intro {
+        margin: 0 0 1.5rem;
+        font-size: 0.9rem;
+        color: var(--muted);
+    }
+
+    .ktr-offer-body {
+        font-size: 1rem;
+        line-height: 1.8;
+        color: var(--ink);
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+        word-break: break-word;
+        padding: 1.25rem 1.4rem;
+        background: var(--warm-ivory);
+        border-left: 3px solid var(--soft-sage);
+        border-radius: 10px;
+        margin: 0 0 1.75rem;
+    }
+
+    .ktr-decision {
+        border-top: 1px dashed var(--warm-sand);
+        padding-top: 1.5rem;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.85rem;
+        align-items: center;
+    }
+
+    .ktr-decision .decision-label {
+        flex-basis: 100%;
+        font-size: 0.7rem;
+        font-weight: 600;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin-bottom: 0.25rem;
+    }
+
+    .ktr-btn {
+        font: inherit;
+        font-weight: 600;
+        font-size: 0.95rem;
+        padding: 0.8rem 1.4rem;
+        border-radius: 10px;
+        cursor: pointer;
+        border: 1px solid transparent;
+        transition: transform 0.15s ease, background 0.18s ease, color 0.18s ease, border-color 0.18s ease;
+        min-height: 48px;
+    }
+
+    .ktr-btn-primary {
+        background: var(--deep-forest);
+        color: var(--warm-ivory);
+        border-color: var(--deep-forest);
+    }
+    .ktr-btn-primary:hover { background: var(--forest); }
+
+    .ktr-btn-secondary {
+        background: transparent;
+        color: var(--forest);
+        border-color: var(--soft-sage);
+    }
+    .ktr-btn-secondary:hover {
+        background: var(--warm-ivory);
+        border-color: var(--forest);
+    }
+
+    .ktr-inline-form { display: inline; margin: 0; }
+
+    /* ── Accepted state ──────────────────────────────────────────────── */
+    .ktr-status {
+        background: var(--forest);
+        color: var(--warm-ivory);
+        border-radius: 16px;
+        padding: clamp(1.4rem, 4vw, 2rem);
+        border: 1px solid rgba(143, 168, 136, 0.35);
+    }
+
+    .ktr-status .status-eyebrow {
+        display: inline-block;
+        font-size: 0.7rem;
+        font-weight: 600;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: var(--warm-sand);
+        margin-bottom: 0.75rem;
+    }
+
+    .ktr-status p {
+        margin: 0 0 1rem;
+        color: rgba(248, 246, 240, 0.9);
+        font-size: 0.98rem;
+    }
+
+    .ktr-status p:last-child { margin-bottom: 0; }
+
+    .ktr-status-track {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin: 1.25rem 0 0;
+    }
+
+    .ktr-status-track span {
+        font-size: 0.78rem;
+        padding: 0.4rem 0.8rem;
+        border-radius: 999px;
+        border: 1px solid rgba(232, 223, 201, 0.35);
+        color: var(--warm-sand);
+    }
+
+    .ktr-status-track .done { background: rgba(143, 168, 136, 0.25); }
+
+    /* ── Destination link ────────────────────────────────────────────── */
+    .ktr-destination {
+        margin-top: clamp(1.75rem, 4vw, 2.5rem);
+        text-align: center;
+    }
+
+    .ktr-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: var(--forest);
+        font-weight: 600;
+        font-size: 0.95rem;
+        text-decoration: none;
+        border-bottom: 1px solid var(--soft-sage);
+        padding-bottom: 0.15rem;
+        transition: color 0.18s ease, border-color 0.18s ease;
+    }
+    .ktr-link:hover { color: var(--deep-forest); border-color: var(--forest); }
+
+    /* ── Responsive ──────────────────────────────────────────────────── */
+    @@media (max-width: 640px) {
+        .ktr-page { padding-left: 0.75rem; padding-right: 0.75rem; }
+        .ktr-reference { flex-direction: column; align-items: flex-start; }
+        .ktr-decision { flex-direction: column; align-items: stretch; }
+        .ktr-btn { width: 100%; }
+        .ktr-inline-form { display: block; }
+    }
+
+    @@media (prefers-reduced-motion: reduce) {
+        .ktr-btn, .ktr-copy, .ktr-link { transition: none; }
+    }
+</style>
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@400;600;700&display=swap" rel="stylesheet" />
+
+<main class="ktr-page">
+    <div class="ktr-shell">
+
+        <!-- ── Hero ─────────────────────────────────────────────────── -->
+        <section class="ktr-hero" aria-labelledby="ktr-title">
+            <p class="ktr-eyebrow">
+                <span class="dot" aria-hidden="true"></span>
+                Custom Journey / Request Received
+            </p>
+            <h1 id="ktr-title">Your journey starts with a conversation.</h1>
+            <p>
+                Your custom trip request has reached our team. We will review your
+                requirements and prepare a personalized trip management plan.
+            </p>
+            <div class="ktr-step-marker" role="status" aria-label="Confirmation step one of three: request received">
+                <span class="num" aria-hidden="true">1</span>
+                <span>Step 1 of 3 &middot; Request received</span>
+            </div>
+        </section>
+
+        <!-- ── Reference panel ──────────────────────────────────────── -->
+        <section class="ktr-reference" aria-labelledby="ktr-ref-label">
+            <div>
+                <span class="label" id="ktr-ref-label">Your request reference</span>
+                <span class="value" id="ktr-reference-value">@Model.ReferenceNumber</span>
+            </div>
+            <button type="button"
+                    class="ktr-copy"
+                    id="ktr-copy-btn"
+                    data-reference="@Model.ReferenceNumber"
+                    aria-describedby="ktr-copy-feedback">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <rect x="9" y="9" width="13" height="13" rx="2" />
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                </svg>
+                Copy reference
+            </button>
+            <span class="ktr-copy-feedback" id="ktr-copy-feedback" role="status" aria-live="polite"></span>
+        </section>
+
+        <!-- ── Timeline ─────────────────────────────────────────────── -->
+        <section class="ktr-spacer" aria-labelledby="ktr-timeline-title">
+            <h2 class="ktr-section-title" id="ktr-timeline-title">What happens next</h2>
+            <ol class="ktr-timeline">
+                <li>
+                    <span class="step-num" aria-hidden="true">01</span>
+                    <div>
+                        <h3>Request received</h3>
+                        <p>Your custom trip requirements have been submitted.</p>
+                    </div>
+                </li>
+                <li>
+                    <span class="step-num" aria-hidden="true">02</span>
+                    <div>
+                        <h3>Plan preparation</h3>
+                        <p>Our team reviews the request and prepares a trip management plan.</p>
+                    </div>
+                </li>
+                <li>
+                    <span class="step-num" aria-hidden="true">03</span>
+                    <div>
+                        <h3>Your decision</h3>
+                        <p>Review the proposed plan and decide whether to accept it.</p>
+                    </div>
+                </li>
+            </ol>
+        </section>
+
+        <!-- ── Conditional offer ────────────────────────────────────── -->
+        @if (Model.Status == "Offer Prepared" && !string.IsNullOrWhiteSpace(Model.ProposedOffer))
+        {
+            <section class="ktr-offer ktr-spacer" aria-labelledby="ktr-offer-title">
+                <h2 id="ktr-offer-title">Your trip management plan</h2>
+                <p class="offer-intro">Prepared by the Karnel team for your review.</p>
+
+                @* Safe rendering — Razor encodes this automatically. *@
+                <div class="ktr-offer-body">@Model.ProposedOffer</div>
+
+                <div class="ktr-decision">
+                    <span class="decision-label">Your decision</span>
+
+                    <form asp-action="AcceptOffer" asp-route-id="@Model.Id" method="post" class="ktr-inline-form">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="ktr-btn ktr-btn-primary">
+                            Accept offer and create booking request
+                        </button>
+                    </form>
+
+                    <form asp-action="RejectOffer" asp-route-id="@Model.Id" method="post" class="ktr-inline-form">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="ktr-btn ktr-btn-secondary">
+                            Reject offer
+                        </button>
+                    </form>
+                </div>
+            </section>
+        }
+
+        <!-- ── Accepted state ───────────────────────────────────────── -->
+        @if (Model.Status == "Accepted")
+        {
+            <section class="ktr-status ktr-spacer" aria-labelledby="ktr-status-title">
+                <span class="status-eyebrow">Offer accepted</span>
+                <h2 class="ktr-section-title" id="ktr-status-title" style="color: var(--warm-ivory);">
+                    Booking request created
+                </h2>
+                <p>
+                    Your offer was accepted and converted into a booking request.
+                    It is not confirmed until the team confirms it.
+                </p>
+                <div class="ktr-status-track" aria-label="Current progress">
+                    <span class="done">Offer accepted</span>
+                    <span class="done">Booking request created</span>
+                    <span>Final confirmation pending</span>
+                </div>
+            </section>
+        }
+
+        <!-- ── Destination navigation ───────────────────────────────── -->
+        <div class="ktr-destination">
+            <a class="ktr-link"
+               asp-controller="Destinations"
+               asp-action="Details"
+               asp-route-slug="@Model.Destinations">
+                Explore this destination
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M5 12h14" />
+                    <path d="M13 6l6 6-6 6" />
+                </svg>
+            </a>
+        </div>
+
+    </div>
+</main>
+
+@* Progressive enhancement only — the page is fully functional without it. *@
+<script>
+    (function () {
+        var btn = document.getElementById('ktr-copy-btn');
+        var feedback = document.getElementById('ktr-copy-feedback');
+        if (!btn || !feedback || !navigator.clipboard) { return; }
+
+        btn.addEventListener('click', function () {
+            var ref = btn.getAttribute('data-reference') || '';
+            navigator.clipboard.writeText(ref).then(function () {
+                feedback.textContent = 'Reference copied to clipboard.';
+                setTimeout(function () { feedback.textContent = ''; }, 2500);
+            }).catch(function () {
+                feedback.textContent = 'Unable to copy automatically. Please select the reference manually.';
+            });
+        });
+    })();
+</script>

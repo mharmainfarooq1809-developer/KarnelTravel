@@ -20,12 +20,12 @@
 
     var travelActive = currentPath.Contains("/admin/destinations")
                     || currentPath.Contains("/admin/properties")
-                    || currentPath.Contains("/admin/tours")
-                    || currentPath.Contains("/admin/experiences");
+                    || currentPath.Contains("/admin/tours");
 
     var opsActive = isTransport
                     || isVehicles
                     || currentPath.Contains("/admin/bookings")
+                     || currentPath.Contains("/admin/customtriprequests")
                     || currentPath.Contains("/admin/customers")
                     || currentPath.Contains("/admin/inquiries")
                     || currentPath.Contains("/admin/reviews");
@@ -1708,11 +1708,7 @@
                         </a>
                         <a class="nav-link @Active("/admin/tours")" asp-controller="Admin" asp-action="Tours">
                             <svg class="nav-icon" aria-hidden="true"><use href="#i-map" /></svg>
-                            <span>Experiences</span>
-                        </a>
-                        <a class="nav-link @Active("/admin/experiences")" asp-controller="Admin" asp-action="Experiences">
-                            <svg class="nav-icon" aria-hidden="true"><use href="#i-list" /></svg>
-                            <span>Experience listings</span>
+                            <span>Tour packages</span>
                         </a>
                     </div>
                 </div>
@@ -1737,6 +1733,10 @@
                         <a class="nav-link @Active("/admin/bookings")" asp-controller="Admin" asp-action="Bookings">
                             <svg class="nav-icon" aria-hidden="true"><use href="#i-calendar" /></svg>
                             <span>Bookings</span>
+                        </a>
+                        <a class="nav-link @Active("/admin/customtriprequests")" asp-controller="Admin" asp-action="CustomTripRequests">
+                            <svg class="nav-icon" aria-hidden="true"><use href="#i-map" /></svg>
+                            <span>Custom trip requests</span>
                         </a>
                         <a class="nav-link @Active("/admin/customers")" asp-controller="Admin" asp-action="Customers">
                             <svg class="nav-icon" aria-hidden="true"><use href="#i-users" /></svg>

@@ -1,28 +1,651 @@
 @model KarnelTravel.Models.TripInquiry
+
+@using System.Globalization
+
 @{
     Layout = "_AdminLayout";
     ViewData["Title"] = "Custom Trip Request";
-}
-<h1>Custom trip request @Model.ReferenceNumber</h1>
-<p><strong>Customer:</strong> @Model.CustomerName · @Model.Phone · @Model.Email</p>
-<p><strong>Destination:</strong> @Model.Destinations</p>
-<p><strong>Dates:</strong> @Model.DepartureDate?.ToString("dd MMM yyyy") - @Model.ReturnDate?.ToString("dd MMM yyyy")</p>
-<p><strong>Travellers:</strong> @Model.Adults adult(s), @Model.Children child(ren)</p>
-<p><strong>Needs:</strong> @Model.ServiceNeeds</p>
-<p><strong>Budget:</strong> @(Model.BudgetPKR?.ToString("N0") ?? "Not provided") PKR</p>
-<p><strong>Requirements:</strong> @Model.AdditionalRequirements</p>
-<form asp-action="UpdateCustomTripRequest" asp-route-id="@Model.Id" method="post">
-    <div asp-validation-summary="ModelOnly"></div>
-    <label for="status">Status</label>
-    <select id="status" name="status">
-        @foreach (var status in new[] { "Pending", "In Progress", "Offer Prepared", "Accepted", "Declined", "Cancelled" })
+    ViewData["Section"] = "Inquiries";
+
+    var culture = CultureInfo.CurrentCulture;
+
+    var statusOptions = new[] { "Pending", "In Progress", "Offer Prepared", "Accepted", "Declined", "Cancelled" };
+
+    string StatusKey(string? status)
+    {
+        var key = (status ?? "unknown").Trim().ToLowerInvariant();
+        return key switch
         {
-            <option selected="@(Model.Status == status)" value="@status">@status</option>
-        }
-    </select>
-    <label for="adminNotes">Internal notes</label>
-    <textarea id="adminNotes" name="adminNotes">@Model.AdminNotes</textarea>
-    <label for="proposedOffer">Proposed offer</label>
-    <textarea id="proposedOffer" name="proposedOffer">@Model.ProposedOffer</textarea>
-    <button type="submit">Save request update</button>
-</form>
+            "pending"           => "pending",
+            "in progress"       => "in-progress",
+            "in-progress"       => "in-progress",
+            "offer prepared"    => "offer-prepared",
+            "offer-prepared"    => "offer-prepared",
+            "accepted"          => "accepted",
+            "declined"          => "declined",
+            "cancelled" or "canceled" => "cancelled",
+            _ => "unknown"
+        };
+    }
+
+    string Initials(string? name)
+    {
+        if (string.IsNullOrWhiteSpace(name)) return "•";
+        var parts = name.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        return string.Concat(parts.Take(2).Select(p => char.ToUpperInvariant(p[0])));
+    }
+
+    var statusKey = StatusKey(Model.Status);
+
+    var dateRange = (Model.DepartureDate.HasValue || Model.ReturnDate.HasValue)
+        ? $"{(Model.DepartureDate?.ToString("dd MMM yyyy", culture) ?? "—")} → {(Model.ReturnDate?.ToString("dd MMM yyyy", culture) ?? "—")}"
+        : "Not specified";
+}
+
+<style>
+    .ctd-page {
+        color: var(--ink, #1b2922);
+        padding-bottom: 36px;
+    }
+
+    /* ---------- Header ---------- */
+    .ctd-header {
+        margin-bottom: 26px;
+        padding: 32px 36px;
+        border: 1px solid var(--line, #e5e9e3);
+        border-radius: 16px;
+        background: linear-gradient(135deg, #ffffff 0%, #fdfcf9 55%, #f7f3e8 100%);
+        box-shadow: 0 2px 6px -2px rgba(22,71,52,.08), 0 1px 2px rgba(22,71,52,.04);
+        overflow: hidden;
+        position: relative;
+    }
+    .ctd-header::before {
+        content: "";
+        position: absolute;
+        top: -50%; right: -6%;
+        width: 360px; height: 360px;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(196,154,62,.18), transparent 68%);
+        pointer-events: none;
+    }
+    .ctd-header::after {
+        content: "";
+        position: absolute;
+        left: 0; right: 0; bottom: 0;
+        height: 1px;
+        background: linear-gradient(90deg, transparent, rgba(196,154,62,.4), transparent);
+    }
+    .ctd-header > * { position: relative; }
+
+    .ctd-eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        margin: 0 0 14px;
+        padding: 6px 12px;
+        border: 1px solid rgba(60,145,105,.28);
+        border-radius: 999px;
+        background: rgba(60,145,105,.08);
+        color: var(--accent, #3c9169);
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+    }
+
+    .ctd-header-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        gap: 20px;
+        flex-wrap: wrap;
+    }
+
+    .ctd-header h1 {
+        font-family: var(--serif, Georgia, serif);
+        font-weight: 400;
+        color: var(--forest, #164734);
+        font-size: clamp(26px, 3.4vw, 40px);
+        line-height: 1.08;
+        letter-spacing: -.025em;
+        margin: 0;
+    }
+    .ctd-header h1 small {
+        display: block;
+        margin-top: 8px;
+        font-family: ui-monospace, 'SF Mono', 'Cascadia Code', monospace;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: .01em;
+        color: var(--muted, #758078);
+    }
+
+    .ctd-header p {
+        margin: 12px 0 0;
+        color: var(--muted, #758078);
+        font-size: 14px;
+        line-height: 1.7;
+        max-width: 62ch;
+    }
+
+    .ctd-back {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 13px;
+        border: 1px solid var(--line, #e5e9e3);
+        border-radius: 999px;
+        background: var(--white, #fff);
+        color: var(--forest, #164734);
+        font-size: 12.5px;
+        font-weight: 600;
+        text-decoration: none;
+        white-space: nowrap;
+        transition: background .14s ease, border-color .14s ease, box-shadow .14s ease;
+    }
+    .ctd-back:hover {
+        background: var(--soft, #edf2ed);
+        border-color: var(--line-hi, #d6dcd4);
+        box-shadow: 0 2px 6px -2px rgba(22,71,52,.08);
+    }
+
+    /* ---------- Status pill (header) ---------- */
+    .ctd-status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 12px;
+        border-radius: 999px;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: .04em;
+        text-transform: uppercase;
+        white-space: nowrap;
+    }
+    .ctd-status-badge::before {
+        content: "";
+        width: 6px; height: 6px;
+        border-radius: 50%;
+        background: currentColor;
+        opacity: .9;
+    }
+    .ctd-status-badge.pending        { background: rgba(220,164,61,.14); color: #8a6516; }
+    .ctd-status-badge.in-progress    { background: rgba(60,120,180,.14); color: #315f96; }
+    .ctd-status-badge.offer-prepared { background: rgba(143,96,192,.14); color: #6c4599; }
+    .ctd-status-badge.accepted       { background: rgba(40,180,133,.14); color: #1c8a64; }
+    .ctd-status-badge.declined       { background: rgba(174,93,80,.14);  color: #8b4137; }
+    .ctd-status-badge.cancelled      { background: rgba(120,120,120,.14); color: #5a5a5a; }
+    .ctd-status-badge.unknown        { background: var(--soft, #edf2ed); color: var(--muted, #758078); }
+
+    /* ---------- Layout ---------- */
+    .ctd-layout {
+        display: grid;
+        grid-template-columns: minmax(0, 1.4fr) minmax(300px, 1fr);
+        gap: 20px;
+        align-items: start;
+    }
+
+    /* ---------- Cards ---------- */
+    .ctd-card {
+        background: var(--white, #fff);
+        border: 1px solid var(--line, #e5e9e3);
+        border-radius: 14px;
+        overflow: hidden;
+        box-shadow: 0 1px 2px rgba(22,71,52,.03);
+    }
+
+    .ctd-card-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        padding: 18px 22px;
+        border-bottom: 1px solid var(--line, #e5e9e3);
+        background: rgba(143,168,136,.05);
+    }
+    .ctd-card-head h2 {
+        margin: 0;
+        font-size: 14.5px;
+        font-weight: 700;
+        color: var(--forest, #164734);
+        letter-spacing: -.01em;
+    }
+    .ctd-card-head p {
+        margin: 4px 0 0;
+        font-size: 11.5px;
+        color: var(--muted, #758078);
+    }
+
+    .ctd-card-body {
+        padding: 22px;
+        display: flex;
+        flex-direction: column;
+        gap: 18px;
+    }
+
+    /* ---------- Customer summary ---------- */
+    .ctd-customer {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 18px 20px;
+        border: 1px solid var(--line, #e5e9e3);
+        border-radius: 12px;
+        background: linear-gradient(135deg, rgba(60,145,105,.05), rgba(22,71,52,.02));
+    }
+    .ctd-avatar {
+        flex-shrink: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 52px; height: 52px;
+        border-radius: 14px;
+        background: linear-gradient(135deg, rgba(60,145,105,.18), rgba(22,71,52,.10));
+        border: 1px solid rgba(60,145,105,.25);
+        color: var(--forest, #164734);
+        font-family: var(--serif, Georgia, serif);
+        font-size: 18px;
+        font-weight: 400;
+    }
+    .ctd-customer-text { min-width: 0; }
+    .ctd-customer-text strong {
+        display: block;
+        font-family: var(--serif, Georgia, serif);
+        font-weight: 400;
+        font-size: 19px;
+        color: var(--forest, #164734);
+        letter-spacing: -.01em;
+    }
+    .ctd-customer-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-top: 6px;
+        font-size: 12.5px;
+        color: var(--muted, #758078);
+    }
+    .ctd-customer-meta a {
+        color: var(--forest, #164734);
+        text-decoration: none;
+        border-bottom: 1px dashed rgba(60,145,105,.4);
+    }
+    .ctd-customer-meta a:hover { border-bottom-style: solid; }
+
+    /* ---------- Info grid ---------- */
+    .ctd-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 16px;
+    }
+    .ctd-field { min-width: 0; }
+    .ctd-field.full { grid-column: 1 / -1; }
+
+    .ctd-label {
+        display: block;
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: .1em;
+        text-transform: uppercase;
+        color: var(--muted, #758078);
+        margin-bottom: 6px;
+    }
+    .ctd-value {
+        display: block;
+        font-size: 13.5px;
+        font-weight: 600;
+        color: var(--ink, #1b2922);
+        line-height: 1.5;
+        overflow-wrap: anywhere;
+    }
+    .ctd-value.mono {
+        font-family: ui-monospace, 'SF Mono', 'Cascadia Code', monospace;
+        font-variant-numeric: tabular-nums;
+        color: var(--forest, #164734);
+    }
+    .ctd-value.empty {
+        color: var(--muted, #758078);
+        font-style: italic;
+        font-weight: 500;
+    }
+    .ctd-value-block {
+        display: block;
+        padding: 12px 14px;
+        border: 1px solid var(--line, #e5e9e3);
+        border-radius: 10px;
+        background: var(--surface-sunken, #fbfcfa);
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--ink, #1b2922);
+        line-height: 1.65;
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+    }
+    .ctd-value-block.empty {
+        color: var(--muted, #758078);
+        font-style: italic;
+    }
+
+    /* ---------- Form fields ---------- */
+    .ctd-form-field {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+    .ctd-form-field label {
+        font-size: 12.5px;
+        font-weight: 650;
+        color: var(--ink, #1b2922);
+    }
+    .ctd-form-field select,
+    .ctd-form-field textarea {
+        width: 100%;
+        padding: 11px 13px;
+        border: 1px solid var(--line, #e5e9e3);
+        border-radius: 10px;
+        background: var(--white, #fff);
+        color: var(--ink, #1b2922);
+        font: inherit;
+        font-size: 13px;
+        outline: none;
+        transition: border-color .14s ease, box-shadow .14s ease;
+    }
+    .ctd-form-field select {
+        appearance: none;
+        -webkit-appearance: none;
+        padding-right: 36px;
+        background: var(--white, #fff) url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23758078' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>") no-repeat right 12px center / 14px;
+        cursor: pointer;
+    }
+    .ctd-form-field textarea {
+        min-height: 130px;
+        resize: vertical;
+        line-height: 1.6;
+    }
+    .ctd-form-field select:focus,
+    .ctd-form-field textarea:focus {
+        border-color: var(--accent, #3c9169);
+        box-shadow: 0 0 0 3px rgba(60,145,105,.18);
+    }
+    .ctd-form-field small {
+        font-size: 11.5px;
+        color: var(--muted, #758078);
+        line-height: 1.55;
+    }
+
+    .ctd-form-field.proposed-offer {
+        padding: 16px;
+        border: 1px solid rgba(143,96,192,.22);
+        border-radius: 12px;
+        background: rgba(143,96,192,.04);
+    }
+    .ctd-form-field.proposed-offer label {
+        color: #6c4599;
+    }
+
+    .ctd-validation {
+        color: #8b4137;
+        background: rgba(174,93,80,.08);
+        border: 1px solid rgba(174,93,80,.22);
+        border-radius: 10px;
+        padding: 12px 14px;
+        font-size: 12.5px;
+        font-weight: 500;
+    }
+    .ctd-validation ul { margin: 6px 0 0; padding-left: 18px; }
+    .ctd-validation.validation-summary-valid { display: none; }
+
+    /* ---------- Actions ---------- */
+    .ctd-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+        flex-wrap: wrap;
+        padding-top: 4px;
+    }
+
+    .ctd-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 7px;
+        min-height: 44px;
+        padding: 0 20px;
+        border-radius: 10px;
+        border: 1px solid transparent;
+        font: inherit;
+        font-size: 13px;
+        font-weight: 700;
+        text-decoration: none;
+        white-space: nowrap;
+        cursor: pointer;
+        transition: background .14s ease, border-color .14s ease, color .14s ease, box-shadow .14s ease, transform .14s ease;
+    }
+    .ctd-btn-primary {
+        background: var(--forest, #164734);
+        color: #fff;
+        border-color: var(--forest, #164734);
+        box-shadow: 0 2px 10px -4px rgba(22,71,52,.4);
+    }
+    .ctd-btn-primary:hover {
+        background: var(--green, #236b4d);
+        border-color: var(--green, #236b4d);
+        box-shadow: 0 6px 20px -8px rgba(22,71,52,.5);
+        transform: translateY(-1px);
+    }
+    .ctd-btn-secondary {
+        background: var(--white, #fff);
+        color: var(--ink, #1b2922);
+        border-color: var(--line, #e5e9e3);
+    }
+    .ctd-btn-secondary:hover {
+        background: var(--soft, #edf2ed);
+        border-color: var(--line-hi, #d6dcd4);
+        color: var(--forest, #164734);
+    }
+
+    /* ---------- Responsive ---------- */
+    @@media (max-width: 900px) {
+        .ctd-layout { grid-template-columns: 1fr; }
+    }
+    @@media (max-width: 640px) {
+        .ctd-header { padding: 24px; }
+        .ctd-header-row { align-items: flex-start; }
+        .ctd-back { width: 100%; justify-content: center; }
+        .ctd-card-head { padding: 16px 18px; }
+        .ctd-card-body { padding: 18px; }
+        .ctd-grid { grid-template-columns: 1fr; }
+        .ctd-customer { padding: 16px; }
+        .ctd-avatar { width: 46px; height: 46px; font-size: 16px; }
+        .ctd-actions { flex-direction: column-reverse; align-items: stretch; }
+        .ctd-actions .ctd-btn { width: 100%; }
+    }
+
+    @@media (prefers-reduced-motion: reduce) {
+        .ctd-btn, .ctd-back { transition-duration: .001ms !important; }
+        .ctd-btn-primary:hover { transform: none; }
+    }
+</style>
+
+<div class="ctd-page">
+
+    <!-- HEADER -->
+    <div class="ctd-header">
+        <p class="ctd-eyebrow">Inquiries · Custom trip request</p>
+
+        <div class="ctd-header-row">
+            <div>
+                <h1>
+                    Custom trip request
+                    <small>@Model.ReferenceNumber</small>
+                </h1>
+                <p>
+                    Review this request, update its status, and prepare an offer for the customer.
+                    Internal notes stay private; the proposed offer is shared when the status is set to <strong>Offer Prepared</strong>.
+                </p>
+            </div>
+
+            <div style="display:flex; flex-direction:column; align-items:flex-end; gap:10px;">
+                <span class="ctd-status-badge @statusKey">@Model.Status</span>
+                <a asp-action="CustomTripRequests" class="ctd-back">
+                    <span aria-hidden="true">←</span> Back to requests
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="ctd-layout">
+
+        <!-- LEFT: REQUEST DETAILS -->
+        <div class="ctd-card">
+            <div class="ctd-card-head">
+                <div>
+                    <h2>Request details</h2>
+                    <p>Information submitted by the customer.</p>
+                </div>
+            </div>
+
+            <div class="ctd-card-body">
+
+                <!-- CUSTOMER -->
+                <div class="ctd-customer">
+                    <span class="ctd-avatar" aria-hidden="true">@Initials(Model.CustomerName)</span>
+                    <div class="ctd-customer-text">
+                        <strong>@Model.CustomerName</strong>
+                        <div class="ctd-customer-meta">
+                            @if (!string.IsNullOrWhiteSpace(Model.Phone))
+                            {
+                                <span>@Model.Phone</span>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(Model.Email))
+                            {
+                                <a href="mailto:@Model.Email">@Model.Email</a>
+                            }
+                        </div>
+                    </div>
+                </div>
+
+                <!-- INFO GRID -->
+                <div class="ctd-grid">
+
+                    <div class="ctd-field">
+                        <span class="ctd-label">Destination</span>
+                        @if (!string.IsNullOrWhiteSpace(Model.Destinations))
+                        {
+                            <span class="ctd-value">@Model.Destinations</span>
+                        }
+                        else
+                        {
+                            <span class="ctd-value empty">Not specified</span>
+                        }
+                    </div>
+
+                    <div class="ctd-field">
+                        <span class="ctd-label">Dates</span>
+                        <span class="ctd-value @(Model.DepartureDate.HasValue || Model.ReturnDate.HasValue ? "" : "empty")">@dateRange</span>
+                    </div>
+
+                    <div class="ctd-field">
+                        <span class="ctd-label">Travellers</span>
+                        <span class="ctd-value">
+                            @Model.Adults adult@(Model.Adults == 1 ? "" : "s")
+                            @if (Model.Children > 0)
+                            {
+                                <text>, @Model.Children child@(Model.Children == 1 ? "" : "ren")</text>
+                            }
+                        </span>
+                    </div>
+
+                    <div class="ctd-field">
+                        <span class="ctd-label">Budget</span>
+                        @if (Model.BudgetPKR.HasValue)
+                        {
+                            <span class="ctd-value mono">PKR @Model.BudgetPKR.Value.ToString("N0", culture)</span>
+                        }
+                        else
+                        {
+                            <span class="ctd-value empty">Not provided</span>
+                        }
+                    </div>
+
+                    <div class="ctd-field full">
+                        <span class="ctd-label">Service needs</span>
+                        @if (!string.IsNullOrWhiteSpace(Model.ServiceNeeds))
+                        {
+                            <span class="ctd-value-block">@Model.ServiceNeeds</span>
+                        }
+                        else
+                        {
+                            <span class="ctd-value-block empty">Not specified</span>
+                        }
+                    </div>
+
+                    <div class="ctd-field full">
+                        <span class="ctd-label">Additional requirements</span>
+                        @if (!string.IsNullOrWhiteSpace(Model.AdditionalRequirements))
+                        {
+                            <span class="ctd-value-block">@Model.AdditionalRequirements</span>
+                        }
+                        else
+                        {
+                            <span class="ctd-value-block empty">None provided</span>
+                        }
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <!-- RIGHT: UPDATE FORM -->
+        <div class="ctd-card">
+            <div class="ctd-card-head">
+                <div>
+                    <h2>Update request</h2>
+                    <p>Status, internal notes, and customer-facing offer.</p>
+                </div>
+            </div>
+
+            <div class="ctd-card-body">
+                <form asp-action="UpdateCustomTripRequest"
+                      asp-route-id="@Model.Id"
+                      method="post">
+
+                    @Html.AntiForgeryToken()
+
+                    <div asp-validation-summary="ModelOnly" class="ctd-validation"></div>
+
+                    <div class="ctd-form-field">
+                        <label for="status">Status</label>
+                        <select id="status" name="status">
+                            @foreach (var status in statusOptions)
+                            {
+                                <option value="@status" selected="@(Model.Status == status ? "selected" : null)">@status</option>
+                            }
+                        </select>
+                        <small>Changing status affects visibility on the customer's request page.</small>
+                    </div>
+
+                    <div class="ctd-form-field">
+                        <label for="adminNotes">Internal notes</label>
+                        <textarea id="adminNotes" name="adminNotes" placeholder="Notes for your team. Not shown to the customer.">@Model.AdminNotes</textarea>
+                        <small>Internal notes are never emailed or shown to the customer.</small>
+                    </div>
+
+                    <div class="ctd-form-field proposed-offer">
+                        <label for="proposedOffer">Customer plan &amp; offer details</label>
+                        <textarea id="proposedOffer" name="proposedOffer" placeholder="Describe the itinerary, pricing, inclusions, and any terms the customer should see.">@Model.ProposedOffer</textarea>
+                        <small>
+                            When status is set to <strong>Offer Prepared</strong>, these details are emailed to the customer.
+                        </small>
+                    </div>
+
+                    <div class="ctd-actions">
+                        <a asp-action="CustomTripRequests" class="ctd-btn ctd-btn-secondary">Cancel</a>
+                        <button type="submit" class="ctd-btn ctd-btn-primary">Save request update</button>
+                    </div>
+
+                </form>
+            </div>
+        </div>
+
+    </div>
+</div>

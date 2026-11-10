@@ -18,6 +18,7 @@ public sealed class RuleBasedAiTests
     [InlineData("compare destinations", AIIntent.DestinationComparison)]
     [InlineData("Can you explain the difference between a hotel and a resort?", AIIntent.GeneralTravelInformation)]
     [InlineData("Tell me about the natural beauty of Skardu.", AIIntent.DestinationInformation)]
+    [InlineData("I want to know about Hunza Valley.", AIIntent.DestinationInformation)]
     [InlineData("I have three days. Suggest a destination.", AIIntent.DestinationRecommendation)]
     [InlineData("Suggest a three-day trip to Hunza.", AIIntent.TripPlanning)]
     [InlineData("What is the hotel price in Hunza?", AIIntent.HotelPriceInquiry)]

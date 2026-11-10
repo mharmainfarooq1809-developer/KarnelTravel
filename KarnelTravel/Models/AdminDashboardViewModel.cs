@@ -19,5 +19,7 @@ namespace KarnelTravel.Models
 
         public List<RecentBookingViewModel> RecentBookings { get; set; }
             = new();
+
+        public List<TripInquiry> RecentTripInquiries { get; set; } = new();
     }
 }

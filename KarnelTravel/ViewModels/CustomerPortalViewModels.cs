@@ -7,11 +7,13 @@ public class CustomerDashboardViewModel
     public CustomerAccount Customer { get; set; } = null!;
     public int TotalBookings { get; set; }
     public int PendingBookings { get; set; }
+    public int PendingApprovalBookings { get; set; }
     public int ConfirmedBookings { get; set; }
     public int CompletedBookings { get; set; }
     public int CancelledBookings { get; set; }
     public IReadOnlyList<Booking> RecentBookings { get; set; } = Array.Empty<Booking>();
     public IReadOnlyDictionary<int, BookingTicket> ActiveTickets { get; set; } = new Dictionary<int, BookingTicket>();
+    public IReadOnlyList<TripInquiry> TripInquiries { get; set; } = Array.Empty<TripInquiry>();
 }
 
 public class CustomerBookingsViewModel

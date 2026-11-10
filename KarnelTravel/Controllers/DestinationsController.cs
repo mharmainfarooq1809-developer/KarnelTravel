@@ -24,10 +24,15 @@ namespace KarnelTravel.Controllers
                 return NotFound();
             }
 
+            var requestedSlug = slug.Trim();
+            var normalizedSlug = requestedSlug.Replace(' ', '-');
             var destination = await _context.Destinations
                 .AsNoTracking()
                 .FirstOrDefaultAsync(d =>
-                    d.Slug == slug && d.IsPublished);
+                    d.IsPublished &&
+                    (d.Slug == requestedSlug ||
+                     d.Slug == normalizedSlug ||
+                     d.Name == requestedSlug));
 
             if (destination == null)
             {

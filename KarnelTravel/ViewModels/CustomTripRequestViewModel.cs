@@ -4,6 +4,9 @@ namespace KarnelTravel.ViewModels;
 
 public sealed class CustomTripRequestViewModel
 {
+    [System.ComponentModel.DataAnnotations.Schema.NotMapped]
+    public IReadOnlyList<string> PublishedDestinations { get; set; } = Array.Empty<string>();
+
     [StringLength(80)]
     public string? IdempotencyKey { get; set; }
 

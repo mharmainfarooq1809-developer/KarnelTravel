@@ -27,6 +27,9 @@ public class Booking
     public int? CustomerId { get; set; }
     public CustomerAccount? Customer { get; set; }
 
+    public int? TripInquiryId { get; set; }
+    public TripInquiry? TripInquiry { get; set; }
+
     [Required, StringLength(30)]
     public string ServiceType { get; set; } = string.Empty;
 
@@ -41,6 +44,12 @@ public class Booking
 
     [Required, StringLength(150)]
     public string ServiceName { get; set; } = string.Empty;
+
+    [StringLength(100)]
+    public string? ServiceNeeds { get; set; }
+
+    [StringLength(120)]
+    public string? StartingCity { get; set; }
 
     [StringLength(150)]
     public string? TransportRouteName { get; set; }
@@ -80,7 +89,7 @@ public class Booking
     [StringLength(1000)]
     public string? CustomerNotes { get; set; }
 
-    [StringLength(1000)]
+    [StringLength(4000)]
     public string? AdminNotes { get; set; }
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
@@ -101,6 +110,7 @@ public class Booking
     public ICollection<BookingStatusHistory> StatusHistory { get; set; } = new List<BookingStatusHistory>();
     public ICollection<CustomerNotification> Notifications { get; set; } = new List<CustomerNotification>();
     public ICollection<EmailDeliveryAttempt> EmailDeliveryAttempts { get; set; } = new List<EmailDeliveryAttempt>();
+    public ICollection<DemoPaymentTransaction> DemoPaymentTransactions { get; set; } = new List<DemoPaymentTransaction>();
 
     public static bool CanTransition(string currentStatus, string nextStatus)
     {
@@ -109,7 +119,10 @@ public class Booking
 
         return currentStatus switch
         {
-            "Pending" => nextStatus is "Confirmed" or "Rejected" or "Cancelled",
+            "PendingPayment" => nextStatus is "Confirmed" or "Rejected" or "Cancelled" or "PaymentFailed",
+            "PaymentFailed" => nextStatus is "Confirmed" or "Cancelled" or "PaymentFailed",
+            "Pending" => nextStatus is "Confirmed" or "Rejected" or "Cancelled" or "Pending Admin Approval",
+            "Pending Admin Approval" => nextStatus is "Confirmed" or "Rejected" or "Cancelled",
             "Confirmed" => nextStatus is "Completed" or "Cancelled",
             _ => false
         };

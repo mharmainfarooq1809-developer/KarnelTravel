@@ -20,6 +20,9 @@
 
     var hasNotes  = !string.IsNullOrWhiteSpace(booking?.CustomerNotes);
     var hasTicket = Model.ActiveTicket is not null;
+    var demoPayment = booking?.DemoPaymentTransactions?.OrderByDescending(x => x.CreatedAt).FirstOrDefault();
+    var tripRequest = booking?.TripInquiry;
+    var isCustomTrip = booking?.ServiceType == "Custom Trip" || tripRequest is not null;
 }
 
 @*
@@ -789,6 +792,52 @@
                     </dd>
                 </div>
             </dl>
+        </section>
+
+        @if (isCustomTrip)
+        {
+            <section class="bk-section bk-anim" style="animation-delay:.07s" aria-labelledby="tripRequestHeading">
+                <h2 class="bk-h2" id="tripRequestHeading">Original trip request</h2>
+                <dl class="bk-facts">
+                    <div class="bk-fact"><dt class="bk-fact__label">Destination</dt><dd class="bk-fact__value">@(tripRequest?.Destinations ?? booking?.ServiceName)</dd></div>
+                    @if (!string.IsNullOrWhiteSpace(tripRequest?.StartingCity) || !string.IsNullOrWhiteSpace(booking?.StartingCity))
+                    {
+                        <div class="bk-fact"><dt class="bk-fact__label">Starting city</dt><dd class="bk-fact__value">@(tripRequest?.StartingCity ?? booking?.StartingCity)</dd></div>
+                    }
+                    <div class="bk-fact"><dt class="bk-fact__label">Requested services</dt><dd class="bk-fact__value">@(tripRequest?.ServiceNeeds ?? booking?.ServiceNeeds)</dd></div>
+                    @if (tripRequest?.BudgetPKR is not null || booking?.EstimatedTotalPKR is not null)
+                    {
+                        <div class="bk-fact"><dt class="bk-fact__label">Requested budget</dt><dd class="bk-fact__value">@((tripRequest?.BudgetPKR ?? booking?.EstimatedTotalPKR)?.ToString("N2")) PKR</dd></div>
+                    }
+                </dl>
+                @if (!string.IsNullOrWhiteSpace(booking?.AdminNotes))
+                {
+                    <h3 class="bk-h2" style="font-size:1.2rem;margin-top:1.5rem">Approved management plan</h3>
+                    <div class="bk-notes">@booking.AdminNotes</div>
+                }
+            </section>
+        }
+
+        <section class="bk-section bk-anim" style="animation-delay:.08s" aria-labelledby="paymentHeading">
+            <h2 class="bk-h2" id="paymentHeading">Payment and approval</h2>
+            <dl class="bk-facts">
+                <div class="bk-fact"><dt class="bk-fact__label">Payment status</dt><dd class="bk-fact__value">@(demoPayment?.PaymentStatus is "Successful" or "Paid (Demo)" ? "Paid" : demoPayment?.PaymentStatus ?? "Not paid")</dd></div>
+                <div class="bk-fact"><dt class="bk-fact__label">Booking approval</dt><dd class="bk-fact__value">@statusText</dd></div>
+                @if (demoPayment is not null)
+                {
+                    <div class="bk-fact"><dt class="bk-fact__label">Demo transaction</dt><dd class="bk-fact__value">@demoPayment.TransactionReference</dd></div>
+                    <div class="bk-fact"><dt class="bk-fact__label">Amount</dt><dd class="bk-fact__value">@demoPayment.Currency @demoPayment.Amount.ToString("N2")</dd></div>
+                    <div class="bk-fact"><dt class="bk-fact__label">Refund status</dt><dd class="bk-fact__value">@demoPayment.RefundStatus</dd></div>
+                }
+            </dl>
+            @if (booking is not null && demoPayment?.PaymentStatus != "Paid (Demo)" && (booking.Status == "Pending" || booking.Status == "Pending Admin Approval"))
+            {
+                <a class="bk-ticket__cta" asp-controller="DemoPayment" asp-action="Checkout" asp-route-id="@booking.Id">Open demo payment</a>
+            }
+            @if (demoPayment?.PaymentStatus == "Failed (Demo)" && booking is not null)
+            {
+                <a class="bk-ticket__cta" asp-controller="DemoPayment" asp-action="Checkout" asp-route-id="@booking.Id">Retry demo payment</a>
+            }
         </section>
 
         <!-- Status timeline -->

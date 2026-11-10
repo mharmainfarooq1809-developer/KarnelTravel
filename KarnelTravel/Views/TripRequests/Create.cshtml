@@ -737,8 +737,13 @@
 
                         <div class="ctr-field">
                             <label asp-for="Destination" class="ctr-label"></label>
-                            <input asp-for="Destination" class="ctr-input"
-                                   placeholder="e.g. Hunza Valley, Skardu, Naran" autocomplete="off" />
+                            <select asp-for="Destination" class="ctr-input" autocomplete="off">
+                                <option value="">Select a published destination</option>
+                                @foreach (var destinationName in Model.PublishedDestinations)
+                                {
+                                    <option value="@destinationName">@destinationName</option>
+                                }
+                            </select>
                             <span asp-validation-for="Destination" class="ctr-error"></span>
                         </div>
 

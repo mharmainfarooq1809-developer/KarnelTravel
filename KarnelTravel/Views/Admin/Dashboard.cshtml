@@ -199,7 +199,7 @@
                         <strong>Trip inquiries</strong>
                         <small>Custom travel requests</small>
                     </div>
-                    <span>@Model.TotalTripInquiries.ToString("N0", culture)</span>
+                    <a asp-controller="Admin" asp-action="CustomTripRequests">@Model.TotalTripInquiries.ToString("N0", culture)</a>
                 </div>
 
                 <div class="operation-item">
@@ -221,6 +221,32 @@
             </div>
         </div>
 
+    </section>
+
+    <section class="panel section-space">
+        <div class="panel-title">
+            <div>
+                <h2>Recent custom trip requests</h2>
+                <p class="panel-subtitle">Destination plans waiting for review or customer response.</p>
+            </div>
+            <a asp-controller="Admin" asp-action="CustomTripRequests">View all</a>
+        </div>
+        @if (Model.RecentTripInquiries.Count == 0)
+        {
+            <div class="dashboard-empty"><strong>No custom trip requests yet</strong><p>New destination trip requests will appear here.</p></div>
+        }
+        else
+        {
+            <div class="operation-list">
+                @foreach (var request in Model.RecentTripInquiries)
+                {
+                    <a class="operation-item" asp-controller="Admin" asp-action="CustomTripRequestDetails" asp-route-id="@request.Id">
+                        <div><strong>@request.ReferenceNumber · @request.Destinations</strong><small>@request.CustomerName · @request.CreatedAt.ToLocalTime().ToString("dd MMM yyyy")</small></div>
+                        <span>@request.Status</span>
+                    </a>
+                }
+            </div>
+        }
     </section>
 
     <!-- QUICK ACTIONS -->

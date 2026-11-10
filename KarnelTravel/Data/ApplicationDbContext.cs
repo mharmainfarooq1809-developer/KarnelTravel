@@ -23,8 +23,6 @@ namespace KarnelTravel.Data
         public DbSet<Hotel> Hotels => Set<Hotel>();
         public DbSet<Restaurant> Restaurants => Set<Restaurant>();
         public DbSet<Resort> Resorts => Set<Resort>();
-        public DbSet<Experience> Experiences => Set<Experience>();
-
         public DbSet<TourPackage> TourPackages => Set<TourPackage>();
         public DbSet<TourItineraryDay> TourItineraryDays => Set<TourItineraryDay>();
         public DbSet<TourDeparture> TourDepartures => Set<TourDeparture>();
@@ -47,6 +45,7 @@ namespace KarnelTravel.Data
         public DbSet<BookingStatusHistory> BookingStatusHistory => Set<BookingStatusHistory>();
         public DbSet<CustomerNotification> CustomerNotifications => Set<CustomerNotification>();
         public DbSet<EmailDeliveryAttempt> EmailDeliveryAttempts => Set<EmailDeliveryAttempt>();
+        public DbSet<DemoPaymentTransaction> DemoPaymentTransactions => Set<DemoPaymentTransaction>();
         public DbSet<Review> Reviews => Set<Review>();
 
         // WEBSITE CONTENT
@@ -79,24 +78,6 @@ namespace KarnelTravel.Data
                 e.ToTable("ApplicationSettings");
                 e.HasKey(x => x.Id);
                 e.HasIndex(x => x.Id).IsUnique();
-            });
-
-            model.Entity<Experience>(e =>
-            {
-                e.ToTable("Experiences");
-                e.HasKey(x => x.Id);
-                e.Property(x => x.Name).HasMaxLength(150).IsRequired();
-                e.Property(x => x.Category).HasMaxLength(80).IsRequired();
-                e.Property(x => x.Location).HasMaxLength(150).IsRequired();
-                e.Property(x => x.Duration).HasMaxLength(80).IsRequired();
-                e.Property(x => x.ShortDescription).HasMaxLength(1000);
-                e.Property(x => x.Description).HasMaxLength(4000);
-                e.Property(x => x.ImageUrl).HasMaxLength(500);
-                e.Property(x => x.Includes).HasMaxLength(1000);
-                e.Property(x => x.Excludes).HasMaxLength(1000);
-                e.Property(x => x.StartingPrice).HasPrecision(18, 2);
-                e.HasIndex(x => x.Category);
-                e.HasIndex(x => new { x.IsPublished, x.DisplayOrder });
             });
 
             model.Entity<AIConfiguration>(e => { e.ToTable("AIConfigurations"); e.HasKey(x => x.Id); });
@@ -437,6 +418,13 @@ namespace KarnelTravel.Data
                 e.HasIndex(x => x.CustomerId);
                 e.Property(x => x.ServiceType).HasMaxLength(30).IsRequired();
                 e.Property(x => x.ServiceName).HasMaxLength(150).IsRequired();
+                e.Property(x => x.ServiceNeeds).HasMaxLength(100);
+                e.Property(x => x.StartingCity).HasMaxLength(120);
+                e.HasIndex(x => x.TripInquiryId);
+                e.HasOne(x => x.TripInquiry)
+                    .WithMany()
+                    .HasForeignKey(x => x.TripInquiryId)
+                    .OnDelete(DeleteBehavior.SetNull);
 
                 e.Property(x => x.EstimatedTotalPKR).HasPrecision(18, 2);
                 e.Property(x => x.TransportOneWayFarePKR).HasPrecision(18, 2);
@@ -445,7 +433,7 @@ namespace KarnelTravel.Data
 
                 e.Property(x => x.Status).HasMaxLength(30).IsRequired();
                 e.Property(x => x.CustomerNotes).HasMaxLength(1000);
-                e.Property(x => x.AdminNotes).HasMaxLength(1000);
+                e.Property(x => x.AdminNotes).HasMaxLength(4000);
 
                 e.HasOne<Hotel>()
                     .WithMany()
@@ -567,6 +555,35 @@ namespace KarnelTravel.Data
                     .WithMany(x => x.EmailDeliveryAttempts)
                     .HasForeignKey(x => x.BookingId)
                     .OnDelete(DeleteBehavior.SetNull);
+                e.HasOne(x => x.Customer)
+                    .WithMany()
+                    .HasForeignKey(x => x.CustomerId)
+                    .OnDelete(DeleteBehavior.SetNull);
+            });
+
+            model.Entity<DemoPaymentTransaction>(e =>
+            {
+                e.ToTable("DemoPaymentTransactions");
+                e.HasKey(x => x.Id);
+                e.Property(x => x.TransactionReference).HasMaxLength(40).IsRequired();
+                e.Property(x => x.PaymentStatus).HasMaxLength(30).IsRequired();
+                e.Property(x => x.PaymentMethod).HasMaxLength(30).IsRequired();
+                e.Property(x => x.CardBrand).HasMaxLength(20);
+                e.Property(x => x.MaskedCardNumber).HasMaxLength(25);
+                e.Property(x => x.IsSimulation).HasDefaultValue(true).IsRequired();
+                e.Property(x => x.Amount).HasPrecision(18, 2);
+                e.Property(x => x.Currency).HasMaxLength(10).IsRequired();
+                e.Property(x => x.FailureReason).HasMaxLength(80);
+                e.Property(x => x.RefundStatus).HasMaxLength(30).IsRequired();
+                e.HasIndex(x => x.TransactionReference).IsUnique();
+                e.HasIndex(x => new { x.BookingId, x.PaymentStatus });
+                e.HasIndex(x => x.BookingId)
+                    .IsUnique()
+                    .HasFilter("[PaymentStatus] = 'Successful'");
+                e.HasOne(x => x.Booking)
+                    .WithMany(x => x.DemoPaymentTransactions)
+                    .HasForeignKey(x => x.BookingId)
+                    .OnDelete(DeleteBehavior.Restrict);
                 e.HasOne(x => x.Customer)
                     .WithMany()
                     .HasForeignKey(x => x.CustomerId)

@@ -39,21 +39,35 @@ public class CustomerController : Controller
         if (customer is null) return Challenge();
 
         var bookings = OwnedBookings();
-        var recentBookings = await bookings.OrderByDescending(x => x.CreatedAt).Take(5).ToListAsync(cancellationToken);
+        var recentBookings = await bookings
+            .Include(x => x.DemoPaymentTransactions)
+            .OrderByDescending(x => x.CreatedAt)
+            .Take(5)
+            .ToListAsync(cancellationToken);
         var bookingIds = recentBookings.Select(x => x.Id).ToList();
         var activeTickets = await _db.BookingTickets.AsNoTracking()
             .Where(x => bookingIds.Contains(x.BookingId) && x.IsActive && x.RevokedAt == null)
             .ToDictionaryAsync(x => x.BookingId, cancellationToken);
+        var ownerEmail = User.FindFirstValue(ClaimTypes.Email)?.Trim().ToLowerInvariant();
+        var tripInquiries = string.IsNullOrWhiteSpace(ownerEmail)
+            ? new List<TripInquiry>()
+            : await _db.TripInquiries.AsNoTracking()
+                .Where(x => x.OwnerEmail == ownerEmail)
+                .OrderByDescending(x => x.CreatedAt)
+                .Take(10)
+                .ToListAsync(cancellationToken);
         var model = new CustomerDashboardViewModel
         {
             Customer = customer,
             TotalBookings = await bookings.CountAsync(cancellationToken),
             PendingBookings = await bookings.CountAsync(x => x.Status == "Pending", cancellationToken),
+            PendingApprovalBookings = await bookings.CountAsync(x => x.Status == "Pending Admin Approval", cancellationToken),
             ConfirmedBookings = await bookings.CountAsync(x => x.Status == "Confirmed", cancellationToken),
             CompletedBookings = await bookings.CountAsync(x => x.Status == "Completed", cancellationToken),
             CancelledBookings = await bookings.CountAsync(x => x.Status == "Cancelled", cancellationToken),
             RecentBookings = recentBookings,
-            ActiveTickets = activeTickets
+            ActiveTickets = activeTickets,
+            TripInquiries = tripInquiries
         };
         return View(model);
     }
@@ -73,7 +87,10 @@ public class CustomerController : Controller
     public async Task<IActionResult> BookingDetails(int id, CancellationToken cancellationToken)
     {
         if (!IsPortalCustomer()) return Forbid();
-        var booking = await OwnedBookings().FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+        var booking = await OwnedBookings()
+            .Include(x => x.DemoPaymentTransactions)
+            .Include(x => x.TripInquiry)
+            .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
         if (booking is null) return NotFound();
         return View(new CustomerBookingDetailsViewModel
         {

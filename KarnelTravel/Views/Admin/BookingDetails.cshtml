@@ -73,6 +73,30 @@
         <section class="booking-panel">
             <div class="panel-heading">
                 <div>
+                    <span class="panel-kicker">PAYMENT</span>
+                    <h2>Demo payment information</h2>
+                </div>
+            </div>
+            @if (Model.DemoPaymentTransactions.OrderByDescending(x => x.CreatedAt).FirstOrDefault() is var demoPayment && demoPayment is not null)
+            {
+                <div class="summary-list">
+                    <div class="summary-row"><span>Payment status</span><strong>@(demoPayment.PaymentStatus is "Successful" or "Paid (Demo)" ? "Paid" : demoPayment.PaymentStatus)</strong></div>
+                    <div class="summary-row"><span>Transaction reference</span><strong class="break-text">@demoPayment.TransactionReference</strong></div>
+                    <div class="summary-row"><span>Amount</span><strong>@demoPayment.Currency @demoPayment.Amount.ToString("N2")</strong></div>
+                    <div class="summary-row"><span>Payment timestamp</span><strong>@demoPayment.ProcessedAt?.ToString("dd MMM yyyy HH:mm") UTC</strong></div>
+                    <div class="summary-row"><span>Refund status</span><strong>@demoPayment.RefundStatus</strong></div>
+                </div>
+                <p class="booking-message warning">DEMO ONLY. No real payment or refund was processed.</p>
+            }
+            else
+            {
+                <p>No demo payment transaction has been recorded.</p>
+            }
+        </section>
+
+        <section class="booking-panel">
+            <div class="panel-heading">
+                <div>
                     <span class="panel-kicker">CUSTOMER PORTAL</span>
                     <h2>Account connection</h2>
                 </div>
@@ -346,7 +370,7 @@
                     <label for="status">Booking status</label>
 
                     <select id="status" name="status" class="select" required>
-                        <option value="Pending" selected="@(Model.Status == "Pending")">Pending</option>
+                        <option value="@(Model.Status == "Pending Admin Approval" ? "Pending Admin Approval" : "Pending")" selected>Pending</option>
                         <option value="Confirmed" selected="@(Model.Status == "Confirmed")">Confirmed</option>
                         <option value="Completed" selected="@(Model.Status == "Completed")">Completed</option>
                         <option value="Cancelled" selected="@(Model.Status == "Cancelled")">Cancelled</option>
