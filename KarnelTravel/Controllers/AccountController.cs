@@ -193,11 +193,30 @@ public class AccountController : Controller
             {
                 var account = await _customers.FindByEmailAsync(model.Email, cancellationToken);
                 if (account is not null)
-                    await _accountEmail.SendPasswordResetCodeAsync(account, code, cancellationToken);
+                {
+                    var sent = await _accountEmail.SendPasswordResetCodeAsync(account.Email, account.FullName, code, cancellationToken);
+                    if (!sent)
+                        await _customers.InvalidatePasswordResetCodeAsync(model.Email, cancellationToken);
+                }
+            }
+            else
+            {
+                var adminCode = await _auth.CreatePasswordResetCodeAsync(model.Email, cancellationToken);
+                if (adminCode is not null)
+                {
+                    var admin = await _db.AdminUsers.FirstOrDefaultAsync(
+                        x => x.Email == model.Email.Trim().ToLowerInvariant(), cancellationToken);
+                    if (admin is not null)
+                    {
+                        var sent = await _accountEmail.SendPasswordResetCodeAsync(admin.Email, admin.DisplayName, adminCode, cancellationToken);
+                        if (!sent)
+                            await _auth.InvalidatePasswordResetCodeAsync(model.Email, cancellationToken);
+                    }
+                }
             }
         }
 
-        TempData["AccountMessage"] = "If an account matches that address, a password reset code will be sent shortly.";
+        TempData["AccountMessage"] = "If an account matches that address, a password reset code will be sent shortly. If it does not arrive, check your spam folder or try again.";
         return RedirectToAction(nameof(ResetPassword));
     }
 
@@ -210,7 +229,12 @@ public class AccountController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> ResetPassword(ResetPasswordViewModel model, CancellationToken cancellationToken)
     {
-        if (!ModelState.IsValid || !await _customers.ResetPasswordWithCodeAsync(model.Email, model.Code, model.Password, cancellationToken))
+        var reset = ModelState.IsValid && await _customers.ResetPasswordWithCodeAsync(
+            model.Email, model.Code, model.Password, cancellationToken);
+        if (!reset && ModelState.IsValid)
+            reset = await _auth.ResetPasswordWithCodeAsync(model.Email, model.Code, model.Password, cancellationToken);
+
+        if (!reset)
         {
             ModelState.AddModelError(string.Empty, "This reset link is invalid or expired.");
             return View(model);

@@ -2468,23 +2468,6 @@
                                     <span class="menu__foot-link">Email available on request</span>
                                 }
                             </div>
-                            <div class="menu__foot-col">
-                                <span class="menu__foot-label">Follow</span>
-                                <ul class="menu__socials">
-                                    @if (!string.IsNullOrWhiteSpace(websiteContent.InstagramUrl))
-                                    {
-                                        <li><a href="@websiteContent.InstagramUrl" target="_blank" rel="noopener noreferrer">Instagram</a></li>
-                                    }
-                                    @if (!string.IsNullOrWhiteSpace(websiteContent.FacebookUrl))
-                                    {
-                                        <li><a href="@websiteContent.FacebookUrl" target="_blank" rel="noopener noreferrer">Facebook</a></li>
-                                    }
-                                    @if (!string.IsNullOrWhiteSpace(websiteContent.YouTubeUrl))
-                                    {
-                                        <li><a href="@websiteContent.YouTubeUrl" target="_blank" rel="noopener noreferrer">YouTube</a></li>
-                                    }
-                                </ul>
-                            </div>
                         </footer>
 
                     </div>
@@ -2515,12 +2498,19 @@
                 <div class="mf__brand">
                     <a class="mf-brand__logo" href="@FooterLink("Home")" aria-label="Karnel Travel Guide — home">
                         <span class="mf-brand__mark" aria-hidden="true">
-                            <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.6">
-                                <circle cx="16" cy="16" r="13" />
-                                <path d="M21 11 18.4 18.4 11 21l2.6-7.4z" stroke-linejoin="round" />
-                            </svg>
+                            @if (!string.IsNullOrWhiteSpace(websiteContent.LogoUrl))
+                            {
+                                <img class="mf-brand__mark-image" src="@websiteContent.LogoUrl" alt="@websiteContent.SiteName" />
+                            }
+                            else
+                            {
+                                <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.6">
+                                    <circle cx="16" cy="16" r="13" />
+                                    <path d="M21 11 18.4 18.4 11 21l2.6-7.4z" stroke-linejoin="round" />
+                                </svg>
+                            }
                         </span>
-                        Karnel
+                        @(string.IsNullOrWhiteSpace(websiteContent.SiteName) ? "Karnel Travel Guide" : websiteContent.SiteName)
                     </a>
 
                     <h2 class="mf-brand__title">@(string.IsNullOrWhiteSpace(websiteContent.Tagline) ? "Your guide to somewhere wonderful" : websiteContent.Tagline)</h2>
@@ -2545,7 +2535,7 @@
                         <li><a href="@FooterLink("Home")">Journey Home</a></li>
                         <li><a href="@FooterLink("About")">Our Story</a></li>
                         <li><a href="@FooterLink("Search")">Explore</a></li>
-                        <li><a href="@FooterLink("Search", "Advanced")">Advanced Discovery</a></li>
+                        <li><a href="@FooterLink("Search", "Advanced", fragment: "discovery")">Advanced Discovery</a></li>
                         <li><a href="@FooterLink("Information")">Discover More</a></li>
                     </ul>
                 </nav>

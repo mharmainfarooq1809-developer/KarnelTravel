@@ -1,6 +1,7 @@
 ﻿
 using KarnelTravel.Data;
 using KarnelTravel.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -17,6 +18,11 @@ public class SearchController : Controller
         _context = context;
     }
 
+    [AllowAnonymous]
+    [HttpGet("/Search/Advanced")]
+    public IActionResult Advanced() => Redirect($"{Url.Action(nameof(Index))}#discovery");
+
+    [AllowAnonymous]
     [HttpGet]
     public async Task<IActionResult> Index(
         string? keyword,

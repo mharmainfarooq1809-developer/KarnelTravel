@@ -40,6 +40,22 @@ public sealed class CustomerAccountServiceTests
         Assert.Null(await service.ValidateCredentialsAsync(account.Email, "OldPassword123!"));
     }
 
+    [Fact]
+    public async Task Password_reset_code_can_be_invalidated_when_delivery_fails()
+    {
+        await using var db = CreateDatabase();
+        var service = CreateService(db);
+        var account = await service.CreateAsync("Customer", "customer@example.com", "+1 111", "OldPassword123!");
+        Assert.NotNull(account);
+
+        var resetCode = await service.CreatePasswordResetCodeAsync(account.Email);
+        Assert.NotNull(resetCode);
+
+        await service.InvalidatePasswordResetCodeAsync(account.Email);
+
+        Assert.False(await service.ResetPasswordWithCodeAsync(account.Email, resetCode!, "NewPassword123!"));
+    }
+
     private static ApplicationDbContext CreateDatabase()
     {
         var options = new DbContextOptionsBuilder<ApplicationDbContext>()

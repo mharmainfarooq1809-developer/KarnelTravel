@@ -2,6 +2,8 @@
 using KarnelTravel.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace KarnelTravel.Services;
 
@@ -62,5 +64,56 @@ public class EfAdminAuthService : IAdminAuthService
         user.PasswordHash = _hasher.HashPassword(user, newPassword);
         await _db.SaveChangesAsync();
         return true;
+    }
+
+    public async Task<string?> CreatePasswordResetCodeAsync(string email, CancellationToken cancellationToken = default)
+    {
+        var user = await _db.AdminUsers.FirstOrDefaultAsync(
+            x => x.Email == NormalizeEmail(email), cancellationToken);
+        if (user is null)
+            return null;
+
+        var code = RandomNumberGenerator.GetInt32(100000, 1000000).ToString();
+        user.PasswordResetCodeHash = HashToken(code);
+        user.PasswordResetCodeExpiresAt = DateTime.UtcNow.AddMinutes(15);
+        await _db.SaveChangesAsync(cancellationToken);
+        return code;
+    }
+
+    public async Task InvalidatePasswordResetCodeAsync(string email, CancellationToken cancellationToken = default)
+    {
+        var user = await _db.AdminUsers.FirstOrDefaultAsync(
+            x => x.Email == NormalizeEmail(email), cancellationToken);
+        if (user is null)
+            return;
+
+        user.PasswordResetCodeHash = null;
+        user.PasswordResetCodeExpiresAt = null;
+        await _db.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task<bool> ResetPasswordWithCodeAsync(string email, string code, string newPassword, CancellationToken cancellationToken = default)
+    {
+        var user = await _db.AdminUsers.FirstOrDefaultAsync(
+            x => x.Email == NormalizeEmail(email) &&
+                 x.PasswordResetCodeHash == HashToken(code.Trim()) &&
+                 x.PasswordResetCodeExpiresAt > DateTime.UtcNow,
+            cancellationToken);
+        if (user is null)
+            return false;
+
+        user.PasswordHash = _hasher.HashPassword(user, newPassword);
+        user.PasswordResetCodeHash = null;
+        user.PasswordResetCodeExpiresAt = null;
+        await _db.SaveChangesAsync(cancellationToken);
+        return true;
+    }
+
+    private static string NormalizeEmail(string email) => email.Trim().ToLowerInvariant();
+
+    private static string HashToken(string value)
+    {
+        var bytes = SHA256.HashData(Encoding.UTF8.GetBytes(value));
+        return Convert.ToHexString(bytes);
     }
 }

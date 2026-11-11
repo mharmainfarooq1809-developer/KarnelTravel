@@ -5,7 +5,6 @@ using KarnelTravel.Models;
 using KarnelTravel.Services;
 using Microsoft.AspNetCore.Authorization;
 
-[Authorize]
 public class HomeController : Controller
 {
     private readonly ApplicationDbContext _db;
@@ -19,6 +18,7 @@ public class HomeController : Controller
         _websiteContentService = websiteContentService;
     }
 
+    [AllowAnonymous]
     public async Task<IActionResult> Index()
     {
         ViewBag.FeaturedDestinations = await _db.Destinations

@@ -1,6 +1,5 @@
 using System.Net;
 using System.Net.Mail;
-using KarnelTravel.Models;
 
 namespace KarnelTravel.Services;
 
@@ -15,39 +14,50 @@ public sealed class AccountEmailService : IAccountEmailService
         _logger = logger;
     }
 
-    public async Task SendPasswordResetCodeAsync(CustomerAccount account, string code, CancellationToken cancellationToken = default)
+    public async Task<bool> SendPasswordResetCodeAsync(string email, string recipientName, string code, CancellationToken cancellationToken = default)
     {
         var smtp = _configuration.GetSection("Email:Smtp");
         var host = smtp["Host"];
+        var username = smtp["Username"];
+        var password = smtp["Password"];
         var from = smtp["From"];
-        if (string.IsNullOrWhiteSpace(host) || string.IsNullOrWhiteSpace(from))
+        if (string.IsNullOrWhiteSpace(host) ||
+            string.IsNullOrWhiteSpace(from) ||
+            string.IsNullOrWhiteSpace(username) ||
+            string.IsNullOrWhiteSpace(password))
         {
-            _logger.LogWarning("Password reset email skipped for {Email}: SMTP is not configured.", account.Email);
-            return;
+            _logger.LogWarning("Password reset email skipped for {Email}: SMTP is not configured.", email);
+            return false;
         }
 
         try
         {
             using var message = new MailMessage(
                 from,
-                account.Email,
+                email,
                 "Your Karnel Travel Guide password reset code",
-                $"Hello {account.FullName},\n\nYour password reset code is: {code}\n\nThis code expires in 15 minutes.\n\nIf you did not request this, you can ignore this email.");
+                $"Hello {recipientName},\n\nYour password reset code is: {code}\n\nThis code expires in 15 minutes.\n\nIf you did not request this, you can ignore this email.");
             using var client = new SmtpClient(host, smtp.GetValue("Port", 587))
             {
                 EnableSsl = smtp.GetValue("EnableSsl", true),
                 DeliveryMethod = SmtpDeliveryMethod.Network,
                 UseDefaultCredentials = false
             };
-            var username = smtp["Username"];
-            if (!string.IsNullOrWhiteSpace(username))
-                client.Credentials = new NetworkCredential(username, smtp["Password"]);
+            client.Credentials = new NetworkCredential(username, password);
 
             await client.SendMailAsync(message, cancellationToken);
+            _logger.LogInformation("Password reset email sent to {Email}.", email);
+            return true;
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            _logger.LogWarning("Password reset email was cancelled for {Email}.", email);
+            return false;
         }
         catch (Exception exception)
         {
-            _logger.LogError(exception, "Password reset email failed for {Email}.", account.Email);
-    }
+            _logger.LogError(exception, "Password reset email failed for {Email}.", email);
+            return false;
+        }
     }
 }

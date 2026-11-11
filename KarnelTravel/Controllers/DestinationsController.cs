@@ -2,6 +2,7 @@
 using KarnelTravel.Data;
 using KarnelTravel.Models;
 using KarnelTravel.ViewModels;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -16,6 +17,7 @@ namespace KarnelTravel.Controllers
             _context = context;
         }
 
+        [AllowAnonymous]
         [HttpGet("/Destinations/{slug}")]
         public async Task<IActionResult> Details(string slug)
         {

@@ -1,5 +1,6 @@
 ﻿
 using KarnelTravel.Data;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -14,11 +15,13 @@ namespace KarnelTravel.Controllers
             _context = context;
         }
 
+        [AllowAnonymous]
         public IActionResult Index()
         {
             return View();
         }
 
+        [AllowAnonymous]
         [HttpGet("/destinations")]
         public async Task<IActionResult> Destination()
         {
@@ -32,6 +35,7 @@ namespace KarnelTravel.Controllers
             return View("Dropdown/destination", destinations);
         }
 
+        [AllowAnonymous]
         [HttpGet("/transport")]
         public async Task<IActionResult> Transport()
         {
@@ -50,6 +54,7 @@ namespace KarnelTravel.Controllers
             );
         }
 
+        [AllowAnonymous]
         [HttpGet("/hotels")]
         public async Task<IActionResult> Hotels()
         {

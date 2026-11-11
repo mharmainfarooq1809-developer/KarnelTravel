@@ -9,6 +9,7 @@ public interface ICustomerAccountService
     Task<string?> CreatePasswordResetTokenAsync(string email, CancellationToken cancellationToken = default);
     Task<bool> ResetPasswordAsync(string token, string newPassword, CancellationToken cancellationToken = default);
     Task<string?> CreatePasswordResetCodeAsync(string email, CancellationToken cancellationToken = default);
+    Task InvalidatePasswordResetCodeAsync(string email, CancellationToken cancellationToken = default);
     Task<bool> ResetPasswordWithCodeAsync(string email, string code, string newPassword, CancellationToken cancellationToken = default);
     Task<bool> ChangePasswordAsync(int customerId, string currentPassword, string newPassword, CancellationToken cancellationToken = default);
     Task<CustomerAccount?> FindByIdAsync(int id, CancellationToken cancellationToken = default);

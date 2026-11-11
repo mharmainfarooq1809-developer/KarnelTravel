@@ -1,6 +1,7 @@
 ﻿
 using KarnelTravel.Data;
 using KarnelTravel.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -16,6 +17,7 @@ namespace KarnelTravel.Controllers
         }
 
         // HOTEL LISTING
+        [AllowAnonymous]
         public async Task<IActionResult> Index()
         {
             var hotels = await _context.Hotels
@@ -29,6 +31,7 @@ namespace KarnelTravel.Controllers
         }
 
         // HOTEL DETAILS
+        [AllowAnonymous]
         public async Task<IActionResult> Details(int id)
         {
             if (id <= 0)

@@ -88,6 +88,7 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseStaticFiles();
 app.UseRouting();
 
 // IMPORTANT: UseAuthentication must come BEFORE UseAuthorization.

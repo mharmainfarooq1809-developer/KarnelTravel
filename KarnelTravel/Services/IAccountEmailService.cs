@@ -1,8 +1,6 @@
-using KarnelTravel.Models;
-
 namespace KarnelTravel.Services;
 
 public interface IAccountEmailService
 {
-    Task SendPasswordResetCodeAsync(CustomerAccount account, string code, CancellationToken cancellationToken = default);
+    Task<bool> SendPasswordResetCodeAsync(string email, string recipientName, string code, CancellationToken cancellationToken = default);
 }

@@ -79,6 +79,18 @@ public sealed class CustomerAccountService : ICustomerAccountService
         return code;
     }
 
+    public async Task InvalidatePasswordResetCodeAsync(string email, CancellationToken cancellationToken = default)
+    {
+        var account = await _db.CustomerAccounts.FirstOrDefaultAsync(
+            x => x.Email == NormalizeEmail(email), cancellationToken);
+        if (account is null)
+            return;
+
+        account.PasswordResetCodeHash = null;
+        account.PasswordResetCodeExpiresAt = null;
+        await _db.SaveChangesAsync(cancellationToken);
+    }
+
     public async Task<bool> ResetPasswordWithCodeAsync(string email, string code, string newPassword, CancellationToken cancellationToken = default)
     {
         var account = await _db.CustomerAccounts.FirstOrDefaultAsync(

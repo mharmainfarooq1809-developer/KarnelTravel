@@ -8,7 +8,6 @@ using Microsoft.EntityFrameworkCore;
 
 namespace KarnelTravel.Controllers
 {
-    [Authorize]
     public class ContactController : Controller
     {
         private readonly ApplicationDbContext _db;
@@ -26,6 +25,7 @@ namespace KarnelTravel.Controllers
         }
 
         // Display contact form
+        [AllowAnonymous]
         [HttpGet]
         public async Task<IActionResult> Index(string? category = null, string? service = null)
         {
@@ -49,6 +49,7 @@ namespace KarnelTravel.Controllers
         }
 
         // Save contact inquiry
+        [AllowAnonymous]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Index(ContactInquiry model)

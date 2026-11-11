@@ -11,940 +11,1802 @@
 }
 
 @section Styles {
-<style>
-    /* ============================================================
-       KARNEL AI — Page (uses layout tokens, no external CSS)
-       ============================================================ */
+    <style>
+        /* ============================================================
+               KARNEL AI — Elevated Chat Surface + Command Bar (v5)
+               Fixed: Bottom clipping, auto-scroll, typing visibility.
+               ============================================================ */
 
-    body.kai-page-active .to-top { display: none; }
-
-    .kai-page {
-        padding-top: calc(var(--header-h) + 56px);
-        padding-bottom: 280px;
-        background: var(--ivory);
-        color: var(--charcoal);
-        font-family: var(--sans);
-        min-height: 100vh;
-        min-height: 100dvh;
-        position: relative;
-        -webkit-font-smoothing: antialiased;
-    }
-    .kai-page [hidden] { display: none !important; }
-    .kai-page *, .kai-page *::before, .kai-page *::after { box-sizing: border-box; }
-
-    /* ---------- Page topbar (below site header) ---------- */
-    .kai-topbar {
-        position: fixed;
-        top: var(--header-h);
-        left: 0;
-        right: 0;
-        z-index: 90;
-        background: rgba(248, 246, 240, .94);
-        backdrop-filter: saturate(140%) blur(12px);
-        -webkit-backdrop-filter: saturate(140%) blur(12px);
-        border-bottom: 1px solid var(--line);
-    }
-    .kai-topbar__inner {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 12px;
-        min-height: 56px;
-        padding-block: 8px;
-    }
-    .kai-brand-mini {
-        display: inline-flex;
-        align-items: center;
-        gap: 10px;
-        font-size: .76rem;
-        font-weight: 500;
-        letter-spacing: .08em;
-        color: var(--forest-deep);
-        text-transform: uppercase;
-    }
-    .kai-dot {
-        width: 7px; height: 7px; border-radius: 50%;
-        background: var(--sage);
-        box-shadow: 0 0 0 4px rgba(168,181,154,.22);
-        flex: 0 0 auto;
-    }
-    .kai-brand-mini[data-available="False"] .kai-dot {
-        background: #C8A97C;
-        box-shadow: 0 0 0 4px rgba(200,169,124,.18);
-    }
-    .kai-brand-mini .kai-tag {
-        font-size: .7rem;
-        font-weight: 400;
-        color: var(--muted);
-        letter-spacing: 0;
-        text-transform: none;
-    }
-    .kai-topbar__actions { display: flex; gap: 6px; }
-    .kai-tool-btn {
-        appearance: none;
-        cursor: pointer;
-        font: inherit;
-        font-size: .74rem;
-        font-weight: 500;
-        letter-spacing: .06em;
-        padding: 7px 14px;
-        border-radius: 999px;
-        border: 1px solid var(--line);
-        background: var(--white);
-        color: var(--forest-deep);
-        transition: background .18s ease, border-color .18s ease, color .18s ease;
-    }
-    .kai-tool-btn:hover {
-        background: var(--forest-deep);
-        color: var(--ivory);
-        border-color: var(--forest-deep);
-    }
-    .kai-tool-btn:focus-visible { outline: 2px solid var(--moss); outline-offset: 2px; }
-
-    /* ---------- Stage ---------- */
-    .kai-stage { padding-top: 24px; }
-
-    /* ---------- Welcome card ---------- */
-    .kai-welcome {
-        max-width: 820px;
-        margin: 0 auto 28px;
-        animation: kai-fade .5s ease both;
-    }
-    .kai-welcome.is-hidden { display: none; }
-    .kai-welcome__card {
-        position: relative;
-        overflow: hidden;
-        isolation: isolate;
-        padding: clamp(28px, 5vw, 52px);
-        border-radius: 20px;
-        color: #EAF0E7;
-        background:
-            radial-gradient(120% 150% at 84% 0%, #234231 0%, var(--forest-deep) 62%),
-            var(--forest-deep);
-        box-shadow: var(--shadow-md);
-    }
-    .kai-welcome__card::after {
-        content: "";
-        position: absolute;
-        inset: 0;
-        pointer-events: none;
-        background: radial-gradient(70% 90% at 8% 0%, rgba(233,223,201,.10), transparent 62%);
-    }
-    .kai-eyebrow {
-        position: relative;
-        z-index: 1;
-        display: inline-flex;
-        align-items: center;
-        gap: 10px;
-        margin: 0 0 18px;
-        font-size: .68rem;
-        font-weight: 500;
-        letter-spacing: .28em;
-        text-transform: uppercase;
-        color: var(--sage);
-    }
-    .kai-eyebrow::before {
-        content: "";
-        width: 28px; height: 1px;
-        background: currentColor; opacity: .7;
-    }
-    .kai-welcome__title {
-        position: relative;
-        z-index: 1;
-        font-family: var(--serif);
-        font-weight: 400;
-        font-size: clamp(1.75rem, 3.8vw, 2.65rem);
-        line-height: 1.1;
-        letter-spacing: -.01em;
-        color: #F6F4EC;
-        margin: 0;
-        max-width: 20ch;
-    }
-    .kai-welcome__lede {
-        position: relative;
-        z-index: 1;
-        margin: 16px 0 0;
-        max-width: 52ch;
-        font-size: .96rem;
-        line-height: 1.65;
-        color: rgba(234, 240, 231, .78);
-    }
-    .kai-welcome__prompts {
-        position: relative;
-        z-index: 1;
-        display: flex;
-        flex-wrap: wrap;
-        gap: 8px;
-        margin-top: 28px;
-    }
-    .kai-prompt {
-        appearance: none;
-        cursor: pointer;
-        font: inherit;
-        font-size: .82rem;
-        line-height: 1.35;
-        padding: 8px 15px;
-        border-radius: 999px;
-        border: 1px solid rgba(168,181,154,.4);
-        background: rgba(255,255,255,.06);
-        color: #EAF0E7;
-        transition: background .18s ease, border-color .18s ease, color .18s ease, transform .18s ease;
-    }
-    .kai-prompt:hover {
-        background: rgba(255,255,255,.14);
-        border-color: var(--sage);
-        transform: translateY(-1px);
-    }
-    .kai-prompt:focus-visible { outline: 2px solid var(--sage); outline-offset: 2px; }
-
-    /* ---------- Chat ---------- */
-    .kai-chat {
-        display: flex;
-        flex-direction: column;
-        gap: 14px;
-        max-width: 820px;
-        margin: 0 auto;
-    }
-    .kai-msg {
-        max-width: 100%;
-        padding: 14px 18px;
-        border-radius: 14px;
-        font-size: .95rem;
-        line-height: 1.72;
-        white-space: pre-wrap;
-        overflow-wrap: anywhere;
-        animation: kai-rise .28s ease both;
-    }
-    .kai-msg--assistant {
-        align-self: flex-start;
-        background: transparent;
-        color: var(--charcoal);
-        padding: 2px 0;
-        font-size: .97rem;
-    }
-    .kai-msg--user {
-        align-self: flex-end;
-        max-width: 78%;
-        background: var(--forest-deep);
-        color: #F3F1E8;
-        border-top-right-radius: 4px;
-    }
-    .kai-msg--typing {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        padding: 8px 0;
-    }
-    .kai-msg--typing span {
-        width: 6px; height: 6px; border-radius: 50%;
-        background: var(--sage);
-        animation: kai-pulse 1.05s ease-in-out infinite;
-    }
-    .kai-msg--typing span:nth-child(2) { animation-delay: .15s; }
-    .kai-msg--typing span:nth-child(3) { animation-delay: .3s; }
-
-    /* ---------- Composer dock ---------- */
-    .kai-composer-dock {
-        position: fixed;
-        left: 0; right: 0; bottom: 0;
-        z-index: 100;
-        padding: 14px 0 max(14px, env(safe-area-inset-bottom));
-        background: linear-gradient(to top, var(--ivory) 55%, rgba(248,246,240,0));
-        pointer-events: none;
-    }
-    .kai-composer-dock > .container { pointer-events: auto; }
-    .kai-composer-wrap { max-width: 820px; margin: 0 auto; }
-    .kai-composer {
-        display: flex;
-        align-items: flex-end;
-        gap: 8px;
-        padding: 10px 10px 10px 18px;
-        border: 1px solid var(--line);
-        border-radius: 20px;
-        background: var(--white);
-        box-shadow: var(--shadow-md);
-        transition: border-color .2s ease, box-shadow .2s ease;
-    }
-    .kai-composer:focus-within {
-        border-color: var(--moss);
-        box-shadow: 0 0 0 4px rgba(83,107,80,.1), var(--shadow-md);
-    }
-    .kai-composer textarea {
-        flex: 1 1 auto;
-        min-height: 28px;
-        max-height: 200px;
-        padding: 8px 0;
-        border: 0;
-        outline: none;
-        resize: none;
-        background: transparent;
-        font: inherit;
-        font-size: .96rem;
-        line-height: 1.55;
-        color: var(--charcoal);
-    }
-    .kai-composer textarea::placeholder { color: #A9AFA4; }
-    .kai-composer__actions {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        flex: 0 0 auto;
-    }
-    .kai-mic, .kai-send {
-        appearance: none;
-        cursor: pointer;
-        border: 0;
-        width: 40px;
-        height: 40px;
-        border-radius: 12px;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        transition: background .18s ease, transform .18s ease, opacity .18s ease;
-    }
-    .kai-mic { background: #F1F1EE; color: var(--forest-deep); }
-    .kai-mic:hover { background: #E5E5DE; }
-    .kai-mic:focus-visible { outline: 2px solid var(--moss); outline-offset: 2px; }
-    .kai-mic svg { width: 18px; height: 18px; }
-    .kai-send { background: var(--forest-deep); color: #F6F4EC; }
-    .kai-send:hover { background: var(--forest); }
-    .kai-send:active { transform: translateY(1px); }
-    .kai-send:disabled { opacity: .55; cursor: progress; }
-    .kai-send:focus-visible { outline: 2px solid var(--sage); outline-offset: 3px; }
-    .kai-send svg { width: 16px; height: 16px; }
-
-    .kai-statusline {
-        min-height: 20px;
-        margin-top: 8px;
-        font-size: .82rem;
-        line-height: 1.5;
-        color: var(--muted);
-    }
-    .kai-statusline.is-error { color: #9B4331; }
-
-    .kai-feedback {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        gap: 8px;
-        margin-top: 10px;
-    }
-    .kai-feedback__label {
-        font-size: .7rem;
-        font-weight: 600;
-        letter-spacing: .14em;
-        text-transform: uppercase;
-        color: var(--muted);
-        margin-right: 4px;
-    }
-    .kai-feedback .kai-prompt {
-        border-color: var(--line);
-        background: var(--white);
-        color: var(--forest-deep);
-    }
-    .kai-feedback .kai-prompt:hover {
-        background: var(--forest-deep);
-        color: var(--ivory);
-        border-color: var(--forest-deep);
-    }
-
-    /* ---------- Drawers ---------- */
-    .kai-drawer {
-        position: fixed;
-        inset: 0;
-        z-index: 350;
-        pointer-events: none;
-        opacity: 0;
-        transition: opacity .28s ease;
-    }
-    .kai-drawer.is-open { pointer-events: auto; opacity: 1; }
-    .kai-drawer__backdrop {
-        position: absolute;
-        inset: 0;
-        background: rgba(14, 26, 21, .4);
-        backdrop-filter: blur(2px);
-    }
-    .kai-drawer__panel {
-        position: absolute;
-        top: 0; right: 0; bottom: 0;
-        width: min(440px, 92vw);
-        background: var(--white);
-        border-left: 1px solid var(--line);
-        box-shadow: var(--shadow-lg);
-        padding: 28px 28px 32px;
-        overflow-y: auto;
-        transform: translateX(100%);
-        transition: transform .32s var(--ease);
-    }
-    .kai-drawer.is-open .kai-drawer__panel { transform: translateX(0); }
-    .kai-drawer--wide .kai-drawer__panel { width: min(640px, 96vw); }
-    .kai-drawer__head {
-        display: flex;
-        align-items: flex-start;
-        justify-content: space-between;
-        gap: 16px;
-        margin-bottom: 22px;
-    }
-    .kai-drawer__eyebrow {
-        margin: 0 0 8px;
-        font-size: .68rem;
-        font-weight: 500;
-        letter-spacing: .24em;
-        text-transform: uppercase;
-        color: var(--moss);
-    }
-    .kai-drawer__head h2 {
-        font-family: var(--serif);
-        font-weight: 400;
-        font-size: 1.5rem;
-        line-height: 1.2;
-        color: var(--forest-deep);
-        margin: 0;
-    }
-    .kai-drawer__sub {
-        margin: 6px 0 0;
-        font-size: .86rem;
-        color: var(--muted);
-        line-height: 1.6;
-    }
-    .kai-drawer__close {
-        appearance: none;
-        cursor: pointer;
-        border: 1px solid var(--line);
-        background: transparent;
-        width: 32px;
-        height: 32px;
-        border-radius: 50%;
-        font-size: 1.3rem;
-        line-height: 1;
-        color: var(--muted);
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        transition: background .18s ease, color .18s ease;
-        flex: 0 0 auto;
-    }
-    .kai-drawer__close:hover { background: var(--ivory); color: var(--forest-deep); }
-    .kai-drawer__close:focus-visible { outline: 2px solid var(--moss); outline-offset: 2px; }
-    body.kai-drawer-open { overflow: hidden; }
-
-    /* ---------- Planner fields ---------- */
-    .kai-field { margin-bottom: 16px; }
-    .kai-field label {
-        display: block;
-        margin-bottom: 7px;
-        font-size: .68rem;
-        font-weight: 500;
-        letter-spacing: .16em;
-        text-transform: uppercase;
-        color: var(--muted);
-    }
-    .kai-field input {
-        width: 100%;
-        padding: 12px 14px;
-        font: inherit;
-        font-size: .93rem;
-        color: var(--charcoal);
-        background: var(--ivory);
-        border: 1px solid var(--line);
-        border-radius: 10px;
-        transition: border-color .18s ease, box-shadow .18s ease, background .18s ease;
-    }
-    .kai-field input::placeholder { color: #A9AFA4; }
-    .kai-field input:focus {
-        outline: none;
-        border-color: var(--moss);
-        background: var(--white);
-        box-shadow: 0 0 0 3px rgba(83,107,80,.14);
-    }
-    .kai-btn {
-        appearance: none;
-        cursor: pointer;
-        font: inherit;
-        font-size: .8rem;
-        font-weight: 500;
-        letter-spacing: .1em;
-        text-transform: uppercase;
-        white-space: nowrap;
-        border: 0;
-        border-radius: 999px;
-        padding: 13px 26px;
-        background: var(--forest-deep);
-        color: var(--ivory);
-        transition: background .18s ease, transform .18s ease, opacity .18s ease;
-    }
-    .kai-btn:hover { background: var(--forest); }
-    .kai-btn:active { transform: translateY(1px); }
-    .kai-btn:disabled { opacity: .55; cursor: progress; transform: none; }
-    .kai-btn:focus-visible { outline: 2px solid var(--moss); outline-offset: 3px; }
-    .kai-planner-form .kai-btn { width: 100%; margin-top: 4px; }
-
-    #itinerary {
-        margin-top: 18px;
-        padding: 18px 18px 18px 20px;
-        max-height: 460px;
-        overflow-y: auto;
-        background: var(--ivory);
-        border: 1px solid var(--line);
-        border-left: 3px solid var(--sage);
-        border-radius: 12px;
-        font-size: .9rem;
-        line-height: 1.78;
-        color: var(--charcoal);
-        white-space: pre-wrap;
-        overflow-wrap: anywhere;
-        animation: kai-rise .3s ease both;
-    }
-
-    /* ---------- Listings ---------- */
-    .kai-count {
-        display: inline-block;
-        font-size: .68rem;
-        font-weight: 500;
-        letter-spacing: .2em;
-        text-transform: uppercase;
-        color: var(--muted);
-        margin-bottom: 14px;
-    }
-    .kai-listings {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-        gap: 12px;
-    }
-    .kai-listing {
-        padding: 16px 18px 14px;
-        background: var(--ivory);
-        border: 1px solid var(--line);
-        border-radius: 12px;
-        transition: border-color .2s ease, transform .2s ease;
-    }
-    .kai-listing:hover { border-color: var(--sage); transform: translateY(-1px); }
-    .kai-listing__type {
-        display: inline-block;
-        margin-bottom: 8px;
-        font-size: .62rem;
-        font-weight: 600;
-        letter-spacing: .18em;
-        text-transform: uppercase;
-        color: var(--moss);
-    }
-    .kai-listing__name {
-        font-family: var(--serif);
-        font-weight: 400;
-        font-size: 1.02rem;
-        line-height: 1.3;
-        color: var(--forest-deep);
-        margin: 0 0 4px;
-    }
-    .kai-listing__loc {
-        margin: 0 0 10px;
-        font-size: .82rem;
-        line-height: 1.5;
-        color: var(--muted);
-    }
-    .kai-listing__price {
-        margin: 0;
-        padding-top: 10px;
-        border-top: 1px solid var(--line);
-        font-size: .82rem;
-        font-weight: 500;
-        color: var(--forest-deep);
-    }
-    .kai-empty {
-        margin: 0;
-        padding: 32px 24px;
-        border: 1px dashed var(--line);
-        border-radius: 12px;
-        background: var(--ivory);
-        text-align: center;
-        font-size: .88rem;
-        line-height: 1.7;
-        color: var(--muted);
-    }
-
-    /* ---------- Page motion ---------- */
-    @@keyframes kai-rise {
-        from { opacity: 0; transform: translateY(6px); }
-        to   { opacity: 1; transform: translateY(0); }
-    }
-    @@keyframes kai-pulse {
-        0%, 100% { opacity: .35; transform: translateY(0); }
-        50%      { opacity: 1; transform: translateY(-2px); }
-    }
-    @@keyframes kai-fade {
-        from { opacity: 0; transform: translateY(6px); }
-        to   { opacity: 1; transform: translateY(0); }
-    }
-
-    /* ============================================================
-       VOICE OVERLAY (was karnel-ai-voice.css — now inline)
-       ============================================================ */
-    .kai-voice {
-        --v-forest-deep: var(--forest-deep, #14271F);
-        --v-forest:      var(--forest, #20382D);
-        --v-sage:        var(--sage, #A8B59A);
-        --v-sand:        var(--sand, #E9DFC9);
-        --v-ivory:       var(--ivory, #F8F6F0);
-
-        position: fixed;
-        inset: 0;
-        z-index: 600;
-        background: radial-gradient(circle at 50% 38%, #1b3527 0%, #0f1e16 55%, #06100b 100%);
-        color: #EAF0E7;
-        display: flex;
-        align-items: stretch;
-        justify-content: center;
-        opacity: 0;
-        visibility: hidden;
-        transition: opacity .32s ease, visibility 0s linear .32s;
-        font-family: var(--sans, 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
-        overflow-y: auto;
-        -webkit-font-smoothing: antialiased;
-    }
-    .kai-voice.is-open {
-        opacity: 1;
-        visibility: visible;
-        transition: opacity .32s ease, visibility 0s linear 0s;
-    }
-    .kai-voice[hidden] { display: none !important; }
-    .kai-voice *, .kai-voice *::before, .kai-voice *::after { box-sizing: border-box; }
-
-    .kai-voice__bg {
-        position: absolute;
-        inset: 0;
-        pointer-events: none;
-        background:
-            radial-gradient(60% 50% at 50% 45%, rgba(168,181,154,.14), transparent 70%),
-            radial-gradient(40% 40% at 20% 80%, rgba(233,223,201,.06), transparent 70%),
-            radial-gradient(40% 40% at 80% 15%, rgba(168,181,154,.08), transparent 70%);
-    }
-    .kai-voice__inner {
-        position: relative;
-        width: 100%;
-        max-width: 720px;
-        padding: 32px 24px 40px;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 24px;
-        min-height: 100%;
-        animation: kai-voice-in .45s ease both;
-    }
-    @@keyframes kai-voice-in {
-        from { opacity: 0; transform: translateY(10px); }
-        to   { opacity: 1; transform: translateY(0); }
-    }
-
-    .kai-voice__top {
-        width: 100%;
-        display: flex;
-        align-items: flex-start;
-        justify-content: space-between;
-        gap: 16px;
-    }
-    .kai-voice__eyebrow {
-        margin: 0 0 6px;
-        font-size: .68rem;
-        font-weight: 500;
-        letter-spacing: .3em;
-        text-transform: uppercase;
-        color: var(--v-sage);
-    }
-    .kai-voice__title-block h2 {
-        margin: 0;
-        font-family: var(--serif, 'DM Serif Display', Georgia, serif);
-        font-weight: 400;
-        font-size: 1.5rem;
-        color: #F6F4EC;
-        letter-spacing: -.01em;
-    }
-    .kai-voice__toggle {
-        display: inline-flex;
-        align-items: center;
-        gap: 10px;
-        font-size: .78rem;
-        color: rgba(234,240,231,.75);
-        cursor: pointer;
-        user-select: none;
-    }
-    .kai-voice__toggle input { position: absolute; opacity: 0; pointer-events: none; }
-    .kai-voice__switch {
-        position: relative;
-        width: 36px;
-        height: 20px;
-        border-radius: 999px;
-        background: rgba(233,223,201,.18);
-        transition: background .2s ease;
-    }
-    .kai-voice__switch::after {
-        content: "";
-        position: absolute;
-        top: 2px; left: 2px;
-        width: 16px; height: 16px;
-        border-radius: 50%;
-        background: var(--v-sand);
-        transition: transform .2s ease, background .2s ease;
-    }
-    .kai-voice__toggle input:checked + .kai-voice__switch { background: var(--v-sage); }
-    .kai-voice__toggle input:checked + .kai-voice__switch::after { transform: translateX(16px); background: #F6F4EC; }
-    .kai-voice__toggle input:focus-visible + .kai-voice__switch { outline: 2px solid var(--v-sage); outline-offset: 2px; }
-
-    .kai-voice__stage {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 28px;
-        width: 100%;
-        padding: 20px 0 8px;
-    }
-
-    .kai-voice__orb {
-        --amp: var(--kai-amp, 0);
-        --speak: var(--kai-speak, 0);
-        position: relative;
-        width: 260px;
-        height: 260px;
-        border-radius: 50%;
-        transform: scale(calc(1 + var(--amp) * 0.18 + var(--speak) * 0.08));
-        transition: transform 90ms linear;
-        will-change: transform;
-    }
-    .kai-voice__halo {
-        position: absolute;
-        inset: -30%;
-        border-radius: 50%;
-        background: radial-gradient(circle, rgba(168,181,154,.28), transparent 65%);
-        filter: blur(28px);
-        animation: kai-orb-halo 6s ease-in-out infinite;
-    }
-    .kai-voice__ring {
-        position: absolute;
-        border-radius: 50%;
-        pointer-events: none;
-        border: 1px solid rgba(233,223,201,.22);
-        transition: border-color .4s ease, opacity .4s ease;
-    }
-    .kai-voice__ring--1 { inset: -4%;  border-style: dashed; animation: kai-orb-rotate 34s linear infinite; }
-    .kai-voice__ring--2 { inset: -14%; animation: kai-orb-rotate 52s linear infinite reverse; border-color: rgba(168,181,154,.28); }
-    .kai-voice__ring--3 { inset: -24%; animation: kai-orb-breathe 8s ease-in-out infinite; border-color: rgba(233,223,201,.12); }
-    .kai-voice__core {
-        position: absolute;
-        inset: 18%;
-        border-radius: 50%;
-        background:
-            radial-gradient(circle at 34% 28%,
-                rgba(248,246,240,.95) 0%,
-                rgba(233,223,201,.65) 22%,
-                rgba(168,181,154,.55) 48%,
-                rgba(32,56,45,.95) 78%,
-                var(--v-forest-deep) 100%);
-        box-shadow:
-            0 0 70px rgba(168,181,154,.45),
-            0 0 140px rgba(168,181,154,.18),
-            inset 0 -20px 40px rgba(10,24,18,.45),
-            inset 0 20px 30px rgba(248,246,240,.18);
-        animation: kai-orb-core 5.5s ease-in-out infinite;
-    }
-    .kai-voice__shine {
-        position: absolute;
-        inset: 26%;
-        border-radius: 50%;
-        background: radial-gradient(circle at 32% 28%, rgba(255,255,255,.55), transparent 55%);
-        filter: blur(4px);
-        pointer-events: none;
-        animation: kai-orb-shine 7s ease-in-out infinite;
-    }
-
-    .kai-voice__stage[data-voice-state="listening"] .kai-voice__ring       { border-color: rgba(233,223,201,.45); }
-    .kai-voice__stage[data-voice-state="listening"] .kai-voice__ring--3    { border-color: rgba(168,181,154,.5); }
-    .kai-voice__stage[data-voice-state="listening"] .kai-voice__halo       { background: radial-gradient(circle, rgba(168,181,154,.42), transparent 65%); }
-    .kai-voice__stage[data-voice-state="listening"] .kai-voice__core       { animation-duration: 2.6s; }
-
-    .kai-voice__stage[data-voice-state="processing"] .kai-voice__ring--1   { animation-duration: 5s; }
-    .kai-voice__stage[data-voice-state="processing"] .kai-voice__ring--2   { animation-duration: 9s; }
-    .kai-voice__stage[data-voice-state="processing"] .kai-voice__halo      { background: radial-gradient(circle, rgba(168,181,154,.34), transparent 60%); animation-duration: 3.2s; }
-    .kai-voice__stage[data-voice-state="processing"] .kai-voice__core      { animation-duration: 2.2s; }
-
-    .kai-voice__stage[data-voice-state="speaking"] .kai-voice__halo        { background: radial-gradient(circle, rgba(233,223,201,.4), transparent 62%); }
-    .kai-voice__stage[data-voice-state="speaking"] .kai-voice__ring--3     { border-color: rgba(233,223,201,.42); animation-duration: 3.2s; }
-    .kai-voice__stage[data-voice-state="speaking"] .kai-voice__core        { animation-duration: 2.4s; }
-
-    .kai-voice__stage[data-voice-state="paused"] .kai-voice__halo,
-    .kai-voice__stage[data-voice-state="paused"] .kai-voice__core {
-        animation-play-state: paused;
-        opacity: .6;
-    }
-    .kai-voice__stage[data-voice-state="paused"] .kai-voice__ring { opacity: .35; }
-
-    .kai-voice__stage[data-voice-state="error"] .kai-voice__halo           { background: radial-gradient(circle, rgba(200,169,124,.28), transparent 62%); }
-    .kai-voice__stage[data-voice-state="error"] .kai-voice__core           {
-        background: radial-gradient(circle at 34% 28%, rgba(233,223,201,.6) 0%, rgba(200,169,124,.4) 35%, rgba(60,40,25,.95) 80%, #1A0F08 100%);
-        animation-duration: 6s;
-    }
-    .kai-voice__stage[data-voice-state="error"] .kai-voice__ring           { border-color: rgba(200,169,124,.3); }
-
-    .kai-voice__copy {
-        text-align: center;
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-        max-width: 44ch;
-    }
-    .kai-voice__copy strong {
-        font-size: 1.1rem;
-        font-weight: 500;
-        color: #F6F4EC;
-        letter-spacing: -.005em;
-    }
-    .kai-voice__copy span {
-        font-size: .9rem;
-        line-height: 1.6;
-        color: rgba(234,240,231,.68);
-    }
-
-    .kai-voice__actions {
-        display: flex;
-        flex-wrap: wrap;
-        justify-content: center;
-        gap: 10px;
-        margin-top: 4px;
-    }
-    .kai-voice__button {
-        appearance: none;
-        cursor: pointer;
-        font: inherit;
-        font-size: .9rem;
-        font-weight: 500;
-        letter-spacing: .01em;
-        padding: 12px 24px;
-        border-radius: 999px;
-        border: 1px solid rgba(233,223,201,.28);
-        background: rgba(255,255,255,.04);
-        color: #EAF0E7;
-        transition: background .2s ease, border-color .2s ease, transform .15s ease, color .2s ease;
-    }
-    .kai-voice__button:hover { background: rgba(255,255,255,.08); border-color: rgba(233,223,201,.5); }
-    .kai-voice__button:active { transform: translateY(1px); }
-    .kai-voice__button:focus-visible { outline: 2px solid var(--v-sage); outline-offset: 3px; }
-    .kai-voice__button--primary {
-        background: var(--v-sand);
-        border-color: var(--v-sand);
-        color: var(--v-forest-deep);
-        font-weight: 600;
-        box-shadow: 0 0 40px rgba(233,223,201,.25);
-    }
-    .kai-voice__button--primary:hover { background: #F1EBDC; border-color: #F1EBDC; }
-    .kai-voice__button:disabled { opacity: .55; cursor: progress; }
-
-    .kai-voice__settings {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        justify-content: center;
-        gap: 10px;
-        width: 100%;
-        padding-top: 8px;
-        border-top: 1px solid rgba(233,223,201,.08);
-    }
-    .kai-voice__settings label {
-        font-size: .72rem;
-        font-weight: 500;
-        letter-spacing: .16em;
-        text-transform: uppercase;
-        color: rgba(234,240,231,.55);
-    }
-    .kai-voice__settings select {
-        appearance: none;
-        cursor: pointer;
-        font: inherit;
-        font-size: .82rem;
-        padding: 8px 32px 8px 12px;
-        border-radius: 8px;
-        border: 1px solid rgba(233,223,201,.22);
-        background: rgba(255,255,255,.04);
-        color: #EAF0E7;
-        background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath fill='%23A8B59A' d='M6 8L2 4h8z'/%3E%3C/svg%3E");
-        background-repeat: no-repeat;
-        background-position: right 10px center;
-        background-size: 10px;
-    }
-    .kai-voice__settings select:focus { outline: 2px solid var(--v-sage); outline-offset: 2px; }
-
-    .kai-voice__status {
-        min-height: 20px;
-        margin: 0;
-        font-size: .82rem;
-        line-height: 1.5;
-        text-align: center;
-        color: rgba(234,240,231,.6);
-    }
-    .kai-voice__status.is-error { color: #E8B98F; }
-    .kai-voice__close {
-        appearance: none;
-        cursor: pointer;
-        background: transparent;
-        border: 0;
-        font: inherit;
-        font-size: .82rem;
-        color: rgba(234,240,231,.55);
-        text-decoration: underline;
-        text-underline-offset: 4px;
-        padding: 8px 12px;
-        transition: color .18s ease;
-    }
-    .kai-voice__close:hover { color: #EAF0E7; }
-    .kai-voice__close:focus-visible { outline: 2px solid var(--v-sage); outline-offset: 2px; border-radius: 4px; }
-
-    @@keyframes kai-orb-halo {
-        0%, 100% { transform: scale(1);   opacity: .8; }
-        50%      { transform: scale(1.1); opacity: 1;  }
-    }
-    @@keyframes kai-orb-core {
-        0%, 100% { transform: scale(1);    filter: brightness(1);    }
-        50%      { transform: scale(1.04); filter: brightness(1.12); }
-    }
-    @@keyframes kai-orb-shine {
-        0%, 100% { transform: translate(-6px, -4px) scale(1); opacity: .8; }
-        50%      { transform: translate(4px, 2px) scale(1.05); opacity: 1; }
-    }
-    @@keyframes kai-orb-rotate {
-        from { transform: rotate(0deg); }
-        to   { transform: rotate(360deg); }
-    }
-    @@keyframes kai-orb-breathe {
-        0%, 100% { transform: scale(1);    opacity: .35; }
-        50%      { transform: scale(1.06); opacity: .7;  }
-    }
-
-    /* ---------- Responsive ---------- */
-    @@media (max-width: 767px) {
-        .kai-page { padding-bottom: 300px; }
-        .kai-stage { padding-top: 16px; }
-        .kai-topbar__inner { gap: 8px; }
-        .kai-tool-btn { font-size: .7rem; padding: 6px 10px; }
-        .kai-brand-mini .kai-tag { display: none; }
-        .kai-composer textarea { font-size: 16px; }
-        .kai-drawer__panel { width: 100vw; padding: 22px 18px 28px; }
-        .kai-msg--user { max-width: 88%; }
-
-        .kai-voice__inner { padding: 22px 18px 32px; gap: 20px; }
-        .kai-voice__orb { width: 200px; height: 200px; }
-        .kai-voice__title-block h2 { font-size: 1.25rem; }
-        .kai-voice__copy strong { font-size: 1rem; }
-        .kai-voice__copy span { font-size: .85rem; }
-        .kai-voice__button { padding: 11px 18px; font-size: .85rem; }
-    }
-
-    @@media (prefers-reduced-motion: reduce) {
-        .kai-page *, .kai-page *::before, .kai-page *::after,
-        .kai-voice *, .kai-voice *::before, .kai-voice *::after {
-            animation-duration: .001ms !important;
-            animation-iteration-count: 1 !important;
-            transition-duration: .001ms !important;
+        body.kai-page-active .to-top {
+            display: none;
         }
-        .kai-voice__orb { transform: none !important; }
-    }
-</style>
+
+        .kai-page {
+            padding-top: calc(var(--header-h) + 56px);
+            /* Increased bottom padding to ensure well never sits under composer */
+            padding-bottom: 320px;
+            background: var(--ivory);
+            color: var(--charcoal);
+            font-family: var(--sans, 'DM Sans', system-ui, sans-serif);
+            min-height: 100vh;
+            min-height: 100dvh;
+            position: relative;
+            -webkit-font-smoothing: antialiased;
+        }
+
+            .kai-page [hidden] {
+                display: none !important;
+            }
+
+            .kai-page *, .kai-page *::before, .kai-page *::after {
+                box-sizing: border-box;
+            }
+
+        /* ---------- Topbar ---------- */
+        .kai-topbar {
+            position: fixed;
+            top: var(--header-h);
+            left: 0;
+            right: 0;
+            z-index: 90;
+            background: rgba(248, 246, 240, .94);
+            backdrop-filter: saturate(140%) blur(12px);
+            -webkit-backdrop-filter: saturate(140%) blur(12px);
+            border-bottom: 1px solid var(--line);
+        }
+
+        .kai-topbar__inner {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            min-height: 56px;
+            padding-block: 8px;
+        }
+
+        .kai-brand-mini {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            font-size: .76rem;
+            font-weight: 500;
+            letter-spacing: .08em;
+            color: var(--forest-deep);
+            text-transform: uppercase;
+        }
+
+        .kai-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--sage);
+            box-shadow: 0 0 0 4px rgba(168,181,154,.22);
+            flex: 0 0 auto;
+        }
+
+        .kai-brand-mini[data-available="False"] .kai-dot {
+            background: #C8A97C;
+            box-shadow: 0 0 0 4px rgba(200,169,124,.18);
+        }
+
+        .kai-brand-mini .kai-tag {
+            font-size: .7rem;
+            font-weight: 400;
+            color: var(--muted);
+            letter-spacing: 0;
+            text-transform: none;
+        }
+
+        .kai-topbar__actions {
+            display: flex;
+            gap: 6px;
+        }
+
+        .kai-tool-btn {
+            appearance: none;
+            cursor: pointer;
+            font: inherit;
+            font-size: .74rem;
+            font-weight: 500;
+            letter-spacing: .06em;
+            padding: 7px 14px;
+            border-radius: 999px;
+            border: 1px solid var(--line);
+            background: var(--white);
+            color: var(--forest-deep);
+            transition: background .18s ease, border-color .18s ease, color .18s ease;
+        }
+
+            .kai-tool-btn:hover {
+                background: var(--forest-deep);
+                color: var(--ivory);
+                border-color: var(--forest-deep);
+            }
+
+            .kai-tool-btn:focus-visible {
+                outline: 2px solid var(--moss);
+                outline-offset: 2px;
+            }
+
+        /* ---------- Stage ---------- */
+        .kai-stage {
+            padding-top: 24px;
+        }
+
+        /* ---------- Welcome card ---------- */
+        .kai-welcome {
+            max-width: 860px;
+            margin: 0 auto 24px;
+            animation: kai-fade .5s ease both;
+        }
+
+            .kai-welcome.is-hidden {
+                display: none;
+            }
+
+        .kai-welcome__card {
+            position: relative;
+            overflow: hidden;
+            isolation: isolate;
+            padding: clamp(28px, 5vw, 52px);
+            border-radius: 20px;
+            color: #EAF0E7;
+            background: radial-gradient(120% 150% at 84% 0%, #234231 0%, var(--forest-deep) 62%), var(--forest-deep);
+            box-shadow: var(--shadow-md);
+        }
+
+            .kai-welcome__card::after {
+                content: "";
+                position: absolute;
+                inset: 0;
+                pointer-events: none;
+                background: radial-gradient(70% 90% at 8% 0%, rgba(233,223,201,.10), transparent 62%);
+            }
+
+        .kai-eyebrow {
+            position: relative;
+            z-index: 1;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            margin: 0 0 18px;
+            font-size: .68rem;
+            font-weight: 500;
+            letter-spacing: .28em;
+            text-transform: uppercase;
+            color: var(--sage);
+        }
+
+            .kai-eyebrow::before {
+                content: "";
+                width: 28px;
+                height: 1px;
+                background: currentColor;
+                opacity: .7;
+            }
+
+        .kai-welcome__title {
+            position: relative;
+            z-index: 1;
+            font-family: var(--serif);
+            font-weight: 400;
+            font-size: clamp(1.75rem, 3.8vw, 2.65rem);
+            line-height: 1.1;
+            letter-spacing: -.01em;
+            color: #F6F4EC;
+            margin: 0;
+            max-width: 20ch;
+        }
+
+        .kai-welcome__lede {
+            position: relative;
+            z-index: 1;
+            margin: 16px 0 0;
+            max-width: 52ch;
+            font-size: .96rem;
+            line-height: 1.65;
+            color: rgba(234, 240, 231, .78);
+        }
+
+        .kai-welcome__prompts {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 28px;
+        }
+
+        .kai-prompt {
+            appearance: none;
+            cursor: pointer;
+            font: inherit;
+            font-size: .82rem;
+            line-height: 1.35;
+            padding: 8px 15px;
+            border-radius: 999px;
+            border: 1px solid rgba(168,181,154,.4);
+            background: rgba(255,255,255,.06);
+            color: #EAF0E7;
+            transition: background .18s ease, border-color .18s ease, color .18s ease, transform .18s ease;
+        }
+
+            .kai-prompt:hover {
+                background: rgba(255,255,255,.14);
+                border-color: var(--sage);
+                transform: translateY(-1px);
+            }
+
+            .kai-prompt:focus-visible {
+                outline: 2px solid var(--sage);
+                outline-offset: 2px;
+            }
+
+        /* ============================================================
+               CONVERSATION WELL
+               ============================================================ */
+        .kai-well {
+            max-width: 860px;
+            margin: 0 auto;
+            border: 1px solid var(--line);
+            border-radius: 20px;
+            background: linear-gradient(180deg, rgba(255,255,255,.72), rgba(255,255,255,.45));
+            box-shadow: 0 1px 0 rgba(255,255,255,.9) inset, 0 18px 40px -28px rgba(20, 39, 31, .25), 0 2px 6px -2px rgba(20, 39, 31, .06);
+            overflow: hidden;
+            animation: kai-fade .5s ease both;
+        }
+
+            .kai-well.is-empty {
+                display: none;
+            }
+
+        .kai-well__head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 14px 20px;
+            border-bottom: 1px solid var(--line);
+            background: rgba(248, 246, 240, .72);
+        }
+
+        .kai-well__title {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            font-size: .74rem;
+            font-weight: 600;
+            letter-spacing: .18em;
+            text-transform: uppercase;
+            color: var(--forest-deep);
+        }
+
+            .kai-well__title::before {
+                content: "";
+                width: 6px;
+                height: 6px;
+                border-radius: 50%;
+                background: var(--sage);
+                box-shadow: 0 0 0 4px rgba(168,181,154,.18);
+            }
+
+        .kai-well__meta {
+            font-size: .74rem;
+            color: var(--muted);
+            letter-spacing: .02em;
+        }
+
+        .kai-well__body {
+            /* Adjusted max-height to ensure last message doesn't clip visually */
+            max-height: min(60vh, 680px);
+            overflow-y: auto;
+            /* Extra bottom padding ensures the last message clears the fade/border */
+            padding: 24px clamp(16px, 3vw, 28px) 32px;
+            scroll-behavior: smooth;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(20,39,31,.18) transparent;
+        }
+
+            .kai-well__body::-webkit-scrollbar {
+                width: 8px;
+            }
+
+            .kai-well__body::-webkit-scrollbar-thumb {
+                background: rgba(20,39,31,.18);
+                border-radius: 8px;
+            }
+
+            .kai-well__body::-webkit-scrollbar-track {
+                background: transparent;
+            }
+
+        /* ---------- Message cards ---------- */
+        .kai-chat {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .kai-msg {
+            max-width: 100%;
+            animation: kai-rise .3s ease both;
+        }
+
+        .kai-msg--user {
+            display: flex;
+            justify-content: flex-end;
+        }
+
+            .kai-msg--user .kai-bubble {
+                max-width: 82%;
+                padding: 14px 20px;
+                border-radius: 18px 18px 4px 18px;
+                background: var(--forest-deep);
+                color: #F3F1E8;
+                font-size: 1rem;
+                line-height: 1.6;
+                white-space: pre-wrap;
+                overflow-wrap: anywhere;
+                box-shadow: 0 6px 16px -12px rgba(20,39,31,.5);
+                position: relative;
+            }
+
+                .kai-msg--user .kai-bubble::after {
+                    content: "";
+                    position: absolute;
+                    right: 12px;
+                    bottom: -6px;
+                    width: 12px;
+                    height: 12px;
+                    background: var(--forest-deep);
+                    clip-path: polygon(0 0, 100% 0, 100% 100%);
+                    border-bottom-right-radius: 4px;
+                }
+
+        .kai-msg--assistant .kai-card {
+            position: relative;
+            border: 1px solid var(--line);
+            border-radius: 14px;
+            background: var(--white);
+            box-shadow: 0 2px 8px -4px rgba(20,39,31,.06);
+            overflow: hidden;
+        }
+
+        .kai-msg--assistant .kai-card__head {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 20px;
+            border-bottom: 1px solid var(--line);
+            background: linear-gradient(180deg, rgba(248,246,240,.8), rgba(248,246,240,.4));
+        }
+
+        .kai-avatar {
+            display: inline-grid;
+            place-items: center;
+            width: 28px;
+            height: 28px;
+            flex: 0 0 auto;
+            border-radius: 50%;
+            background: radial-gradient(circle at 32% 28%, #234231, var(--forest-deep));
+            color: #E9DFC9;
+            font-family: var(--serif);
+            font-size: .85rem;
+            font-weight: 500;
+            letter-spacing: -.02em;
+            box-shadow: 0 0 0 2px rgba(168,181,154,.18);
+        }
+
+        .kai-author {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            min-width: 0;
+        }
+
+            .kai-author strong {
+                font-size: .82rem;
+                font-weight: 600;
+                letter-spacing: .04em;
+                color: var(--forest-deep);
+                line-height: 1.15;
+            }
+
+            .kai-author span {
+                font-size: .7rem;
+                color: var(--muted);
+                letter-spacing: .02em;
+            }
+
+        .kai-card__actions {
+            margin-left: auto;
+            display: flex;
+            gap: 4px;
+            opacity: 0;
+            transition: opacity .2s ease;
+        }
+
+        .kai-msg--assistant:hover .kai-card__actions,
+        .kai-msg--assistant:focus-within .kai-card__actions {
+            opacity: 1;
+        }
+
+        .kai-iconbtn {
+            appearance: none;
+            cursor: pointer;
+            border: 0;
+            background: transparent;
+            width: 28px;
+            height: 28px;
+            border-radius: 6px;
+            color: var(--muted);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: background .18s ease, color .18s ease;
+        }
+
+            .kai-iconbtn:hover {
+                background: var(--ivory);
+                color: var(--forest-deep);
+            }
+
+            .kai-iconbtn:focus-visible {
+                outline: 2px solid var(--moss);
+                outline-offset: 1px;
+            }
+
+            .kai-iconbtn svg {
+                width: 16px;
+                height: 16px;
+            }
+
+            .kai-iconbtn.is-copied {
+                color: var(--moss);
+            }
+
+        .kai-card__body {
+            padding: 18px 22px 20px;
+            font-size: 1rem;
+            line-height: 1.7;
+            color: var(--charcoal);
+            white-space: pre-wrap;
+            overflow-wrap: anywhere;
+        }
+
+        .kai-msg--typing .kai-card__body {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 16px 22px;
+            color: var(--muted);
+            font-size: .9rem;
+        }
+
+        .kai-typing-dots {
+            display: inline-flex;
+            gap: 4px;
+        }
+
+            .kai-typing-dots span {
+                width: 6px;
+                height: 6px;
+                border-radius: 50%;
+                background: var(--sage);
+                animation: kai-pulse 1.05s ease-in-out infinite;
+            }
+
+                .kai-typing-dots span:nth-child(2) {
+                    animation-delay: .15s;
+                }
+
+                .kai-typing-dots span:nth-child(3) {
+                    animation-delay: .3s;
+                }
+
+        /* ============================================================
+               COMPOSER — Upgraded Command Bar
+               ============================================================ */
+        .kai-composer-dock {
+            position: fixed;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 100;
+            padding: 16px 0 max(16px, env(safe-area-inset-bottom));
+            background: linear-gradient(to top, var(--ivory) 55%, rgba(248,246,240,0));
+            pointer-events: none;
+        }
+
+            .kai-composer-dock > .container {
+                pointer-events: auto;
+            }
+
+        .kai-composer-wrap {
+            max-width: 860px;
+            margin: 0 auto;
+        }
+
+        .kai-composer {
+            position: relative;
+            display: flex;
+            align-items: flex-end;
+            gap: 12px;
+            padding: 12px 12px 12px 14px;
+            border: 1px solid var(--line);
+            border-radius: 24px;
+            background: #FFFFFF;
+            box-shadow: 0 1px 0 rgba(255,255,255,.9) inset, 0 20px 40px -24px rgba(20, 39, 31, .38), 0 4px 12px -6px rgba(20, 39, 31, .08);
+            transition: border-color .22s ease, box-shadow .22s ease, transform .22s ease;
+        }
+
+            .kai-composer:hover {
+                border-color: rgba(20, 39, 31, .18);
+            }
+
+            .kai-composer:focus-within {
+                border-color: #14271F;
+                box-shadow: 0 0 0 4px rgba(83,107,80,.12), 0 1px 0 rgba(255,255,255,.9) inset, 0 20px 40px -22px rgba(20, 39, 31, .42), 0 4px 12px -6px rgba(20, 39, 31, .1);
+            }
+
+        /* Left mode chip */
+        .kai-composer__lead {
+            display: flex;
+            align-items: center;
+            flex: 0 0 auto;
+            padding-bottom: 4px;
+        }
+
+        .kai-mode-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            height: 36px;
+            padding: 0 14px;
+            border-radius: 999px;
+            background: #F6F2E9;
+            border: 1px solid rgba(20,39,31,.12);
+            font: inherit;
+            font-size: .72rem;
+            font-weight: 600;
+            letter-spacing: .14em;
+            text-transform: uppercase;
+            color: #14271F;
+            user-select: none;
+            cursor: pointer;
+            transition: background .18s ease, border-color .18s ease, color .18s ease;
+        }
+
+            .kai-mode-chip:hover {
+                background: #EFE9DB;
+                border-color: rgba(20, 39, 31, .22);
+            }
+
+            .kai-mode-chip:focus-visible {
+                outline: 2px solid #536B50;
+                outline-offset: 2px;
+            }
+
+        .kai-mode-chip__dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #A8B59A;
+            box-shadow: 0 0 0 3px rgba(168,181,154,.22);
+            animation: kai-mode-pulse 2.4s ease-in-out infinite;
+        }
+
+        .kai-mode-chip[data-mode="voice"] {
+            background: #14271F;
+            border-color: #14271F;
+            color: #EAF0E7;
+        }
+
+            .kai-mode-chip[data-mode="voice"] .kai-mode-chip__dot {
+                background: #E9DFC9;
+                box-shadow: 0 0 0 3px rgba(233,223,201,.28);
+            }
+
+        /* Textarea */
+        .kai-composer textarea {
+            flex: 1 1 auto;
+            min-width: 0;
+            min-height: 36px;
+            max-height: 220px;
+            padding: 8px 4px;
+            border: 0;
+            outline: none;
+            resize: none;
+            background: transparent;
+            font: inherit;
+            font-family: var(--sans, 'DM Sans', system-ui, sans-serif);
+            font-size: 1.05rem;
+            line-height: 1.5;
+            color: #14271F;
+            caret-color: #14271F;
+            -webkit-text-fill-color: #14271F;
+            transition: color .2s ease;
+            overflow-wrap: anywhere;
+            word-break: break-word;
+        }
+
+            .kai-composer textarea::placeholder {
+                color: #99A196;
+                opacity: 1;
+                transition: color .2s ease;
+                -webkit-text-fill-color: #99A196;
+            }
+
+        .kai-composer:focus-within textarea::placeholder {
+            color: #B5BCAF;
+            -webkit-text-fill-color: #B5BCAF;
+        }
+
+        .kai-composer textarea::selection {
+            background: rgba(20, 39, 31, .18);
+            color: #0F1F17;
+            -webkit-text-fill-color: #0F1F17;
+        }
+
+        /* Right actions */
+        .kai-composer__actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex: 0 0 auto;
+            padding-bottom: 2px;
+        }
+
+        .kai-char-count {
+            font-size: .7rem;
+            font-variant-numeric: tabular-nums;
+            color: #6B7A6E;
+            letter-spacing: .02em;
+            min-width: 0;
+            opacity: 0;
+            transition: opacity .2s ease, color .2s ease;
+        }
+
+        .kai-composer.has-content .kai-char-count {
+            opacity: .75;
+        }
+
+        .kai-char-count.is-near-limit {
+            color: #B23B2E;
+            opacity: 1;
+            font-weight: 600;
+        }
+
+        .kai-composer__hint {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            font-size: .72rem;
+            color: #6B7A6E;
+            letter-spacing: .02em;
+            padding-right: 6px;
+            opacity: .8;
+            transition: opacity .2s ease;
+        }
+
+            .kai-composer__hint kbd {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                min-width: 20px;
+                height: 20px;
+                padding: 0 5px;
+                border-radius: 5px;
+                border: 1px solid rgba(20,39,31,.12);
+                border-bottom-width: 2px;
+                background: #F6F2E9;
+                font-family: var(--sans, 'DM Sans', system-ui, sans-serif);
+                font-size: .68rem;
+                font-weight: 600;
+                color: #14271F;
+                line-height: 1;
+            }
+
+        .kai-composer:focus-within .kai-composer__hint {
+            opacity: 1;
+        }
+
+        .kai-composer.has-content .kai-composer__hint {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .kai-mic, .kai-send {
+            appearance: none;
+            cursor: pointer;
+            border: 0;
+            width: 44px;
+            height: 44px;
+            border-radius: 14px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: background .18s ease, color .18s ease, transform .18s ease, opacity .18s ease, box-shadow .18s ease;
+        }
+
+        .kai-mic {
+            background: #F1F1EE;
+            color: #14271F;
+        }
+
+            .kai-mic:hover {
+                background: #E5E5DE;
+                transform: translateY(-1px);
+            }
+
+            .kai-mic:active {
+                transform: translateY(0);
+            }
+
+            .kai-mic:focus-visible {
+                outline: 2px solid #536B50;
+                outline-offset: 2px;
+            }
+
+            .kai-mic svg {
+                width: 20px;
+                height: 20px;
+            }
+
+        .kai-send {
+            background: #14271F;
+            color: #F6F4EC;
+            box-shadow: 0 4px 12px -6px rgba(20, 39, 31, .5);
+            transform: scale(.92);
+            opacity: .55;
+            transition: transform .18s ease, opacity .18s ease, background .18s ease, box-shadow .18s ease;
+        }
+
+        .kai-composer.has-content .kai-send {
+            transform: scale(1);
+            opacity: 1;
+            box-shadow: 0 8px 20px -10px rgba(20, 39, 31, .55), 0 1px 0 rgba(255,255,255,.06) inset;
+        }
+
+            .kai-composer.has-content .kai-send:hover {
+                background: #20382D;
+                transform: scale(1.06) translateY(-1px);
+            }
+
+        .kai-send:active {
+            transform: scale(.97);
+        }
+
+        .kai-send:disabled {
+            opacity: .4;
+            cursor: progress;
+            transform: scale(.92);
+        }
+
+        .kai-send:focus-visible {
+            outline: 2px solid #A8B59A;
+            outline-offset: 3px;
+        }
+
+        .kai-send svg {
+            width: 18px;
+            height: 18px;
+        }
+
+        .kai-statusline {
+            min-height: 20px;
+            margin-top: 8px;
+            font-size: .82rem;
+            line-height: 1.5;
+            color: var(--muted);
+        }
+
+            .kai-statusline.is-error {
+                color: #9B4331;
+            }
+
+        .kai-feedback {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .kai-feedback__label {
+            font-size: .7rem;
+            font-weight: 600;
+            letter-spacing: .14em;
+            text-transform: uppercase;
+            color: var(--muted);
+            margin-right: 4px;
+        }
+
+        .kai-feedback .kai-prompt {
+            border-color: var(--line);
+            background: var(--white);
+            color: var(--forest-deep);
+        }
+
+            .kai-feedback .kai-prompt:hover {
+                background: var(--forest-deep);
+                color: var(--ivory);
+                border-color: var(--forest-deep);
+            }
+
+        /* ---------- Drawers ---------- */
+        .kai-drawer {
+            position: fixed;
+            inset: 0;
+            z-index: 350;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity .28s ease;
+        }
+
+            .kai-drawer.is-open {
+                pointer-events: auto;
+                opacity: 1;
+            }
+
+        .kai-drawer__backdrop {
+            position: absolute;
+            inset: 0;
+            background: rgba(14, 26, 21, .4);
+            backdrop-filter: blur(2px);
+        }
+
+        .kai-drawer__panel {
+            position: absolute;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            width: min(440px, 92vw);
+            background: var(--white);
+            border-left: 1px solid var(--line);
+            box-shadow: var(--shadow-lg);
+            padding: 28px 28px 32px;
+            overflow-y: auto;
+            transform: translateX(100%);
+            transition: transform .32s var(--ease);
+        }
+
+        .kai-drawer.is-open .kai-drawer__panel {
+            transform: translateX(0);
+        }
+
+        .kai-drawer--wide .kai-drawer__panel {
+            width: min(640px, 96vw);
+        }
+
+        .kai-drawer__head {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 16px;
+            margin-bottom: 22px;
+        }
+
+        .kai-drawer__eyebrow {
+            margin: 0 0 8px;
+            font-size: .68rem;
+            font-weight: 500;
+            letter-spacing: .24em;
+            text-transform: uppercase;
+            color: var(--moss);
+        }
+
+        .kai-drawer__head h2 {
+            font-family: var(--serif);
+            font-weight: 400;
+            font-size: 1.5rem;
+            line-height: 1.2;
+            color: var(--forest-deep);
+            margin: 0;
+        }
+
+        .kai-drawer__sub {
+            margin: 6px 0 0;
+            font-size: .86rem;
+            color: var(--muted);
+            line-height: 1.6;
+        }
+
+        .kai-drawer__close {
+            appearance: none;
+            cursor: pointer;
+            border: 1px solid var(--line);
+            background: transparent;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            font-size: 1.3rem;
+            line-height: 1;
+            color: var(--muted);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: background .18s ease, color .18s ease;
+            flex: 0 0 auto;
+        }
+
+            .kai-drawer__close:hover {
+                background: var(--ivory);
+                color: var(--forest-deep);
+            }
+
+            .kai-drawer__close:focus-visible {
+                outline: 2px solid var(--moss);
+                outline-offset: 2px;
+            }
+
+        body.kai-drawer-open {
+            overflow: hidden;
+        }
+
+        /* ---------- Planner fields ---------- */
+        .kai-field {
+            margin-bottom: 16px;
+        }
+
+            .kai-field label {
+                display: block;
+                margin-bottom: 7px;
+                font-size: .68rem;
+                font-weight: 500;
+                letter-spacing: .16em;
+                text-transform: uppercase;
+                color: var(--muted);
+            }
+
+            .kai-field input {
+                width: 100%;
+                padding: 12px 14px;
+                font: inherit;
+                font-size: .93rem;
+                color: var(--charcoal);
+                background: var(--ivory);
+                border: 1px solid var(--line);
+                border-radius: 10px;
+                transition: border-color .18s ease, box-shadow .18s ease, background .18s ease;
+            }
+
+                .kai-field input::placeholder {
+                    color: #A9AFA4;
+                }
+
+                .kai-field input:focus {
+                    outline: none;
+                    border-color: var(--moss);
+                    background: var(--white);
+                    box-shadow: 0 0 0 3px rgba(83,107,80,.14);
+                }
+
+        .kai-btn {
+            appearance: none;
+            cursor: pointer;
+            font: inherit;
+            font-size: .8rem;
+            font-weight: 500;
+            letter-spacing: .1em;
+            text-transform: uppercase;
+            white-space: nowrap;
+            border: 0;
+            border-radius: 999px;
+            padding: 13px 26px;
+            background: var(--forest-deep);
+            color: var(--ivory);
+            transition: background .18s ease, transform .18s ease, opacity .18s ease;
+        }
+
+            .kai-btn:hover {
+                background: var(--forest);
+            }
+
+            .kai-btn:active {
+                transform: translateY(1px);
+            }
+
+            .kai-btn:disabled {
+                opacity: .55;
+                cursor: progress;
+                transform: none;
+            }
+
+            .kai-btn:focus-visible {
+                outline: 2px solid var(--moss);
+                outline-offset: 3px;
+            }
+
+        .kai-planner-form .kai-btn {
+            width: 100%;
+            margin-top: 4px;
+        }
+
+        #itinerary {
+            margin-top: 18px;
+            padding: 18px 18px 18px 20px;
+            max-height: 460px;
+            overflow-y: auto;
+            background: var(--ivory);
+            border: 1px solid var(--line);
+            border-left: 3px solid var(--sage);
+            border-radius: 12px;
+            font-size: .9rem;
+            line-height: 1.78;
+            color: var(--charcoal);
+            white-space: pre-wrap;
+            overflow-wrap: anywhere;
+            animation: kai-rise .3s ease both;
+        }
+
+        /* ---------- Listings ---------- */
+        .kai-count {
+            display: inline-block;
+            font-size: .68rem;
+            font-weight: 500;
+            letter-spacing: .2em;
+            text-transform: uppercase;
+            color: var(--muted);
+            margin-bottom: 14px;
+        }
+
+        .kai-listings {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 12px;
+        }
+
+        .kai-listing {
+            padding: 16px 18px 14px;
+            background: var(--ivory);
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            transition: border-color .2s ease, transform .2s ease;
+        }
+
+            .kai-listing:hover {
+                border-color: var(--sage);
+                transform: translateY(-1px);
+            }
+
+        .kai-listing__type {
+            display: inline-block;
+            margin-bottom: 8px;
+            font-size: .62rem;
+            font-weight: 600;
+            letter-spacing: .18em;
+            text-transform: uppercase;
+            color: var(--moss);
+        }
+
+        .kai-listing__name {
+            font-family: var(--serif);
+            font-weight: 400;
+            font-size: 1.02rem;
+            line-height: 1.3;
+            color: var(--forest-deep);
+            margin: 0 0 4px;
+        }
+
+        .kai-listing__loc {
+            margin: 0 0 10px;
+            font-size: .82rem;
+            line-height: 1.5;
+            color: var(--muted);
+        }
+
+        .kai-listing__price {
+            margin: 0;
+            padding-top: 10px;
+            border-top: 1px solid var(--line);
+            font-size: .82rem;
+            font-weight: 500;
+            color: var(--forest-deep);
+        }
+
+        .kai-empty {
+            margin: 0;
+            padding: 32px 24px;
+            border: 1px dashed var(--line);
+            border-radius: 12px;
+            background: var(--ivory);
+            text-align: center;
+            font-size: .88rem;
+            line-height: 1.7;
+            color: var(--muted);
+        }
+
+        /* ---------- Motion ---------- */
+        @@keyframes kai-rise {
+            from {
+                opacity: 0;
+                transform: translateY(6px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @@keyframes kai-pulse {
+            0%, 100% {
+                opacity: .35;
+                transform: translateY(0);
+            }
+
+            50% {
+                opacity: 1;
+                transform: translateY(-2px);
+            }
+        }
+
+        @@keyframes kai-fade {
+            from {
+                opacity: 0;
+                transform: translateY(6px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @@keyframes kai-mode-pulse {
+            0%, 100% {
+                opacity: .8;
+                transform: scale(1);
+            }
+
+            50% {
+                opacity: 1;
+                transform: scale(1.15);
+            }
+        }
+
+        /* ============================================================
+               VOICE OVERLAY
+               ============================================================ */
+        .kai-voice {
+            --v-forest-deep: var(--forest-deep, #14271F);
+            --v-forest: var(--forest, #20382D);
+            --v-sage: var(--sage, #A8B59A);
+            --v-sand: var(--sand, #E9DFC9);
+            --v-ivory: var(--ivory, #F8F6F0);
+            position: fixed;
+            inset: 0;
+            z-index: 600;
+            background: radial-gradient(circle at 50% 38%, #1b3527 0%, #0f1e16 55%, #06100b 100%);
+            color: #EAF0E7;
+            display: flex;
+            align-items: stretch;
+            justify-content: center;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity .32s ease, visibility 0s linear .32s;
+            font-family: var(--sans, 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
+            overflow-y: auto;
+            -webkit-font-smoothing: antialiased;
+        }
+
+            .kai-voice.is-open {
+                opacity: 1;
+                visibility: visible;
+                transition: opacity .32s ease, visibility 0s linear 0s;
+            }
+
+            .kai-voice[hidden] {
+                display: none !important;
+            }
+
+            .kai-voice *, .kai-voice *::before, .kai-voice *::after {
+                box-sizing: border-box;
+            }
+
+        .kai-voice__bg {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            background: radial-gradient(60% 50% at 50% 45%, rgba(168,181,154,.14), transparent 70%), radial-gradient(40% 40% at 20% 80%, rgba(233,223,201,.06), transparent 70%), radial-gradient(40% 40% at 80% 15%, rgba(168,181,154,.08), transparent 70%);
+        }
+
+        .kai-voice__inner {
+            position: relative;
+            width: 100%;
+            max-width: 720px;
+            padding: 32px 24px 40px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 24px;
+            min-height: 100%;
+            animation: kai-voice-in .45s ease both;
+        }
+
+        @@keyframes kai-voice-in {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .kai-voice__top {
+            width: 100%;
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 16px;
+        }
+
+        .kai-voice__eyebrow {
+            margin: 0 0 6px;
+            font-size: .68rem;
+            font-weight: 500;
+            letter-spacing: .3em;
+            text-transform: uppercase;
+            color: var(--v-sage);
+        }
+
+        .kai-voice__title-block h2 {
+            margin: 0;
+            font-family: var(--serif, 'DM Serif Display', Georgia, serif);
+            font-weight: 400;
+            font-size: 1.5rem;
+            color: #F6F4EC;
+            letter-spacing: -.01em;
+        }
+
+        .kai-voice__toggle {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            font-size: .78rem;
+            color: rgba(234,240,231,.75);
+            cursor: pointer;
+            user-select: none;
+        }
+
+            .kai-voice__toggle input {
+                position: absolute;
+                opacity: 0;
+                pointer-events: none;
+            }
+
+        .kai-voice__switch {
+            position: relative;
+            width: 36px;
+            height: 20px;
+            border-radius: 999px;
+            background: rgba(233,223,201,.18);
+            transition: background .2s ease;
+        }
+
+            .kai-voice__switch::after {
+                content: "";
+                position: absolute;
+                top: 2px;
+                left: 2px;
+                width: 16px;
+                height: 16px;
+                border-radius: 50%;
+                background: var(--v-sand);
+                transition: transform .2s ease, background .2s ease;
+            }
+
+        .kai-voice__toggle input:checked + .kai-voice__switch {
+            background: var(--v-sage);
+        }
+
+            .kai-voice__toggle input:checked + .kai-voice__switch::after {
+                transform: translateX(16px);
+                background: #F6F4EC;
+            }
+
+        .kai-voice__toggle input:focus-visible + .kai-voice__switch {
+            outline: 2px solid var(--v-sage);
+            outline-offset: 2px;
+        }
+
+        .kai-voice__stage {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 28px;
+            width: 100%;
+            padding: 20px 0 8px;
+        }
+
+        .kai-voice__orb {
+            --amp: var(--kai-amp, 0);
+            --speak: var(--kai-speak, 0);
+            position: relative;
+            width: 260px;
+            height: 260px;
+            border-radius: 50%;
+            transform: scale(calc(1 + var(--amp) * 0.18 + var(--speak) * 0.08));
+            transition: transform 90ms linear;
+            will-change: transform;
+        }
+
+        .kai-voice__halo {
+            position: absolute;
+            inset: -30%;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(168,181,154,.28), transparent 65%);
+            filter: blur(28px);
+            animation: kai-orb-halo 6s ease-in-out infinite;
+        }
+
+        .kai-voice__ring {
+            position: absolute;
+            border-radius: 50%;
+            pointer-events: none;
+            border: 1px solid rgba(233,223,201,.22);
+            transition: border-color .4s ease, opacity .4s ease;
+        }
+
+        .kai-voice__ring--1 {
+            inset: -4%;
+            border-style: dashed;
+            animation: kai-orb-rotate 34s linear infinite;
+        }
+
+        .kai-voice__ring--2 {
+            inset: -14%;
+            animation: kai-orb-rotate 52s linear infinite reverse;
+            border-color: rgba(168,181,154,.28);
+        }
+
+        .kai-voice__ring--3 {
+            inset: -24%;
+            animation: kai-orb-breathe 8s ease-in-out infinite;
+            border-color: rgba(233,223,201,.12);
+        }
+
+        .kai-voice__core {
+            position: absolute;
+            inset: 18%;
+            border-radius: 50%;
+            background: radial-gradient(circle at 34% 28%, rgba(248,246,240,.95) 0%, rgba(233,223,201,.65) 22%, rgba(168,181,154,.55) 48%, rgba(32,56,45,.95) 78%, var(--v-forest-deep) 100%);
+            box-shadow: 0 0 70px rgba(168,181,154,.45), 0 0 140px rgba(168,181,154,.18), inset 0 -20px 40px rgba(10,24,18,.45), inset 0 20px 30px rgba(248,246,240,.18);
+            animation: kai-orb-core 5.5s ease-in-out infinite;
+        }
+
+        .kai-voice__shine {
+            position: absolute;
+            inset: 26%;
+            border-radius: 50%;
+            background: radial-gradient(circle at 32% 28%, rgba(255,255,255,.55), transparent 55%);
+            filter: blur(4px);
+            pointer-events: none;
+            animation: kai-orb-shine 7s ease-in-out infinite;
+        }
+
+        .kai-voice__stage[data-voice-state="listening"] .kai-voice__ring {
+            border-color: rgba(233,223,201,.45);
+        }
+
+        .kai-voice__stage[data-voice-state="listening"] .kai-voice__ring--3 {
+            border-color: rgba(168,181,154,.5);
+        }
+
+        .kai-voice__stage[data-voice-state="listening"] .kai-voice__halo {
+            background: radial-gradient(circle, rgba(168,181,154,.42), transparent 65%);
+        }
+
+        .kai-voice__stage[data-voice-state="listening"] .kai-voice__core {
+            animation-duration: 2.6s;
+        }
+
+        .kai-voice__stage[data-voice-state="processing"] .kai-voice__ring--1 {
+            animation-duration: 5s;
+        }
+
+        .kai-voice__stage[data-voice-state="processing"] .kai-voice__ring--2 {
+            animation-duration: 9s;
+        }
+
+        .kai-voice__stage[data-voice-state="processing"] .kai-voice__halo {
+            background: radial-gradient(circle, rgba(168,181,154,.34), transparent 60%);
+            animation-duration: 3.2s;
+        }
+
+        .kai-voice__stage[data-voice-state="processing"] .kai-voice__core {
+            animation-duration: 2.2s;
+        }
+
+        .kai-voice__stage[data-voice-state="speaking"] .kai-voice__halo {
+            background: radial-gradient(circle, rgba(233,223,201,.4), transparent 62%);
+        }
+
+        .kai-voice__stage[data-voice-state="speaking"] .kai-voice__ring--3 {
+            border-color: rgba(233,223,201,.42);
+            animation-duration: 3.2s;
+        }
+
+        .kai-voice__stage[data-voice-state="speaking"] .kai-voice__core {
+            animation-duration: 2.4s;
+        }
+
+        .kai-voice__stage[data-voice-state="paused"] .kai-voice__halo,
+        .kai-voice__stage[data-voice-state="paused"] .kai-voice__core {
+            animation-play-state: paused;
+            opacity: .6;
+        }
+
+        .kai-voice__stage[data-voice-state="paused"] .kai-voice__ring {
+            opacity: .35;
+        }
+
+        .kai-voice__stage[data-voice-state="error"] .kai-voice__halo {
+            background: radial-gradient(circle, rgba(200,169,124,.28), transparent 62%);
+        }
+
+        .kai-voice__stage[data-voice-state="error"] .kai-voice__core {
+            background: radial-gradient(circle at 34% 28%, rgba(233,223,201,.6) 0%, rgba(200,169,124,.4) 35%, rgba(60,40,25,.95) 80%, #1A0F08 100%);
+            animation-duration: 6s;
+        }
+
+        .kai-voice__stage[data-voice-state="error"] .kai-voice__ring {
+            border-color: rgba(200,169,124,.3);
+        }
+
+        .kai-voice__copy {
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            max-width: 44ch;
+        }
+
+            .kai-voice__copy strong {
+                font-size: 1.1rem;
+                font-weight: 500;
+                color: #F6F4EC;
+                letter-spacing: -.005em;
+            }
+
+            .kai-voice__copy span {
+                font-size: .9rem;
+                line-height: 1.6;
+                color: rgba(234,240,231,.68);
+            }
+
+        .kai-voice__actions {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 4px;
+        }
+
+        .kai-voice__button {
+            appearance: none;
+            cursor: pointer;
+            font: inherit;
+            font-size: .9rem;
+            font-weight: 500;
+            letter-spacing: .01em;
+            padding: 12px 24px;
+            border-radius: 999px;
+            border: 1px solid rgba(233,223,201,.28);
+            background: rgba(255,255,255,.04);
+            color: #EAF0E7;
+            transition: background .2s ease, border-color .2s ease, transform .15s ease, color .2s ease;
+        }
+
+            .kai-voice__button:hover {
+                background: rgba(255,255,255,.08);
+                border-color: rgba(233,223,201,.5);
+            }
+
+            .kai-voice__button:active {
+                transform: translateY(1px);
+            }
+
+            .kai-voice__button:focus-visible {
+                outline: 2px solid var(--v-sage);
+                outline-offset: 3px;
+            }
+
+        .kai-voice__button--primary {
+            background: var(--v-sand);
+            border-color: var(--v-sand);
+            color: var(--v-forest-deep);
+            font-weight: 600;
+            box-shadow: 0 0 40px rgba(233,223,201,.25);
+        }
+
+            .kai-voice__button--primary:hover {
+                background: #F1EBDC;
+                border-color: #F1EBDC;
+            }
+
+        .kai-voice__button:disabled {
+            opacity: .55;
+            cursor: progress;
+        }
+
+        .kai-voice__settings {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            width: 100%;
+            padding-top: 8px;
+            border-top: 1px solid rgba(233,223,201,.08);
+        }
+
+            .kai-voice__settings label {
+                font-size: .72rem;
+                font-weight: 500;
+                letter-spacing: .16em;
+                text-transform: uppercase;
+                color: rgba(234,240,231,.55);
+            }
+
+            .kai-voice__settings select {
+                appearance: none;
+                cursor: pointer;
+                font: inherit;
+                font-size: .82rem;
+                padding: 8px 32px 8px 12px;
+                border-radius: 8px;
+                border: 1px solid rgba(233,223,201,.22);
+                background: rgba(255,255,255,.04);
+                color: #EAF0E7;
+                background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath fill='%23A8B59A' d='M6 8L2 4h8z'/%3E%3C/svg%3E");
+                background-repeat: no-repeat;
+                background-position: right 10px center;
+                background-size: 10px;
+            }
+
+                .kai-voice__settings select:focus {
+                    outline: 2px solid var(--v-sage);
+                    outline-offset: 2px;
+                }
+
+        .kai-voice__status {
+            min-height: 20px;
+            margin: 0;
+            font-size: .82rem;
+            line-height: 1.5;
+            text-align: center;
+            color: rgba(234,240,231,.6);
+        }
+
+            .kai-voice__status.is-error {
+                color: #E8B98F;
+            }
+
+        .kai-voice__close {
+            appearance: none;
+            cursor: pointer;
+            background: transparent;
+            border: 0;
+            font: inherit;
+            font-size: .82rem;
+            color: rgba(234,240,231,.55);
+            text-decoration: underline;
+            text-underline-offset: 4px;
+            padding: 8px 12px;
+            transition: color .18s ease;
+        }
+
+            .kai-voice__close:hover {
+                color: #EAF0E7;
+            }
+
+            .kai-voice__close:focus-visible {
+                outline: 2px solid var(--v-sage);
+                outline-offset: 2px;
+                border-radius: 4px;
+            }
+
+        @@keyframes kai-orb-halo {
+            0%, 100% {
+                transform: scale(1);
+                opacity: .8;
+            }
+
+            50% {
+                transform: scale(1.1);
+                opacity: 1;
+            }
+        }
+
+        @@keyframes kai-orb-core {
+            0%, 100% {
+                transform: scale(1);
+                filter: brightness(1);
+            }
+
+            50% {
+                transform: scale(1.04);
+                filter: brightness(1.12);
+            }
+        }
+
+        @@keyframes kai-orb-shine {
+            0%, 100% {
+                transform: translate(-6px, -4px) scale(1);
+                opacity: .8;
+            }
+
+            50% {
+                transform: translate(4px, 2px) scale(1.05);
+                opacity: 1;
+            }
+        }
+
+        @@keyframes kai-orb-rotate {
+            from {
+                transform: rotate(0deg);
+            }
+
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        @@keyframes kai-orb-breathe {
+            0%, 100% {
+                transform: scale(1);
+                opacity: .35;
+            }
+
+            50% {
+                transform: scale(1.06);
+                opacity: .7;
+            }
+        }
+
+        /* ---------- Responsive ---------- */
+        @@media (max-width: 767px) {
+            .kai-page {
+                padding-bottom: 280px;
+            }
+
+            .kai-stage {
+                padding-top: 16px;
+            }
+
+            .kai-topbar__inner {
+                gap: 8px;
+            }
+
+            .kai-tool-btn {
+                font-size: .7rem;
+                padding: 6px 10px;
+            }
+
+            .kai-brand-mini .kai-tag {
+                display: none;
+            }
+
+            .kai-composer {
+                padding: 8px 8px 8px 10px;
+                border-radius: 20px;
+                gap: 8px;
+            }
+
+                .kai-composer textarea {
+                    font-size: 16px;
+                    min-height: 36px;
+                    padding: 10px 2px;
+                }
+
+            .kai-composer__hint {
+                display: none;
+            }
+
+            .kai-char-count {
+                display: none;
+            }
+
+            .kai-mode-chip {
+                padding: 0 10px;
+                height: 32px;
+                font-size: .65rem;
+            }
+
+            .kai-mode-chip__label {
+                display: none;
+            }
+
+            .kai-mode-chip__dot {
+                width: 8px;
+                height: 8px;
+            }
+
+            .kai-mic, .kai-send {
+                width: 40px;
+                height: 40px;
+                border-radius: 12px;
+            }
+
+            .kai-drawer__panel {
+                width: 100vw;
+                padding: 22px 18px 28px;
+            }
+
+            .kai-msg--user .kai-bubble {
+                max-width: 90%;
+            }
+
+            .kai-well__body {
+                max-height: 55vh;
+                padding: 16px 14px 24px;
+            }
+
+            .kai-card__body {
+                padding: 16px 18px;
+                font-size: .95rem;
+            }
+
+            .kai-msg--assistant .kai-card__head {
+                padding: 10px 16px;
+            }
+
+            .kai-avatar {
+                width: 26px;
+                height: 26px;
+                font-size: .75rem;
+            }
+
+            .kai-voice__inner {
+                padding: 22px 18px 32px;
+                gap: 20px;
+            }
+
+            .kai-voice__orb {
+                width: 200px;
+                height: 200px;
+            }
+
+            .kai-voice__title-block h2 {
+                font-size: 1.25rem;
+            }
+
+            .kai-voice__copy strong {
+                font-size: 1rem;
+            }
+
+            .kai-voice__copy span {
+                font-size: .85rem;
+            }
+
+            .kai-voice__button {
+                padding: 11px 18px;
+                font-size: .85rem;
+            }
+        }
+
+        @@media (prefers-reduced-motion: reduce) {
+            .kai-page *, .kai-page *::before, .kai-page *::after,
+            .kai-voice *, .kai-voice *::before, .kai-voice *::after {
+                animation-duration: .001ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: .001ms !important;
+            }
+
+            .kai-voice__orb {
+                transform: none !important;
+            }
+
+            .kai-mode-chip__dot {
+                animation: none !important;
+            }
+        }
+    </style>
 }
 
 <!-- ============================================================
@@ -986,34 +1848,72 @@
                 </div>
             </section>
 
-            <div id="chat" class="kai-chat" aria-live="polite" aria-label="Conversation with Karnel AI"></div>
+            <!-- ===== CONVERSATION WELL ===== -->
+            <div class="kai-well is-empty" id="kai-well">
+                <div class="kai-well__head">
+                    <span class="kai-well__title">Conversation</span>
+                    <span class="kai-well__meta" id="kai-well-meta">0 messages</span>
+                </div>
+                <div class="kai-well__body">
+                    <div id="chat" class="kai-chat" aria-live="polite" aria-label="Conversation with Karnel AI"></div>
+                </div>
+            </div>
 
         </div>
     </section>
 </div>
 
 <!-- ============================================================
-     COMPOSER (fixed)
+     COMPOSER (fixed) — Command Bar
      ============================================================ -->
 <div class="kai-composer-dock">
     <div class="container">
         <div class="kai-composer-wrap">
-            <form id="chat-form" class="kai-composer">
-                <label class="kai-visually-hidden" for="chat-message">Your travel question</label>
+            <form id="chat-form" class="kai-composer" role="search">
                 <input id="kai-input-mode" type="hidden" value="text" />
-                <textarea id="chat-message" maxlength="2000" placeholder="Ask Karnel AI anything about travelling in Pakistan…" required rows="1"></textarea>
+
+                <!-- Left mode chip (now a real toggle button) -->
+                <div class="kai-composer__lead">
+                    <button type="button"
+                            class="kai-mode-chip"
+                            id="kai-mode-chip"
+                            data-mode="text"
+                            aria-label="Toggle input mode. Currently text."
+                            title="Toggle between text and voice">
+                        <span class="kai-mode-chip__dot" aria-hidden="true"></span>
+                        <span class="kai-mode-chip__label">Ask</span>
+                    </button>
+                </div>
+
+                <!-- Textarea -->
+                <textarea id="chat-message"
+                          maxlength="2000"
+                          placeholder="Ask Karnel AI about destinations, stays, or itineraries…"
+                          required
+                          rows="1"
+                          autocomplete="off"
+                          autocorrect="on"
+                          autocapitalize="sentences"
+                          spellcheck="true"
+                          aria-describedby="kai-composer-hint kai-char-count"></textarea>
+
+                <!-- Right actions -->
                 <div class="kai-composer__actions">
-                    <button id="kai-voice-open" class="kai-mic" type="button" aria-label="Open voice mode">
+                    <span class="kai-char-count" id="kai-char-count" aria-hidden="true"></span>
+                    <span class="kai-composer__hint" id="kai-composer-hint" aria-hidden="true">
+                        <kbd>↵</kbd> to send
+                    </span>
+                    <button id="kai-voice-open" class="kai-mic" type="button" aria-label="Open voice mode" title="Voice mode">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                             <rect x="9" y="3" width="6" height="12" rx="3"></rect>
                             <path d="M5 11a7 7 0 0 0 14 0"></path>
                             <line x1="12" y1="18" x2="12" y2="22"></line>
                         </svg>
                     </button>
-                    <button class="kai-send" type="submit" aria-label="Send message">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                            <line x1="5" y1="12" x2="19" y2="12"></line>
-                            <polyline points="13 6 19 12 13 18"></polyline>
+                    <button class="kai-send" type="submit" aria-label="Send message" title="Send">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <line x1="12" y1="19" x2="12" y2="5"></line>
+                            <polyline points="6 11 12 5 18 11"></polyline>
                         </svg>
                     </button>
                 </div>
@@ -1167,630 +2067,799 @@
 </aside>
 
 @section Scripts {
-<script>
-    /* ============================================================
-       KARNEL AI — Page (chat, planner, feedback, drawers)
-       ============================================================ */
-    (function () {
-        'use strict';
+    <script>
+        /* ============================================================
+           KARNEL AI — Elevated Chat Surface + Command Bar (v5)
+           ============================================================ */
+        (function () {
+            'use strict';
 
-        var token = document.querySelector('input[name="__RequestVerificationToken"]');
-        var headers = { 'Content-Type': 'application/json', 'RequestVerificationToken': token ? token.value : '' };
+            var token = document.querySelector('input[name="__RequestVerificationToken"]');
+            var headers = { 'Content-Type': 'application/json', 'RequestVerificationToken': token ? token.value : '' };
 
-        var keyName = 'karnel-ai-conversation';
-        var conversationKey = sessionStorage.getItem(keyName) || crypto.randomUUID();
-        sessionStorage.setItem(keyName, conversationKey);
+            var keyName = 'karnel-ai-conversation';
+            var conversationKey = sessionStorage.getItem(keyName) || crypto.randomUUID();
+            sessionStorage.setItem(keyName, conversationKey);
 
-        var chat             = document.getElementById('chat');
-        var input            = document.getElementById('chat-message');
-        var status           = document.getElementById('chat-status');
-        var chatForm         = document.getElementById('chat-form');
-        var chatButton       = chatForm.querySelector('button[type="submit"]');
-        var feedbackControls = document.getElementById('feedback-controls');
-        var inputMode        = document.getElementById('kai-input-mode');
-        var welcome          = document.getElementById('kai-welcome');
+            var chat = document.getElementById('chat');
+            var well = document.getElementById('kai-well');
+            var wellMeta = document.getElementById('kai-well-meta');
+            var input = document.getElementById('chat-message');
+            var status = document.getElementById('chat-status');
+            var chatForm = document.getElementById('chat-form');
+            var chatButton = chatForm.querySelector('button[type="submit"]');
+            var feedbackControls = document.getElementById('feedback-controls');
+            var inputMode = document.getElementById('kai-input-mode');
+            var welcome = document.getElementById('kai-welcome');
+            var modeChip = document.getElementById('kai-mode-chip');
+            var charCount = document.getElementById('kai-char-count');
 
-        function addMessage(text, role) {
-            var el = document.createElement('div');
-            el.className = 'kai-msg kai-msg--' + role;
-            el.textContent = text;
-            chat.appendChild(el);
-            el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-            return el;
-        }
+            var copyIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"></rect><path d="M5 15V5a2 2 0 0 1 2-2h10"></path></svg>';
+            var checkIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg>';
 
-        function setThinking(on) {
-            var existing = chat.querySelector('.kai-msg--typing');
-            if (existing) existing.remove();
-            if (!on) return;
-            var el = document.createElement('div');
-            el.className = 'kai-msg kai-msg--assistant kai-msg--typing';
-            el.setAttribute('aria-label', 'Karnel AI is preparing a response');
-            el.innerHTML = '<span></span><span></span><span></span>';
-            chat.appendChild(el);
-            el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-        }
-
-        function markActive() {
-            if (welcome && !welcome.classList.contains('is-hidden')) {
-                welcome.classList.add('is-hidden');
-            }
-        }
-
-        async function ask(message, mode) {
-            var requestId = crypto.randomUUID();
-            markActive();
-            addMessage(message, 'user');
-            status.textContent = 'Karnel AI is thinking…';
-            status.classList.remove('is-error');
-            document.dispatchEvent(new CustomEvent('karnel-ai:question', {
-                detail: { inputMode: mode, requestId: requestId }
-            }));
-            chatButton.disabled = true;
-            if (feedbackControls) feedbackControls.hidden = true;
-            setThinking(true);
-
-            try {
-                var response = await fetch('@Url.Action("Chat", "KarnelAI")', {
-                    method: 'POST',
-                    headers: headers,
-                    body: JSON.stringify({ message: message, conversationKey: conversationKey, inputMode: mode, requestId: requestId })
+            function escapeHtml(s) {
+                return (s || '').replace(/[&<>"']/g, function (c) {
+                    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
                 });
-                var data = await response.json();
-                if (!response.ok || !data.success) {
-                    throw new Error(data.error || 'The assistant could not respond.');
+            }
+
+            function updateMeta() {
+                var count = chat.children.length;
+                wellMeta.textContent = count + ' message' + (count === 1 ? '' : 's');
+                if (count === 0) {
+                    well.classList.add('is-empty');
+                } else {
+                    well.classList.remove('is-empty');
                 }
-                setThinking(false);
-                addMessage(data.reply, 'assistant');
-                if (feedbackControls) feedbackControls.hidden = false;
-                document.dispatchEvent(new CustomEvent('karnel-ai:response', {
-                    detail: {
-                        text: data.reply,
-                        inputMode: data.inputMode === 'voice' ? 'voice' : mode,
-                        requestId: data.requestId || requestId
-                    }
-                }));
-                status.textContent = '';
-            } catch (error) {
-                setThinking(false);
-                document.dispatchEvent(new CustomEvent('karnel-ai:error', { detail: { message: error.message } }));
-                status.textContent = error.message + ' Please try again.';
-                status.classList.add('is-error');
-            } finally {
-                chatButton.disabled = false;
             }
-        }
 
-        window.KarnelAI = {
-            ask: ask,
-            addMessage: addMessage,
-            getConversationKey: function () { return conversationKey; }
-        };
-
-        /* ---------- Composer ---------- */
-        function autoResize() {
-            input.style.height = 'auto';
-            input.style.height = Math.min(input.scrollHeight, 200) + 'px';
-        }
-        input.addEventListener('input', autoResize);
-
-        document.querySelectorAll('[data-prompt]').forEach(function (btn) {
-            btn.addEventListener('click', function () {
-                input.value = btn.dataset.prompt;
-                input.focus();
-                input.setSelectionRange(input.value.length, input.value.length);
-                autoResize();
-            });
-        });
-
-        chatForm.addEventListener('submit', function (e) {
-            e.preventDefault();
-            var message = input.value.trim();
-            if (!message) return;
-            var mode = inputMode.value === 'voice' ? 'voice' : 'text';
-            input.value = '';
-            inputMode.value = 'text';
-            autoResize();
-            ask(message, mode);
-        });
-
-        input.addEventListener('keydown', function (e) {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                chatForm.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+            function scrollToBottom() {
+                var body = well.querySelector('.kai-well__body');
+                if (body) {
+                    // Smooth scroll to bottom to reveal the full latest message
+                    body.scrollTo({ top: body.scrollHeight, behavior: 'smooth' });
+                }
             }
-        });
 
-        /* ---------- Feedback ---------- */
-        document.querySelectorAll('[data-helpful]').forEach(function (btn) {
-            btn.addEventListener('click', async function () {
+            function timeNow() {
                 try {
-                    await fetch('@Url.Action("Feedback", "KarnelAI")', {
+                    return new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                } catch (_) { return ''; }
+            }
+
+            /* ---------- Composer state helpers ---------- */
+            function syncComposerState() {
+                var len = input.value.length;
+                var has = input.value.trim().length > 0;
+                chatForm.classList.toggle('has-content', has);
+
+                if (charCount) {
+                    if (len > 0) {
+                        charCount.textContent = len + ' / ' + input.maxLength;
+                        charCount.classList.toggle('is-near-limit', len > input.maxLength * 0.9);
+                    } else {
+                        charCount.textContent = '';
+                        charCount.classList.remove('is-near-limit');
+                    }
+                }
+            }
+
+            function setModeChip(mode) {
+                if (!modeChip) return;
+                modeChip.dataset.mode = mode;
+                var label = modeChip.querySelector('.kai-mode-chip__label');
+                if (label) label.textContent = (mode === 'voice') ? 'Voice' : 'Ask';
+                modeChip.setAttribute(
+                    'aria-label',
+                    'Toggle input mode. Currently ' + (mode === 'voice' ? 'voice' : 'text') + '.'
+                );
+                if (inputMode) inputMode.value = mode;
+            }
+
+            /* ---------- Message rendering ---------- */
+            function addMessage(text, role) {
+                var el = document.createElement('div');
+                el.className = 'kai-msg kai-msg--' + role;
+
+                if (role === 'user') {
+                    var bubble = document.createElement('div');
+                    bubble.className = 'kai-bubble';
+                    bubble.textContent = text;
+                    el.appendChild(bubble);
+                } else {
+                    var card = document.createElement('div');
+                    card.className = 'kai-card';
+
+                    var head = document.createElement('div');
+                    head.className = 'kai-card__head';
+                    head.innerHTML =
+                        '<span class="kai-avatar" aria-hidden="true">K</span>' +
+                        '<span class="kai-author">' +
+                        '<strong>Karnel AI</strong>' +
+                        '<span>Travel intelligence · ' + escapeHtml(timeNow()) + '</span>' +
+                        '</span>' +
+                        '<span class="kai-card__actions">' +
+                        '<button class="kai-iconbtn" type="button" data-copy aria-label="Copy response" title="Copy">' + copyIcon + '</button>' +
+                        '</span>';
+
+                    var body = document.createElement('div');
+                    body.className = 'kai-card__body';
+                    body.textContent = text;
+
+                    card.appendChild(head);
+                    card.appendChild(body);
+                    el.appendChild(card);
+
+                    var copyBtn = head.querySelector('[data-copy]');
+                    if (copyBtn) {
+                        copyBtn.addEventListener('click', function () {
+                            var done = function () {
+                                copyBtn.classList.add('is-copied');
+                                copyBtn.innerHTML = checkIcon;
+                                setTimeout(function () {
+                                    copyBtn.classList.remove('is-copied');
+                                    copyBtn.innerHTML = copyIcon;
+                                }, 1400);
+                            };
+                            if (navigator.clipboard && navigator.clipboard.writeText) {
+                                navigator.clipboard.writeText(text).then(done).catch(function () { });
+                            } else {
+                                try {
+                                    var ta = document.createElement('textarea');
+                                    ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+                                    document.body.appendChild(ta); ta.select();
+                                    document.execCommand('copy'); document.body.removeChild(ta);
+                                    done();
+                                } catch (_) { }
+                            }
+                        });
+                    }
+                }
+
+                chat.appendChild(el);
+                updateMeta();
+                scrollToBottom();
+                return el;
+            }
+
+            function setThinking(on) {
+                var existing = chat.querySelector('.kai-msg--typing');
+                if (existing) existing.remove();
+                if (!on) { updateMeta(); return; }
+
+                var el = document.createElement('div');
+                el.className = 'kai-msg kai-msg--assistant kai-msg--typing';
+                el.setAttribute('aria-label', 'Karnel AI is preparing a response');
+                el.innerHTML =
+                    '<div class="kai-card">' +
+                    '<div class="kai-card__head">' +
+                    '<span class="kai-avatar" aria-hidden="true">K</span>' +
+                    '<span class="kai-author">' +
+                    '<strong>Karnel AI</strong>' +
+                    '<span>Thinking…</span>' +
+                    '</span>' +
+                    '</div>' +
+                    '<div class="kai-card__body">' +
+                    '<span class="kai-typing-dots" aria-hidden="true"><span></span><span></span><span></span></span>' +
+                    '</div>' +
+                    '</div>';
+                chat.appendChild(el);
+                updateMeta();
+                scrollToBottom();
+            }
+
+            function markActive() {
+                if (welcome && !welcome.classList.contains('is-hidden')) {
+                    welcome.classList.add('is-hidden');
+                }
+            }
+
+            async function ask(message, mode) {
+                var requestId = crypto.randomUUID();
+                markActive();
+                addMessage(message, 'user');
+                status.textContent = 'Karnel AI is thinking…';
+                status.classList.remove('is-error');
+                document.dispatchEvent(new CustomEvent('karnel-ai:question', {
+                    detail: { inputMode: mode, requestId: requestId }
+                }));
+                chatButton.disabled = true;
+                if (feedbackControls) feedbackControls.hidden = true;
+                setThinking(true);
+
+                try {
+                    var response = await fetch('@Url.Action("Chat", "KarnelAI")', {
+                        method: 'POST',
+                        headers: headers,
+                        body: JSON.stringify({ message: message, conversationKey: conversationKey, inputMode: mode, requestId: requestId })
+                    });
+                    var data = await response.json();
+                    if (!response.ok || !data.success) {
+                        throw new Error(data.error || 'The assistant could not respond.');
+                    }
+                    setThinking(false);
+                    addMessage(data.reply, 'assistant');
+                    if (feedbackControls) feedbackControls.hidden = false;
+                    document.dispatchEvent(new CustomEvent('karnel-ai:response', {
+                        detail: {
+                            text: data.reply,
+                            inputMode: data.inputMode === 'voice' ? 'voice' : mode,
+                            requestId: data.requestId || requestId
+                        }
+                    }));
+                    status.textContent = '';
+                } catch (error) {
+                    setThinking(false);
+                    document.dispatchEvent(new CustomEvent('karnel-ai:error', { detail: { message: error.message } }));
+                    status.textContent = error.message + ' Please try again.';
+                    status.classList.add('is-error');
+                } finally {
+                    chatButton.disabled = false;
+                }
+            }
+
+            window.KarnelAI = {
+                ask: ask,
+                addMessage: addMessage,
+                getConversationKey: function () { return conversationKey; }
+            };
+
+            /* ---------- Composer ---------- */
+            function autoResize() {
+                input.style.height = 'auto';
+                input.style.height = Math.min(input.scrollHeight, 200) + 'px';
+                syncComposerState();
+            }
+            input.addEventListener('input', autoResize);
+
+            document.querySelectorAll('[data-prompt]').forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    input.value = btn.dataset.prompt;
+                    input.focus();
+                    input.setSelectionRange(input.value.length, input.value.length);
+                    autoResize();
+                });
+            });
+
+            chatForm.addEventListener('submit', function (e) {
+                e.preventDefault();
+                var message = input.value.trim();
+                if (!message) return;
+                var mode = inputMode.value === 'voice' ? 'voice' : 'text';
+                input.value = '';
+                setModeChip('text');
+                autoResize();
+                ask(message, mode);
+            });
+
+            input.addEventListener('keydown', function (e) {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    chatForm.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+                }
+            });
+
+            /* Chip is now a toggle button */
+            if (modeChip) {
+                modeChip.addEventListener('click', function () {
+                    var current = modeChip.dataset.mode || 'text';
+                    var next = current === 'voice' ? 'text' : 'voice';
+                    setModeChip(next);
+                    if (next === 'voice' && window.KarnelVoice) {
+                        window.KarnelVoice.open();
+                    }
+                    input.focus();
+                });
+            }
+
+            /* Reflect voice mode into the chip when the voice controller asks */
+            document.addEventListener('karnel-ai:question', function (event) {
+                var d = event.detail || {};
+                setModeChip(d.inputMode === 'voice' ? 'voice' : 'text');
+            });
+
+            /* ---------- Feedback ---------- */
+            document.querySelectorAll('[data-helpful]').forEach(function (btn) {
+                btn.addEventListener('click', async function () {
+                    try {
+                        await fetch('@Url.Action("Feedback", "KarnelAI")', {
+                            method: 'POST',
+                            headers: headers,
+                            body: JSON.stringify({
+                                conversationKey: conversationKey,
+                                isHelpful: btn.dataset.helpful === 'true'
+                            })
+                        });
+                    } catch (e) { /* non-critical */ }
+                    btn.parentElement.hidden = true;
+                });
+            });
+
+            /* ---------- Planner ---------- */
+            document.getElementById('planner-form').addEventListener('submit', async function (e) {
+                e.preventDefault();
+                var output = document.getElementById('itinerary');
+                var plannerStatus = document.getElementById('planner-status');
+                var button = this.querySelector('button[type="submit"]');
+
+                plannerStatus.textContent = 'Building your itinerary…';
+                plannerStatus.classList.remove('is-error');
+                output.hidden = true;
+                button.disabled = true;
+
+                try {
+                    var response = await fetch('@Url.Action("Plan", "KarnelAI")', {
                         method: 'POST',
                         headers: headers,
                         body: JSON.stringify({
-                            conversationKey: conversationKey,
-                            isHelpful: btn.dataset.helpful === 'true'
+                            destination: document.getElementById('destination').value,
+                            durationDays: Number(document.getElementById('duration').value),
+                            budget: document.getElementById('budget').value,
+                            conversationKey: conversationKey
                         })
                     });
-                } catch (e) { /* non-critical */ }
-                btn.parentElement.hidden = true;
+                    var data = await response.json();
+                    if (!response.ok || !data.success) {
+                        throw new Error(data.error || 'The itinerary could not be prepared.');
+                    }
+                    output.textContent = data.itinerary;
+                    output.hidden = false;
+                    plannerStatus.textContent = '';
+                } catch (err) {
+                    plannerStatus.textContent = err.message;
+                    plannerStatus.classList.add('is-error');
+                } finally {
+                    button.disabled = false;
+                }
             });
-        });
 
-        /* ---------- Planner ---------- */
-        document.getElementById('planner-form').addEventListener('submit', async function (e) {
-            e.preventDefault();
-            var output = document.getElementById('itinerary');
-            var plannerStatus = document.getElementById('planner-status');
-            var button = this.querySelector('button[type="submit"]');
-
-            plannerStatus.textContent = 'Building your itinerary…';
-            plannerStatus.classList.remove('is-error');
-            output.hidden = true;
-            button.disabled = true;
-
-            try {
-                var response = await fetch('@Url.Action("Plan", "KarnelAI")', {
-                    method: 'POST',
-                    headers: headers,
-                    body: JSON.stringify({
-                        destination: document.getElementById('destination').value,
-                        durationDays: Number(document.getElementById('duration').value),
-                        budget: document.getElementById('budget').value,
-                        conversationKey: conversationKey
-                    })
+            /* ---------- New conversation ---------- */
+            document.querySelectorAll('[data-new-chat]').forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    conversationKey = crypto.randomUUID();
+                    sessionStorage.setItem(keyName, conversationKey);
+                    chat.innerHTML = '';
+                    updateMeta();
+                    status.textContent = '';
+                    status.classList.remove('is-error');
+                    if (feedbackControls) feedbackControls.hidden = true;
+                    if (welcome) welcome.classList.remove('is-hidden');
+                    input.value = '';
+                    setModeChip('text');
+                    autoResize();
+                    input.focus();
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
                 });
-                var data = await response.json();
-                if (!response.ok || !data.success) {
-                    throw new Error(data.error || 'The itinerary could not be prepared.');
+            });
+
+            /* ---------- Drawers ---------- */
+            function openDrawer(drawer) {
+                if (!drawer) return;
+                drawer.classList.add('is-open');
+                drawer.setAttribute('aria-hidden', 'false');
+                document.body.classList.add('kai-drawer-open');
+                var closeBtn = drawer.querySelector('.kai-drawer__close');
+                if (closeBtn) setTimeout(function () { closeBtn.focus(); }, 120);
+            }
+            function closeDrawer(drawer) {
+                if (!drawer) return;
+                drawer.classList.remove('is-open');
+                drawer.setAttribute('aria-hidden', 'true');
+                document.body.classList.remove('kai-drawer-open');
+            }
+
+            document.querySelectorAll('[data-open-planner]').forEach(function (b) {
+                b.addEventListener('click', function () { openDrawer(document.getElementById('kai-planner-drawer')); });
+            });
+            document.querySelectorAll('[data-open-context]').forEach(function (b) {
+                b.addEventListener('click', function () { openDrawer(document.getElementById('kai-context-drawer')); });
+            });
+            document.querySelectorAll('[data-close-drawer]').forEach(function (el) {
+                el.addEventListener('click', function () {
+                    closeDrawer(el.closest('.kai-drawer'));
+                });
+            });
+
+            document.addEventListener('keydown', function (e) {
+                if (e.key === 'Escape') {
+                    document.querySelectorAll('.kai-drawer.is-open').forEach(closeDrawer);
+                    if (window.KarnelVoice && window.KarnelVoice.isOpen && window.KarnelVoice.isOpen()) {
+                        window.KarnelVoice.close();
+                    }
                 }
-                output.textContent = data.itinerary;
-                output.hidden = false;
-                plannerStatus.textContent = '';
-            } catch (err) {
-                plannerStatus.textContent = err.message;
-                plannerStatus.classList.add('is-error');
-            } finally {
-                button.disabled = false;
-            }
-        });
-
-        /* ---------- New conversation ---------- */
-        document.querySelectorAll('[data-new-chat]').forEach(function (btn) {
-            btn.addEventListener('click', function () {
-                conversationKey = crypto.randomUUID();
-                sessionStorage.setItem(keyName, conversationKey);
-                chat.innerHTML = '';
-                status.textContent = '';
-                status.classList.remove('is-error');
-                if (feedbackControls) feedbackControls.hidden = true;
-                if (welcome) welcome.classList.remove('is-hidden');
-                input.value = '';
-                autoResize();
-                input.focus();
-                window.scrollTo({ top: 0, behavior: 'smooth' });
             });
-        });
 
-        /* ---------- Drawers ---------- */
-        function openDrawer(drawer) {
-            if (!drawer) return;
-            drawer.classList.add('is-open');
-            drawer.setAttribute('aria-hidden', 'false');
-            document.body.classList.add('kai-drawer-open');
-            var closeBtn = drawer.querySelector('.kai-drawer__close');
-            if (closeBtn) setTimeout(function () { closeBtn.focus(); }, 120);
-        }
-        function closeDrawer(drawer) {
-            if (!drawer) return;
-            drawer.classList.remove('is-open');
-            drawer.setAttribute('aria-hidden', 'true');
-            document.body.classList.remove('kai-drawer-open');
-        }
+            autoResize();
+            updateMeta();
+        })();
 
-        document.querySelectorAll('[data-open-planner]').forEach(function (b) {
-            b.addEventListener('click', function () { openDrawer(document.getElementById('kai-planner-drawer')); });
-        });
-        document.querySelectorAll('[data-open-context]').forEach(function (b) {
-            b.addEventListener('click', function () { openDrawer(document.getElementById('kai-context-drawer')); });
-        });
-        document.querySelectorAll('[data-close-drawer]').forEach(function (el) {
-            el.addEventListener('click', function () {
-                closeDrawer(el.closest('.kai-drawer'));
-            });
-        });
+        /* ============================================================
+           KARNEL AI — Voice mode controller
+           ============================================================ */
+        (function () {
+            'use strict';
 
-        document.addEventListener('keydown', function (e) {
-            if (e.key === 'Escape') {
-                document.querySelectorAll('.kai-drawer.is-open').forEach(closeDrawer);
-                if (window.KarnelVoice && window.KarnelVoice.isOpen && window.KarnelVoice.isOpen()) {
-                    window.KarnelVoice.close();
-                }
-            }
-        });
+            var root = document.getElementById('kai-voice');
+            if (!root) { return; }
 
-        autoResize();
-    })();
+            var stage = root.querySelector('[data-voice-state]');
+            var stateText = document.getElementById('kai-voice-state');
+            var helpText = document.getElementById('kai-voice-help');
+            var statusEl = document.getElementById('kai-voice-status');
+            var micBtn = document.getElementById('kai-voice-microphone');
+            var stopBtn = document.getElementById('kai-voice-stop');
+            var pauseBtn = document.getElementById('kai-voice-pause');
+            var resumeBtn = document.getElementById('kai-voice-resume');
+            var endBtn = document.getElementById('kai-voice-end');
+            var langSel = document.getElementById('kai-voice-language');
+            var voiceSel = document.getElementById('kai-voice-voice');
+            var repliesTog = document.getElementById('kai-voice-enabled');
+            var orb = root.querySelector('.kai-voice__orb');
+            var openMicBtn = document.getElementById('kai-voice-open');
 
-    /* ============================================================
-       KARNEL AI — Voice mode controller
-       (was karnel-ai-voice.js — now inline)
-       ============================================================ */
-    (function () {
-        'use strict';
+            var defaultLang = root.dataset.defaultLanguage || 'en-US';
+            var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+            var synth = window.speechSynthesis;
 
-        var root = document.getElementById('kai-voice');
-        if (!root) { return; }
+            var recognition = null;
+            var listening = false;
+            var paused = false;
+            var speaking = false;
+            var voiceOpen = false;
+            var suppressRestart = false;
+            var currentUtterance = null;
 
-        var stage     = root.querySelector('[data-voice-state]');
-        var stateText = document.getElementById('kai-voice-state');
-        var helpText  = document.getElementById('kai-voice-help');
-        var statusEl  = document.getElementById('kai-voice-status');
-        var micBtn    = document.getElementById('kai-voice-microphone');
-        var stopBtn   = document.getElementById('kai-voice-stop');
-        var pauseBtn  = document.getElementById('kai-voice-pause');
-        var resumeBtn = document.getElementById('kai-voice-resume');
-        var endBtn    = document.getElementById('kai-voice-end');
-        var langSel   = document.getElementById('kai-voice-language');
-        var voiceSel  = document.getElementById('kai-voice-voice');
-        var repliesTog = document.getElementById('kai-voice-enabled');
-        var orb       = root.querySelector('.kai-voice__orb');
-        var openMicBtn = document.getElementById('kai-voice-open');
+            var mediaStream = null;
+            var audioCtx = null;
+            var analyser = null;
+            var freqData = null;
+            var rafId = 0;
 
-        var defaultLang = root.dataset.defaultLanguage || 'en-US';
-        var SR    = window.SpeechRecognition || window.webkitSpeechRecognition;
-        var synth = window.speechSynthesis;
-
-        var recognition      = null;
-        var listening        = false;
-        var paused           = false;
-        var speaking         = false;
-        var voiceOpen        = false;
-        var suppressRestart  = false;
-        var currentUtterance = null;
-
-        var mediaStream = null;
-        var audioCtx    = null;
-        var analyser    = null;
-        var freqData    = null;
-        var rafId       = 0;
-
-        var STATE_COPY = {
-            idle:       { title: 'Ready when you are',         help: 'Tap Start listening and speak naturally.' },
-            listening:  { title: 'Listening…',                 help: 'Speak now. Pause when you are done.' },
-            processing: { title: 'Thinking…',                  help: 'Karnel is preparing a response.' },
-            speaking:   { title: 'Karnel is speaking…',        help: 'Tap Interrupt to stop the response.' },
-            paused:     { title: 'Voice conversation paused',  help: 'Resume whenever you are ready.' },
-            error:      { title: 'Voice unavailable',          help: 'Something went wrong. Try again or return to text.' }
-        };
-
-        function setState(state) {
-            stage.dataset.voiceState = state;
-            var copy = STATE_COPY[state] || STATE_COPY.idle;
-            stateText.textContent = copy.title;
-            helpText.textContent  = copy.help;
-
-            micBtn.hidden    = !(state === 'idle' || state === 'paused');
-            stopBtn.hidden   = state !== 'speaking';
-            pauseBtn.hidden  = state !== 'listening';
-            resumeBtn.hidden = state !== 'paused';
-
-            if (state === 'listening') {
-                micBtn.disabled = true;
-                micBtn.textContent = 'Listening…';
-            } else {
-                micBtn.disabled = false;
-                micBtn.textContent = 'Start listening';
-            }
-        }
-
-        function setStatus(msg, isError) {
-            statusEl.textContent = msg || '';
-            statusEl.classList.toggle('is-error', !!isError);
-        }
-
-        function startMicAnalysis() {
-            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { return; }
-            if (mediaStream) { return; }
-            navigator.mediaDevices.getUserMedia({ audio: true }).then(function (stream) {
-                mediaStream = stream;
-                var Ctx = window.AudioContext || window.webkitAudioContext;
-                if (!Ctx) { return; }
-                audioCtx = new Ctx();
-                var source = audioCtx.createMediaStreamSource(stream);
-                analyser = audioCtx.createAnalyser();
-                analyser.fftSize = 256;
-                analyser.smoothingTimeConstant = 0.75;
-                source.connect(analyser);
-                freqData = new Uint8Array(analyser.frequencyBinCount);
-                tickAnalyser();
-            }).catch(function (err) {
-                if (window.console) { console.warn('Mic analysis unavailable:', err); }
-            });
-        }
-
-        function tickAnalyser() {
-            if (!analyser || !orb) { return; }
-            analyser.getByteFrequencyData(freqData);
-            var sum = 0;
-            for (var i = 0; i < freqData.length; i++) { sum += freqData[i]; }
-            var avg = (sum / freqData.length) / 255;
-            var amp = Math.min(1, avg * 1.8);
-            orb.style.setProperty('--kai-amp', amp.toFixed(3));
-            rafId = requestAnimationFrame(tickAnalyser);
-        }
-
-        function stopMicAnalysis() {
-            if (rafId) { cancelAnimationFrame(rafId); rafId = 0; }
-            if (mediaStream) {
-                mediaStream.getTracks().forEach(function (t) { t.stop(); });
-                mediaStream = null;
-            }
-            if (audioCtx) {
-                try { audioCtx.close(); } catch (e) {}
-                audioCtx = null;
-            }
-            analyser = null;
-            freqData = null;
-            if (orb) { orb.style.setProperty('--kai-amp', '0'); }
-        }
-
-        function ensureRecognition() {
-            if (recognition) { return recognition; }
-            if (!SR) { return null; }
-
-            recognition = new SR();
-            recognition.continuous     = true;
-            recognition.interimResults = true;
-            recognition.lang           = langSel.value || defaultLang;
-
-            recognition.onstart = function () {
-                listening = true;
-                paused    = false;
-                setState('listening');
-                setStatus('');
+            var STATE_COPY = {
+                idle: { title: 'Ready when you are', help: 'Tap Start listening and speak naturally.' },
+                listening: { title: 'Listening…', help: 'Speak now. Pause when you are done.' },
+                processing: { title: 'Thinking…', help: 'Karnel is preparing a response.' },
+                speaking: { title: 'Karnel is speaking…', help: 'Tap Interrupt to stop the response.' },
+                paused: { title: 'Voice conversation paused', help: 'Resume whenever you are ready.' },
+                error: { title: 'Voice unavailable', help: 'Something went wrong. Try again or return to text.' }
             };
 
-            recognition.onresult = function (event) {
-                var finalText = '';
-                var interim   = '';
-                for (var i = event.resultIndex; i < event.results.length; i++) {
-                    var r = event.results[i];
-                    if (r.isFinal) { finalText += r[0].transcript; }
-                    else           { interim   += r[0].transcript; }
-                }
-                if (interim) { helpText.textContent = interim; }
-                if (finalText.trim()) { submitVoiceTranscript(finalText.trim()); }
-            };
+            function setState(state) {
+                stage.dataset.voiceState = state;
+                var copy = STATE_COPY[state] || STATE_COPY.idle;
+                stateText.textContent = copy.title;
+                helpText.textContent = copy.help;
 
-            recognition.onerror = function (event) {
-                if (event.error === 'no-speech' || event.error === 'aborted') { return; }
-                if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
-                    setStatus('Microphone permission was denied. You can still type in the chat.', true);
-                } else if (event.error === 'network') {
-                    setStatus('Network error. Speech recognition is unavailable.', true);
+                micBtn.hidden = !(state === 'idle' || state === 'paused');
+                stopBtn.hidden = state !== 'speaking';
+                pauseBtn.hidden = state !== 'listening';
+                resumeBtn.hidden = state !== 'paused';
+
+                if (state === 'listening') {
+                    micBtn.disabled = true;
+                    micBtn.textContent = 'Listening…';
                 } else {
-                    setStatus('Speech recognition error: ' + event.error, true);
-                }
-                listening = false;
-                stopMicAnalysis();
-                setState('error');
-            };
-
-            recognition.onend = function () {
-                listening = false;
-                stopMicAnalysis();
-                if (suppressRestart) { suppressRestart = false; return; }
-                if (paused) { setState('paused'); return; }
-                if (voiceOpen && stage.dataset.voiceState === 'listening') {
-                    try { recognition.start(); }
-                    catch (e) { setState('idle'); }
-                } else if (!speaking) {
-                    setState('idle');
-                }
-            };
-
-            return recognition;
-        }
-
-        function startListening() {
-            if (!SR) {
-                setStatus('Speech recognition is not supported in this browser.', true);
-                setState('error');
-                return;
-            }
-            if (listening) { return; }
-            var rec = ensureRecognition();
-            if (!rec) { return; }
-            rec.lang = langSel.value || defaultLang;
-            try {
-                rec.start();
-                startMicAnalysis();
-            } catch (e) {
-                if (e.name !== 'InvalidStateError') {
-                    setStatus('Could not start listening. ' + e.message, true);
+                    micBtn.disabled = false;
+                    micBtn.textContent = 'Start listening';
                 }
             }
-        }
 
-        function stopListening() {
-            suppressRestart = true;
-            if (recognition && listening) {
-                try { recognition.stop(); } catch (e) {}
+            function setStatus(msg, isError) {
+                statusEl.textContent = msg || '';
+                statusEl.classList.toggle('is-error', !!isError);
             }
-            stopMicAnalysis();
-        }
 
-        function submitVoiceTranscript(text) {
-            stopListening();
-            setState('processing');
-            setStatus('');
-            if (window.KarnelAI && typeof window.KarnelAI.ask === 'function') {
-                try {
-                    window.KarnelAI.ask(text, 'voice');
+            function startMicAnalysis() {
+                if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { return; }
+                if (mediaStream) { return; }
+                navigator.mediaDevices.getUserMedia({ audio: true }).then(function (stream) {
+                    mediaStream = stream;
+                    var Ctx = window.AudioContext || window.webkitAudioContext;
+                    if (!Ctx) { return; }
+                    audioCtx = new Ctx();
+                    var source = audioCtx.createMediaStreamSource(stream);
+                    analyser = audioCtx.createAnalyser();
+                    analyser.fftSize = 256;
+                    analyser.smoothingTimeConstant = 0.75;
+                    source.connect(analyser);
+                    freqData = new Uint8Array(analyser.frequencyBinCount);
+                    tickAnalyser();
+                }).catch(function (err) {
+                    if (window.console) { console.warn('Mic analysis unavailable:', err); }
+                });
+            }
+
+            function tickAnalyser() {
+                if (!analyser || !orb) { return; }
+                analyser.getByteFrequencyData(freqData);
+                var sum = 0;
+                for (var i = 0; i < freqData.length; i++) { sum += freqData[i]; }
+                var avg = (sum / freqData.length) / 255;
+                var amp = Math.min(1, avg * 1.8);
+                orb.style.setProperty('--kai-amp', amp.toFixed(3));
+                rafId = requestAnimationFrame(tickAnalyser);
+            }
+
+            function stopMicAnalysis() {
+                if (rafId) { cancelAnimationFrame(rafId); rafId = 0; }
+                if (mediaStream) {
+                    mediaStream.getTracks().forEach(function (t) { t.stop(); });
+                    mediaStream = null;
+                }
+                if (audioCtx) {
+                    try { audioCtx.close(); } catch (e) { }
+                    audioCtx = null;
+                }
+                analyser = null;
+                freqData = null;
+                if (orb) { orb.style.setProperty('--kai-amp', '0'); }
+            }
+
+            function ensureRecognition() {
+                if (recognition) { return recognition; }
+                if (!SR) { return null; }
+
+                recognition = new SR();
+                recognition.continuous = true;
+                recognition.interimResults = true;
+                recognition.lang = langSel.value || defaultLang;
+
+                recognition.onstart = function () {
+                    listening = true;
+                    paused = false;
+                    setState('listening');
+                    setStatus('');
+                };
+
+                recognition.onresult = function (event) {
+                    var finalText = '';
+                    var interim = '';
+                    for (var i = event.resultIndex; i < event.results.length; i++) {
+                        var r = event.results[i];
+                        if (r.isFinal) { finalText += r[0].transcript; }
+                        else { interim += r[0].transcript; }
+                    }
+                    if (interim) { helpText.textContent = interim; }
+                    if (finalText.trim()) { submitVoiceTranscript(finalText.trim()); }
+                };
+
+                recognition.onerror = function (event) {
+                    if (event.error === 'no-speech' || event.error === 'aborted') { return; }
+                    if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
+                        setStatus('Microphone permission was denied. You can still type in the chat.', true);
+                    } else if (event.error === 'network') {
+                        setStatus('Network error. Speech recognition is unavailable.', true);
+                    } else {
+                        setStatus('Speech recognition error: ' + event.error, true);
+                    }
+                    listening = false;
+                    stopMicAnalysis();
+                    setState('error');
+                };
+
+                recognition.onend = function () {
+                    listening = false;
+                    stopMicAnalysis();
+                    if (suppressRestart) { suppressRestart = false; return; }
+                    if (paused) { setState('paused'); return; }
+                    if (voiceOpen && stage.dataset.voiceState === 'listening') {
+                        try { recognition.start(); }
+                        catch (e) { setState('idle'); }
+                    } else if (!speaking) {
+                        setState('idle');
+                    }
+                };
+
+                return recognition;
+            }
+
+            function startListening() {
+                if (!SR) {
+                    setStatus('Speech recognition is not supported in this browser.', true);
+                    setState('error');
                     return;
+                }
+                if (listening) { return; }
+                var rec = ensureRecognition();
+                if (!rec) { return; }
+                rec.lang = langSel.value || defaultLang;
+                try {
+                    rec.start();
+                    startMicAnalysis();
                 } catch (e) {
-                    if (window.console) { console.warn('Voice ask failed:', e); }
-                }
-            }
-            var input = document.getElementById('chat-message');
-            var form  = document.getElementById('chat-form');
-            var mode  = document.getElementById('kai-input-mode');
-            if (input && form) {
-                input.value = text;
-                if (mode) { mode.value = 'voice'; }
-                form.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
-            } else {
-                setStatus('Could not send voice message.', true);
-                setState('error');
-            }
-        }
-
-        var speakPulseTimer = 0;
-        function pulseSpeak() {
-            if (!orb) { return; }
-            orb.style.setProperty('--kai-speak', '1');
-            clearTimeout(speakPulseTimer);
-            speakPulseTimer = setTimeout(function () {
-                if (orb) { orb.style.setProperty('--kai-speak', '0'); }
-            }, 170);
-        }
-
-        function speak(text) {
-            if (!synth || !repliesTog.checked || !text) { setState('idle'); return; }
-            try { synth.cancel(); } catch (e) {}
-
-            var utter = new SpeechSynthesisUtterance(text);
-            utter.lang = langSel.value || defaultLang;
-            if (voiceSel.value) {
-                var voices = synth.getVoices();
-                for (var i = 0; i < voices.length; i++) {
-                    if (voices[i].name === voiceSel.value) { utter.voice = voices[i]; break; }
+                    if (e.name !== 'InvalidStateError') {
+                        setStatus('Could not start listening. ' + e.message, true);
+                    }
                 }
             }
 
-            utter.onstart    = function () { speaking = true; setState('speaking'); };
-            utter.onboundary = pulseSpeak;
-            utter.onend      = function () { speaking = false; currentUtterance = null; setState('idle'); };
-            utter.onerror    = function (e) {
+            function stopListening() {
+                suppressRestart = true;
+                if (recognition && listening) {
+                    try { recognition.stop(); } catch (e) { }
+                }
+                stopMicAnalysis();
+            }
+
+            function submitVoiceTranscript(text) {
+                stopListening();
+                setState('processing');
+                setStatus('');
+                if (window.KarnelAI && typeof window.KarnelAI.ask === 'function') {
+                    try {
+                        window.KarnelAI.ask(text, 'voice');
+                        return;
+                    } catch (e) {
+                        if (window.console) { console.warn('Voice ask failed:', e); }
+                    }
+                }
+                var input = document.getElementById('chat-message');
+                var form = document.getElementById('chat-form');
+                var mode = document.getElementById('kai-input-mode');
+                if (input && form) {
+                    input.value = text;
+                    if (mode) { mode.value = 'voice'; }
+                    form.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+                } else {
+                    setStatus('Could not send voice message.', true);
+                    setState('error');
+                }
+            }
+
+            var speakPulseTimer = 0;
+            function pulseSpeak() {
+                if (!orb) { return; }
+                orb.style.setProperty('--kai-speak', '1');
+                clearTimeout(speakPulseTimer);
+                speakPulseTimer = setTimeout(function () {
+                    if (orb) { orb.style.setProperty('--kai-speak', '0'); }
+                }, 170);
+            }
+
+            function speak(text) {
+                if (!synth || !repliesTog.checked || !text) { setState('idle'); return; }
+                try { synth.cancel(); } catch (e) { }
+
+                var utter = new SpeechSynthesisUtterance(text);
+                utter.lang = langSel.value || defaultLang;
+                if (voiceSel.value) {
+                    var voices = synth.getVoices();
+                    for (var i = 0; i < voices.length; i++) {
+                        if (voices[i].name === voiceSel.value) { utter.voice = voices[i]; break; }
+                    }
+                }
+
+                utter.onstart = function () { speaking = true; setState('speaking'); };
+                utter.onboundary = pulseSpeak;
+                utter.onend = function () { speaking = false; currentUtterance = null; setState('idle'); };
+                utter.onerror = function (e) {
+                    speaking = false;
+                    currentUtterance = null;
+                    if (e.error !== 'interrupted' && e.error !== 'canceled') {
+                        setStatus('Speech output failed.', true);
+                    }
+                    setState('idle');
+                };
+
+                currentUtterance = utter;
+                synth.speak(utter);
+            }
+
+            function stopSpeaking() {
+                if (synth) { try { synth.cancel(); } catch (e) { } }
                 speaking = false;
                 currentUtterance = null;
-                if (e.error !== 'interrupted' && e.error !== 'canceled') {
-                    setStatus('Speech output failed.', true);
+                setState('idle');
+            }
+
+            function populateVoices() {
+                if (!synth) { return; }
+                var voices = synth.getVoices();
+                if (!voices || !voices.length) { return; }
+                voiceSel.innerHTML = '<option value="">System default voice</option>';
+                for (var i = 0; i < voices.length; i++) {
+                    var v = voices[i];
+                    var opt = document.createElement('option');
+                    opt.value = v.name;
+                    opt.textContent = v.name + ' — ' + v.lang;
+                    voiceSel.appendChild(opt);
                 }
-                setState('idle');
-            };
-
-            currentUtterance = utter;
-            synth.speak(utter);
-        }
-
-        function stopSpeaking() {
-            if (synth) { try { synth.cancel(); } catch (e) {} }
-            speaking = false;
-            currentUtterance = null;
-            setState('idle');
-        }
-
-        function populateVoices() {
-            if (!synth) { return; }
-            var voices = synth.getVoices();
-            if (!voices || !voices.length) { return; }
-            voiceSel.innerHTML = '<option value="">System default voice</option>';
-            for (var i = 0; i < voices.length; i++) {
-                var v = voices[i];
-                var opt = document.createElement('option');
-                opt.value = v.name;
-                opt.textContent = v.name + ' — ' + v.lang;
-                voiceSel.appendChild(opt);
+                voiceSel.hidden = false;
             }
-            voiceSel.hidden = false;
-        }
 
-        function open() {
-            if (voiceOpen) { return; }
-            voiceOpen = true;
-            root.hidden = false;
-            void root.offsetWidth;
-            root.classList.add('is-open');
-            setState('idle');
-            setStatus('');
-            if (!SR) {
-                setStatus('Speech recognition is not supported in this browser. You can still type in the chat.', true);
+            function open() {
+                if (voiceOpen) { return; }
+                voiceOpen = true;
+                root.hidden = false;
+                void root.offsetWidth;
+                root.classList.add('is-open');
+                setState('idle');
+                setStatus('');
+                if (!SR) {
+                    setStatus('Speech recognition is not supported in this browser. You can still type in the chat.', true);
+                    setState('error');
+                }
+            }
+
+            function close() {
+                if (!voiceOpen) { return; }
+                voiceOpen = false;
+                paused = false;
+                stopListening();
+                stopSpeaking();
+                root.classList.remove('is-open');
+                setTimeout(function () { if (!voiceOpen) { root.hidden = true; } }, 320);
+
+                /* Reset chip to Ask when voice closes */
+                var chip = document.getElementById('kai-mode-chip');
+                if (chip) {
+                    chip.dataset.mode = 'text';
+                    var label = chip.querySelector('.kai-mode-chip__label');
+                    if (label) label.textContent = 'Ask';
+                }
+                var modeInput = document.getElementById('kai-input-mode');
+                if (modeInput) modeInput.value = 'text';
+            }
+
+            function isOpen() { return voiceOpen; }
+
+            if (openMicBtn) { openMicBtn.addEventListener('click', open); }
+            if (endBtn) { endBtn.addEventListener('click', close); }
+
+            micBtn.addEventListener('click', function () {
+                if (paused) { paused = false; }
+                startListening();
+            });
+            stopBtn.addEventListener('click', stopSpeaking);
+            pauseBtn.addEventListener('click', function () {
+                paused = true;
+                stopListening();
+                setState('paused');
+            });
+            resumeBtn.addEventListener('click', function () {
+                paused = false;
+                startListening();
+            });
+            langSel.addEventListener('change', function () {
+                if (recognition) { recognition.lang = langSel.value; }
+            });
+            repliesTog.addEventListener('change', function () {
+                if (!repliesTog.checked) { stopSpeaking(); }
+            });
+
+            document.addEventListener('karnel-ai:response', function (event) {
+                if (!voiceOpen) { return; }
+                var detail = event.detail || {};
+                if (detail.inputMode === 'voice' || repliesTog.checked) {
+                    setState('processing');
+                    setTimeout(function () { speak(detail.text || ''); }, 180);
+                } else {
+                    setState('idle');
+                }
+            });
+
+            document.addEventListener('karnel-ai:error', function (event) {
+                if (!voiceOpen) { return; }
+                var msg = (event.detail && event.detail.message) || 'Something went wrong.';
+                setStatus(msg, true);
                 setState('error');
+            });
+
+            if (synth) {
+                populateVoices();
+                if (typeof synth.onvoiceschanged !== 'undefined') {
+                    synth.addEventListener('voiceschanged', populateVoices);
+                }
             }
-        }
 
-        function close() {
-            if (!voiceOpen) { return; }
-            voiceOpen = false;
-            paused = false;
-            stopListening();
-            stopSpeaking();
-            root.classList.remove('is-open');
-            setTimeout(function () { if (!voiceOpen) { root.hidden = true; } }, 320);
-        }
+            window.addEventListener('beforeunload', function () {
+                stopListening();
+                stopSpeaking();
+            });
 
-        function isOpen() { return voiceOpen; }
+            window.KarnelVoice = { open: open, close: close, isOpen: isOpen };
 
-        if (openMicBtn) { openMicBtn.addEventListener('click', open); }
-        if (endBtn)     { endBtn.addEventListener('click', close); }
-
-        micBtn.addEventListener('click', function () {
-            if (paused) { paused = false; }
-            startListening();
-        });
-        stopBtn.addEventListener('click', stopSpeaking);
-        pauseBtn.addEventListener('click', function () {
-            paused = true;
-            stopListening();
-            setState('paused');
-        });
-        resumeBtn.addEventListener('click', function () {
-            paused = false;
-            startListening();
-        });
-        langSel.addEventListener('change', function () {
-            if (recognition) { recognition.lang = langSel.value; }
-        });
-        repliesTog.addEventListener('change', function () {
-            if (!repliesTog.checked) { stopSpeaking(); }
-        });
-
-        document.addEventListener('karnel-ai:response', function (event) {
-            if (!voiceOpen) { return; }
-            var detail = event.detail || {};
-            if (detail.inputMode === 'voice' || repliesTog.checked) {
-                setState('processing');
-                setTimeout(function () { speak(detail.text || ''); }, 180);
-            } else {
-                setState('idle');
-            }
-        });
-
-        document.addEventListener('karnel-ai:error', function (event) {
-            if (!voiceOpen) { return; }
-            var msg = (event.detail && event.detail.message) || 'Something went wrong.';
-            setStatus(msg, true);
-            setState('error');
-        });
-
-        if (synth) {
-            populateVoices();
-            if (typeof synth.onvoiceschanged !== 'undefined') {
-                synth.addEventListener('voiceschanged', populateVoices);
-            }
-        }
-
-        window.addEventListener('beforeunload', function () {
-            stopListening();
-            stopSpeaking();
-        });
-
-        window.KarnelVoice = { open: open, close: close, isOpen: isOpen };
-
-        setState('idle');
-    })();
-</script>
+            setState('idle');
+        })();
+    </script>
 }

@@ -1,5 +1,6 @@
 ﻿
 using KarnelTravel.Data;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -15,6 +16,7 @@ namespace KarnelTravel.Controllers
         }
 
         // GET: /Tours
+        [AllowAnonymous]
         public async Task<IActionResult> Index()
         {
             var packages = await _context.TourPackages
@@ -28,6 +30,7 @@ namespace KarnelTravel.Controllers
         }
 
         // GET: /Tours/Details/hunza-valley-explorer
+        [AllowAnonymous]
         public async Task<IActionResult> Details(string slug)
         {
             if (string.IsNullOrWhiteSpace(slug))

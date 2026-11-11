@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using KarnelTravel.Services;
 
 namespace KarnelTravel.Controllers
@@ -12,6 +13,7 @@ namespace KarnelTravel.Controllers
             _websiteContentService = websiteContentService;
         }
 
+        [AllowAnonymous]
         public async Task<IActionResult> Index()
         {
             ViewBag.WebsiteContent = await _websiteContentService.GetAsync();

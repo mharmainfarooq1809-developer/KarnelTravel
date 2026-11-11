@@ -1,0 +1,37 @@
+@{
+    ViewData["Title"] = "Experiences";
+    ViewData["Description"] = "Plan meaningful travel experiences across Pakistan with Karnel Travel Guide.";
+}
+
+<section class="page-section" aria-labelledby="experiences-heading">
+    <div class="container">
+        <p class="eyebrow">Travel differently</p>
+        <h1 id="experiences-heading">Experiences made for your journey.</h1>
+        <p class="lead">
+            Tell us what you want to feel, discover or remember. Karnel Travel Guide will help shape a considered experience around your destination, dates and travel style.
+        </p>
+
+        <div class="card-grid" style="margin-top:2rem;">
+            <article class="card">
+                <h2>Nature and mountain escapes</h2>
+                <p>Plan slower days around valleys, lakes, viewpoints and local routes.</p>
+                <a class="btn btn--forest" asp-controller="Contact" asp-action="Index" asp-route-category="Experience Planning" asp-route-service="Nature and mountain escapes">Plan this experience</a>
+            </article>
+            <article class="card">
+                <h2>Culture and heritage</h2>
+                <p>Build a journey around history, architecture, food and living local traditions.</p>
+                <a class="btn btn--forest" asp-controller="Contact" asp-action="Index" asp-route-category="Experience Planning" asp-route-service="Culture and heritage">Plan this experience</a>
+            </article>
+            <article class="card">
+                <h2>Food and local life</h2>
+                <p>Discover regional flavours and meaningful stops beyond a standard itinerary.</p>
+                <a class="btn btn--forest" asp-controller="Contact" asp-action="Index" asp-route-category="Experience Planning" asp-route-service="Food and local life">Plan this experience</a>
+            </article>
+        </div>
+
+        <div style="margin-top:3rem;">
+            <p class="eyebrow">Already know where to go?</p>
+            <a class="btn btn--ghost-dark" asp-controller="Search" asp-action="Index">Explore destinations and listings</a>
+        </div>
+    </div>
+</section>

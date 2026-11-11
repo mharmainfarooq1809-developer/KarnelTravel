@@ -1,5 +1,7 @@
 ﻿using KarnelTravel.Models;
 using Microsoft.AspNetCore.Identity;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace KarnelTravel.Services;
 
@@ -94,4 +96,46 @@ public class InMemoryAdminAuthService : IAdminAuthService
         user.PasswordHash = _hasher.HashPassword(user, newPassword);
         return Task.FromResult(true);
     }
+
+    public Task<string?> CreatePasswordResetCodeAsync(string email, CancellationToken cancellationToken = default)
+    {
+        var user = _users.FirstOrDefault(u => string.Equals(u.Email, email.Trim(), StringComparison.OrdinalIgnoreCase));
+        if (user is null)
+            return Task.FromResult<string?>(null);
+
+        var code = RandomNumberGenerator.GetInt32(100000, 1000000).ToString();
+        user.PasswordResetCodeHash = HashToken(code);
+        user.PasswordResetCodeExpiresAt = DateTime.UtcNow.AddMinutes(15);
+        return Task.FromResult<string?>(code);
+    }
+
+    public Task InvalidatePasswordResetCodeAsync(string email, CancellationToken cancellationToken = default)
+    {
+        var user = _users.FirstOrDefault(u => string.Equals(u.Email, email.Trim(), StringComparison.OrdinalIgnoreCase));
+        if (user is not null)
+        {
+            user.PasswordResetCodeHash = null;
+            user.PasswordResetCodeExpiresAt = null;
+        }
+
+        return Task.CompletedTask;
+    }
+
+    public Task<bool> ResetPasswordWithCodeAsync(string email, string code, string newPassword, CancellationToken cancellationToken = default)
+    {
+        var user = _users.FirstOrDefault(u =>
+            string.Equals(u.Email, email.Trim(), StringComparison.OrdinalIgnoreCase) &&
+            u.PasswordResetCodeHash == HashToken(code.Trim()) &&
+            u.PasswordResetCodeExpiresAt > DateTime.UtcNow);
+        if (user is null)
+            return Task.FromResult(false);
+
+        user.PasswordHash = _hasher.HashPassword(user, newPassword);
+        user.PasswordResetCodeHash = null;
+        user.PasswordResetCodeExpiresAt = null;
+        return Task.FromResult(true);
+    }
+
+    private static string HashToken(string value) =>
+        Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(value)));
 }

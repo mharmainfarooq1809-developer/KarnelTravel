@@ -1,5 +1,6 @@
 using KarnelTravel.Data;
 using KarnelTravel.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -15,6 +16,7 @@ namespace KarnelTravel.Controllers
         }
 
         // TRANSPORT LISTING
+        [AllowAnonymous]
         public async Task<IActionResult> Index()
         {
             var routes = await _context.TransportRoutes
@@ -32,6 +34,7 @@ namespace KarnelTravel.Controllers
         }
 
         // TRANSPORT DETAILS
+        [AllowAnonymous]
         public async Task<IActionResult> Details(int id)
         {
             if (id <= 0)

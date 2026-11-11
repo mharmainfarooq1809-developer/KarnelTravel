@@ -9,7 +9,6 @@ using System.Security.Claims;
 namespace KarnelTravel.Controllers;
 
 [Route("KarnelAI")]
-[Authorize]
 public sealed class KarnelAiController : Controller
 {
     private readonly IAIEngine _ai;
@@ -21,6 +20,7 @@ public sealed class KarnelAiController : Controller
 
     public KarnelAiController(IAIEngine ai, ITravelSearchService search, IAIActionService actions, ApplicationDbContext db, IAIControlledActionService controlledActions, IAIAdministrationService administration) { _ai = ai; _search = search; _actions = actions; _db = db; _controlledActions = controlledActions; _administration = administration; }
 
+    [AllowAnonymous]
     [HttpGet("")]
     public async Task<IActionResult> Index(CancellationToken cancellationToken)
     {

@@ -123,6 +123,7 @@ namespace KarnelTravel.Data
                 e.Property(x => x.DisplayName).HasMaxLength(128).IsRequired();
                 e.Property(x => x.PasswordHash).HasMaxLength(512).IsRequired();
                 e.Property(x => x.Role).HasMaxLength(64).IsRequired();
+                e.Property(x => x.PasswordResetCodeHash).HasMaxLength(128);
 
                 e.HasIndex(x => x.Email).IsUnique();
             });
