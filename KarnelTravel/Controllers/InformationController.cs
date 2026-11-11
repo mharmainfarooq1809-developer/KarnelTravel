@@ -22,6 +22,26 @@ namespace KarnelTravel.Controllers
         }
 
         [AllowAnonymous]
+        [HttpGet("/policies/terms-and-conditions")]
+        public IActionResult TermsAndConditions() => View("Policies/TermsAndConditions");
+
+        [AllowAnonymous]
+        [HttpGet("/policies/privacy-policy")]
+        public IActionResult PrivacyPolicy() => View("Policies/PrivacyPolicy");
+
+        [AllowAnonymous]
+        [HttpGet("/policies/booking-cancellation")]
+        public IActionResult BookingCancellation() => View("Policies/BookingCancellation");
+
+        [AllowAnonymous]
+        [HttpGet("/policies/travel-disclaimer")]
+        public IActionResult TravelDisclaimer() => View("Policies/TravelDisclaimer");
+
+        [AllowAnonymous]
+        [HttpGet("/policies/{slug}")]
+        public IActionResult UnknownPolicy(string slug) => NotFound();
+
+        [AllowAnonymous]
         [HttpGet("/destinations")]
         public async Task<IActionResult> Destination()
         {

@@ -3,6 +3,7 @@
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>KarnelTravel-Development</UserSecretsId>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.13" />
@@ -20,9 +21,9 @@
     <PackageReference Include="QuestPDF" Version="2025.12.0" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Remove="booking-setup-backup\**\*.cs" />
+    <InternalsVisibleTo Include="KarnelTravel.Tests" />
   </ItemGroup>
   <ItemGroup>
-    <InternalsVisibleTo Include="KarnelTravel.Tests" />
+    <Folder Include="booking-setup-backup\" />
   </ItemGroup>
 </Project>

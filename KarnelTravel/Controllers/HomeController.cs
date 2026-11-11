@@ -37,14 +37,14 @@ public class HomeController : Controller
             .ToListAsync();
 
         ViewBag.FeaturedHotels = await _db.Hotels
-            .Where(x => x.IsPublished)
+            .Where(x => x.IsPublished && !x.IsArchived)
             .OrderBy(x => x.Name)
             .Take(3)
             .AsNoTracking()
             .ToListAsync();
 
         ViewBag.FeaturedResorts = await _db.Resorts
-            .Where(x => x.IsPublished)
+            .Where(x => x.IsPublished && !x.IsArchived)
             .OrderBy(x => x.Name)
             .Take(3)
             .AsNoTracking()

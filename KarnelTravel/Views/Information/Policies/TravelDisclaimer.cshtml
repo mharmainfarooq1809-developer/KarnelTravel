@@ -1,0 +1,76 @@
+@{
+    ViewData["Title"] = "Travel Disclaimer | Karnel Travel Guide";
+    ViewData["Description"] = "Important travel information about weather, access, roads, providers and customer planning responsibilities in Pakistan.";
+}
+
+<main class="policy-page">
+    <header class="policy-hero">
+        <div class="container policy-hero__inner">
+            <nav class="policy-breadcrumbs" aria-label="Breadcrumb">
+                <a href="@Url.Action("Index", "Home")">Home</a><span aria-hidden="true">/</span><span>Travel Disclaimer</span>
+            </nav>
+            <p class="policy-eyebrow">Policies &amp; information</p>
+            <h1>Travel Disclaimer &amp; Important Information</h1>
+            <p class="policy-intro">Travel across Pakistan can change quickly. Use the guide as a planning resource, verify important details and make decisions appropriate to your circumstances.</p>
+            <p class="policy-status">Draft for business review. This information is general guidance, not a guarantee of conditions or a substitute for official advice.</p>
+        </div>
+    </header>
+
+    <div class="container policy-layout">
+        <aside class="policy-toc" aria-label="On this page">
+            <p>On this page</p>
+            <ol>
+                <li><a href="#accuracy">Information accuracy</a></li>
+                <li><a href="#weather">Weather and seasons</a></li>
+                <li><a href="#access">Access and roads</a></li>
+                <li><a href="#providers">Listings and providers</a></li>
+                <li><a href="#safety">Safety planning</a></li>
+                <li><a href="#changes">Changing circumstances</a></li>
+                <li><a href="#contact">Questions</a></li>
+            </ol>
+        </aside>
+
+        <article class="policy-content">
+            <section id="accuracy">
+                <h2>1. Travel information and accuracy</h2>
+                <p>Karnel Travel Guide aims to provide useful destination, accommodation, dining, transport and experience information. Details such as prices, opening times, access, facilities, images and availability can change, and not every change will be visible immediately.</p>
+                <p>Check important information with the relevant provider or official authority before travelling. Contact the team if you find information that appears outdated or inaccurate.</p>
+            </section>
+
+            <section id="weather">
+                <h2>2. Weather and seasonal conditions</h2>
+                <p>Pakistan includes coastal, plains, desert, forest, mountain and high-altitude environments. Weather can vary by region and season, and conditions can change quickly in northern and mountainous areas.</p>
+                <p>Allow flexibility for rain, snow, heat, visibility, flooding, landslides, altitude effects and seasonal closures. Check current forecasts and official warnings before departure.</p>
+            </section>
+
+            <section id="access">
+                <h2>3. Destination access, roads and transport</h2>
+                <p>Road conditions, traffic, construction, checkpoints, landslides, flooding, closures and local restrictions may affect journey times or access. Estimated durations and route information are planning aids, not guaranteed arrival times.</p>
+                <p>Transport services may be operated by independent providers. Confirm departure points, vehicle arrangements, luggage limits, accessibility needs and current schedules directly when those details matter to your journey.</p>
+            </section>
+
+            <section id="providers">
+                <h2>4. Accommodation, restaurants and third-party providers</h2>
+                <p>Descriptions of hotels, resorts, restaurants, tours and other providers are intended to help customers discover options. The provider controls its own facilities, standards, menus, prices, opening times, availability and service delivery.</p>
+                <p>Images and descriptions may be representative or supplied by a provider. Ask the provider to confirm accessibility, dietary requirements, room features, transport arrangements and other specific needs before relying on a listing.</p>
+            </section>
+
+            <section id="safety">
+                <h2>5. Safety and customer planning</h2>
+                <p>Customers should review current government and local travel guidance, identity and entry requirements, permits, health recommendations, insurance, emergency contacts and any destination-specific restrictions. Carry appropriate clothing, medication, communications equipment and supplies for the route and season.</p>
+                <p>Tell the business or relevant provider about important mobility, medical, dietary or accessibility requirements before making a request. The customer remains responsible for deciding whether a destination, route or activity is suitable.</p>
+            </section>
+
+            <section id="changes">
+                <h2>6. Circumstances outside the business’s control</h2>
+                <p>Weather, natural events, road closures, public safety conditions, government decisions, provider changes, technical failures and other circumstances can affect information or travel arrangements. The business may update information or communicate changes when it becomes aware of them.</p>
+                <p>This guidance does not remove responsibilities that may apply to the business or an independent provider. It explains why travel information must be checked and why a published itinerary cannot guarantee conditions beyond the relevant provider’s control.</p>
+            </section>
+
+            <section id="contact">
+                <h2>7. Questions before travelling</h2>
+                <p>For a destination or service question, use the <a href="@Url.Action("Index", "Contact")">contact and inquiry page</a>. For urgent safety matters while travelling, contact local emergency services or the relevant official authority.</p>
+            </section>
+        </article>
+    </div>
+</main>

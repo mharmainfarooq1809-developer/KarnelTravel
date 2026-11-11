@@ -2955,95 +2955,96 @@
 <!-- ==================== SECTION 08 — CURATED JOURNEYS ==================== -->
 <section class="section section--sand" aria-labelledby="journeys-title">
     <div class="container">
+        @{ var featuredPackages = (ViewBag.FeaturedPackages as IEnumerable<KarnelTravel.Models.TourPackage>)?.ToList() ?? new List<KarnelTravel.Models.TourPackage>(); }
         <div class="section-head" data-reveal>
             <p class="eyebrow">Curated Journeys</p>
-            <h2 id="journeys-title">Sample travel packages.</h2>
+            <h2 id="journeys-title">Travel packages for the way you want to go.</h2>
             <p>
-                Illustrative itineraries to show how package information will be presented
-                once the backend is connected. Prices are examples, not confirmed rates.
+                Explore published itineraries, destinations and pricing from our travel catalogue.
             </p>
         </div>
 
-        <article class="journey-feature" data-reveal>
-            <div class="journey-feature__media">
-                <img src="https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=1200&q=80"
-                     alt="Mountain lake reflecting a northern landscape" loading="lazy" decoding="async" />
-            </div>
-            <div class="journey-feature__body">
-                <span class="region-tag">Featured sample journey</span>
-                <h3>Northern Escape</h3>
-                <div class="meta-row">
-                    <span>Hunza · Skardu</span>
-                    <span>7 nights</span>
-                    <span>Guided</span>
+        @if (featuredPackages.Any())
+        {
+            var primaryPackage = featuredPackages[0];
+            <article class="journey-feature" data-reveal>
+                <div class="journey-feature__media">
+                    <img src="@(string.IsNullOrWhiteSpace(primaryPackage.ImageUrl) ? "https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=1200&q=80" : primaryPackage.ImageUrl)"
+                         alt="@primaryPackage.Name" loading="lazy" decoding="async" />
                 </div>
-                <p>
-                    A slow arc through the north, pairing valley stays with high-altitude
-                    day trips. Built around early starts, long views and unhurried evenings.
-                </p>
-                <ul class="included">
-                    <li>Sample accommodation in each location</li>
-                    <li>Intercity transport (illustrative)</li>
-                    <li>Selected guided day trips</li>
-                    <li>Breakfast daily</li>
-                </ul>
-                <div class="journey-feature__foot">
-                    <div class="price">
-                        <small>Sample price / person</small>
-                        PKR 145,000
-                    </div>
-                    <a class="btn btn--forest" href="@Url.Action("Index", "Contact")">View package</a>
-                </div>
-            </div>
-        </article>
-
-        <div class="journey-list" data-reveal-group>
-            <article class="journey-row" data-reveal>
-                <div class="journey-row__media">
-                    <img src="https://images.unsplash.com/photo-1500534623283-312aade485b7?auto=format&fit=crop&w=400&q=70"
-                         alt="High meadow beneath a mountain" loading="lazy" decoding="async" />
-                </div>
-                <div>
-                    <span class="region-tag">Sample package</span>
-                    <h3>Heritage &amp; Coast</h3>
-                    <p>Lahore · Karachi · 5 nights — city stays, guided heritage walks and an optional coastal day trip.</p>
+                <div class="journey-feature__body">
+                    <span class="region-tag">@primaryPackage.DestinationName</span>
+                    <h3>@primaryPackage.Name</h3>
                     <div class="meta-row">
-                        <span>5 nights</span>
-                        <span>City &amp; coast</span>
+                        <span>@primaryPackage.DurationDays days</span>
+                        @if (primaryPackage.PricePerAdult.HasValue)
+                        {
+                            <span>From PKR @primaryPackage.PricePerAdult.Value.ToString("N0")</span>
+                        }
                     </div>
-                </div>
-                <div class="journey-row__action">
-                    <div class="price">
-                        <small>Sample / person</small>
-                        PKR 98,000
+                    <p>@primaryPackage.ShortDescription</p>
+                    <div class="journey-feature__foot">
+                        <div class="price">
+                            <small>Price / adult</small>
+                            @if (primaryPackage.PricePerAdult.HasValue)
+                            {
+                                <span>PKR @primaryPackage.PricePerAdult.Value.ToString("N0")</span>
+                            }
+                            else
+                            {
+                                <span>Contact us</span>
+                            }
+                        </div>
+                        <a class="btn btn--forest" href="@Url.Action("Details", "Tours", new { slug = primaryPackage.Slug })">View package</a>
                     </div>
-                    <a class="link-arrow" href="@Url.Action("Index", "Contact")">Send inquiry</a>
                 </div>
             </article>
 
-            <article class="journey-row" data-reveal>
-                <div class="journey-row__media">
-                    <img src="https://images.unsplash.com/photo-1472214103451-9374bd1c798e?auto=format&fit=crop&w=400&q=70"
-                         alt="Rolling green hills in a valley" loading="lazy" decoding="async" />
+            @if (featuredPackages.Count > 1)
+            {
+                <div class="journey-list" data-reveal-group>
+                    @foreach (var package in featuredPackages.Skip(1).Take(2))
+                    {
+                        <article class="journey-row" data-reveal>
+                            <div class="journey-row__media">
+                                <img src="@(string.IsNullOrWhiteSpace(package.ImageUrl) ? "https://images.unsplash.com/photo-1500534623283-312aade485b7?auto=format&fit=crop&w=400&q=70" : package.ImageUrl)"
+                                     alt="@package.Name" loading="lazy" decoding="async" />
+                            </div>
+                            <div>
+                                <span class="region-tag">@package.DestinationName</span>
+                                <h3>@package.Name</h3>
+                                <p>@package.ShortDescription</p>
+                                <div class="meta-row">
+                                    <span>@package.DurationDays days</span>
+                                    @if (package.PricePerAdult.HasValue)
+                                    {
+                                        <span>From PKR @package.PricePerAdult.Value.ToString("N0")</span>
+                                    }
+                                </div>
+                            </div>
+                            <div class="journey-row__action">
+                                <div class="price">
+                                    <small>Price / adult</small>
+                                    @if (package.PricePerAdult.HasValue)
+                                    {
+                                        <span>PKR @package.PricePerAdult.Value.ToString("N0")</span>
+                                    }
+                                    else
+                                    {
+                                        <span>Contact us</span>
+                                    }
+                                </div>
+                                <a class="link-arrow" href="@Url.Action("Details", "Tours", new { slug = package.Slug })">View package</a>
+                            </div>
+                        </article>
+                    }
                 </div>
-                <div>
-                    <span class="region-tag">Sample package</span>
-                    <h3>Valley &amp; Meadow</h3>
-                    <p>Swat · Kalam · 4 nights — riverside stay, local transfers and two guided trail walks.</p>
-                    <div class="meta-row">
-                        <span>4 nights</span>
-                        <span>Walking</span>
-                    </div>
-                </div>
-                <div class="journey-row__action">
-                    <div class="price">
-                        <small>Sample / person</small>
-                        PKR 72,000
-                    </div>
-                    <a class="link-arrow" href="@Url.Action("Index", "Contact")">Send inquiry</a>
-                </div>
-            </article>
-        </div>
+            }
+        }
+        else
+        {
+            <div class="notice">Published travel packages will appear here when they are available.</div>
+        }
     </div>
 </section>
 

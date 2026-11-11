@@ -4,9 +4,9 @@
     ViewData["Title"] = "Stay & Unwind — Hotel Information | Karnel Travel Guide";
     ViewData["Description"] = "Explore hotels across Pakistan and view accommodation details through Karnel Travel Guide.";
 
-    var hasHotels = Model != null && Model.Any();
-    var totalHotels = hasHotels ? Model.Count() : 0;
-    var index = 0;
+    var hotelList = Model?.ToList() ?? new List<KarnelTravel.Models.Hotel>();
+    var hasHotels = hotelList.Any();
+    var totalHotels = hotelList.Count;
 }
 
 @section Styles {
@@ -26,6 +26,9 @@
             --kd-serif: var(--serif, "Playfair Display", Georgia, "Times New Roman", serif);
             --kd-sans: var(--sans, "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif);
             --kd-ease: var(--ease, cubic-bezier(.22, .61, .36, 1));
+            --kd-ease-out: cubic-bezier(.16, 1, .3, 1);
+            --kd-card-radius: 20px;
+            --kd-card-radius-sm: 14px;
 
             background: var(--kd-ivory);
             color: var(--kd-forest);
@@ -45,7 +48,6 @@
             text-transform: uppercase;
             color: var(--kd-sage);
         }
-
         .kd-eyebrow::before {
             content: "";
             width: 34px;
@@ -53,7 +55,6 @@
             background: currentColor;
             opacity: .7;
         }
-
         .kd-eyebrow--light { color: var(--kd-sand); }
 
         .kd-reveal {
@@ -64,7 +65,6 @@
                 transform .9s var(--kd-ease);
             transition-delay: var(--kd-delay, 0ms);
         }
-
         .kd-reveal.is-in {
             opacity: 1;
             transform: none;
@@ -76,14 +76,12 @@
             padding: calc(var(--header-h, 80px) + 64px) 0 clamp(52px, 7vw, 88px);
             background: var(--kd-ivory);
         }
-
         .kd-hero__grid {
             display: grid;
             grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr);
             align-items: center;
             gap: clamp(32px, 6vw, 84px);
         }
-
         .kd-hero h1 {
             margin: 0 0 24px;
             max-width: 14ch;
@@ -94,12 +92,7 @@
             letter-spacing: -.02em;
             color: var(--kd-forest);
         }
-
-        .kd-hero h1 em {
-            font-style: italic;
-            color: inherit;
-        }
-
+        .kd-hero h1 em { font-style: italic; color: inherit; }
         .kd-hero__lede {
             margin: 0;
             max-width: 46ch;
@@ -107,19 +100,15 @@
             line-height: 1.75;
             color: var(--kd-muted);
         }
-
-        .kd-hero__media {
-            position: relative;
-        }
-
+        .kd-hero__media { position: relative; }
         .kd-hero__frame {
             margin: 0;
             height: clamp(320px, 44vw, 520px);
             overflow: hidden;
-            border-radius: 3px;
+            border-radius: var(--kd-card-radius);
             background: var(--kd-forest);
+            box-shadow: 0 40px 80px -50px rgba(20, 39, 31, .45);
         }
-
         .kd-hero__frame img {
             display: block;
             width: 100%;
@@ -128,9 +117,34 @@
             transform: scale(1.06);
             transition: transform 1.6s var(--kd-ease);
         }
+        .kd-hero__media.is-in .kd-hero__frame img { transform: scale(1); }
 
-        .kd-hero__media.is-in .kd-hero__frame img {
-            transform: scale(1);
+        /* floating caption plate */
+        .kd-hero__caption {
+            position: absolute;
+            left: clamp(16px, 3vw, 28px);
+            bottom: clamp(16px, 3vw, 28px);
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 16px;
+            border-radius: 12px;
+            background: rgba(248, 246, 240, .94);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 18px 36px -22px rgba(0, 0, 0, .45);
+            font-size: .62rem;
+            font-weight: 600;
+            letter-spacing: .18em;
+            text-transform: uppercase;
+            color: var(--kd-forest);
+        }
+        .kd-hero__caption::before {
+            content: "";
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--kd-sage);
+            box-shadow: 0 0 0 4px rgba(143, 168, 136, .25);
         }
 
         /* ------------------------------------------------ 02 — INTRODUCTION ---- */
@@ -138,7 +152,6 @@
             padding: clamp(40px, 5vw, 64px) 0 clamp(28px, 3.5vw, 44px);
             background: var(--kd-ivory);
         }
-
         .kd-intro__inner {
             display: flex;
             flex-wrap: wrap;
@@ -148,7 +161,6 @@
             padding-bottom: clamp(18px, 2.4vw, 28px);
             border-bottom: 1px solid rgba(20, 39, 31, .12);
         }
-
         .kd-intro h2 {
             margin: 0;
             font-family: var(--kd-serif);
@@ -158,14 +170,12 @@
             letter-spacing: -.015em;
             color: var(--kd-forest);
         }
-
         .kd-intro__meta {
             display: flex;
             flex-wrap: wrap;
             align-items: baseline;
             gap: 12px 24px;
         }
-
         .kd-intro__desc {
             margin: 0;
             max-width: 44ch;
@@ -173,25 +183,25 @@
             line-height: 1.7;
             color: var(--kd-muted);
         }
-
         .kd-intro__count {
             display: inline-flex;
             align-items: center;
             gap: 8px;
             margin: 0;
-            font-size: .7rem;
+            padding: 8px 14px;
+            border-radius: 999px;
+            background: var(--kd-sand);
+            font-size: .62rem;
             font-weight: 600;
-            letter-spacing: .22em;
+            letter-spacing: .18em;
             text-transform: uppercase;
-            color: var(--kd-sage);
+            color: var(--kd-forest);
         }
-
         .kd-intro__count strong {
             font-family: var(--kd-serif);
-            font-size: 1.15rem;
+            font-size: 1.05rem;
             font-weight: 500;
             letter-spacing: 0;
-            color: var(--kd-forest);
         }
 
         /* -------------------------------------------------- 03 — SHOWCASE ---- */
@@ -199,7 +209,6 @@
             padding: 0 0 clamp(64px, 8vw, 112px);
             background: var(--kd-ivory);
         }
-
         .kd-showcase {
             display: grid;
             grid-template-columns: repeat(12, minmax(0, 1fr));
@@ -209,19 +218,25 @@
 
         /* --- base hotel card --- */
         .kd-hotel {
-            display: block;
+            display: flex;
+            flex-direction: column;
             position: relative;
-            border-radius: 2px;
+            overflow: hidden;
+            border-radius: var(--kd-card-radius);
             background: var(--kd-white);
+            border: 1px solid rgba(20, 39, 31, .08);
             color: inherit;
             text-decoration: none;
-            transition: transform .45s var(--kd-ease);
+            transition:
+                transform .5s var(--kd-ease-out),
+                box-shadow .5s var(--kd-ease-out),
+                border-color .4s var(--kd-ease);
         }
-
         .kd-hotel:hover {
-            transform: translateY(-3px);
+            transform: translateY(-5px);
+            border-color: rgba(83, 107, 80, .22);
+            box-shadow: 0 30px 60px -34px rgba(20, 39, 31, .42);
         }
-
         .kd-hotel:focus-visible {
             outline: 2px solid var(--kd-sand);
             outline-offset: 3px;
@@ -231,38 +246,101 @@
             position: relative;
             overflow: hidden;
             background: var(--kd-sand);
-            border-radius: 2px;
+            aspect-ratio: 16 / 10;
         }
-
         .kd-hotel__media img {
             display: block;
             width: 100%;
             height: 100%;
             object-fit: cover;
-            transition: transform 1.1s var(--kd-ease);
+            transition: transform 1.1s var(--kd-ease-out);
+        }
+        .kd-hotel:hover .kd-hotel__media img { transform: scale(1.06); }
+
+        /* floating rating badge */
+        .kd-hotel__rating {
+            position: absolute;
+            top: 14px;
+            right: 14px;
+            z-index: 2;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 11px;
+            border-radius: 999px;
+            background: rgba(248, 246, 240, .96);
+            backdrop-filter: blur(8px);
+            box-shadow: 0 12px 24px -16px rgba(0, 0, 0, .45);
+            font-size: .62rem;
+            font-weight: 600;
+            letter-spacing: .1em;
+            color: var(--kd-forest);
+        }
+        .kd-hotel__rating .star {
+            color: #bd914a;
+            font-size: .82rem;
+            line-height: 1;
         }
 
-        .kd-hotel:hover .kd-hotel__media img {
-            transform: scale(1.05);
+        /* floating price plate (reveals on hover) */
+        .kd-hotel__price-tag {
+            position: absolute;
+            left: 14px;
+            bottom: 14px;
+            z-index: 2;
+            padding: 8px 13px;
+            border-radius: 12px;
+            background: rgba(20, 39, 31, .86);
+            backdrop-filter: blur(8px);
+            color: var(--kd-ivory);
+            line-height: 1.1;
+            box-shadow: 0 14px 28px -18px rgba(0, 0, 0, .5);
+            opacity: 0;
+            transform: translateY(8px);
+            transition:
+                opacity .4s var(--kd-ease),
+                transform .4s var(--kd-ease-out);
+        }
+        .kd-hotel:hover .kd-hotel__price-tag,
+        .kd-hotel:focus-visible .kd-hotel__price-tag {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .kd-hotel__price-tag small {
+            display: block;
+            font-family: var(--kd-sans);
+            font-size: .5rem;
+            font-weight: 600;
+            letter-spacing: .16em;
+            text-transform: uppercase;
+            color: rgba(248, 246, 240, .62);
+            margin-bottom: 2px;
+        }
+        .kd-hotel__price-tag strong {
+            font-family: var(--kd-serif);
+            font-weight: 500;
+            font-size: .92rem;
         }
 
+        /* body */
         .kd-hotel__body {
-            padding: 18px 0 0;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            flex: 1;
+            padding: clamp(18px, 2.2vw, 22px) clamp(20px, 2.4vw, 26px) clamp(20px, 2.6vw, 26px);
         }
-
         .kd-hotel__meta {
             display: flex;
             flex-wrap: wrap;
             align-items: center;
-            gap: 6px 14px;
-            margin-bottom: 10px;
-            font-size: .68rem;
+            gap: 6px 12px;
+            font-size: .6rem;
             font-weight: 600;
             letter-spacing: .18em;
             text-transform: uppercase;
             color: var(--kd-muted);
         }
-
         .kd-hotel__meta .kd-dot {
             width: 3px;
             height: 3px;
@@ -271,9 +349,7 @@
             opacity: .45;
             display: inline-block;
         }
-
-        .kd-hotel__city { color: var(--kd-forest); }
-
+        .kd-hotel__city { color: var(--kd-moss, #536b50); }
         .kd-hotel__stars {
             color: var(--kd-sage);
             letter-spacing: .08em;
@@ -281,46 +357,40 @@
         }
 
         .kd-hotel__title {
-            margin: 0 0 8px;
+            margin: 0;
             font-family: var(--kd-serif);
             font-weight: 500;
-            font-size: clamp(1.25rem, 1.8vw, 1.7rem);
+            font-size: clamp(1.2rem, 1.7vw, 1.45rem);
             line-height: 1.2;
-            letter-spacing: -.005em;
+            letter-spacing: -.01em;
             color: var(--kd-forest);
         }
-
         .kd-hotel--span7 .kd-hotel__title {
             font-size: clamp(1.5rem, 2.2vw, 2rem);
         }
 
         .kd-hotel__desc {
-            margin: 0 0 14px;
-            font-size: .93rem;
-            line-height: 1.65;
+            margin: 0;
+            font-size: .88rem;
+            line-height: 1.6;
             color: var(--kd-muted);
             display: -webkit-box;
             -webkit-line-clamp: 3;
             -webkit-box-orient: vertical;
             overflow: hidden;
+            flex: 1;
         }
 
         .kd-hotel__address {
             display: flex;
             align-items: flex-start;
             gap: 8px;
-            margin: 0 0 14px;
-            font-size: .82rem;
+            margin: 0;
+            font-size: .8rem;
             line-height: 1.5;
             color: var(--kd-muted);
         }
-
-        .kd-hotel__address svg {
-            flex: none;
-            margin-top: 3px;
-            opacity: .65;
-        }
-
+        .kd-hotel__address svg { flex: none; margin-top: 3px; opacity: .65; }
         .kd-hotel__address span {
             display: -webkit-box;
             -webkit-line-clamp: 2;
@@ -334,45 +404,40 @@
             align-items: center;
             justify-content: space-between;
             gap: 12px;
+            margin-top: 6px;
             padding-top: 14px;
-            margin-top: auto;
-            border-top: 1px solid rgba(20, 39, 31, .12);
+            border-top: 1px solid rgba(20, 39, 31, .08);
         }
-
         .kd-hotel__price {
             display: flex;
             flex-direction: column;
             gap: 2px;
             line-height: 1.2;
         }
-
         .kd-hotel__price small {
-            font-size: .62rem;
+            font-size: .56rem;
             font-weight: 600;
-            letter-spacing: .2em;
+            letter-spacing: .18em;
             text-transform: uppercase;
             color: var(--kd-muted);
         }
-
         .kd-hotel__price strong {
             font-family: var(--kd-serif);
-            font-size: 1.1rem;
+            font-size: 1.06rem;
             font-weight: 500;
             color: var(--kd-forest);
         }
-
         .kd-hotel__link {
             display: inline-flex;
             align-items: center;
             gap: 10px;
-            font-size: .7rem;
+            font-size: .64rem;
             font-weight: 600;
-            letter-spacing: .2em;
+            letter-spacing: .18em;
             text-transform: uppercase;
             color: var(--kd-forest);
             white-space: nowrap;
         }
-
         .kd-hotel__link .kd-rule {
             width: 22px;
             height: 1px;
@@ -380,53 +445,36 @@
             opacity: .5;
             transition: width .4s var(--kd-ease), opacity .4s var(--kd-ease);
         }
-
-        .kd-hotel:hover .kd-hotel__link .kd-rule {
-            width: 46px;
-            opacity: 1;
-        }
-
+        .kd-hotel:hover .kd-hotel__link .kd-rule { width: 46px; opacity: 1; }
         .kd-hotel__link svg {
             flex: none;
-            transition: transform .4s var(--kd-ease);
+            transition: transform .4s var(--kd-ease-out);
         }
-
-        .kd-hotel:hover .kd-hotel__link svg {
-            transform: translateX(5px);
-        }
+        .kd-hotel:hover .kd-hotel__link svg { transform: translateX(5px); }
 
         /* --- feature hotel --- */
         .kd-hotel--feature {
             grid-column: 1 / -1;
             display: flex;
-            align-items: flex-end;
+            flex-direction: column;
+            justify-content: flex-end;
             min-height: clamp(420px, 46vw, 560px);
             padding: clamp(24px, 4vw, 48px);
             color: var(--kd-ivory);
             background: var(--kd-forest);
             overflow: hidden;
             isolation: isolate;
+            border: 0;
         }
-
-        .kd-hotel--feature:hover {
-            transform: none;
-        }
-
         .kd-hotel--feature .kd-hotel__media {
             position: absolute;
             inset: 0;
             z-index: 0;
+            aspect-ratio: auto;
             border-radius: 0;
         }
-
-        .kd-hotel--feature .kd-hotel__media img {
-            transform: scale(1.02);
-        }
-
-        .kd-hotel--feature:hover .kd-hotel__media img {
-            transform: scale(1.06);
-        }
-
+        .kd-hotel--feature .kd-hotel__media img { transform: scale(1.02); }
+        .kd-hotel--feature:hover .kd-hotel__media img { transform: scale(1.06); }
         .kd-hotel__scrim {
             position: absolute;
             inset: 0;
@@ -439,39 +487,60 @@
                     rgba(10, 22, 17, .12) 72%,
                     rgba(10, 22, 17, .28) 100%);
         }
-
         .kd-hotel--feature .kd-hotel__body {
             position: relative;
             z-index: 2;
             max-width: 640px;
             padding: 0;
         }
-
         .kd-hotel--feature .kd-hotel__meta { color: var(--kd-sand); }
         .kd-hotel--feature .kd-hotel__city { color: var(--kd-sand); }
         .kd-hotel--feature .kd-hotel__stars { color: var(--kd-sand); opacity: .95; }
-
         .kd-hotel--feature .kd-hotel__title {
             font-size: clamp(2rem, 4vw, 3.2rem);
             color: var(--kd-ivory);
         }
-
         .kd-hotel--feature .kd-hotel__desc {
             color: rgba(248, 246, 240, .84);
             -webkit-line-clamp: 4;
         }
-
-        .kd-hotel--feature .kd-hotel__address {
-            color: rgba(248, 246, 240, .78);
-        }
-
-        .kd-hotel--feature .kd-hotel__footer {
-            border-top-color: rgba(232, 223, 201, .22);
-        }
-
+        .kd-hotel--feature .kd-hotel__address { color: rgba(248, 246, 240, .78); }
+        .kd-hotel--feature .kd-hotel__footer { border-top-color: rgba(232, 223, 201, .22); }
         .kd-hotel--feature .kd-hotel__price small { color: rgba(232, 223, 201, .78); }
         .kd-hotel--feature .kd-hotel__price strong { color: var(--kd-ivory); }
         .kd-hotel--feature .kd-hotel__link { color: var(--kd-ivory); }
+
+        /* feature plate + meta bar */
+        .kd-hotel__feature-plate {
+            position: absolute;
+            top: clamp(20px, 3vw, 28px);
+            right: clamp(20px, 3vw, 28px);
+            z-index: 2;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 14px;
+            border-radius: 999px;
+            background: rgba(248, 246, 240, .94);
+            backdrop-filter: blur(8px);
+            font-family: var(--kd-serif);
+            font-style: italic;
+            font-size: .72rem;
+            font-weight: 500;
+            letter-spacing: .08em;
+            color: var(--kd-forest);
+            box-shadow: 0 14px 28px -18px rgba(0, 0, 0, .5);
+        }
+        .kd-hotel__feature-plate::before {
+            content: "";
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--kd-sage);
+        }
+
+        /* hide feature overlays on media for non-feature cards */
+        .kd-hotel:not(.kd-hotel--feature) .kd-hotel__scrim { display: none; }
 
         /* --- span variants --- */
         .kd-hotel--span7 { grid-column: span 7; }
@@ -479,52 +548,37 @@
         .kd-hotel--span4 { grid-column: span 4; }
         .kd-hotel--span6 { grid-column: span 6; }
 
-        /* --- aspect ratios for vertical cards --- */
         .kd-hotel--span7 .kd-hotel__media { aspect-ratio: 16 / 10; }
         .kd-hotel--span5 .kd-hotel__media { aspect-ratio: 4 / 5; }
         .kd-hotel--span4 .kd-hotel__media { aspect-ratio: 1 / 1; }
 
         /* --- horizontal card variant --- */
         .kd-hotel--horizontal {
-            display: flex;
             flex-direction: row;
             align-items: stretch;
             min-height: 280px;
-            background: var(--kd-white);
-            overflow: hidden;
         }
-
         .kd-hotel--horizontal .kd-hotel__media {
-            position: relative;
-            width: 50%;
+            width: 48%;
             flex: none;
             aspect-ratio: auto;
             min-height: 100%;
             border-radius: 0;
         }
-
         .kd-hotel--horizontal .kd-hotel__media img {
             position: absolute;
             inset: 0;
             width: 100%;
             height: 100%;
         }
-
         .kd-hotel--horizontal .kd-hotel__body {
-            width: 50%;
-            padding: clamp(20px, 2.5vw, 32px);
-            display: flex;
-            flex-direction: column;
+            width: 52%;
+            padding: clamp(22px, 2.6vw, 32px);
             justify-content: center;
+            border-left: 1px solid rgba(20, 39, 31, .06);
         }
-
-        .kd-hotel--horizontal .kd-hotel__desc {
-            -webkit-line-clamp: 3;
-        }
-
-        .kd-hotel--horizontal .kd-hotel__address span {
-            -webkit-line-clamp: 1;
-        }
+        .kd-hotel--horizontal .kd-hotel__desc { -webkit-line-clamp: 3; }
+        .kd-hotel--horizontal .kd-hotel__address span { -webkit-line-clamp: 1; }
 
         /* --- staggered entrance --- */
         .kd-showcase > .kd-hotel:nth-child(1) { --kd-delay: 0ms; }
@@ -540,14 +594,24 @@
 
         /* ---------------------------------------------------- 04 — EMPTY ---- */
         .kd-empty {
-            grid-column: 1 / -1;
+            position: relative;
+            overflow: hidden;
             text-align: center;
             padding: clamp(48px, 8vw, 96px) 24px;
             background: var(--kd-white);
             border: 1px solid rgba(20, 39, 31, .1);
-            border-radius: 2px;
+            border-radius: var(--kd-card-radius);
         }
-
+        .kd-empty::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background:
+                radial-gradient(ellipse 60% 60% at 50% 0%, rgba(143, 168, 136, .14), transparent 70%),
+                radial-gradient(ellipse 50% 50% at 50% 100%, rgba(232, 223, 201, .4), transparent 70%);
+            pointer-events: none;
+        }
+        .kd-empty > * { position: relative; z-index: 1; }
         .kd-empty h2 {
             margin: 0 0 12px;
             font-family: var(--kd-serif);
@@ -555,13 +619,49 @@
             font-size: clamp(1.8rem, 3vw, 2.4rem);
             color: var(--kd-forest);
         }
-
         .kd-empty p {
-            margin: 0 auto;
+            margin: 0 auto 26px;
             max-width: 48ch;
             font-size: .98rem;
             line-height: 1.7;
             color: var(--kd-muted);
+        }
+        .kd-empty__actions {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 12px;
+        }
+        .kd-empty__btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 14px 24px;
+            border-radius: 999px;
+            background: var(--kd-forest);
+            color: var(--kd-ivory);
+            font-size: .68rem;
+            font-weight: 600;
+            letter-spacing: .18em;
+            text-transform: uppercase;
+            text-decoration: none;
+            transition:
+                transform .4s var(--kd-ease-out),
+                box-shadow .4s var(--kd-ease-out),
+                background .3s var(--kd-ease);
+        }
+        .kd-empty__btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 16px 30px -18px rgba(20, 39, 31, .5);
+        }
+        .kd-empty__btn--ghost {
+            background: transparent;
+            color: var(--kd-forest);
+            border: 1px solid rgba(20, 39, 31, .22);
+        }
+        .kd-empty__btn--ghost:hover {
+            background: var(--kd-white);
+            border-color: var(--kd-forest);
         }
 
         /* ------------------------------------------------------- 05 — CTA ---- */
@@ -574,13 +674,7 @@
             border-top: 1px solid rgba(232, 223, 201, .16);
             isolation: isolate;
         }
-
-        .kd-cta__bg {
-            position: absolute;
-            inset: 0;
-            z-index: 0;
-        }
-
+        .kd-cta__bg { position: absolute; inset: 0; z-index: 0; }
         .kd-cta__bg img {
             display: block;
             width: 100%;
@@ -588,7 +682,6 @@
             object-fit: cover;
             opacity: .24;
         }
-
         .kd-cta::before {
             content: "";
             position: absolute;
@@ -601,7 +694,6 @@
                     rgba(20, 39, 31, .55) 46%,
                     rgba(20, 39, 31, .95) 100%);
         }
-
         .kd-cta__inner {
             position: relative;
             z-index: 2;
@@ -609,12 +701,7 @@
             margin: 0 auto;
             text-align: center;
         }
-
-        .kd-cta__inner .kd-eyebrow {
-            justify-content: center;
-            margin-bottom: 22px;
-        }
-
+        .kd-cta__inner .kd-eyebrow { justify-content: center; margin-bottom: 22px; }
         .kd-cta h2 {
             margin: 0 0 20px;
             font-family: var(--kd-serif);
@@ -624,7 +711,6 @@
             letter-spacing: -.02em;
             color: var(--kd-ivory);
         }
-
         .kd-cta__lede {
             margin: 0 auto 36px;
             max-width: 52ch;
@@ -632,17 +718,16 @@
             line-height: 1.75;
             color: rgba(248, 246, 240, .78);
         }
-
         .kd-btn {
             display: inline-flex;
             align-items: center;
             gap: 14px;
             padding: 18px 34px;
             border: 1px solid transparent;
-            border-radius: 2px;
+            border-radius: 999px;
             background: var(--kd-ivory);
             color: var(--kd-forest);
-            font-size: .74rem;
+            font-size: .72rem;
             font-weight: 600;
             letter-spacing: .22em;
             text-transform: uppercase;
@@ -650,23 +735,19 @@
             transition:
                 background .4s var(--kd-ease),
                 color .4s var(--kd-ease),
-                transform .4s var(--kd-ease);
+                transform .4s var(--kd-ease-out),
+                box-shadow .4s var(--kd-ease-out);
         }
-
         .kd-btn svg {
             flex: none;
-            transition: transform .4s var(--kd-ease);
+            transition: transform .4s var(--kd-ease-out);
         }
-
         .kd-btn:hover {
             background: var(--kd-sand);
             transform: translateY(-2px);
+            box-shadow: 0 18px 32px -18px rgba(0, 0, 0, .45);
         }
-
-        .kd-btn:hover svg {
-            transform: translateX(5px);
-        }
-
+        .kd-btn:hover svg { transform: translateX(5px); }
         .kd-btn:focus-visible {
             outline: 2px solid var(--kd-sand);
             outline-offset: 4px;
@@ -674,97 +755,63 @@
 
         /* --------------------------------------------------- RESPONSIVE ---- */
         @@media (max-width: 1024px) {
-            .kd-hero {
-                padding: calc(var(--header-h, 80px) + 44px) 0 clamp(44px, 6vw, 68px);
-            }
-
+            .kd-hero { padding: calc(var(--header-h, 80px) + 44px) 0 clamp(44px, 6vw, 68px); }
             .kd-hero__grid {
                 grid-template-columns: minmax(0, 1fr);
                 gap: clamp(26px, 5vw, 40px);
             }
-
             .kd-hero h1 { max-width: 18ch; }
             .kd-hero__frame { height: clamp(280px, 48vw, 420px); }
 
-            .kd-showcase {
-                grid-template-columns: repeat(2, minmax(0, 1fr));
-            }
+            .kd-showcase { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .kd-hotel--feature { grid-column: 1 / -1; }
+            .kd-hotel:not(.kd-hotel--feature) { grid-column: span 1; }
 
-            .kd-hotel--feature {
-                grid-column: 1 / -1;
-            }
-
-            .kd-hotel:not(.kd-hotel--feature) {
-                grid-column: span 1;
-            }
-
-            /* neutralise horizontal layout on tablet */
-            .kd-hotel--horizontal {
-                display: block;
-                min-height: 0;
-            }
-
+            .kd-hotel--horizontal { flex-direction: column; min-height: 0; }
             .kd-hotel--horizontal .kd-hotel__media {
                 width: 100%;
                 aspect-ratio: 4 / 3;
                 min-height: 0;
             }
-
             .kd-hotel--horizontal .kd-hotel__media img {
                 position: static;
                 width: 100%;
                 height: 100%;
             }
-
             .kd-hotel--horizontal .kd-hotel__body {
                 width: 100%;
-                padding: 18px 0 0;
-                display: block;
+                padding: clamp(18px, 2.2vw, 22px) clamp(20px, 2.4vw, 26px) clamp(20px, 2.6vw, 26px);
+                border-left: 0;
             }
-
             .kd-hotel--span7 .kd-hotel__media,
             .kd-hotel--span5 .kd-hotel__media,
             .kd-hotel--span4 .kd-hotel__media,
-            .kd-hotel--span6 .kd-hotel__media {
-                aspect-ratio: 4 / 3;
-            }
+            .kd-hotel--span6 .kd-hotel__media { aspect-ratio: 4 / 3; }
         }
 
         @@media (max-width: 640px) {
             .kd-hero { padding-top: calc(var(--header-h, 80px) + 32px); }
             .kd-hero h1 { margin-bottom: 18px; }
-
-            .kd-eyebrow {
-                letter-spacing: .24em;
-                font-size: .66rem;
-            }
+            .kd-eyebrow { letter-spacing: .24em; font-size: .66rem; }
 
             .kd-intro__inner {
                 flex-direction: column;
                 align-items: flex-start;
                 gap: 14px;
             }
-
             .kd-intro__meta {
                 flex-direction: column;
                 align-items: flex-start;
                 gap: 8px;
             }
 
-            .kd-showcase {
-                grid-template-columns: 1fr;
-            }
-
+            .kd-showcase { grid-template-columns: 1fr; }
             .kd-hotel--feature {
                 grid-column: 1 / -1;
                 min-height: 400px;
                 padding: 24px;
             }
-
-            .kd-hotel:not(.kd-hotel--feature) {
-                grid-column: 1 / -1;
-            }
-
+            .kd-hotel:not(.kd-hotel--feature) { grid-column: 1 / -1; }
             .kd-hotel--feature .kd-hotel__title { font-size: 1.9rem; }
 
             .kd-hotel__media,
@@ -772,9 +819,7 @@
             .kd-hotel--span5 .kd-hotel__media,
             .kd-hotel--span4 .kd-hotel__media,
             .kd-hotel--span6 .kd-hotel__media,
-            .kd-hotel--horizontal .kd-hotel__media {
-                aspect-ratio: 4 / 3;
-            }
+            .kd-hotel--horizontal .kd-hotel__media { aspect-ratio: 4 / 3; }
 
             .kd-hotel--feature .kd-hotel__footer {
                 flex-direction: column;
@@ -785,12 +830,9 @@
             .kd-cta__inner { text-align: left; }
             .kd-cta__inner .kd-eyebrow { justify-content: flex-start; }
             .kd-cta__lede { margin-left: 0; margin-right: 0; }
-
-            .kd-btn {
-                width: 100%;
-                justify-content: center;
-                padding: 18px 24px;
-            }
+            .kd-btn { width: 100%; justify-content: center; padding: 18px 24px; }
+            .kd-empty__actions { flex-direction: column; }
+            .kd-empty__btn { width: 100%; justify-content: center; }
         }
 
         /* --------------------------------------------- REDUCED MOTION ---- */
@@ -800,38 +842,31 @@
                 transform: none !important;
                 transition: none !important;
             }
-
             .kd-hero__frame img,
             .kd-hotel__media img,
+            .kd-hotel__price-tag,
             .kd-hotel__link .kd-rule,
             .kd-hotel__link svg,
             .kd-btn,
-            .kd-btn svg {
+            .kd-btn svg,
+            .kd-empty__btn {
                 transition: none !important;
             }
-
             .kd-hero__frame img,
             .kd-hotel__media img,
             .kd-hotel:hover .kd-hotel__media img,
             .kd-hotel--feature:hover .kd-hotel__media img {
                 transform: none !important;
             }
-
-            .kd-hotel:hover {
-                transform: none !important;
-            }
-
+            .kd-hotel:hover { transform: none !important; }
             .kd-hotel:hover .kd-hotel__link .kd-rule {
                 width: 22px !important;
                 opacity: .5 !important;
             }
-
             .kd-hotel:hover .kd-hotel__link svg,
-            .kd-btn:hover svg {
-                transform: none !important;
-            }
-
+            .kd-btn:hover svg { transform: none !important; }
             .kd-btn:hover { transform: none; }
+            .kd-hotel__price-tag { opacity: 1; transform: none; }
         }
     </style>
 }
@@ -842,6 +877,7 @@
         <style>
             .kd-reveal { opacity: 1 !important; transform: none !important; }
             .kd-hero__frame img { transform: none !important; }
+            .kd-hotel__price-tag { opacity: 1 !important; transform: none !important; }
         </style>
     </noscript>
 
@@ -868,6 +904,7 @@
                          alt="Warm, softly lit hotel interior with a large window"
                          loading="eager" fetchpriority="high" />
                 </figure>
+                <span class="kd-hero__caption">Curated Stays</span>
             </div>
 
         </div>
@@ -914,8 +951,9 @@
             {
                 <div class="kd-showcase">
 
-                    @foreach (var hotel in Model)
+                    @for (var index = 0; index < hotelList.Count; index++)
                     {
+                        var hotel = hotelList[index];
                         var isFirst = index == 0;
                         string layoutClass;
 
@@ -928,30 +966,14 @@
                             var pattern = (index - 1) % 7;
                             switch (pattern)
                             {
-                                case 0:
-                                    layoutClass = "kd-hotel--span7";
-                                    break;
-                                case 1:
-                                    layoutClass = "kd-hotel--span5";
-                                    break;
-                                case 2:
-                                    layoutClass = "kd-hotel--span4";
-                                    break;
-                                case 3:
-                                    layoutClass = "kd-hotel--span4";
-                                    break;
-                                case 4:
-                                    layoutClass = "kd-hotel--span4";
-                                    break;
-                                case 5:
-                                    layoutClass = "kd-hotel--span6 kd-hotel--horizontal";
-                                    break;
-                                case 6:
-                                    layoutClass = "kd-hotel--span6 kd-hotel--horizontal";
-                                    break;
-                                default:
-                                    layoutClass = "kd-hotel--span4";
-                                    break;
+                                case 0: layoutClass = "kd-hotel--span7"; break;
+                                case 1: layoutClass = "kd-hotel--span5"; break;
+                                case 2: layoutClass = "kd-hotel--span4"; break;
+                                case 3: layoutClass = "kd-hotel--span4"; break;
+                                case 4: layoutClass = "kd-hotel--span4"; break;
+                                case 5: layoutClass = "kd-hotel--span6 kd-hotel--horizontal"; break;
+                                case 6: layoutClass = "kd-hotel--span6 kd-hotel--horizontal"; break;
+                                default: layoutClass = "kd-hotel--span4"; break;
                             }
                         }
 
@@ -965,7 +987,8 @@
 
                         <a class="kd-hotel @layoutClass kd-reveal"
                            href="@Url.Action("Details", "Hotels", new { id = hotel.Id })"
-                           style="--kd-delay:@(index * 80)ms">
+                           style="--kd-delay:@(index * 80)ms"
+                           aria-label="@(isFirst ? "Featured hotel" : "Hotel") — @hotel.Name">
 
                             <div class="kd-hotel__media media"
                                  data-fallback-label="@hotel.Name">
@@ -975,11 +998,28 @@
                                          alt="@hotel.Name in @hotel.City"
                                          loading="lazy" />
                                 }
+
+                                @if (hasStars)
+                                {
+                                    <span class="kd-hotel__rating">
+                                        <span class="star">★</span>
+                                        @hotel.StarRating-star hotel
+                                    </span>
+                                }
+
+                                @if (hasPrice && !isFirst)
+                                {
+                                    <span class="kd-hotel__price-tag">
+                                        <small>Per night</small>
+                                        <strong>PKR @string.Format("{0:N0}", hotel.StartingPricePerNight)</strong>
+                                    </span>
+                                }
                             </div>
 
                             @if (isFirst)
                             {
                                 <span class="kd-hotel__scrim" aria-hidden="true"></span>
+                                <span class="kd-hotel__feature-plate">Featured property</span>
                             }
 
                             <div class="kd-hotel__body">
@@ -1019,9 +1059,7 @@
                                 <div class="kd-hotel__footer">
 
                                     <div class="kd-hotel__price">
-                                        <small>
-                                            @(hasPrice ? "Starting / night" : "Rate")
-                                        </small>
+                                        <small>@(hasPrice ? "Starting / night" : "Rate")</small>
                                         <strong>
                                             @if (hasPrice)
                                             {
@@ -1050,23 +1088,26 @@
                             </div>
 
                         </a>
-
-                        index++;
                     }
 
                 </div>
             }
             else
             {
-                <!-- =============================================================
-                     SECTION 04 — SOPHISTICATED EMPTY STATE
-                     ============================================================= -->
                 <div class="kd-empty kd-reveal">
                     <h2>Your next stay is being prepared.</h2>
                     <p>
                         Published accommodation listings will appear here
                         as new properties are added to Karnel Travel Guide.
                     </p>
+                    <div class="kd-empty__actions">
+                        <a class="kd-empty__btn" href="@Url.Action("Index", "Search")">
+                            Browse all listings
+                        </a>
+                        <a class="kd-empty__btn kd-empty__btn--ghost" href="@Url.Action("Index", "Contact")">
+                            Plan with us
+                        </a>
+                    </div>
                 </div>
             }
 

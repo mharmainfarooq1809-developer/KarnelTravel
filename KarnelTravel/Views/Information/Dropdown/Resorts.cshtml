@@ -4,9 +4,9 @@
     ViewData["Title"] = "Resorts Information";
     ViewData["Description"] = "Resorts and leisure properties across Pakistan.";
 
-    var hasResorts = Model != null && Model.Any();
-    var totalResorts = hasResorts ? Model.Count() : 0;
-    var index = 0;
+    var resortList = Model?.ToList() ?? new List<KarnelTravel.Models.Resort>();
+    var hasResorts = resortList.Any();
+    var totalResorts = resortList.Count;
 }
 
 @section Styles {
@@ -21,11 +21,15 @@
             --kd-ivory: var(--ivory, #F8F6F0);
             --kd-sage: var(--sage, #8FA888);
             --kd-sand: var(--sand, #E8DFC9);
+            --kd-moss: var(--moss, #536B50);
             --kd-white: #FFFFFF;
             --kd-muted: var(--muted, #5A6B60);
             --kd-serif: var(--serif, "Playfair Display", Georgia, "Times New Roman", serif);
             --kd-sans: var(--sans, "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif);
             --kd-ease: var(--ease, cubic-bezier(.22, .61, .36, 1));
+            --kd-ease-out: cubic-bezier(.16, 1, .3, 1);
+            --kd-card-radius: 20px;
+            --kd-card-radius-sm: 14px;
 
             background: var(--kd-ivory);
             color: var(--kd-forest);
@@ -45,7 +49,6 @@
             text-transform: uppercase;
             color: var(--kd-sage);
         }
-
         .kd-eyebrow::before {
             content: "";
             width: 34px;
@@ -53,7 +56,6 @@
             background: currentColor;
             opacity: .7;
         }
-
         .kd-eyebrow--light { color: var(--kd-sand); }
 
         .kd-reveal {
@@ -64,7 +66,6 @@
                 transform .9s var(--kd-ease);
             transition-delay: var(--kd-delay, 0ms);
         }
-
         .kd-reveal.is-in {
             opacity: 1;
             transform: none;
@@ -76,14 +77,12 @@
             padding: calc(var(--header-h, 80px) + 64px) 0 clamp(52px, 7vw, 88px);
             background: var(--kd-ivory);
         }
-
         .kd-hero__grid {
             display: grid;
             grid-template-columns: minmax(0, 1fr) minmax(0, 1.08fr);
             align-items: center;
             gap: clamp(32px, 6vw, 84px);
         }
-
         .kd-hero h1 {
             margin: 0 0 24px;
             max-width: 15ch;
@@ -94,12 +93,7 @@
             letter-spacing: -.02em;
             color: var(--kd-forest);
         }
-
-        .kd-hero h1 em {
-            font-style: italic;
-            color: inherit;
-        }
-
+        .kd-hero h1 em { font-style: italic; color: inherit; }
         .kd-hero__lede {
             margin: 0;
             max-width: 46ch;
@@ -107,19 +101,15 @@
             line-height: 1.75;
             color: var(--kd-muted);
         }
-
-        .kd-hero__media {
-            position: relative;
-        }
-
+        .kd-hero__media { position: relative; }
         .kd-hero__frame {
             margin: 0;
             height: clamp(320px, 44vw, 520px);
             overflow: hidden;
-            border-radius: 3px;
+            border-radius: var(--kd-card-radius);
             background: var(--kd-forest);
+            box-shadow: 0 40px 80px -50px rgba(20, 39, 31, .45);
         }
-
         .kd-hero__frame img {
             display: block;
             width: 100%;
@@ -128,68 +118,91 @@
             transform: scale(1.06);
             transition: transform 1.6s var(--kd-ease);
         }
+        .kd-hero__media.is-in .kd-hero__frame img { transform: scale(1); }
 
-        .kd-hero__media.is-in .kd-hero__frame img {
-            transform: scale(1);
+        /* floating caption plate */
+        .kd-hero__caption {
+            position: absolute;
+            left: clamp(16px, 3vw, 28px);
+            bottom: clamp(16px, 3vw, 28px);
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 16px;
+            border-radius: 12px;
+            background: rgba(248, 246, 240, .94);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 18px 36px -22px rgba(0, 0, 0, .45);
+            font-size: .62rem;
+            font-weight: 600;
+            letter-spacing: .18em;
+            text-transform: uppercase;
+            color: var(--kd-forest);
+        }
+        .kd-hero__caption::before {
+            content: "";
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--kd-sage);
+            box-shadow: 0 0 0 4px rgba(143, 168, 136, .25);
         }
 
         /* ------------------------------------------------ 02 — INTRODUCTION ---- */
         .kd-intro {
             padding: clamp(48px, 6vw, 80px) 0 clamp(32px, 4vw, 52px);
             background: var(--kd-ivory);
-            text-align: center;
         }
-
         .kd-intro__inner {
-            max-width: 720px;
-            margin: 0 auto;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: flex-end;
+            justify-content: space-between;
+            gap: 18px 48px;
+            padding-bottom: clamp(18px, 2.4vw, 28px);
+            border-bottom: 1px solid rgba(20, 39, 31, .12);
         }
-
-        .kd-intro__inner .kd-eyebrow {
-            justify-content: center;
-            margin-bottom: 20px;
-        }
-
         .kd-intro h2 {
-            margin: 0 0 20px;
+            margin: 0;
             font-family: var(--kd-serif);
             font-weight: 500;
-            font-size: clamp(2rem, 3.8vw, 3.1rem);
+            font-size: clamp(1.9rem, 3.2vw, 2.7rem);
             line-height: 1.1;
             letter-spacing: -.015em;
             color: var(--kd-forest);
         }
-
+        .kd-intro__meta {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: baseline;
+            gap: 12px 24px;
+        }
         .kd-intro__desc {
-            margin: 0 auto;
-            max-width: 52ch;
-            font-size: clamp(.98rem, 1.1vw, 1.05rem);
-            line-height: 1.75;
+            margin: 0;
+            max-width: 44ch;
+            font-size: .95rem;
+            line-height: 1.7;
             color: var(--kd-muted);
         }
-
         .kd-intro__count {
             display: inline-flex;
-            align-items: center;
-            gap: 10px;
-            margin: 24px auto 0;
-            padding: 8px 18px;
-            border: 1px solid rgba(20, 39, 31, .14);
+            align-items: baseline;
+            gap: 8px;
+            margin: 0;
+            padding: 8px 14px;
             border-radius: 999px;
-            font-size: .68rem;
+            background: var(--kd-sand);
+            font-size: .62rem;
             font-weight: 600;
-            letter-spacing: .22em;
+            letter-spacing: .18em;
             text-transform: uppercase;
-            color: var(--kd-sage);
-            background: var(--kd-white);
+            color: var(--kd-forest);
         }
-
         .kd-intro__count strong {
             font-family: var(--kd-serif);
-            font-size: 1rem;
+            font-size: 1.05rem;
             font-weight: 500;
             letter-spacing: 0;
-            color: var(--kd-forest);
         }
 
         /* -------------------------------------------------- 03 — GALLERY ---- */
@@ -197,7 +210,6 @@
             padding: 0 0 clamp(64px, 8vw, 112px);
             background: var(--kd-ivory);
         }
-
         .kd-gallery {
             display: grid;
             grid-template-columns: repeat(12, minmax(0, 1fr));
@@ -207,16 +219,25 @@
 
         /* --- base resort card --- */
         .kd-resort {
-            display: block;
+            display: flex;
+            flex-direction: column;
             position: relative;
+            overflow: hidden;
+            background: var(--kd-white);
+            border: 1px solid rgba(20, 39, 31, .08);
+            border-radius: var(--kd-card-radius);
             color: inherit;
             text-decoration: none;
-            border-radius: 2px;
-            transition: transform .45s var(--kd-ease);
+            transition:
+                transform .5s var(--kd-ease-out),
+                box-shadow .5s var(--kd-ease-out),
+                border-color .4s var(--kd-ease);
         }
-
-        .kd-resort:hover { transform: translateY(-3px); }
-
+        .kd-resort:hover {
+            transform: translateY(-5px);
+            border-color: rgba(83, 107, 80, .22);
+            box-shadow: 0 30px 60px -34px rgba(20, 39, 31, .42);
+        }
         .kd-resort:focus-visible {
             outline: 2px solid var(--kd-sand);
             outline-offset: 3px;
@@ -226,71 +247,117 @@
             position: relative;
             overflow: hidden;
             background: var(--kd-sand);
-            border-radius: 2px;
+            aspect-ratio: 5 / 4;
         }
-
         .kd-resort__media img {
             display: block;
             width: 100%;
             height: 100%;
             object-fit: cover;
-            transition: transform 1.15s var(--kd-ease);
+            transition: transform 1.15s var(--kd-ease-out);
+        }
+        .kd-resort:hover .kd-resort__media img { transform: scale(1.06); }
+
+        /* floating location plate */
+        .kd-resort__place {
+            position: absolute;
+            left: 14px;
+            bottom: 14px;
+            z-index: 2;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 14px;
+            border-radius: 12px;
+            background: rgba(248, 246, 240, .94);
+            backdrop-filter: blur(8px);
+            color: var(--kd-forest);
+            font-family: var(--kd-serif);
+            font-style: italic;
+            font-size: .85rem;
+            letter-spacing: .02em;
+            box-shadow: 0 12px 24px -16px rgba(0, 0, 0, .4);
+        }
+        .kd-resort__place::before {
+            content: "";
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--kd-sage);
         }
 
-        .kd-resort:hover .kd-resort__media img {
-            transform: scale(1.05);
+        /* floating price ribbon (hover) */
+        .kd-resort__price-tag {
+            position: absolute;
+            right: 14px;
+            bottom: 14px;
+            z-index: 2;
+            padding: 8px 13px;
+            border-radius: 12px;
+            background: rgba(20, 39, 31, .86);
+            backdrop-filter: blur(8px);
+            color: var(--kd-ivory);
+            line-height: 1.1;
+            text-align: right;
+            box-shadow: 0 14px 28px -18px rgba(0, 0, 0, .5);
+            opacity: 0;
+            transform: translateY(8px);
+            transition:
+                opacity .4s var(--kd-ease),
+                transform .4s var(--kd-ease-out);
+        }
+        .kd-resort:hover .kd-resort__price-tag,
+        .kd-resort:focus-visible .kd-resort__price-tag {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .kd-resort__price-tag small {
+            display: block;
+            font-family: var(--kd-sans);
+            font-size: .5rem;
+            font-weight: 600;
+            letter-spacing: .16em;
+            text-transform: uppercase;
+            color: rgba(248, 246, 240, .62);
+            margin-bottom: 2px;
+        }
+        .kd-resort__price-tag strong {
+            font-family: var(--kd-serif);
+            font-weight: 500;
+            font-size: .92rem;
         }
 
         .kd-resort__body {
-            padding: 20px 0 0;
-        }
-
-        .kd-resort__meta {
             display: flex;
-            align-items: center;
+            flex-direction: column;
             gap: 10px;
-            margin-bottom: 10px;
-        }
-
-        .kd-resort__meta .kd-rule {
-            width: 22px;
-            height: 1px;
-            background: var(--kd-sage);
-            flex: none;
-        }
-
-        .kd-resort__location {
-            margin: 0;
-            font-family: var(--kd-serif);
-            font-style: italic;
-            font-size: .95rem;
-            color: var(--kd-sage);
-            letter-spacing: .02em;
+            flex: 1;
+            padding: clamp(18px, 2.2vw, 22px) clamp(20px, 2.4vw, 26px) clamp(20px, 2.6vw, 26px);
         }
 
         .kd-resort__title {
-            margin: 0 0 10px;
+            margin: 0;
             font-family: var(--kd-serif);
             font-weight: 500;
-            font-size: clamp(1.3rem, 1.9vw, 1.75rem);
+            font-size: clamp(1.24rem, 1.8vw, 1.5rem);
             line-height: 1.2;
-            letter-spacing: -.005em;
+            letter-spacing: -.01em;
             color: var(--kd-forest);
         }
-
         .kd-resort--span7 .kd-resort__title {
             font-size: clamp(1.6rem, 2.4vw, 2.15rem);
         }
 
         .kd-resort__desc {
-            margin: 0 0 16px;
-            font-size: .93rem;
+            margin: 0;
+            font-size: .9rem;
             line-height: 1.65;
             color: var(--kd-muted);
             display: -webkit-box;
             -webkit-line-clamp: 3;
             -webkit-box-orient: vertical;
             overflow: hidden;
+            flex: 1;
         }
 
         .kd-resort__footer {
@@ -299,29 +366,26 @@
             align-items: center;
             justify-content: space-between;
             gap: 12px;
+            margin-top: 6px;
             padding-top: 14px;
-            margin-top: auto;
-            border-top: 1px solid rgba(20, 39, 31, .12);
+            border-top: 1px solid rgba(20, 39, 31, .08);
         }
-
         .kd-resort__price {
             display: flex;
             flex-direction: column;
             gap: 2px;
             line-height: 1.2;
         }
-
         .kd-resort__price small {
-            font-size: .62rem;
+            font-size: .56rem;
             font-weight: 600;
-            letter-spacing: .2em;
+            letter-spacing: .18em;
             text-transform: uppercase;
             color: var(--kd-muted);
         }
-
         .kd-resort__price strong {
             font-family: var(--kd-serif);
-            font-size: 1.12rem;
+            font-size: 1.06rem;
             font-weight: 500;
             color: var(--kd-forest);
         }
@@ -330,19 +394,15 @@
             display: inline-flex;
             align-items: center;
             gap: 10px;
-            font-size: .7rem;
+            font-size: .64rem;
             font-weight: 600;
-            letter-spacing: .2em;
+            letter-spacing: .18em;
             text-transform: uppercase;
             color: var(--kd-forest);
             white-space: nowrap;
             transition: color .35s var(--kd-ease);
         }
-
-        .kd-resort:hover .kd-resort__link {
-            color: var(--kd-sage);
-        }
-
+        .kd-resort:hover .kd-resort__link { color: var(--kd-moss); }
         .kd-resort__link .kd-rule {
             width: 22px;
             height: 1px;
@@ -350,20 +410,12 @@
             opacity: .55;
             transition: width .4s var(--kd-ease), opacity .4s var(--kd-ease);
         }
-
-        .kd-resort:hover .kd-resort__link .kd-rule {
-            width: 46px;
-            opacity: 1;
-        }
-
+        .kd-resort:hover .kd-resort__link .kd-rule { width: 46px; opacity: 1; }
         .kd-resort__link svg {
             flex: none;
-            transition: transform .4s var(--kd-ease);
+            transition: transform .4s var(--kd-ease-out);
         }
-
-        .kd-resort:hover .kd-resort__link svg {
-            transform: translateX(5px);
-        }
+        .kd-resort:hover .kd-resort__link svg { transform: translateX(5px); }
 
         /* --- 01 — FEATURE SPLIT PANEL --- */
         .kd-resort--feature {
@@ -373,73 +425,61 @@
             min-height: clamp(440px, 48vw, 580px);
             background: var(--kd-sand);
             overflow: hidden;
-            border-radius: 3px;
+            border: 0;
         }
-
-        .kd-resort--feature:hover { transform: none; }
+        .kd-resort--feature:hover { transform: translateY(-3px); }
 
         .kd-resort--feature .kd-resort__media {
+            aspect-ratio: auto;
             border-radius: 0;
             background: var(--kd-forest);
+            min-height: 100%;
         }
-
-        .kd-resort--feature .kd-resort__media img {
-            transform: scale(1.01);
-        }
-
-        .kd-resort--feature:hover .kd-resort__media img {
-            transform: scale(1.05);
-        }
+        .kd-resort--feature .kd-resort__media img { transform: scale(1.01); }
+        .kd-resort--feature:hover .kd-resort__media img { transform: scale(1.05); }
 
         .kd-resort--feature .kd-resort__body {
             padding: clamp(32px, 5vw, 64px);
-            display: flex;
-            flex-direction: column;
             justify-content: center;
             background: var(--kd-sand);
             position: relative;
+            gap: 14px;
         }
 
         .kd-resort__num {
-            display: block;
-            margin-bottom: 20px;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 8px;
             font-family: var(--kd-serif);
             font-weight: 500;
-            font-size: 1rem;
-            letter-spacing: .3em;
-            color: var(--kd-sage);
+            font-size: .95rem;
+            letter-spacing: .28em;
+            color: var(--kd-moss);
         }
-
-        .kd-resort--feature .kd-resort__meta .kd-rule {
-            width: 32px;
-            background: var(--kd-forest);
-            opacity: .65;
-        }
-
-        .kd-resort--feature .kd-resort__location {
-            color: var(--kd-forest);
-            opacity: .82;
+        .kd-resort__num::before {
+            content: "";
+            width: 28px;
+            height: 1px;
+            background: var(--kd-moss);
+            opacity: .55;
         }
 
         .kd-resort--feature .kd-resort__title {
             font-size: clamp(1.9rem, 3.4vw, 2.85rem);
-            margin-bottom: 16px;
             color: var(--kd-forest);
         }
-
         .kd-resort--feature .kd-resort__desc {
             color: rgba(20, 39, 31, .78);
             -webkit-line-clamp: 4;
-            margin-bottom: 22px;
+            margin-bottom: 8px;
         }
-
         .kd-resort--feature .kd-resort__footer {
             border-top-color: rgba(20, 39, 31, .18);
         }
-
-        .kd-resort--feature .kd-resort__price small {
-            color: rgba(20, 39, 31, .65);
-        }
+        .kd-resort--feature .kd-resort__price small { color: rgba(20, 39, 31, .65); }
+        .kd-resort--feature .kd-resort__link { color: var(--kd-forest); }
+        .kd-resort--feature:hover .kd-resort__link { color: var(--kd-moss); }
 
         /* --- span variants --- */
         .kd-resort--span7 { grid-column: span 7; }
@@ -447,52 +487,41 @@
         .kd-resort--span4 { grid-column: span 4; }
         .kd-resort--span6 { grid-column: span 6; }
 
-        /* --- differentiated aspect ratios (taller than hotels) --- */
+        /* relaxed aspect ratios (taller than hotels) */
         .kd-resort--span7 .kd-resort__media { aspect-ratio: 5 / 4; }
         .kd-resort--span5 .kd-resort__media { aspect-ratio: 3 / 4; }
         .kd-resort--span4 .kd-resort__media { aspect-ratio: 4 / 5; }
 
         /* --- horizontal card variant --- */
         .kd-resort--horizontal {
-            display: flex;
             flex-direction: row;
             align-items: stretch;
             min-height: 300px;
-            background: var(--kd-white);
-            border: 1px solid rgba(20, 39, 31, .1);
-            overflow: hidden;
         }
-
         .kd-resort--horizontal .kd-resort__media {
-            position: relative;
-            width: 50%;
+            width: 48%;
             flex: none;
             aspect-ratio: auto;
             min-height: 100%;
             border-radius: 0;
         }
-
         .kd-resort--horizontal .kd-resort__media img {
             position: absolute;
             inset: 0;
             width: 100%;
             height: 100%;
         }
-
         .kd-resort--horizontal .kd-resort__body {
-            width: 50%;
+            width: 52%;
             padding: clamp(22px, 2.8vw, 34px);
-            display: flex;
-            flex-direction: column;
             justify-content: center;
+            border-left: 1px solid rgba(20, 39, 31, .06);
         }
-
-        .kd-resort--horizontal .kd-resort__desc {
-            -webkit-line-clamp: 3;
-        }
-
-        .kd-resort--horizontal-reverse {
-            flex-direction: row-reverse;
+        .kd-resort--horizontal .kd-resort__desc { -webkit-line-clamp: 3; }
+        .kd-resort--horizontal-reverse { flex-direction: row-reverse; }
+        .kd-resort--horizontal-reverse .kd-resort__body {
+            border-left: 0;
+            border-right: 1px solid rgba(20, 39, 31, .06);
         }
 
         /* --- staggered entrance --- */
@@ -509,19 +538,26 @@
 
         /* ---------------------------------------------------- 04 — EMPTY ---- */
         .kd-empty {
+            position: relative;
             grid-column: 1 / -1;
+            overflow: hidden;
             text-align: center;
             padding: clamp(52px, 8vw, 100px) 24px;
             background: var(--kd-white);
             border: 1px solid rgba(20, 39, 31, .1);
-            border-radius: 3px;
+            border-radius: var(--kd-card-radius);
         }
-
-        .kd-empty .kd-eyebrow {
-            justify-content: center;
-            margin-bottom: 18px;
+        .kd-empty::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background:
+                radial-gradient(ellipse 60% 60% at 50% 0%, rgba(143, 168, 136, .14), transparent 70%),
+                radial-gradient(ellipse 50% 50% at 50% 100%, rgba(232, 223, 201, .4), transparent 70%);
+            pointer-events: none;
         }
-
+        .kd-empty > * { position: relative; z-index: 1; }
+        .kd-empty .kd-eyebrow { justify-content: center; margin-bottom: 18px; }
         .kd-empty h2 {
             margin: 0 0 14px;
             font-family: var(--kd-serif);
@@ -529,13 +565,48 @@
             font-size: clamp(1.9rem, 3.2vw, 2.5rem);
             color: var(--kd-forest);
         }
-
         .kd-empty p {
-            margin: 0 auto;
+            margin: 0 auto 26px;
             max-width: 48ch;
             font-size: .98rem;
             line-height: 1.7;
             color: var(--kd-muted);
+        }
+        .kd-empty__actions {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 12px;
+        }
+        .kd-empty__btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 14px 24px;
+            border-radius: 999px;
+            background: var(--kd-forest);
+            color: var(--kd-ivory);
+            font-size: .68rem;
+            font-weight: 600;
+            letter-spacing: .18em;
+            text-transform: uppercase;
+            text-decoration: none;
+            transition:
+                transform .4s var(--kd-ease-out),
+                box-shadow .4s var(--kd-ease-out);
+        }
+        .kd-empty__btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 16px 30px -18px rgba(20, 39, 31, .5);
+        }
+        .kd-empty__btn--ghost {
+            background: transparent;
+            color: var(--kd-forest);
+            border: 1px solid rgba(20, 39, 31, .22);
+        }
+        .kd-empty__btn--ghost:hover {
+            background: var(--kd-white);
+            border-color: var(--kd-forest);
         }
 
         /* ------------------------------------------------------- 05 — CTA ---- */
@@ -548,7 +619,6 @@
             border-top: 1px solid rgba(232, 223, 201, .16);
             isolation: isolate;
         }
-
         .kd-cta::before {
             content: "";
             position: absolute;
@@ -560,7 +630,6 @@
             pointer-events: none;
             z-index: 0;
         }
-
         .kd-cta__inner {
             position: relative;
             z-index: 2;
@@ -569,11 +638,7 @@
             align-items: center;
             gap: clamp(32px, 6vw, 88px);
         }
-
-        .kd-cta__heading .kd-eyebrow {
-            margin-bottom: 20px;
-        }
-
+        .kd-cta__heading .kd-eyebrow { margin-bottom: 20px; }
         .kd-cta h2 {
             margin: 0;
             font-family: var(--kd-serif);
@@ -583,12 +648,10 @@
             letter-spacing: -.02em;
             color: var(--kd-ivory);
         }
-
         .kd-cta__aside {
             padding-left: clamp(0px, 2vw, 32px);
             border-left: 1px solid rgba(232, 223, 201, .2);
         }
-
         .kd-cta__lede {
             margin: 0 0 30px;
             max-width: 42ch;
@@ -596,17 +659,16 @@
             line-height: 1.75;
             color: rgba(248, 246, 240, .8);
         }
-
         .kd-btn {
             display: inline-flex;
             align-items: center;
             gap: 14px;
             padding: 18px 32px;
             border: 1px solid rgba(232, 223, 201, .55);
-            border-radius: 2px;
+            border-radius: 999px;
             background: transparent;
             color: var(--kd-ivory);
-            font-size: .74rem;
+            font-size: .72rem;
             font-weight: 600;
             letter-spacing: .22em;
             text-transform: uppercase;
@@ -615,25 +677,21 @@
                 background .4s var(--kd-ease),
                 border-color .4s var(--kd-ease),
                 color .4s var(--kd-ease),
-                transform .4s var(--kd-ease);
+                transform .4s var(--kd-ease-out),
+                box-shadow .4s var(--kd-ease-out);
         }
-
         .kd-btn svg {
             flex: none;
-            transition: transform .4s var(--kd-ease);
+            transition: transform .4s var(--kd-ease-out);
         }
-
         .kd-btn:hover {
             background: var(--kd-ivory);
             border-color: var(--kd-ivory);
             color: var(--kd-forest);
             transform: translateY(-2px);
+            box-shadow: 0 18px 32px -18px rgba(0, 0, 0, .45);
         }
-
-        .kd-btn:hover svg {
-            transform: translateX(5px);
-        }
-
+        .kd-btn:hover svg { transform: translateX(5px); }
         .kd-btn:focus-visible {
             outline: 2px solid var(--kd-sand);
             outline-offset: 4px;
@@ -641,77 +699,60 @@
 
         /* --------------------------------------------------- RESPONSIVE ---- */
         @@media (max-width: 1024px) {
-            .kd-hero {
-                padding: calc(var(--header-h, 80px) + 44px) 0 clamp(44px, 6vw, 68px);
-            }
-
+            .kd-hero { padding: calc(var(--header-h, 80px) + 44px) 0 clamp(44px, 6vw, 68px); }
             .kd-hero__grid {
                 grid-template-columns: minmax(0, 1fr);
                 gap: clamp(26px, 5vw, 40px);
             }
-
             .kd-hero h1 { max-width: 18ch; }
             .kd-hero__frame { height: clamp(280px, 48vw, 420px); }
 
-            .kd-gallery {
-                grid-template-columns: repeat(2, minmax(0, 1fr));
-            }
-
+            .kd-gallery { grid-template-columns: repeat(2, minmax(0, 1fr)); }
             .kd-resort--feature {
                 grid-column: 1 / -1;
                 grid-template-columns: minmax(0, 1fr);
                 min-height: 0;
             }
-
             .kd-resort--feature .kd-resort__media {
                 aspect-ratio: 16 / 10;
                 min-height: 340px;
             }
+            .kd-resort:not(.kd-resort--feature) { grid-column: span 1; }
 
-            .kd-resort:not(.kd-resort--feature) {
-                grid-column: span 1;
-            }
-
-            /* neutralise horizontal layouts on tablet */
             .kd-resort--horizontal,
             .kd-resort--horizontal-reverse {
-                display: block;
+                flex-direction: column;
                 min-height: 0;
             }
-
             .kd-resort--horizontal .kd-resort__media,
             .kd-resort--horizontal-reverse .kd-resort__media {
                 width: 100%;
                 aspect-ratio: 4 / 3;
                 min-height: 0;
             }
-
             .kd-resort--horizontal .kd-resort__media img,
             .kd-resort--horizontal-reverse .kd-resort__media img {
                 position: static;
                 width: 100%;
                 height: 100%;
             }
-
             .kd-resort--horizontal .kd-resort__body,
             .kd-resort--horizontal-reverse .kd-resort__body {
                 width: 100%;
-                padding: 20px 0 0;
-                display: block;
+                padding: clamp(18px, 2.2vw, 22px) clamp(20px, 2.4vw, 26px) clamp(20px, 2.6vw, 26px);
+                border-left: 0;
+                border-right: 0;
             }
 
             .kd-resort--span7 .kd-resort__media,
             .kd-resort--span5 .kd-resort__media,
             .kd-resort--span4 .kd-resort__media,
-            .kd-resort--span6 .kd-resort__media {
-                aspect-ratio: 4 / 3;
-            }
+            .kd-resort--span6 .kd-resort__media { aspect-ratio: 4 / 3; }
 
             .kd-cta__inner {
                 grid-template-columns: minmax(0, 1fr);
                 gap: clamp(24px, 4vw, 36px);
             }
-
             .kd-cta__aside {
                 padding-left: 0;
                 border-left: 0;
@@ -723,46 +764,34 @@
         @@media (max-width: 640px) {
             .kd-hero { padding-top: calc(var(--header-h, 80px) + 32px); }
             .kd-hero h1 { margin-bottom: 18px; }
-
-            .kd-eyebrow {
-                letter-spacing: .24em;
-                font-size: .66rem;
-            }
+            .kd-eyebrow { letter-spacing: .24em; font-size: .66rem; }
 
             .kd-intro {
                 padding: clamp(36px, 5vw, 56px) 0 clamp(24px, 3vw, 36px);
-                text-align: left;
             }
-
-            .kd-intro__inner { max-width: none; }
-
-            .kd-intro__inner .kd-eyebrow {
-                justify-content: flex-start;
+            .kd-intro__inner {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 14px;
+            }
+            .kd-intro__meta {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
             }
 
             .kd-gallery {
                 grid-template-columns: 1fr;
                 gap: 24px;
             }
-
-            .kd-resort--feature {
-                grid-column: 1 / -1;
-            }
-
+            .kd-resort--feature { grid-column: 1 / -1; }
             .kd-resort--feature .kd-resort__media {
                 min-height: 260px;
                 aspect-ratio: 4 / 3;
             }
-
-            .kd-resort--feature .kd-resort__body {
-                padding: 24px;
-            }
-
+            .kd-resort--feature .kd-resort__body { padding: 24px; }
             .kd-resort--feature .kd-resort__title { font-size: 1.75rem; }
-
-            .kd-resort:not(.kd-resort--feature) {
-                grid-column: 1 / -1;
-            }
+            .kd-resort:not(.kd-resort--feature) { grid-column: 1 / -1; }
 
             .kd-resort__media,
             .kd-resort--span7 .kd-resort__media,
@@ -770,21 +799,16 @@
             .kd-resort--span4 .kd-resort__media,
             .kd-resort--span6 .kd-resort__media,
             .kd-resort--horizontal .kd-resort__media,
-            .kd-resort--horizontal-reverse .kd-resort__media {
-                aspect-ratio: 4 / 3;
-            }
+            .kd-resort--horizontal-reverse .kd-resort__media { aspect-ratio: 4 / 3; }
 
             .kd-resort__footer {
                 flex-direction: column;
                 align-items: flex-start;
                 gap: 14px;
             }
-
-            .kd-btn {
-                width: 100%;
-                justify-content: center;
-                padding: 18px 24px;
-            }
+            .kd-btn { width: 100%; justify-content: center; padding: 18px 24px; }
+            .kd-empty__actions { flex-direction: column; }
+            .kd-empty__btn { width: 100%; justify-content: center; }
         }
 
         /* --------------------------------------------- REDUCED MOTION ---- */
@@ -794,42 +818,32 @@
                 transform: none !important;
                 transition: none !important;
             }
-
             .kd-hero__frame img,
             .kd-resort__media img,
+            .kd-resort__price-tag,
             .kd-resort__link .kd-rule,
             .kd-resort__link svg,
             .kd-btn,
-            .kd-btn svg {
+            .kd-btn svg,
+            .kd-empty__btn {
                 transition: none !important;
             }
-
             .kd-hero__frame img,
             .kd-resort__media img,
             .kd-resort:hover .kd-resort__media img,
             .kd-resort--feature:hover .kd-resort__media img {
                 transform: none !important;
             }
-
-            .kd-resort:hover {
-                transform: none !important;
-            }
-
-            .kd-resort:hover .kd-resort__link {
-                color: var(--kd-forest) !important;
-            }
-
+            .kd-resort:hover { transform: none !important; }
+            .kd-resort:hover .kd-resort__link { color: var(--kd-forest) !important; }
             .kd-resort:hover .kd-resort__link .kd-rule {
                 width: 22px !important;
                 opacity: .55 !important;
             }
-
             .kd-resort:hover .kd-resort__link svg,
-            .kd-btn:hover svg {
-                transform: none !important;
-            }
-
+            .kd-btn:hover svg { transform: none !important; }
             .kd-btn:hover { transform: none; }
+            .kd-resort__price-tag { opacity: 1; transform: none; }
         }
     </style>
 }
@@ -840,6 +854,7 @@
         <style>
             .kd-reveal { opacity: 1 !important; transform: none !important; }
             .kd-hero__frame img { transform: none !important; }
+            .kd-resort__price-tag { opacity: 1 !important; transform: none !important; }
         </style>
     </noscript>
 
@@ -865,6 +880,7 @@
                          alt="A tranquil resort pool overlooking a mountain lake at dusk"
                          loading="eager" fetchpriority="high" />
                 </figure>
+                <span class="kd-hero__caption">Mountain Retreats</span>
             </div>
 
         </div>
@@ -876,20 +892,27 @@
     <section class="kd-intro" aria-labelledby="kd-intro-heading">
         <div class="container">
             <div class="kd-intro__inner kd-reveal">
-                <p class="kd-eyebrow">The Retreats</p>
-                <h2 id="kd-intro-heading">Room to slow down.</h2>
-                <p class="kd-intro__desc">
-                    Explore resort properties across Pakistan and discover places
-                    designed for a different kind of stay.
-                </p>
 
-                @if (hasResorts)
-                {
-                    <p class="kd-intro__count">
-                        <strong>@totalResorts</strong>
-                        @(totalResorts == 1 ? "retreat" : "retreats")
+                <div>
+                    <p class="kd-eyebrow">The Retreats</p>
+                    <h2 id="kd-intro-heading">Room to slow down.</h2>
+                </div>
+
+                <div class="kd-intro__meta">
+                    <p class="kd-intro__desc">
+                        Explore resort properties across Pakistan and discover places
+                        designed for a different kind of stay.
                     </p>
-                }
+
+                    @if (hasResorts)
+                    {
+                        <p class="kd-intro__count">
+                            <strong>@totalResorts</strong>
+                            @(totalResorts == 1 ? "retreat" : "retreats")
+                        </p>
+                    }
+                </div>
+
             </div>
         </div>
     </section>
@@ -904,8 +927,9 @@
             {
                 <div class="kd-gallery">
 
-                    @foreach (var resort in Model)
+                    @for (var index = 0; index < resortList.Count; index++)
                     {
+                        var resort = resortList[index];
                         var isFirst = index == 0;
                         string layoutClass;
 
@@ -918,30 +942,14 @@
                             var pattern = (index - 1) % 7;
                             switch (pattern)
                             {
-                                case 0:
-                                    layoutClass = "kd-resort--span7";
-                                    break;
-                                case 1:
-                                    layoutClass = "kd-resort--span5";
-                                    break;
-                                case 2:
-                                    layoutClass = "kd-resort--span4";
-                                    break;
-                                case 3:
-                                    layoutClass = "kd-resort--span4";
-                                    break;
-                                case 4:
-                                    layoutClass = "kd-resort--span4";
-                                    break;
-                                case 5:
-                                    layoutClass = "kd-resort--span6 kd-resort--horizontal";
-                                    break;
-                                case 6:
-                                    layoutClass = "kd-resort--span6 kd-resort--horizontal kd-resort--horizontal-reverse";
-                                    break;
-                                default:
-                                    layoutClass = "kd-resort--span4";
-                                    break;
+                                case 0: layoutClass = "kd-resort--span7"; break;
+                                case 1: layoutClass = "kd-resort--span5"; break;
+                                case 2: layoutClass = "kd-resort--span4"; break;
+                                case 3: layoutClass = "kd-resort--span4"; break;
+                                case 4: layoutClass = "kd-resort--span4"; break;
+                                case 5: layoutClass = "kd-resort--span6 kd-resort--horizontal"; break;
+                                case 6: layoutClass = "kd-resort--span6 kd-resort--horizontal kd-resort--horizontal-reverse"; break;
+                                default: layoutClass = "kd-resort--span4"; break;
                             }
                         }
 
@@ -954,7 +962,8 @@
 
                         <a class="kd-resort @layoutClass kd-reveal"
                            href="@Url.Action("Details", "Resorts", new { id = resort.Id })"
-                           style="--kd-delay:@(index * 80)ms">
+                           style="--kd-delay:@(index * 80)ms"
+                           aria-label="@(isFirst ? "Featured resort" : "Resort") — @resort.Name">
 
                             <div class="kd-resort__media media"
                                  data-fallback-label="@resort.Name">
@@ -964,21 +973,26 @@
                                          alt="@resort.Name"
                                          loading="lazy" />
                                 }
+
+                                @if (hasLocation)
+                                {
+                                    <span class="kd-resort__place">@resort.CityOrRegion</span>
+                                }
+
+                                @if (hasPrice && !isFirst)
+                                {
+                                    <span class="kd-resort__price-tag">
+                                        <small>Per night</small>
+                                        <strong>PKR @resort.StartingPricePerNight.Value.ToString("N0")</strong>
+                                    </span>
+                                }
                             </div>
 
                             <div class="kd-resort__body">
 
                                 @if (isFirst)
                                 {
-                                    <span class="kd-resort__num">01</span>
-                                }
-
-                                @if (hasLocation)
-                                {
-                                    <div class="kd-resort__meta">
-                                        <span class="kd-rule" aria-hidden="true"></span>
-                                        <p class="kd-resort__location">@resort.CityOrRegion</p>
-                                    </div>
+                                    <span class="kd-resort__num">01 — Featured</span>
                                 }
 
                                 <h2 class="kd-resort__title">@resort.Name</h2>
@@ -988,9 +1002,7 @@
                                 <div class="kd-resort__footer">
 
                                     <div class="kd-resort__price">
-                                        <small>
-                                            @(hasPrice ? "Starting from" : "Rate")
-                                        </small>
+                                        <small>@(hasPrice ? "Starting from" : "Rate")</small>
                                         <strong>
                                             @if (hasPrice)
                                             {
@@ -1020,17 +1032,12 @@
                             </div>
 
                         </a>
-
-                        index++;
                     }
 
                 </div>
             }
             else
             {
-                <!-- =============================================================
-                     SECTION 04 — ELEGANT EMPTY STATE
-                     ============================================================= -->
                 <div class="kd-empty kd-reveal">
                     <p class="kd-eyebrow">Coming Soon</p>
                     <h2>Your next escape is taking shape.</h2>
@@ -1038,6 +1045,14 @@
                         Resort listings will appear here as new leisure properties
                         are added to Karnel Travel Guide.
                     </p>
+                    <div class="kd-empty__actions">
+                        <a class="kd-empty__btn" href="@Url.Action("Index", "Search")">
+                            Browse all listings
+                        </a>
+                        <a class="kd-empty__btn kd-empty__btn--ghost" href="@Url.Action("Index", "Contact")">
+                            Plan with us
+                        </a>
+                    </div>
                 </div>
             }
 

@@ -1,272 +1,956 @@
-﻿
-@model IEnumerable<KarnelTravel.Models.Restaurant>
+﻿@model IEnumerable<KarnelTravel.Models.Restaurant>
 
 @{
     ViewData["Title"] = "Taste Trails — Restaurant Information | Karnel Travel Guide";
     ViewData["Description"] = "Discover restaurants across Pakistan, explore regional cuisine and plan your dining experience.";
+
+    var restaurants = Model?.ToList() ?? new List<KarnelTravel.Models.Restaurant>();
+    var hasRestaurants = restaurants.Any();
+    var totalRestaurants = restaurants.Count;
 }
 
 @section Styles {
     <style>
-        .page-hero {
-            padding: calc(var(--header-h) + 60px) 0 60px;
-            background: var(--sand);
+        /* ============================================================
+           KARNEL — RESTAURANTS LISTING
+           Scoped under .kd-detail to align with site-wide architecture.
+           ============================================================ */
+
+        .kd-page {
+            --forest-deep: #14271f;
+            --forest: #173b32;
+            --moss: #536b50;
+            --sage: #8fa888;
+            --ivory: #f8f6f0;
+            --sand: #e8dfc9;
+            --white: #ffffff;
+            --charcoal: #24312c;
+            --muted: #5a6b60;
+            --line: #e6e2d6;
+            --serif: "Playfair Display", Georgia, "Times New Roman", serif;
+            --sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            --radius: 12px;
+            --radius-lg: 24px;
+            --card-radius: 20px;
+            --card-radius-sm: 14px;
+            --header-h: 72px;
+            --ease: cubic-bezier(.22, .61, .36, 1);
+            --ease-out: cubic-bezier(.16, 1, .3, 1);
+
+            background: var(--ivory);
+            color: var(--charcoal);
+            font-family: var(--sans);
+            -webkit-font-smoothing: antialiased;
+            overflow-x: hidden;
         }
 
-        .page-hero h1 { max-width: 14ch; }
+        .kd-page * { box-sizing: border-box; }
 
-        .page-hero p {
-            color: var(--muted);
-            font-size: 1.05rem;
-            max-width: 62ch;
+        .kd-page .container {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding-left: clamp(20px, 5vw, 48px);
+            padding-right: clamp(20px, 5vw, 48px);
         }
 
-        .listing-grid {
+        /* ---------- Reveal ---------- */
+        .kd-page .reveal {
+            opacity: 0;
+            transform: translateY(26px);
+            transition:
+                opacity .9s var(--ease),
+                transform .9s var(--ease);
+            transition-delay: var(--kd-delay, 0ms);
+        }
+        .kd-page .reveal.is-in {
+            opacity: 1;
+            transform: none;
+        }
+
+        /* ---------- Shared Atoms ---------- */
+        .kd-page .eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            margin: 0 0 18px;
+            font-family: var(--sans);
+            font-size: .66rem;
+            font-weight: 600;
+            letter-spacing: .24em;
+            text-transform: uppercase;
+            color: var(--moss);
+        }
+        .kd-page .eyebrow::before {
+            content: '';
+            width: 28px;
+            height: 1px;
+            background: currentColor;
+            opacity: .85;
+        }
+        .kd-page .eyebrow--light { color: var(--sand); }
+
+        /* ============================================================
+           HERO
+           ============================================================ */
+        .kd-page .kd-hero {
+            position: relative;
+            padding: clamp(56px, 7.5vw, 104px) 0 clamp(56px, 7.5vw, 104px);
+            background: var(--ivory);
+            overflow: hidden;
+        }
+        .kd-page .kd-hero::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: min(92%, 1320px);
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--sage), transparent);
+            opacity: .35;
+            pointer-events: none;
+        }
+
+        .kd-page .kd-hero__grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 28px;
+            grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
+            gap: clamp(36px, 5vw, 76px);
+            align-items: start;
         }
 
-        .listing-card {
+        .kd-page .kd-hero__text {
+            max-width: 540px;
+            min-width: 0;
+            padding-top: clamp(0px, 1.4vw, 16px);
+        }
+        .kd-page .kd-hero__text h1 {
+            margin: 16px 0 22px;
+            font-family: var(--serif);
+            font-weight: 500;
+            font-size: clamp(2.4rem, 5.2vw, 4.4rem);
+            line-height: 1.02;
+            letter-spacing: -.024em;
+            color: var(--forest-deep);
+            text-wrap: balance;
+        }
+        .kd-page .kd-hero__text h1 em {
+            font-style: italic;
+            color: var(--moss);
+            font-weight: 500;
+        }
+        .kd-page .kd-hero__lede {
+            margin: 0;
+            max-width: 52ch;
+            font-family: var(--sans);
+            font-size: clamp(.96rem, 1.2vw, 1.06rem);
+            line-height: 1.72;
+            color: var(--muted);
+        }
+
+        .kd-page .kd-hero__media { position: relative; min-width: 0; }
+        .kd-page .kd-hero__frame {
+            position: relative;
+            margin: 0;
+            overflow: hidden;
+            border-radius: var(--card-radius);
+            aspect-ratio: 4 / 5;
+            max-height: 640px;
+            background: var(--forest);
+            box-shadow: 0 46px 90px -54px rgba(20, 39, 31, .50);
+        }
+        .kd-page .kd-hero__frame img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+            transform: scale(1.04);
+            transition: transform 1.4s var(--ease-out);
+        }
+        .kd-page .kd-hero:hover .kd-hero__frame img { transform: scale(1.06); }
+
+        .kd-page .kd-hero__caption {
+            position: absolute;
+            left: clamp(16px, 3vw, 28px);
+            bottom: clamp(16px, 3vw, 28px);
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 16px;
+            border-radius: 12px;
+            background: rgba(248, 246, 240, .94);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 18px 36px -22px rgba(0, 0, 0, .45);
+            font-family: var(--sans);
+            font-size: .62rem;
+            font-weight: 600;
+            letter-spacing: .18em;
+            text-transform: uppercase;
+            color: var(--forest-deep);
+        }
+        .kd-page .kd-hero__caption::before {
+            content: "";
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--sage);
+            box-shadow: 0 0 0 4px rgba(143, 168, 136, .25);
+        }
+
+        /* ============================================================
+           INTRODUCTION
+           ============================================================ */
+        .kd-page .kd-intro {
+            padding: clamp(40px, 5vw, 64px) 0 clamp(28px, 3.5vw, 44px);
+            background: var(--ivory);
+        }
+        .kd-page .kd-intro__inner {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: flex-end;
+            justify-content: space-between;
+            gap: 18px 48px;
+            padding-bottom: clamp(18px, 2.4vw, 28px);
+            border-bottom: 1px solid var(--line);
+        }
+        .kd-page .kd-intro__inner h2 {
+            margin: 0;
+            font-family: var(--serif);
+            font-weight: 500;
+            font-size: clamp(1.9rem, 3.2vw, 2.7rem);
+            line-height: 1.08;
+            letter-spacing: -.015em;
+            color: var(--forest-deep);
+        }
+        .kd-page .kd-intro__meta {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: baseline;
+            gap: 12px 24px;
+        }
+        .kd-page .kd-intro__desc {
+            margin: 0;
+            max-width: 44ch;
+            font-family: var(--sans);
+            font-size: .95rem;
+            line-height: 1.7;
+            color: var(--muted);
+        }
+        .kd-page .kd-intro__count {
+            display: inline-flex;
+            align-items: baseline;
+            gap: 8px;
+            margin: 0;
+            padding: 8px 14px;
+            border-radius: 999px;
+            background: var(--sand);
+            font-family: var(--sans);
+            font-size: .62rem;
+            font-weight: 600;
+            letter-spacing: .18em;
+            text-transform: uppercase;
+            color: var(--forest-deep);
+        }
+        .kd-page .kd-intro__count strong {
+            font-family: var(--serif);
+            font-size: 1.05rem;
+            font-weight: 500;
+            letter-spacing: 0;
+        }
+
+        /* ============================================================
+           GALLERY
+           ============================================================ */
+        .kd-page .kd-gallery {
+            padding: 0 0 clamp(72px, 8vw, 120px);
+            background: var(--ivory);
+        }
+        .kd-page .kd-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
+            gap: 24px;
+            align-items: stretch;
+        }
+
+        /* ---------- Card ---------- */
+        .kd-page .kd-card {
+            position: relative;
             display: flex;
             flex-direction: column;
             background: var(--white);
             border: 1px solid var(--line);
-            border-radius: var(--radius-lg);
+            border-radius: var(--card-radius);
             overflow: hidden;
-            transition: transform .4s var(--ease), box-shadow .4s var(--ease);
+            transition:
+                border-color .3s var(--ease),
+                box-shadow .3s var(--ease),
+                transform .3s var(--ease);
         }
-
-        .listing-card:hover {
+        .kd-page .kd-card:hover {
+            border-color: rgba(83, 107, 80, .25);
+            box-shadow: 0 30px 60px -34px rgba(20, 39, 31, .32);
             transform: translateY(-4px);
-            box-shadow: var(--shadow-md);
         }
 
-        .listing-card .media { aspect-ratio: 4 / 3; }
-
-        .listing-card .media img {
+        .kd-page .kd-card__media {
+            position: relative;
+            aspect-ratio: 16 / 10;
+            overflow: hidden;
+            background: var(--sand);
+        }
+        .kd-page .kd-card__media img {
+            display: block;
             width: 100%;
             height: 100%;
             object-fit: cover;
-            transition: transform .4s var(--ease);
+            transition: transform 1s var(--ease-out);
+        }
+        .kd-page .kd-card:hover .kd-card__media img { transform: scale(1.06); }
+
+        .kd-page .kd-card__badge {
+            position: absolute;
+            top: 14px;
+            right: 14px;
+            z-index: 2;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 11px;
+            border-radius: 999px;
+            background: rgba(248, 246, 240, .96);
+            backdrop-filter: blur(8px);
+            box-shadow: 0 10px 20px -14px rgba(0, 0, 0, .3);
+            font-family: var(--sans);
+            font-size: .54rem;
+            font-weight: 600;
+            letter-spacing: .14em;
+            text-transform: uppercase;
+            color: var(--forest-deep);
+        }
+        .kd-page .kd-card__badge::before {
+            content: "";
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--sage);
         }
 
-        .listing-card:hover .media img { transform: scale(1.05); }
-
-        .listing-card__body {
-            padding: 22px;
+        .kd-page .kd-card__body {
             display: flex;
             flex-direction: column;
             gap: 10px;
             flex: 1;
+            padding: clamp(20px, 2.4vw, 26px);
         }
-
-        .listing-card__meta {
-            font-size: .68rem;
-            letter-spacing: .16em;
+        .kd-page .kd-card__meta {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-family: var(--sans);
+            font-size: .6rem;
+            font-weight: 600;
+            letter-spacing: .18em;
             text-transform: uppercase;
             color: var(--muted);
         }
-
-        .listing-card h3 {
-            margin: 0;
-            font-size: 1.25rem;
+        .kd-page .kd-card__meta::before {
+            content: "";
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            background: var(--sage);
         }
 
-        .listing-card__desc {
-            color: var(--muted);
-            font-size: .92rem;
+        .kd-page .kd-card__title {
             margin: 0;
+            font-family: var(--serif);
+            font-weight: 500;
+            font-size: clamp(1.2rem, 1.8vw, 1.45rem);
+            line-height: 1.2;
+            letter-spacing: -.01em;
+            color: var(--forest-deep);
+        }
+        .kd-page .kd-card__desc {
+            margin: 0;
+            font-family: var(--sans);
+            font-size: .88rem;
+            line-height: 1.6;
+            color: var(--muted);
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
             flex: 1;
         }
 
-        .listing-card__tags {
+        .kd-page .kd-card__tags {
             display: flex;
             flex-wrap: wrap;
             gap: 6px;
         }
-
-        .listing-card__tags span {
-            font-size: .68rem;
-            padding: 3px 10px;
+        .kd-page .kd-card__tags span {
+            padding: 4px 10px;
             background: var(--ivory);
             border: 1px solid var(--line);
             border-radius: 999px;
-            color: var(--forest);
-        }
-
-        .listing-card__footer {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding-top: 14px;
-            border-top: 1px solid var(--line);
-            margin-top: auto;
-            gap: 10px;
-        }
-
-        .listing-card__price {
-            font-family: var(--serif);
-            font-size: 1.1rem;
-            color: var(--forest-deep);
-        }
-
-        .listing-card__price small {
-            display: block;
             font-family: var(--sans);
-            font-size: .66rem;
+            font-size: .54rem;
+            font-weight: 600;
             letter-spacing: .12em;
             text-transform: uppercase;
             color: var(--muted);
-            font-weight: 400;
         }
 
-        .cta-band {
+        .kd-page .kd-card__footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-top: 6px;
+            padding-top: 16px;
+            border-top: 1px solid var(--line);
+        }
+        .kd-page .kd-card__price {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            line-height: 1.2;
+        }
+        .kd-page .kd-card__price small {
+            font-family: var(--sans);
+            font-size: .56rem;
+            font-weight: 600;
+            letter-spacing: .18em;
+            text-transform: uppercase;
+            color: var(--muted);
+        }
+        .kd-page .kd-card__price strong {
+            font-family: var(--serif);
+            font-weight: 500;
+            font-size: 1.06rem;
+            color: var(--forest-deep);
+        }
+
+        .kd-page .kd-card__cta {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 9px 16px;
+            border-radius: 999px;
+            background: rgba(20, 39, 31, .04);
+            font-family: var(--sans);
+            font-size: .62rem;
+            font-weight: 600;
+            letter-spacing: .14em;
+            text-transform: uppercase;
+            color: var(--forest-deep);
+            text-decoration: none;
+            white-space: nowrap;
+            transition:
+                background .3s var(--ease),
+                color .3s var(--ease),
+                transform .3s var(--ease-out);
+        }
+        .kd-page .kd-card:hover .kd-card__cta {
             background: var(--forest-deep);
             color: var(--ivory);
-            padding: clamp(56px, 8vw, 100px) 0;
-            text-align: center;
+            transform: translateY(-1px);
+        }
+        .kd-page .kd-card__cta svg {
+            transition: transform .3s var(--ease-out);
+        }
+        .kd-page .kd-card:hover .kd-card__cta svg {
+            transform: translateX(3px);
         }
 
-        .cta-band h2 { color: var(--ivory); }
-
-        .cta-band p {
-            color: rgba(248, 246, 240, .78);
-            max-width: 56ch;
-            margin: 0 auto 28px;
-        }
-
-        .empty-state {
+        /* ---------- Empty state ---------- */
+        .kd-page .kd-empty {
+            position: relative;
+            overflow: hidden;
+            max-width: 620px;
+            margin: 0 auto;
+            padding: clamp(52px, 7vw, 88px) clamp(28px, 4vw, 48px) clamp(48px, 6vw, 72px);
             text-align: center;
-            padding: 75px 20px;
             background: var(--white);
             border: 1px solid var(--line);
-            border-radius: var(--radius-lg);
+            border-radius: var(--card-radius);
+        }
+        .kd-page .kd-empty::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background:
+                radial-gradient(ellipse 60% 60% at 50% 0%, rgba(143, 168, 136, .14), transparent 70%),
+                radial-gradient(ellipse 50% 50% at 50% 100%, rgba(232, 223, 201, .40), transparent 70%);
+            pointer-events: none;
+        }
+        .kd-page .kd-empty > * { position: relative; z-index: 1; }
+        .kd-page .kd-empty__icon {
+            display: inline-grid;
+            place-items: center;
+            width: 68px;
+            height: 68px;
+            margin-bottom: 22px;
+            border-radius: 18px;
+            background: rgba(143, 168, 136, .18);
+            color: var(--forest-deep);
+        }
+        .kd-page .kd-empty__title {
+            margin: 0 0 12px;
+            font-family: var(--serif);
+            font-weight: 500;
+            font-size: clamp(1.7rem, 3vw, 2.3rem);
+            line-height: 1.15;
+            letter-spacing: -.015em;
+            color: var(--forest-deep);
+        }
+        .kd-page .kd-empty__desc {
+            margin: 0 auto 28px;
+            max-width: 46ch;
+            font-family: var(--sans);
+            font-size: .94rem;
+            line-height: 1.65;
+            color: var(--muted);
+        }
+        .kd-page .kd-empty__actions {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 12px;
+        }
+        .kd-page .kd-empty__cta {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 13px 24px;
+            border-radius: 999px;
+            background: var(--forest-deep);
+            color: var(--ivory);
+            font-family: var(--sans);
+            font-size: .68rem;
+            font-weight: 600;
+            letter-spacing: .16em;
+            text-transform: uppercase;
+            text-decoration: none;
+            transition:
+                background .3s var(--ease),
+                transform .3s var(--ease-out),
+                box-shadow .3s var(--ease-out);
+        }
+        .kd-page .kd-empty__cta:hover {
+            background: var(--forest);
+            transform: translateY(-2px);
+            box-shadow: 0 16px 30px -18px rgba(20, 39, 31, .5);
+        }
+        .kd-page .kd-empty__cta--ghost {
+            background: transparent;
+            color: var(--forest-deep);
+            border: 1px solid rgba(20, 39, 31, .22);
+        }
+        .kd-page .kd-empty__cta--ghost:hover {
+            background: var(--white);
+            border-color: var(--forest-deep);
         }
 
-        .empty-state h2 { margin-bottom: 12px; }
+        /* ============================================================
+           CLOSING CTA (ROUNDED TOP CORNERS)
+           ============================================================ */
+        .kd-page .kd-cta-section {
+            position: relative;
+            overflow: hidden;
+            background: var(--forest-deep);
+            color: var(--ivory);
+            border-top: 1px solid rgba(232, 223, 201, .16);
+            isolation: isolate;
+            border-radius: 48px 48px 0 0;
+            margin-top: 40px;
+        }
+        .kd-page .kd-cta-section::before {
+            content: "";
+            position: absolute;
+            top: -20%;
+            right: -10%;
+            width: 55%;
+            height: 140%;
+            background: radial-gradient(circle at center, rgba(143, 168, 136, .14), transparent 65%);
+            pointer-events: none;
+            z-index: 0;
+        }
+        
+        .kd-page .kd-cta__inner {
+            position: relative;
+            z-index: 2;
+            display: grid;
+            grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+            gap: clamp(28px, 5vw, 72px);
+            align-items: start;
+            padding-top: clamp(68px, 9vw, 112px);
+            padding-bottom: clamp(68px, 9vw, 112px);
+        }
+        
+        .kd-page .kd-cta__heading h2 {
+            margin: 12px 0 0;
+            font-family: var(--serif);
+            font-weight: 500;
+            font-size: clamp(2rem, 4vw, 3.4rem);
+            line-height: 1.08;
+            letter-spacing: -.02em;
+            color: var(--ivory);
+        }
+        .kd-page .kd-cta__aside {
+            padding-top: clamp(0px, 1.2vw, 12px);
+        }
+        .kd-page .kd-cta__lede {
+            margin: 0 0 22px;
+            font-family: var(--sans);
+            font-size: .96rem;
+            line-height: 1.72;
+            color: rgba(248, 246, 240, .8);
+        }
+        .kd-page .kd-btn-outline {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 14px 26px;
+            border-radius: 999px;
+            border: 1px solid rgba(232, 223, 201, .4);
+            background: transparent;
+            color: var(--ivory);
+            font-family: var(--sans);
+            font-size: .7rem;
+            font-weight: 600;
+            letter-spacing: .18em;
+            text-transform: uppercase;
+            text-decoration: none;
+            transition:
+                background .3s var(--ease),
+                border-color .3s var(--ease),
+                color .3s var(--ease),
+                transform .3s var(--ease-out),
+                box-shadow .3s var(--ease-out);
+        }
+        .kd-page .kd-btn-outline:hover {
+            background: var(--sand);
+            border-color: var(--sand);
+            color: var(--forest-deep);
+            transform: translateY(-2px);
+            box-shadow: 0 18px 32px -18px rgba(0, 0, 0, .45);
+        }
+        .kd-page .kd-btn-outline svg {
+            transition: transform .3s var(--ease-out);
+        }
+        .kd-page .kd-btn-outline:hover svg { transform: translateX(4px); }
 
-        .empty-state p {
-            color: var(--muted);
-            max-width: 50ch;
-            margin: 0 auto;
+        /* ============================================================
+           RESPONSIVE
+           ============================================================ */
+        @@media (max-width: 1024px) {
+            .kd-page .kd-cta__inner {
+                grid-template-columns: 1fr;
+                gap: 32px;
+            }
+            .kd-page .kd-cta__aside {
+                padding-top: 0;
+                border-top: 1px solid rgba(232, 223, 201, .2);
+                padding-top: 32px;
+            }
+        }
+
+        @@media (max-width: 900px) {
+            .kd-page .kd-hero__grid {
+                grid-template-columns: 1fr;
+                gap: 40px;
+            }
+            .kd-page .kd-hero__text {
+                max-width: none;
+                padding-top: 0;
+            }
+            .kd-page .kd-hero__frame {
+                aspect-ratio: 4 / 3;
+                max-height: 520px;
+            }
+        }
+
+        @@media (max-width: 640px) {
+            .kd-page .kd-hero {
+                padding-top: 40px;
+                padding-bottom: 48px;
+            }
+            .kd-page .kd-hero__frame {
+                aspect-ratio: 16 / 11;
+                max-height: 380px;
+                border-radius: 18px;
+            }
+            .kd-page .kd-gallery { padding-bottom: 64px; }
+            .kd-page .kd-grid { gap: 16px; }
+            
+            .kd-page .kd-card__footer {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 14px;
+            }
+            .kd-page .kd-empty__actions { flex-direction: column; }
+            .kd-page .kd-empty__cta { width: 100%; justify-content: center; }
+            .kd-page .kd-btn-outline { width: 100%; justify-content: center; }
+            
+            .kd-page .kd-cta-section {
+                border-radius: 32px 32px 0 0;
+            }
+        }
+
+        /* ============================================================
+           REDUCED MOTION
+           ============================================================ */
+        @@media (prefers-reduced-motion: reduce) {
+            .kd-page .reveal {
+                opacity: 1 !important;
+                transform: none !important;
+                transition: none !important;
+            }
+            .kd-page .kd-card,
+            .kd-page .kd-card__media img,
+            .kd-page .kd-card__cta,
+            .kd-page .kd-card__cta svg,
+            .kd-page .kd-empty__cta,
+            .kd-page .kd-btn-outline,
+            .kd-page .kd-btn-outline svg,
+            .kd-page .kd-hero__frame img {
+                transition: none !important;
+            }
+            .kd-page .kd-card:hover { transform: none !important; }
+            .kd-page .kd-hero:hover .kd-hero__frame img { transform: none !important; }
         }
     </style>
 }
 
-<header class="page-hero">
-    <div class="container" data-reveal>
-        <p class="eyebrow">Discover More · Restaurant Information</p>
-        <h1>Taste Trails.</h1>
-        <p>
-            Explore restaurants, regional dishes and dining experiences
-            across Pakistan, organised by destination.
-        </p>
-    </div>
-</header>
+<div class="kd-page">
 
-<section class="section section--ivory">
-    <div class="container">
+    <!-- ==================== HERO ==================== -->
+    <header class="kd-hero">
+        <div class="container kd-hero__grid">
 
-        @if (Model != null && Model.Any())
-        {
-            <div class="listing-grid" data-reveal-group>
+            <div class="kd-hero__text reveal">
+                <p class="eyebrow">Discover More / Taste Trails</p>
+                <h1>Taste the <em>extraordinary</em>.</h1>
+                <p class="kd-hero__lede">
+                    Explore restaurants, regional dishes and dining experiences
+                    across Pakistan, organised by destination.
+                </p>
+            </div>
 
-                @foreach (var restaurant in Model)
-                {
-                    var imageUrl = !string.IsNullOrWhiteSpace(restaurant.ImageUrl)
-                        ? restaurant.ImageUrl
-                        : "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=900&q=70";
+            <div class="kd-hero__media reveal" style="--kd-delay:140ms">
+                <figure class="kd-hero__frame media">
+                    <img src="https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=1200&q=75"
+                         alt="Warmly lit restaurant interior"
+                         loading="eager" fetchpriority="high" />
+                </figure>
+                <span class="kd-hero__caption">Local Flavours</span>
+            </div>
 
-                    <article class="listing-card" data-reveal>
+        </div>
+    </header>
 
-                        <div class="media" data-fallback-label="@restaurant.Name">
-                            <img src="@imageUrl"
-                                 alt="@restaurant.Name"
-                                 loading="lazy"
-                                 onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=900&q=70';" />
-                        </div>
+    <!-- ==================== INTRODUCTION ==================== -->
+    <section class="kd-intro" aria-labelledby="kd-intro-heading">
+        <div class="container">
+            <div class="kd-intro__inner reveal">
 
-                        <div class="listing-card__body">
+                <div>
+                    <p class="eyebrow">The Collection</p>
+                    <h2 id="kd-intro-heading">A guide to dining well.</h2>
+                </div>
 
-                            <span class="listing-card__meta">
-                                @(string.IsNullOrWhiteSpace(restaurant.City)
-                                    ? "Pakistan"
-                                    : restaurant.City)
-                                · Restaurant
-                            </span>
+                <div class="kd-intro__meta">
+                    <p class="kd-intro__desc">
+                        Discover restaurants across the country and find the perfect spot
+                        for your next meal.
+                    </p>
 
-                            <h3>@restaurant.Name</h3>
+                    @if (hasRestaurants)
+                    {
+                        <p class="kd-intro__count">
+                            <strong>@totalRestaurants</strong>
+                            @(totalRestaurants == 1 ? "restaurant" : "restaurants")
+                        </p>
+                    }
+                </div>
 
-                            <p class="listing-card__desc">
-                                @(string.IsNullOrWhiteSpace(restaurant.ShortDescription)
-                                    ? "Discover this restaurant and its dining experience."
-                                    : restaurant.ShortDescription)
-                            </p>
+            </div>
+        </div>
+    </section>
 
-                            <div class="listing-card__tags">
+    <!-- ==================== GALLERY ==================== -->
+    <section class="kd-gallery" aria-label="Restaurant listings">
+        <div class="container">
+
+            @if (hasRestaurants)
+            {
+                <div class="kd-grid">
+                    @for (var i = 0; i < restaurants.Count; i++)
+                    {
+                        var restaurant = restaurants[i];
+                        var delay = Math.Min(i * 60, 480);
+                        
+                        <article class="kd-card reveal" style="--kd-delay:@(delay)ms;">
+                            <div class="kd-card__media">
+                                @if (!string.IsNullOrWhiteSpace(restaurant.ImageUrl))
+                                {
+                                    <img src="@restaurant.ImageUrl"
+                                         alt="@restaurant.Name"
+                                         loading="lazy"
+                                         onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=900&q=70';" />
+                                }
+                                else
+                                {
+                                    <img src="https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=900&q=70"
+                                         alt="@restaurant.Name"
+                                         loading="lazy" />
+                                }
+
                                 @if (!string.IsNullOrWhiteSpace(restaurant.CuisineType))
                                 {
-                                    <span>@restaurant.CuisineType</span>
+                                    <span class="kd-card__badge">@restaurant.CuisineType</span>
                                 }
+                            </div>
+
+                            <div class="kd-card__body">
+                                <span class="kd-card__meta">
+                                    @(string.IsNullOrWhiteSpace(restaurant.City) ? "Pakistan" : restaurant.City) · Restaurant
+                                </span>
+
+                                <h3 class="kd-card__title">@restaurant.Name</h3>
+
+                                <p class="kd-card__desc">
+                                    @(string.IsNullOrWhiteSpace(restaurant.ShortDescription)
+                                        ? "Discover this restaurant and its dining experience."
+                                        : restaurant.ShortDescription)
+                                </p>
 
                                 @if (restaurant.IsFeatured)
                                 {
-                                    <span>Featured</span>
+                                    <div class="kd-card__tags">
+                                        <span>Featured</span>
+                                    </div>
                                 }
-                            </div>
 
-                            <div class="listing-card__footer">
-
-                                <div class="listing-card__price">
-                                    @if (restaurant.AverageMealPrice.HasValue &&
-                                         restaurant.AverageMealPrice.Value > 0)
-                                    {
+                                <div class="kd-card__footer">
+                                    <div class="kd-card__price">
                                         <small>Average / person</small>
-                                        @:PKR @restaurant.AverageMealPrice.Value.ToString("N0")
-                                    }
-                                    else
-                                    {
-                                        <small>Pricing</small>
-                                        @:Contact for details
-                                    }
+                                        <strong>
+                                            @if (restaurant.AverageMealPrice.HasValue && restaurant.AverageMealPrice.Value > 0)
+                                            {
+                                                @:PKR @restaurant.AverageMealPrice.Value.ToString("N0")
+                                            }
+                                            else
+                                            {
+                                                @:On request
+                                            }
+                                        </strong>
+                                    </div>
+                                    
+                                    <a class="kd-card__cta" href="@Url.Action("Details", "Restaurants", new { id = restaurant.Id })">
+                                        View
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                            <path d="M5 12h14" />
+                                            <path d="m13 6 6 6-6 6" />
+                                        </svg>
+                                    </a>
                                 </div>
-
-                                <a class="link-arrow"
-                                   href="@Url.Action("Details", "Restaurants", new { id = restaurant.Id })">
-                                    View Details
-                                </a>
-
                             </div>
-                        </div>
-                    </article>
-                }
+                        </article>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="kd-empty reveal">
+                    <span class="kd-empty__icon" aria-hidden="true">
+                        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+                        </svg>
+                    </span>
+                    <h2 class="kd-empty__title">No restaurants listed yet.</h2>
+                    <p class="kd-empty__desc">
+                        Our team is currently updating restaurant information. Please check back soon for new dining destinations.
+                    </p>
+                    <div class="kd-empty__actions">
+                        <a class="kd-empty__cta" href="@Url.Action("Index", "Contact")">
+                            Talk to our team
+                        </a>
+                        <a class="kd-empty__cta kd-empty__cta--ghost" href="@Url.Action("Index", "Search")">
+                            Browse experiences
+                        </a>
+                    </div>
+                </div>
+            }
 
+        </div>
+    </section>
+
+    <!-- ==================== CLOSING CTA ==================== -->
+    <section class="kd-cta-section" aria-labelledby="kd-cta-heading">
+        <div class="container kd-cta__inner">
+
+            <div class="kd-cta__heading reveal">
+                <p class="eyebrow eyebrow--light">Plan With Us</p>
+                <h2 id="kd-cta-heading">Looking for something specific?</h2>
             </div>
-        }
-        else
-        {
-            <div class="empty-state">
-                <h2>No Restaurants Available Yet.</h2>
-                <p>
-                    Restaurant information is currently being updated.
-                    Please check back soon for new dining destinations.
+
+            <div class="kd-cta__aside reveal" style="--kd-delay:140ms">
+                <p class="kd-cta__lede">
+                    Tell us your destination and cuisine preference.
+                    We'll help you explore dining options during your journey.
                 </p>
+                <a class="kd-btn-outline" href="@Url.Action("Index", "Contact")">
+                    Get in touch
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                        <path d="M5 12h14M13 6l6 6-6 6" />
+                    </svg>
+                </a>
             </div>
-        }
 
-    </div>
-</section>
+        </div>
+    </section>
 
-<section class="cta-band">
-    <div class="container" data-reveal>
-        <h2>Looking for Something Specific?</h2>
-        <p>
-            Tell us your destination and cuisine preference.
-            We'll help you explore dining options during your journey.
-        </p>
-        <a class="btn btn--light" href="@Url.Action("Index", "Contact")">
-            Get in Touch
-        </a>
-    </div>
-</section>
+</div>
+
+@section Scripts {
+    <script>
+        (function () {
+            var items = document.querySelectorAll('.kd-page .reveal');
+            if (!items.length) { return; }
+
+            var prefersReduced = window.matchMedia
+                && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+            function showAll() {
+                for (var i = 0; i < items.length; i++) {
+                    items[i].classList.add('is-in');
+                }
+            }
+
+            if (prefersReduced || !('IntersectionObserver' in window)) {
+                showAll();
+                return;
+            }
+
+            var observer = new IntersectionObserver(function (entries) {
+                for (var i = 0; i < entries.length; i++) {
+                    if (entries[i].isIntersecting) {
+                        entries[i].target.classList.add('is-in');
+                        observer.unobserve(entries[i].target);
+                    }
+                }
+            }, {
+                root: null,
+                rootMargin: '0px 0px -8% 0px',
+                threshold: 0.12
+            });
+
+            for (var j = 0; j < items.length; j++) {
+                observer.observe(items[j]);
+            }
+        })();
+    </script>
+}

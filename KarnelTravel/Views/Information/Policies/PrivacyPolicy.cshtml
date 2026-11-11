@@ -1,0 +1,77 @@
+@{
+    ViewData["Title"] = "Privacy Policy | Karnel Travel Guide";
+    ViewData["Description"] = "Draft privacy information for customer accounts, travel inquiries and booking requests submitted to Karnel Travel Guide.";
+}
+
+<main class="policy-page">
+    <header class="policy-hero">
+        <div class="container policy-hero__inner">
+            <nav class="policy-breadcrumbs" aria-label="Breadcrumb">
+                <a href="@Url.Action("Index", "Home")">Home</a><span aria-hidden="true">/</span><span>Privacy Policy</span>
+            </nav>
+            <p class="policy-eyebrow">Policies &amp; information</p>
+            <h1>Privacy Policy</h1>
+            <p class="policy-intro">This draft explains the information the Karnel Travel Guide application may receive when customers browse, inquire, create accounts or request bookings.</p>
+            <p class="policy-status">Draft for business review. Collection, retention and legal-rights wording requires confirmation before publication.</p>
+        </div>
+    </header>
+
+    <div class="container policy-layout">
+        <aside class="policy-toc" aria-label="On this page">
+            <p>On this page</p>
+            <ol>
+                <li><a href="#collected">Information collected</a></li>
+                <li><a href="#use">How information is used</a></li>
+                <li><a href="#storage">Storage and protection</a></li>
+                <li><a href="#sharing">Sharing</a></li>
+                <li><a href="#retention">Retention</a></li>
+                <li><a href="#rights">Privacy requests</a></li>
+                <li><a href="#contact">Questions</a></li>
+            </ol>
+        </aside>
+
+        <article class="policy-content">
+            <section id="collected">
+                <h2>1. Information collected</h2>
+                <p>The application may receive information that a customer chooses to provide, including a name, email address, phone number, travel dates, party details, destination preferences and messages in an inquiry or booking request.</p>
+                <p>Customer accounts may also contain authentication and profile information. Booking records can include the selected service, requested dates, contact details, status history and information needed to manage the request.</p>
+                <p>Payment records in the current application are for a demo payment workflow. The application stores transaction metadata and masked card details, not a full card number, CVV or expiry date in the demo payment transaction model.</p>
+            </section>
+
+            <section id="use">
+                <h2>2. How information is used</h2>
+                <p>Information may be used to provide destination and service information, respond to inquiries, manage customer accounts, validate and process booking requests, record booking status changes, support demo payment flows, issue customer notifications and protect the application from misuse.</p>
+                <p>Where email services are configured, information may also be used for account or booking-related messages. Email delivery depends on the configured service and is not guaranteed while SMTP is unavailable.</p>
+            </section>
+
+            <section id="storage">
+                <h2>3. Data storage and protection</h2>
+                <p>The application uses a SQL Server-backed data store for website, customer, inquiry, booking and related records. Access controls, authenticated sessions, ownership checks and password hashing are used in the current implementation.</p>
+                <p>No online system can promise absolute security. The business should confirm its operational security controls, access review process, backups, hosting arrangements and incident-response procedure before this policy is finalized.</p>
+            </section>
+
+            <section id="sharing">
+                <h2>4. Information sharing</h2>
+                <p>Information may need to be shared with a relevant travel, accommodation, transport, restaurant or other service provider when necessary to respond to a request or arrange a service. The exact provider relationships and disclosures must be confirmed by the business.</p>
+                <p>The application should not sell customer personal information. Any additional disclosures required by law, payment processing, hosting, email delivery, analytics or support providers must be documented before final publication.</p>
+            </section>
+
+            <section id="retention">
+                <h2>5. Data retention</h2>
+                <p>Booking, inquiry, account and transaction records may be retained so the business can operate the service, answer follow-up questions, maintain audit history and meet applicable obligations.</p>
+                <p>The current project does not establish an approved retention schedule or deletion timetable. The business must define retention periods for accounts, inquiries, bookings, payment records, tickets, logs and email delivery records before this section is considered final.</p>
+            </section>
+
+            <section id="rights">
+                <h2>6. Privacy rights and requests</h2>
+                <p>Customers may contact the business to ask what personal information is held about them, request correction of inaccurate information, or ask a question about how their information is used. Requests may need to be verified to protect the account owner.</p>
+                <p>The specific rights, response process, exceptions and applicable legal framework have not been established in the project and require business and legal review.</p>
+            </section>
+
+            <section id="contact">
+                <h2>7. Privacy questions</h2>
+                <p>For a privacy question or request, use the <a href="@Url.Action("Index", "Contact")">contact and inquiry page</a>. The business should confirm the official privacy contact email, business identity, effective date and final request-handling process before publishing this policy.</p>
+            </section>
+        </article>
+    </div>
+</main>

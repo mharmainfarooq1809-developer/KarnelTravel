@@ -283,7 +283,7 @@
         }
 
         .sights-slider {
-            left:0; right:0; top: var(--sights-top); padding:0; z-index:2;
+            left:0; right:0; top: var(--sights-top); padding:0; z-index:8;
             opacity: var(--sights-opacity);
             visibility: var(--sights-visibility);
             transform: translate3d(var(--sights-enter-x), var(--sights-y), 0) scale(var(--sights-scale));
@@ -993,8 +993,6 @@
     </style>
 </head>
 <body>
-    @await Html.PartialAsync("_KarnelCursor")
-
     <main class="intro" id="intro" aria-label="Karnel Travel Guide introduction">
 
         <header class="intro-top">
@@ -1630,8 +1628,6 @@
         }
     })();
 </script>
-
-<script src="~/js/site.js" asp-append-version="true"></script>
 
 </body>
 </html>

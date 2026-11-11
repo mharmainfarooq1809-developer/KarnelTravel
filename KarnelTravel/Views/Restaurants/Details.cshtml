@@ -1,5 +1,4 @@
-﻿
-@model KarnelTravel.Models.Restaurant
+﻿@model KarnelTravel.Models.Restaurant
 @using KarnelTravel.Models
 
 @{
@@ -25,581 +24,1229 @@
         "Reviews",
         new { type = "Restaurant", id = Model.Id }
     );
+
+    var hasPrice = Model.AverageMealPrice.HasValue && Model.AverageMealPrice.Value > 0;
+    var hasCity = !string.IsNullOrWhiteSpace(Model.City);
+    var hasAddress = !string.IsNullOrWhiteSpace(Model.Address);
+    var hasPhone = !string.IsNullOrWhiteSpace(Model.ContactPhone);
+    var hasCuisine = !string.IsNullOrWhiteSpace(Model.CuisineType);
+    var hasDescription = !string.IsNullOrWhiteSpace(Model.Description);
+    var hasShortDescription = !string.IsNullOrWhiteSpace(Model.ShortDescription);
 }
 
 @section Styles {
     <style>
-        .restaurant-detail {
+        /* ==========================================================================
+           KARNEL TRAVEL GUIDE — RESTAURANT DETAILS
+           Same shell + tokens as Destination / Hotel / Resort Details.
+           ========================================================================== */
+
+        .kd-detail {
+            --forest-deep: #14271f;
+            --forest: #173b32;
+            --moss: #536b50;
+            --sage: #8fa888;
+            --ivory: #f8f6f0;
+            --sand: #e8dfc9;
+            --white: #ffffff;
+            --charcoal: #24312c;
+            --muted: #5a6b60;
+            --line: #e6e2d6;
+            --serif: "Playfair Display", Georgia, "Times New Roman", serif;
+            --sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            --radius: 12px;
+            --radius-lg: 24px;
+            --card-radius: 20px;
+            --card-radius-sm: 14px;
+            --header-h: 72px;
+            --ease: cubic-bezier(.22, .61, .36, 1);
+            --ease-out: cubic-bezier(.16, 1, .3, 1);
+
             background: var(--ivory);
-            padding-bottom: 90px;
+            color: var(--charcoal);
+            font-family: var(--sans);
+            -webkit-font-smoothing: antialiased;
+            overflow-x: hidden;
         }
 
-        .restaurant-hero {
-            padding: calc(var(--header-h) + 45px) 0 45px;
-            background: var(--sand);
-        }
+        .kd-detail * { box-sizing: border-box; }
 
-        .restaurant-breadcrumb {
-            font-size: .78rem;
-            color: var(--muted);
-            margin-bottom: 25px;
-        }
-
-        .restaurant-breadcrumb a {
-            color: var(--forest);
-            text-decoration: none;
-        }
-
-        .restaurant-heading {
-            max-width: 850px;
-        }
-
-        .restaurant-heading h1 {
-            margin: 12px 0;
-        }
-
-        .restaurant-heading p {
-            max-width: 65ch;
-            color: var(--muted);
-            font-size: 1.05rem;
-        }
-
-        .restaurant-meta {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin-top: 22px;
-        }
-
-        .restaurant-meta span {
-            padding: 8px 14px;
-            border: 1px solid var(--line);
-            border-radius: 50px;
-            font-size: .78rem;
-            color: var(--forest);
-            background: rgba(255,255,255,.45);
-        }
-
-        .restaurant-layout {
-            display: grid;
-            grid-template-columns: minmax(0, 1.6fr) minmax(280px, .8fr);
-            gap: 35px;
-            align-items: start;
-        }
-
-        .restaurant-main-image {
+        .kd-detail .container {
             width: 100%;
-            height: 460px;
-            object-fit: cover;
-            display: block;
-            border-radius: var(--radius-lg);
-            background: var(--sand);
+            max-width: 1200px;
+            margin: 0 auto;
+            padding-left: clamp(20px, 5vw, 48px);
+            padding-right: clamp(20px, 5vw, 48px);
         }
 
-        .restaurant-section {
-            margin-top: 38px;
+        /* ---------- Reveal ---------- */
+        .kd-detail .reveal {
+            opacity: 0;
+            transform: translateY(30px);
+            filter: blur(5px);
+            transition:
+                opacity 0.95s var(--ease-out),
+                transform 0.95s var(--ease-out),
+                filter 0.95s var(--ease-out);
+        }
+        .kd-detail .reveal.is-in {
+            opacity: 1 !important;
+            transform: none !important;
+            filter: blur(0) !important;
         }
 
-        .restaurant-section h2 {
-            margin-bottom: 16px;
-        }
-
-        .restaurant-description {
-            color: var(--muted);
-            line-height: 1.9;
-            white-space: pre-line;
-        }
-
-        .restaurant-sidebar {
-            background: var(--white);
-            border: 1px solid var(--line);
-            border-radius: var(--radius-lg);
-            padding: 28px;
-            position: sticky;
-            top: calc(var(--header-h) + 25px);
-        }
-
-        .restaurant-sidebar h2 {
-            font-size: 1.5rem;
-            margin-bottom: 22px;
-        }
-
-        .restaurant-info-item {
-            padding: 17px 0;
-            border-bottom: 1px solid var(--line);
-        }
-
-        .restaurant-info-item:last-of-type {
-            border-bottom: none;
-        }
-
-        .restaurant-info-item small {
-            display: block;
-            text-transform: uppercase;
-            letter-spacing: .12em;
-            font-size: .65rem;
-            color: var(--muted);
-            margin-bottom: 7px;
-        }
-
-        .restaurant-info-item strong {
-            color: var(--forest-deep);
-            font-weight: 500;
-            overflow-wrap: anywhere;
-        }
-
-        .restaurant-price {
-            font-family: var(--serif);
-            font-size: 1.65rem;
-            color: var(--forest-deep);
-        }
-
-        .restaurant-sidebar .btn {
-            width: 100%;
-            margin-top: 24px;
-            text-align: center;
-        }
-
-        .restaurant-note {
-            color: var(--muted);
-            font-size: .78rem;
-            line-height: 1.7;
-            margin-top: 15px;
-        }
-
-        .restaurant-back {
-            display: inline-block;
-            margin-top: 30px;
-            color: var(--forest);
-            text-decoration: none;
-            font-size: .9rem;
-        }
-
-        /* RESTAURANT REVIEWS */
-
-        .restaurant-reviews {
-            padding: 70px 0 20px;
-            border-top: 1px solid var(--line);
-        }
-
-        .restaurant-reviews__heading {
-            margin-bottom: 35px;
-        }
-
-        .restaurant-reviews__eyebrow {
-            text-transform: uppercase;
-            letter-spacing: .17em;
-            font-size: .7rem;
-            color: var(--forest);
-            margin-bottom: 12px;
-        }
-
-        .restaurant-reviews__heading h2 {
-            font-size: clamp(2rem, 4vw, 3rem);
-            margin: 0 0 12px;
-        }
-
-        .restaurant-reviews__heading p {
-            color: var(--muted);
-            line-height: 1.7;
-            margin: 0;
-        }
-
-        .restaurant-reviews__summary {
-            display: flex;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 24px;
-            padding: 25px 28px;
-            margin-bottom: 30px;
-            background: var(--white);
-            border: 1px solid var(--line);
-            border-radius: var(--radius-lg);
-        }
-
-        .restaurant-reviews__average {
-            font-family: var(--serif);
-            font-size: 3rem;
-            line-height: 1;
-        }
-
-        .restaurant-reviews__stars {
-            color: #b28a43;
-            letter-spacing: 3px;
-            font-size: 1.05rem;
-        }
-
-        .restaurant-reviews__count {
-            color: var(--muted);
-            font-size: .82rem;
-            margin-top: 6px;
-        }
-
-        .restaurant-reviews__grid {
-            display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 18px;
-        }
-
-        .restaurant-review-card {
-            padding: 25px;
-            background: var(--white);
-            border: 1px solid var(--line);
-            border-radius: var(--radius-lg);
-        }
-
-        .restaurant-review-card__top {
-            display: flex;
-            justify-content: space-between;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin-bottom: 17px;
-        }
-
-        .restaurant-review-card__name {
-            font-weight: 650;
-            font-size: .95rem;
-        }
-
-        .restaurant-review-card__date {
-            color: var(--muted);
-            font-size: .75rem;
-            margin-top: 5px;
-        }
-
-        .restaurant-review-card h3 {
-            font-size: 1.15rem;
-            margin: 12px 0 9px;
-        }
-
-        .restaurant-review-card__comment {
-            color: var(--muted);
-            font-size: .9rem;
-            line-height: 1.8;
-            white-space: pre-line;
-            overflow-wrap: anywhere;
-        }
-
-        .restaurant-reviews__empty {
-            padding: 35px;
-            text-align: center;
-            background: var(--white);
-            border: 1px dashed var(--line);
-            border-radius: var(--radius-lg);
-        }
-
-        .restaurant-reviews__empty h3 {
-            margin: 0 0 9px;
-        }
-
-        .restaurant-reviews__empty p {
-            color: var(--muted);
-            font-size: .9rem;
-            line-height: 1.7;
-        }
-
-        .restaurant-review-button {
+        /* ---------- Atoms ---------- */
+        .kd-detail .eyebrow {
             display: inline-flex;
-            justify-content: center;
             align-items: center;
-            margin-top: 25px;
-            padding: 14px 25px;
-            background: var(--forest-deep);
-            color: var(--ivory);
-            border-radius: 999px;
-            text-decoration: none;
-            font-size: .85rem;
+            gap: 12px;
+            margin: 0 0 16px;
+            font-family: var(--sans);
+            font-size: 0.66rem;
             font-weight: 600;
-            transition: background .3s ease, transform .3s ease;
+            letter-spacing: 0.24em;
+            text-transform: uppercase;
+            color: var(--moss);
         }
+        .kd-detail .eyebrow::before {
+            content: '';
+            width: 28px;
+            height: 1px;
+            background: currentColor;
+            opacity: 0.85;
+        }
+        .kd-detail .eyebrow--light { color: var(--sage); }
 
-        .restaurant-review-button:hover {
+        /* ---------- Buttons ---------- */
+        .kd-detail .btn {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            min-height: 52px;
+            padding: 0 26px;
+            overflow: hidden;
+            isolation: isolate;
+            border: 1px solid transparent;
+            border-radius: 999px;
             background: var(--forest);
             color: var(--ivory);
-            transform: translateY(-2px);
+            font-family: var(--sans);
+            font-size: 0.7rem;
+            font-weight: 600;
+            letter-spacing: 0.16em;
+            text-transform: uppercase;
+            text-decoration: none;
+            cursor: pointer;
+            transition:
+                transform 0.5s var(--ease-out),
+                box-shadow 0.5s var(--ease-out),
+                background 0.4s var(--ease),
+                color 0.4s var(--ease),
+                border-color 0.4s var(--ease);
+        }
+        .kd-detail .btn::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            z-index: 1;
+            background: linear-gradient(120deg, transparent 20%, rgba(255,255,255,.35) 50%, transparent 80%);
+            transform: translateX(-120%);
+            transition: transform 0.85s var(--ease-out);
+            pointer-events: none;
+        }
+        .kd-detail .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 18px 32px -18px rgba(20,39,31,.55);
+        }
+        .kd-detail .btn:hover::after { transform: translateX(120%); }
+        .kd-detail .btn:active { transform: translateY(-1px); }
+
+        .kd-detail .btn--ghost {
+            background: transparent;
+            color: var(--forest);
+            border-color: rgba(20,39,31,.24);
+        }
+        .kd-detail .btn--ghost:hover { border-color: var(--forest); }
+
+        .kd-detail .btn--light {
+            background: var(--ivory);
+            color: var(--forest-deep);
+            border-color: var(--ivory);
+        }
+        .kd-detail .btn--light:hover { background: var(--sand); border-color: var(--sand); }
+
+        .kd-detail .btn--ghost-light {
+            background: transparent;
+            color: var(--ivory);
+            border-color: rgba(248,246,240,.4);
+        }
+        .kd-detail .btn--ghost-light:hover { border-color: var(--ivory); }
+
+        .kd-detail .btn--block { width: 100%; }
+
+        /* ---------- Nav ---------- */
+        .kd-detail .kd-nav {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: rgba(248,246,240,.92);
+            backdrop-filter: blur(14px);
+            border-bottom: 1px solid var(--line);
+        }
+        .kd-detail .kd-nav__inner {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+            padding: 14px 0;
+        }
+        .kd-detail .kd-brand {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            font-family: var(--serif);
+            font-size: 1.15rem;
+            font-weight: 600;
+            letter-spacing: -0.01em;
+            color: var(--forest-deep);
+            text-decoration: none;
+        }
+        .kd-detail .kd-brand::before {
+            content: '';
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--moss);
+            box-shadow: 0 0 0 4px rgba(83,107,80,.16);
+        }
+        .kd-detail .kd-back {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.62rem;
+            font-weight: 600;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+            color: var(--moss);
+            text-decoration: none;
+            transition: color 0.3s var(--ease);
+        }
+        .kd-detail .kd-back::before {
+            content: '\2190';
+            font-size: 0.86rem;
+            transition: transform 0.35s var(--ease-out);
+        }
+        .kd-detail .kd-back:hover { color: var(--forest); }
+        .kd-detail .kd-back:hover::before { transform: translateX(-3px); }
+
+        /* ---------- Hero ---------- */
+        .kd-detail .kd-hero {
+            position: relative;
+            min-height: clamp(460px, 58vh, 640px);
+            display: flex;
+            align-items: flex-end;
+            padding: clamp(120px, 14vw, 180px) 0 clamp(48px, 6vw, 72px);
+            overflow: hidden;
+            color: var(--ivory);
+            isolation: isolate;
+            background: var(--forest-deep);
+        }
+        .kd-detail .kd-hero__bg {
+            position: absolute;
+            inset: 0;
+            z-index: -2;
+            overflow: hidden;
+        }
+        .kd-detail .kd-hero__bg img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transform: scale(1.06);
+            transition: transform 2.2s var(--ease-out);
+        }
+        .kd-detail .kd-hero.is-in .kd-hero__bg img { transform: scale(1); }
+        .kd-detail .kd-hero::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            z-index: -1;
+            background:
+                linear-gradient(180deg,
+                    rgba(10,22,17,.28) 0%,
+                    rgba(10,22,17,.5) 42%,
+                    rgba(10,22,17,.94) 100%),
+                radial-gradient(ellipse 70% 70% at 20% 20%, rgba(20,39,31,.14), transparent 65%);
+            pointer-events: none;
+        }
+        .kd-detail .kd-hero__inner {
+            position: relative;
+            z-index: 2;
+            max-width: 820px;
+        }
+        .kd-detail .kd-hero__crumb {
+            display: inline-flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 22px;
+            font-size: 0.6rem;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            color: rgba(248,246,240,.6);
+        }
+        .kd-detail .kd-hero__crumb a {
+            color: rgba(248,246,240,.8);
+            text-decoration: none;
+            transition: color 0.3s var(--ease);
+        }
+        .kd-detail .kd-hero__crumb a:hover { color: var(--ivory); }
+        .kd-detail .kd-hero__crumb span { opacity: 0.5; }
+
+        .kd-detail .kd-hero__meta {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 10px 22px;
+            margin-bottom: 20px;
+        }
+        .kd-detail .kd-hero__meta span {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.6rem;
+            letter-spacing: 0.22em;
+            text-transform: uppercase;
+            color: rgba(248,246,240,.72);
+        }
+        .kd-detail .kd-hero__meta span + span::before {
+            content: '';
+            width: 12px;
+            height: 1px;
+            background: currentColor;
+            opacity: 0.5;
+            margin-right: 6px;
+        }
+        .kd-detail .kd-hero h1 {
+            margin: 0 0 20px;
+            color: var(--ivory);
+            font-family: var(--serif);
+            font-weight: 500;
+            font-size: clamp(2.4rem, 5.4vw, 4.4rem);
+            line-height: 1;
+            letter-spacing: -0.025em;
+            text-wrap: balance;
+        }
+        .kd-detail .kd-hero__lead {
+            max-width: 60ch;
+            margin: 0 0 28px;
+            color: rgba(248,246,240,.85);
+            font-size: clamp(0.98rem, 1.15vw, 1.08rem);
+            line-height: 1.75;
+        }
+        .kd-detail .kd-hero__actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
         }
 
-        .restaurant-reviews__note {
-            margin-top: 22px;
+        .kd-detail .kd-hero__inner > * {
+            opacity: 0;
+            transform: translateY(24px);
+            filter: blur(6px);
+            animation: heroIn 1s var(--ease-out) forwards;
+        }
+        .kd-detail .kd-hero__inner > *:nth-child(1) { animation-delay: 0.08s; }
+        .kd-detail .kd-hero__inner > *:nth-child(2) { animation-delay: 0.18s; }
+        .kd-detail .kd-hero__inner > *:nth-child(3) { animation-delay: 0.3s; }
+        .kd-detail .kd-hero__inner > *:nth-child(4) { animation-delay: 0.42s; }
+        .kd-detail .kd-hero__inner > *:nth-child(5) { animation-delay: 0.54s; }
+        @@keyframes heroIn {
+            to { opacity: 1; transform: none; filter: blur(0); }
+        }
+
+        /* ---------- Layout ---------- */
+        .kd-detail .kd-body {
+            padding: clamp(48px, 6vw, 96px) 0;
+        }
+        .kd-detail .kd-layout {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 340px;
+            gap: clamp(32px, 5vw, 72px);
+            align-items: start;
+        }
+        .kd-detail .kd-main { min-width: 0; }
+
+        /* ---------- Cover ---------- */
+        .kd-detail .kd-cover {
+            position: relative;
+            aspect-ratio: 16 / 9;
+            margin-bottom: clamp(32px, 4vw, 48px);
+            overflow: hidden;
+            border-radius: var(--card-radius);
+            background: var(--sand);
+            box-shadow: 0 30px 60px -40px rgba(20,39,31,.45);
+        }
+        .kd-detail .kd-cover img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        /* ---------- Intro block ---------- */
+        .kd-detail .kd-intro-block {
+            padding-bottom: clamp(32px, 4vw, 48px);
+            border-bottom: 1px solid var(--line);
+        }
+        .kd-detail .kd-intro-block h2 {
+            margin: 0 0 20px;
+            font-family: var(--serif);
+            font-weight: 500;
+            font-size: clamp(1.8rem, 3vw, 2.6rem);
+            line-height: 1.08;
+            letter-spacing: -0.02em;
+            color: var(--forest-deep);
+        }
+        .kd-detail .kd-prose {
+            max-width: 68ch;
+            font-size: 1rem;
+            line-height: 1.85;
+            color: var(--charcoal);
+            white-space: pre-line;
+        }
+        .kd-detail .kd-prose p { margin: 0 0 1em; }
+        .kd-detail .kd-prose p:last-child { margin-bottom: 0; }
+
+        /* ---------- Rail ---------- */
+        .kd-detail .kd-rail {
+            position: sticky;
+            top: calc(var(--header-h) + 24px);
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+        }
+        .kd-detail .kd-rail__card {
+            overflow: hidden;
+            border: 1px solid var(--line);
+            border-radius: var(--card-radius);
+            background: var(--white);
+            box-shadow: 0 30px 60px -40px rgba(20,39,31,.4);
+        }
+        .kd-detail .kd-rail__head {
+            padding: clamp(20px, 2.6vw, 26px);
+            background:
+                radial-gradient(ellipse 80% 80% at 20% 10%, rgba(143,168,136,.24), transparent 60%),
+                linear-gradient(140deg, var(--forest) 0%, #1d3629 55%, var(--moss) 140%);
+            color: var(--ivory);
+        }
+        .kd-detail .kd-rail__head span {
+            display: block;
+            font-size: 0.56rem;
+            font-weight: 600;
+            letter-spacing: 0.22em;
+            text-transform: uppercase;
+            color: rgba(248,246,240,.62);
+            margin-bottom: 8px;
+        }
+        .kd-detail .kd-rail__head strong {
+            display: block;
+            font-family: var(--serif);
+            font-weight: 500;
+            font-size: clamp(1.4rem, 2.2vw, 1.8rem);
+            line-height: 1.1;
+            letter-spacing: -0.02em;
+        }
+        .kd-detail .kd-rail__head small {
+            display: block;
+            margin-top: 8px;
+            font-size: 0.6rem;
+            letter-spacing: 0.16em;
+            text-transform: uppercase;
+            color: rgba(248,246,240,.68);
+        }
+        .kd-detail .kd-rail__body {
+            display: flex;
+            flex-direction: column;
+            padding: 4px clamp(20px, 2.6vw, 26px);
+        }
+        .kd-detail .kd-info-row {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 14px;
+            padding: 14px 0;
+            border-bottom: 1px solid var(--line);
+            font-size: 0.82rem;
+        }
+        .kd-detail .kd-info-row:last-child { border-bottom: 0; }
+        .kd-detail .kd-info-row span:first-child {
             color: var(--muted);
-            font-size: .76rem;
-            line-height: 1.7;
+            letter-spacing: 0.02em;
+        }
+        .kd-detail .kd-info-row span:last-child {
+            color: var(--charcoal);
+            font-weight: 600;
+            text-align: right;
+            max-width: 60%;
+        }
+        .kd-detail .kd-rail__foot {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            padding: 16px clamp(20px, 2.6vw, 26px) clamp(20px, 2.6vw, 26px);
+        }
+        .kd-detail .kd-rail__note {
+            margin: 0;
+            font-size: 0.7rem;
+            line-height: 1.55;
+            color: var(--muted);
+            text-align: center;
         }
 
-        @@media (max-width: 850px) {
-            .restaurant-layout {
-                grid-template-columns: 1fr;
-            }
+        /* ---------- Sections ---------- */
+        .kd-detail .kd-section {
+            padding: clamp(32px, 4vw, 44px) 0;
+            border-top: 1px solid var(--line);
+        }
+        .kd-detail .kd-section:first-of-type { border-top: 0; padding-top: 0; }
 
-            .restaurant-sidebar {
+        .kd-detail .kd-section-head {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: baseline;
+            gap: 16px;
+            margin-bottom: clamp(18px, 2.4vw, 26px);
+        }
+        .kd-detail .kd-section-num {
+            font-family: var(--serif);
+            font-style: italic;
+            font-size: 0.92rem;
+            letter-spacing: 0.06em;
+            color: var(--sage);
+        }
+        .kd-detail .kd-section-head h2 {
+            margin: 0;
+            font-family: var(--serif);
+            font-weight: 500;
+            font-size: clamp(1.4rem, 2.2vw, 1.85rem);
+            line-height: 1.1;
+            letter-spacing: -0.015em;
+            color: var(--forest-deep);
+        }
+
+        /* ---------- Info grid ---------- */
+        .kd-detail .kd-info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 14px;
+        }
+        .kd-detail .kd-info-card {
+            padding: clamp(16px, 2vw, 22px);
+            border: 1px solid var(--line);
+            border-radius: var(--card-radius-sm);
+            background: var(--white);
+        }
+        .kd-detail .kd-info-card span {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 0.56rem;
+            font-weight: 600;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            color: var(--muted);
+        }
+        .kd-detail .kd-info-card strong {
+            font-family: var(--serif);
+            font-weight: 500;
+            font-size: 1.05rem;
+            line-height: 1.25;
+            letter-spacing: -0.005em;
+            color: var(--forest-deep);
+            overflow-wrap: anywhere;
+        }
+
+        /* ---------- Reviews ---------- */
+        .kd-detail .kd-reviews {
+            background: var(--white);
+            border-top: 1px solid var(--line);
+            border-bottom: 1px solid var(--line);
+            padding: clamp(48px, 6vw, 80px) 0;
+        }
+        .kd-detail .kd-reviews__head {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: flex-end;
+            justify-content: space-between;
+            gap: 24px;
+            margin-bottom: clamp(24px, 3vw, 36px);
+        }
+        .kd-detail .kd-reviews__head h2 {
+            margin: 0 0 8px;
+            font-family: var(--serif);
+            font-weight: 500;
+            font-size: clamp(1.6rem, 2.6vw, 2.2rem);
+            line-height: 1.1;
+            letter-spacing: -0.02em;
+            color: var(--forest-deep);
+        }
+        .kd-detail .kd-reviews__head p {
+            margin: 0;
+            max-width: 60ch;
+            color: var(--muted);
+            font-size: 0.94rem;
+            line-height: 1.65;
+        }
+        .kd-detail .kd-rating {
+            display: inline-flex;
+            align-items: center;
+            gap: 16px;
+            padding: 16px 22px;
+            border-radius: var(--card-radius-sm);
+            background: var(--ivory);
+            border: 1px solid var(--line);
+        }
+        .kd-detail .kd-rating__score {
+            font-family: var(--serif);
+            font-weight: 500;
+            font-size: 2.2rem;
+            line-height: 1;
+            color: var(--forest-deep);
+        }
+        .kd-detail .kd-rating__meta {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        .kd-detail .kd-stars {
+            color: #bd914a;
+            font-size: 0.95rem;
+            letter-spacing: 2px;
+            white-space: nowrap;
+        }
+        .kd-detail .kd-rating__count {
+            font-size: 0.62rem;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            color: var(--muted);
+        }
+
+        .kd-detail .kd-review-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
+            gap: clamp(16px, 2.4vw, 24px);
+        }
+        .kd-detail .kd-review-card {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            padding: clamp(20px, 2.6vw, 26px);
+            background: var(--ivory);
+            border: 1px solid var(--line);
+            border-radius: var(--card-radius-sm);
+            transition:
+                transform 0.4s var(--ease-out),
+                box-shadow 0.4s var(--ease-out),
+                border-color 0.3s var(--ease);
+        }
+        .kd-detail .kd-review-card:hover {
+            transform: translateY(-3px);
+            border-color: rgba(83,107,80,.25);
+            box-shadow: 0 20px 40px -30px rgba(20,39,31,.35);
+        }
+        .kd-detail .kd-review-card__top {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 14px;
+        }
+        .kd-detail .kd-review-card__who {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .kd-detail .kd-review-card__avatar {
+            display: grid;
+            place-items: center;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background:
+                radial-gradient(ellipse 80% 80% at 20% 10%, rgba(143,168,136,.4), transparent 60%),
+                linear-gradient(140deg, var(--forest) 0%, var(--moss) 140%);
+            color: var(--ivory);
+            font-family: var(--serif);
+            font-style: italic;
+            font-size: 1rem;
+            font-weight: 500;
+        }
+        .kd-detail .kd-review-card__name {
+            font-weight: 600;
+            font-size: 0.88rem;
+            color: var(--forest-deep);
+            line-height: 1.2;
+        }
+        .kd-detail .kd-review-card__date {
+            display: block;
+            margin-top: 2px;
+            font-size: 0.6rem;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            color: var(--muted);
+        }
+        .kd-detail .kd-review-card h3 {
+            margin: 0;
+            font-family: var(--serif);
+            font-weight: 500;
+            font-size: 1.08rem;
+            line-height: 1.3;
+            color: var(--forest-deep);
+        }
+        .kd-detail .kd-review-card__body {
+            margin: 0;
+            color: var(--muted);
+            font-size: 0.9rem;
+            line-height: 1.65;
+            white-space: pre-line;
+            overflow-wrap: anywhere;
+        }
+
+        .kd-detail .kd-review-notice {
+            margin-top: clamp(20px, 2.6vw, 28px);
+            padding: 14px 18px;
+            border-left: 3px solid var(--sand);
+            border-radius: 8px;
+            background: var(--ivory);
+            color: var(--muted);
+            font-size: 0.78rem;
+            line-height: 1.6;
+        }
+        .kd-detail .kd-reviews__actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 24px;
+        }
+
+        /* ---------- Empty state ---------- */
+        .kd-detail .kd-empty {
+            display: grid;
+            place-items: center;
+            text-align: center;
+            padding: clamp(32px, 4vw, 48px) clamp(20px, 3vw, 32px);
+            border: 1px dashed var(--line);
+            border-radius: var(--card-radius);
+            background: var(--white);
+        }
+        .kd-detail .kd-empty__icon {
+            display: grid;
+            place-items: center;
+            width: 48px;
+            height: 48px;
+            margin-bottom: 16px;
+            border-radius: 50%;
+            background: var(--ivory);
+            color: var(--moss);
+            font-family: var(--serif);
+            font-size: 1.2rem;
+        }
+        .kd-detail .kd-empty h3 {
+            margin: 0 0 8px;
+            font-family: var(--serif);
+            font-weight: 500;
+            font-size: 1.15rem;
+            color: var(--forest-deep);
+        }
+        .kd-detail .kd-empty p {
+            margin: 0;
+            max-width: 44ch;
+            color: var(--muted);
+            font-size: 0.9rem;
+            line-height: 1.65;
+        }
+
+        /* ---------- Plan CTA ---------- */
+        .kd-detail .kd-plan {
+            position: relative;
+            overflow: hidden;
+            padding: clamp(64px, 8vw, 108px) 0;
+            background: var(--forest-deep);
+            color: var(--ivory);
+            isolation: isolate;
+        }
+        .kd-detail .kd-plan::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            z-index: -1;
+            background:
+                radial-gradient(ellipse 60% 60% at 15% 20%, rgba(143,168,136,.18), transparent 60%),
+                radial-gradient(ellipse 60% 60% at 100% 100%, rgba(232,223,201,.08), transparent 65%),
+                linear-gradient(180deg, #173b32 0%, #1d3629 60%, #14271f 100%);
+        }
+        .kd-detail .kd-plan__inner {
+            max-width: 780px;
+            margin: 0 auto;
+            text-align: center;
+        }
+        .kd-detail .kd-plan__inner .eyebrow { justify-content: center; }
+        .kd-detail .kd-plan h2 {
+            margin: 0 0 18px;
+            font-family: var(--serif);
+            font-weight: 500;
+            font-size: clamp(2rem, 4vw, 3.2rem);
+            line-height: 1.08;
+            letter-spacing: -0.025em;
+            color: var(--ivory);
+        }
+        .kd-detail .kd-plan p {
+            margin: 0 auto 28px;
+            max-width: 54ch;
+            color: rgba(248,246,240,.8);
+            font-size: clamp(0.98rem, 1.1vw, 1.06rem);
+            line-height: 1.75;
+        }
+        .kd-detail .kd-plan__actions {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 12px;
+        }
+        .kd-detail .kd-plan__notice {
+            margin: 28px auto 0;
+            max-width: 620px;
+            padding: 14px 18px;
+            border-left: 3px solid var(--sand);
+            border-radius: 8px;
+            background: rgba(248,246,240,.06);
+            color: rgba(248,246,240,.7);
+            font-size: 0.78rem;
+            line-height: 1.6;
+            text-align: left;
+        }
+
+        /* ---------- Footer ---------- */
+        .kd-detail .kd-foot {
+            padding: 28px 0;
+            background: #0e1f19;
+            color: rgba(248,246,240,.7);
+            font-size: 0.8rem;
+            text-align: center;
+        }
+        .kd-detail .kd-foot strong { color: var(--ivory); font-weight: 500; }
+
+        /* ---------- Responsive ---------- */
+        @@media (max-width: 1024px) {
+            .kd-detail .kd-layout { grid-template-columns: 1fr; }
+            .kd-detail .kd-rail {
                 position: static;
-            }
-
-            .restaurant-main-image {
-                height: 350px;
+                order: -1;
             }
         }
 
-        @@media (max-width: 600px) {
-            .restaurant-main-image {
-                height: 260px;
-            }
+        @@media (max-width: 760px) {
+            .kd-detail .kd-hero { min-height: 0; padding-top: calc(var(--header-h) + 56px); }
+            .kd-detail .kd-hero__actions { flex-direction: column; }
+            .kd-detail .kd-hero__actions .btn { width: 100%; }
+            .kd-detail .kd-nav__inner { padding: 12px 0; }
+            .kd-detail .kd-reviews__head { align-items: flex-start; }
+            .kd-detail .kd-reviews__actions { flex-direction: column; }
+            .kd-detail .kd-reviews__actions .btn { width: 100%; }
+            .kd-detail .kd-info-grid { grid-template-columns: 1fr; }
+        }
 
-            .restaurant-sidebar {
-                padding: 22px;
+        @@media (prefers-reduced-motion: reduce) {
+            .kd-detail .reveal, .kd-detail .kd-hero__bg img {
+                opacity: 1 !important;
+                transform: none !important;
+                filter: none !important;
+                transition: none !important;
             }
-
-            .restaurant-reviews__grid {
-                grid-template-columns: 1fr;
+            .kd-detail .kd-hero__inner > * {
+                opacity: 1 !important;
+                transform: none !important;
+                filter: none !important;
+                animation: none !important;
             }
-
-            .restaurant-reviews__summary {
-                padding: 20px;
+            .kd-detail .btn,
+            .kd-detail .kd-review-card {
+                transition: none !important;
             }
+            .kd-detail .btn:hover,
+            .kd-detail .kd-review-card:hover {
+                transform: none !important;
+            }
+            .kd-detail .kd-hero.is-in .kd-hero__bg img { transform: none !important; }
         }
     </style>
 }
 
-<main class="restaurant-detail">
+<div class="kd-detail">
+    <noscript>
+        <style>
+            .kd-detail .reveal { opacity: 1 !important; transform: none !important; filter: none !important; }
+            .kd-detail .kd-hero__bg img { transform: none !important; }
+        </style>
+    </noscript>
 
-    <header class="restaurant-hero">
-        <div class="container">
-
-            <div class="restaurant-breadcrumb">
-                <a href="@Url.Action("Index", "Home")">Home</a>
-                /
-                <a href="@Url.Action("Index", "Restaurants")">Restaurants</a>
-                /
-                @Model.Name
-            </div>
-
-            <div class="restaurant-heading" data-reveal>
-                <span class="eyebrow">Restaurant Information</span>
-
-                <h1>@Model.Name</h1>
-
-                <p>
-                    @(Model.ShortDescription ?? "Discover this restaurant during your journey.")
-                </p>
-
-                <div class="restaurant-meta">
-                    @if (!string.IsNullOrWhiteSpace(Model.City))
-                    {
-                        <span>@Model.City</span>
-                    }
-
-                    @if (!string.IsNullOrWhiteSpace(Model.CuisineType))
-                    {
-                        <span>@Model.CuisineType</span>
-                    }
-
-                    @if (Model.IsFeatured)
-                    {
-                        <span>Featured Restaurant</span>
-                    }
-                </div>
-            </div>
-
+    <!-- ==================== NAV ==================== -->
+    <header class="kd-nav">
+        <div class="container kd-nav__inner">
+            <a class="kd-brand" asp-controller="Home" asp-action="Index">Karnel Travel Guide</a>
+            <a class="kd-back" asp-controller="Restaurants" asp-action="Index">All restaurants</a>
         </div>
     </header>
 
-    <section class="section">
-        <div class="container">
+    <main>
+        <!-- ==================== HERO ==================== -->
+        <section class="kd-hero reveal">
+            <div class="kd-hero__bg">
+                <img src="@imageUrl" alt="@Model.Name" loading="eager" fetchpriority="high" />
+            </div>
 
-            <div class="restaurant-layout">
+            <div class="container kd-hero__inner">
+                <nav class="kd-hero__crumb" aria-label="Breadcrumb">
+                    <a asp-controller="Home" asp-action="Index">Home</a>
+                    <span>/</span>
+                    <a asp-controller="Restaurants" asp-action="Index">Restaurants</a>
+                    <span>/</span>
+                    <span>@Model.Name</span>
+                </nav>
 
-                <div class="restaurant-content" data-reveal>
+                <div class="kd-hero__meta">
+                    @if (hasCity)
+                    {
+                        <span>@Model.City</span>
+                    }
+                    @if (hasCuisine)
+                    {
+                        <span>@Model.CuisineType</span>
+                    }
+                    @if (Model.IsFeatured)
+                    {
+                        <span>Featured</span>
+                    }
+                    @if (totalReviews > 0)
+                    {
+                        <span>@averageRating.ToString("0.0") / 5 · @totalReviews review(s)</span>
+                    }
+                </div>
 
-                    <img class="restaurant-main-image"
-                         src="@imageUrl"
-                         alt="@Model.Name"
-                         onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=1400&q=85';" />
+                <h1>@Model.Name</h1>
 
-                    <div class="restaurant-section">
-                        <span class="eyebrow">About the Restaurant</span>
-                        <h2>Discover the Experience.</h2>
+                <p class="kd-hero__lead">
+                    @(hasShortDescription ? Model.ShortDescription : "Discover this restaurant during your journey.")
+                </p>
 
-                        <div class="restaurant-description">
-                            @if (!string.IsNullOrWhiteSpace(Model.Description))
+                <div class="kd-hero__actions">
+                    <a class="btn btn--light" href="#booking">Make an inquiry</a>
+                    <a class="btn btn--ghost-light" href="#reviews">Read reviews</a>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== BODY ==================== -->
+        <section class="kd-body">
+            <div class="container">
+                <div class="kd-layout">
+
+                    <!-- ============ MAIN ============ -->
+                    <div class="kd-main">
+
+                        <!-- Cover -->
+                        <div class="kd-cover reveal">
+                            <img src="@imageUrl" alt="@Model.Name" loading="eager" />
+                        </div>
+
+                        <!-- Intro -->
+                        <div class="kd-intro-block reveal">
+                            <p class="eyebrow">About the restaurant</p>
+                            <h2>Discover the experience.</h2>
+
+                            @if (hasDescription || hasShortDescription)
                             {
-                                @Model.Description
-                            }
-                            else if (!string.IsNullOrWhiteSpace(Model.ShortDescription))
-                            {
-                                @Model.ShortDescription
+                                <div class="kd-prose">
+                                    @if (hasDescription)
+                                    {
+                                        <p>@Model.Description</p>
+                                    }
+                                    else if (hasShortDescription)
+                                    {
+                                        <p>@Model.ShortDescription</p>
+                                    }
+                                </div>
                             }
                             else
                             {
-                                <p>Further information about this restaurant will be added soon.</p>
-                            }
-                        </div>
-                    </div>
-
-                    @if (!string.IsNullOrWhiteSpace(Model.Address))
-                    {
-                        <div class="restaurant-section">
-                            <span class="eyebrow">Location</span>
-                            <h2>Find the Restaurant.</h2>
-                            <p class="restaurant-description">@Model.Address</p>
-                        </div>
-                    }
-
-                    <a class="restaurant-back"
-                       href="@Url.Action("Index", "Restaurants")">
-                        ← Back to Restaurants
-                    </a>
-
-                </div>
-
-                <aside class="restaurant-sidebar" data-reveal>
-
-                    <span class="eyebrow">Restaurant Overview</span>
-                    <h2>Plan Your Visit.</h2>
-
-                    @if (Model.AverageMealPrice.HasValue && Model.AverageMealPrice.Value > 0)
-                    {
-                        <div class="restaurant-info-item">
-                            <small>Average Meal Price</small>
-                            <strong class="restaurant-price">
-                                PKR @Model.AverageMealPrice.Value.ToString("N0")
-                            </strong>
-                        </div>
-                    }
-
-                    @if (!string.IsNullOrWhiteSpace(Model.CuisineType))
-                    {
-                        <div class="restaurant-info-item">
-                            <small>Cuisine Type</small>
-                            <strong>@Model.CuisineType</strong>
-                        </div>
-                    }
-
-                    @if (!string.IsNullOrWhiteSpace(Model.City))
-                    {
-                        <div class="restaurant-info-item">
-                            <small>City</small>
-                            <strong>@Model.City</strong>
-                        </div>
-                    }
-
-                    @if (!string.IsNullOrWhiteSpace(Model.Address))
-                    {
-                        <div class="restaurant-info-item">
-                            <small>Address</small>
-                            <strong>@Model.Address</strong>
-                        </div>
-                    }
-
-                    @if (!string.IsNullOrWhiteSpace(Model.ContactPhone))
-                    {
-                        <div class="restaurant-info-item">
-                            <small>Contact Number</small>
-                            <strong>@Model.ContactPhone</strong>
-                        </div>
-                    }
-
-                    <a href="@bookingUrl" class="btn btn--primary">
-                        Book / Make an Inquiry
-                    </a>
-
-                    <p class="restaurant-note">
-                        Contact and booking details are subject to confirmation.
-                        Please verify arrangements before your visit.
-                    </p>
-
-                </aside>
-
-            </div>
-
-        </div>
-    </section>
-
-    <!-- RESTAURANT REVIEWS -->
-    <section class="restaurant-reviews">
-        <div class="container">
-
-            <div class="restaurant-reviews__heading" data-reveal>
-                <p class="restaurant-reviews__eyebrow">Traveller experiences</p>
-                <h2>Reviews of @Model.Name</h2>
-                <p>Read feedback shared by visitors about this restaurant.</p>
-            </div>
-
-            @if (totalReviews > 0)
-            {
-                <div class="restaurant-reviews__summary" data-reveal>
-                    <div class="restaurant-reviews__average">
-                        @averageRating.ToString("0.0")
-                    </div>
-
-                    <div>
-                        <div class="restaurant-reviews__stars">
-                            @for (int i = 1; i <= 5; i++)
-                            {
-                                @(i <= Math.Round(averageRating, MidpointRounding.AwayFromZero) ? "★" : "☆")
+                                <p class="kd-prose" style="color:var(--muted);">
+                                    Further information about this restaurant will be added soon.
+                                </p>
                             }
                         </div>
 
-                        <div class="restaurant-reviews__count">
-                            @totalReviews approved review(s)
-                        </div>
-                    </div>
-                </div>
-
-                <div class="restaurant-reviews__grid">
-                    @foreach (var review in reviews)
-                    {
-                        <article class="restaurant-review-card" data-reveal>
-
-                            <div class="restaurant-review-card__top">
-                                <div>
-                                    <div class="restaurant-review-card__name">
-                                        @review.ReviewerName
-                                    </div>
-
-                                    <div class="restaurant-review-card__date">
-                                        @review.CreatedAt.ToString("dd MMM yyyy")
-                                    </div>
+                        <!-- Location -->
+                        @if (hasAddress || hasCity)
+                        {
+                            <section class="kd-section reveal" id="location" aria-labelledby="loc-title">
+                                <div class="kd-section-head">
+                                    <span class="kd-section-num">01</span>
+                                    <h2 id="loc-title">Location &amp; contact</h2>
                                 </div>
 
-                                <div class="restaurant-reviews__stars"
-                                     aria-label="@review.Rating out of 5 stars">
-                                    @for (int i = 1; i <= 5; i++)
+                                <div class="kd-info-grid">
+                                    @if (hasCity)
                                     {
-                                        @(i <= review.Rating ? "★" : "☆")
+                                        <div class="kd-info-card">
+                                            <span>City</span>
+                                            <strong>@Model.City</strong>
+                                        </div>
+                                    }
+                                    @if (hasAddress)
+                                    {
+                                        <div class="kd-info-card">
+                                            <span>Address</span>
+                                            <strong>@Model.Address</strong>
+                                        </div>
+                                    }
+                                    @if (hasPhone)
+                                    {
+                                        <div class="kd-info-card">
+                                            <span>Contact</span>
+                                            <strong>@Model.ContactPhone</strong>
+                                        </div>
                                     }
                                 </div>
+                            </section>
+                        }
+
+                        <!-- Booking note -->
+                        <section class="kd-section reveal" id="booking" aria-labelledby="booking-title">
+                            <div class="kd-section-head">
+                                <span class="kd-section-num">02</span>
+                                <h2 id="booking-title">Booking &amp; inquiries</h2>
                             </div>
 
-                            <h3>@review.Title</h3>
+                            <div class="kd-prose" style="max-width:60ch;">
+                                <p>
+                                    Contact and booking details are subject to confirmation. 
+                                    Please verify arrangements before your visit.
+                                </p>
+                            </div>
 
-                            <p class="restaurant-review-card__comment">
-                                @review.Comment
-                            </p>
+                            <div style="margin-top:22px;">
+                                <a class="btn" href="@bookingUrl">Make an inquiry</a>
+                            </div>
+                        </section>
 
-                        </article>
+                    </div>
+
+                    <!-- ============ RAIL ============ -->
+                    <aside class="kd-rail" aria-label="Restaurant summary">
+                        <div class="kd-rail__card reveal">
+                            <div class="kd-rail__head">
+                                <span>Average meal</span>
+                                <strong>
+                                    @if (hasPrice)
+                                    {
+                                        @:PKR @Model.AverageMealPrice.Value.ToString("N0")
+                                    }
+                                    else
+                                    {
+                                        @:On request
+                                    }
+                                </strong>
+                                <small>per person · reference</small>
+                            </div>
+                            <div class="kd-rail__body">
+                                @if (hasCuisine)
+                                {
+                                    <div class="kd-info-row">
+                                        <span>Cuisine</span>
+                                        <span>@Model.CuisineType</span>
+                                    </div>
+                                }
+                                @if (hasCity)
+                                {
+                                    <div class="kd-info-row">
+                                        <span>City</span>
+                                        <span>@Model.City</span>
+                                    </div>
+                                }
+                                @if (hasPhone)
+                                {
+                                    <div class="kd-info-row">
+                                        <span>Contact</span>
+                                        <span>@Model.ContactPhone</span>
+                                    </div>
+                                }
+                                @if (totalReviews > 0)
+                                {
+                                    <div class="kd-info-row">
+                                        <span>Reviews</span>
+                                        <span>@averageRating.ToString("0.0") / 5 · @totalReviews</span>
+                                    </div>
+                                }
+                                <div class="kd-info-row">
+                                    <span>Booking</span>
+                                    <span>Pending review</span>
+                                </div>
+                            </div>
+                            <div class="kd-rail__foot">
+                                <a class="btn btn--block" href="@bookingUrl">Make an inquiry</a>
+                                <a class="btn btn--ghost btn--block" asp-controller="Restaurants" asp-action="Index">
+                                    Back to restaurants
+                                </a>
+                                <p class="kd-rail__note">
+                                    Prices are indicative. Availability and final pricing confirmed on review.
+                                </p>
+                            </div>
+                        </div>
+                    </aside>
+
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== REVIEWS ==================== -->
+        <section class="kd-reviews" id="reviews" aria-labelledby="reviews-title">
+            <div class="container">
+                <div class="kd-reviews__head reveal">
+                    <div>
+                        <p class="eyebrow">Traveller experiences</p>
+                        <h2 id="reviews-title">Reviews of @Model.Name</h2>
+                        <p>Read feedback shared by visitors about this restaurant.</p>
+                    </div>
+
+                    @if (totalReviews > 0)
+                    {
+                        <div class="kd-rating">
+                            <span class="kd-rating__score">@averageRating.ToString("0.0")</span>
+                            <div class="kd-rating__meta">
+                                <span class="kd-stars">
+                                    @for (int i = 1; i <= 5; i++)
+                                    {
+                                        @(i <= Math.Round(averageRating, MidpointRounding.AwayFromZero) ? "★" : "☆")
+                                    }
+                                </span>
+                                <span class="kd-rating__count">@totalReviews approved review(s)</span>
+                            </div>
+                        </div>
                     }
                 </div>
-            }
-            else
-            {
-                <div class="restaurant-reviews__empty" data-reveal>
-                    <h3>No reviews yet</h3>
-                    <p>
-                        Be the first to share your experience
-                        at @Model.Name.
-                    </p>
+
+                @if (reviews.Any())
+                {
+                    <div class="kd-review-grid">
+                        @foreach (var review in reviews)
+                        {
+                            var initial = string.IsNullOrWhiteSpace(review.ReviewerName)
+                                ? "G"
+                                : review.ReviewerName.Trim().Substring(0, 1).ToUpperInvariant();
+
+                            <article class="kd-review-card">
+                                <div class="kd-review-card__top">
+                                    <div class="kd-review-card__who">
+                                        <span class="kd-review-card__avatar" aria-hidden="true">@initial</span>
+                                        <div>
+                                            <div class="kd-review-card__name">@review.ReviewerName</div>
+                                            <span class="kd-review-card__date">
+                                                @review.CreatedAt.ToString("dd MMM yyyy")
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <span class="kd-stars" aria-label="@review.Rating out of 5 stars">
+                                        @for (int i = 1; i <= 5; i++)
+                                        {
+                                            @(i <= review.Rating ? "★" : "☆")
+                                        }
+                                    </span>
+                                </div>
+                                @if (!string.IsNullOrWhiteSpace(review.Title))
+                                {
+                                    <h3>@review.Title</h3>
+                                }
+                                <p class="kd-review-card__body">@review.Comment</p>
+                            </article>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="kd-empty">
+                        <div class="kd-empty__icon">★</div>
+                        <h3>No reviews yet</h3>
+                        <p>Be the first to share your experience at @Model.Name.</p>
+                    </div>
+                }
+
+                <div class="kd-review-notice">
+                    Reviews are submitted for moderation before they appear publicly.
                 </div>
+
+                <div class="kd-reviews__actions">
+                    <a class="btn" href="@reviewUrl">Write a review</a>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== PLAN CTA ==================== -->
+        <section class="kd-plan" aria-labelledby="plan-title">
+            <div class="container kd-plan__inner reveal">
+                <p class="eyebrow eyebrow--light">Continue exploring</p>
+                <h2 id="plan-title">Find your next table.</h2>
+                <p>
+                    Explore other restaurants, discover new cuisines and start planning your next dining experience.
+                </p>
+                <div class="kd-plan__actions">
+                    <a class="btn btn--light" href="@bookingUrl">Make an inquiry</a>
+                    <a class="btn btn--ghost-light" asp-controller="Restaurants" asp-action="Index">All restaurants</a>
+                </div>
+                <div class="kd-plan__notice">
+                    Submitting a request does not confirm a reservation. Availability and final
+                    arrangements are confirmed by Karnel Travel Guide after review.
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="kd-foot">
+        <div class="container">
+            © @DateTime.Now.Year <strong>Karnel Travel Guide</strong>. Explore more. Travel better.
+        </div>
+    </footer>
+</div>
+
+@section Scripts {
+    <script>
+        (function () {
+            'use strict';
+
+            var reduceMotion = window.matchMedia
+                && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+            var items = document.querySelectorAll('.kd-detail .reveal');
+            if (!items.length) { return; }
+
+            if (reduceMotion || !('IntersectionObserver' in window)) {
+                for (var i = 0; i < items.length; i++) {
+                    items[i].classList.add('is-in');
+                }
+                return;
             }
 
-            <a href="@reviewUrl" class="restaurant-review-button">
-                Write a review →
-            </a>
+            var observer = new IntersectionObserver(function (entries) {
+                for (var i = 0; i < entries.length; i++) {
+                    if (entries[i].isIntersecting) {
+                        entries[i].target.classList.add('is-in');
+                        observer.unobserve(entries[i].target);
+                    }
+                }
+            }, { root: null, rootMargin: '0px 0px -8% 0px', threshold: 0.12 });
 
-            <p class="restaurant-reviews__note">
-                Reviews are submitted for moderation before they appear publicly.
-            </p>
-
-        </div>
-    </section>
-
-</main>
+            for (var j = 0; j < items.length; j++) {
+                observer.observe(items[j]);
+            }
+        })();
+    </script>
+}

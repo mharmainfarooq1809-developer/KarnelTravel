@@ -1,73 +1,717 @@
-﻿
-@model IEnumerable<KarnelTravel.Models.TourPackage>
+﻿@model IEnumerable<KarnelTravel.Models.TourPackage>
 
 @{
     ViewData["Title"] = "Tour Packages | Karnel Travel Guide";
+    var packageList = Model?.ToList() ?? new List<KarnelTravel.Models.TourPackage>();
+    int total = packageList.Count;
 }
 
-<section style="padding:140px 6% 70px; background:#173b32; color:#f7f4eb;">
-    <p style="letter-spacing:3px; text-transform:uppercase;">Discover Pakistan</p>
-    <h1 style="font-size:clamp(42px,7vw,76px); margin:15px 0;">
-        Find Your Next Journey.
-    </h1>
-    <p style="max-width:650px; line-height:1.8;">
-        Explore carefully planned journeys across Pakistan's extraordinary landscapes.
-    </p>
-</section>
+@section Styles {
+    <style>
+        @@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,500;1,600&display=swap');
 
-<section style="padding:70px 6%; background:#f7f4eb; color:#243b32;">
-    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:15px; margin-bottom:35px;">
-        <div>
-            <p style="letter-spacing:2px; text-transform:uppercase;">Our collection</p>
-            <h2 style="font-size:36px;">Explore Tour Packages</h2>
+        :root {
+            --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+            --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+            --card-radius: 20px;
+            --card-radius-sm: 14px;
+        }
+
+        html { scroll-behavior: smooth; }
+        ::selection { background: var(--forest); color: var(--ivory); }
+        ::-webkit-scrollbar { width: 10px; }
+        ::-webkit-scrollbar-track { background: var(--ivory); }
+        ::-webkit-scrollbar-thumb {
+            background: var(--moss);
+            border-radius: 10px;
+            border: 2px solid var(--ivory);
+        }
+        ::-webkit-scrollbar-thumb:hover { background: var(--forest); }
+
+        :focus-visible {
+            outline: 2px solid var(--moss);
+            outline-offset: 3px;
+            border-radius: 4px;
+        }
+
+        /* ---------- Reveal ---------- */
+        .reveal-pending {
+            opacity: 0;
+            transform: translateY(36px);
+            filter: blur(5px);
+            transition:
+                opacity 0.95s var(--ease-out),
+                transform 0.95s var(--ease-out),
+                filter 0.95s var(--ease-out);
+        }
+        .reveal-pending.is-revealed {
+            opacity: 1 !important;
+            transform: none !important;
+            filter: blur(0) !important;
+        }
+
+        /* ---------- Shared atoms ---------- */
+        .eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            margin: 0 0 16px;
+            font-family: var(--sans);
+            font-size: 0.66rem;
+            font-weight: 600;
+            letter-spacing: 0.24em;
+            text-transform: uppercase;
+            color: var(--moss);
+        }
+        .eyebrow::before {
+            content: '';
+            width: 28px;
+            height: 1px;
+            background: currentColor;
+            flex: 0 0 auto;
+            opacity: 0.85;
+        }
+
+        .tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.62rem;
+            letter-spacing: 0.16em;
+            text-transform: uppercase;
+            color: var(--moss);
+        }
+        .tag::before {
+            content: '';
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            background: var(--sage);
+            flex: 0 0 auto;
+        }
+
+        .price {
+            font-family: var(--serif);
+            font-size: 1.12rem;
+            line-height: 1.15;
+            color: var(--forest-deep);
+            letter-spacing: -0.01em;
+        }
+        .price small {
+            display: block;
+            margin-bottom: 3px;
+            font-family: var(--sans);
+            font-size: 0.58rem;
+            font-weight: 400;
+            letter-spacing: 0.16em;
+            text-transform: uppercase;
+            color: var(--muted);
+        }
+
+        .media--fallback {
+            display: grid;
+            place-items: center;
+            width: 100%;
+            height: 100%;
+            padding: 18px;
+            border-radius: inherit;
+            text-align: center;
+            background:
+                radial-gradient(ellipse 80% 80% at 20% 10%, rgba(143, 168, 136, 0.35), transparent 60%),
+                linear-gradient(140deg, var(--forest) 0%, #1d3629 55%, var(--moss) 130%);
+            color: rgba(248, 246, 240, 0.92);
+            font-family: var(--serif);
+            font-style: italic;
+            font-size: 0.95rem;
+            line-height: 1.35;
+            position: relative;
+            overflow: hidden;
+        }
+        .media--fallback::after {
+            content: '';
+            position: absolute;
+            inset: 9px;
+            border: 1px solid rgba(248, 246, 240, 0.14);
+            border-radius: inherit;
+            pointer-events: none;
+        }
+
+        /* ---------- Buttons ---------- */
+        .btn {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            min-height: 52px;
+            padding: 0 26px;
+            overflow: hidden;
+            isolation: isolate;
+            border: 1px solid transparent;
+            border-radius: var(--radius);
+            background: var(--forest);
+            color: var(--ivory);
+            font-family: var(--sans);
+            font-size: 0.72rem;
+            font-weight: 600;
+            letter-spacing: 0.16em;
+            text-transform: uppercase;
+            text-decoration: none;
+            cursor: pointer;
+            transition:
+                transform 0.5s var(--ease-out),
+                box-shadow 0.5s var(--ease-out),
+                background 0.4s var(--ease),
+                color 0.4s var(--ease),
+                border-color 0.4s var(--ease);
+        }
+        .btn::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            z-index: 1;
+            background: linear-gradient(120deg, transparent 20%, rgba(255, 255, 255, 0.35) 50%, transparent 80%);
+            transform: translateX(-120%);
+            transition: transform 0.85s var(--ease-out);
+            pointer-events: none;
+        }
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 18px 32px -18px rgba(20, 39, 31, 0.55);
+        }
+        .btn:hover::after { transform: translateX(120%); }
+        .btn:active { transform: translateY(-1px); }
+
+        .btn--ghost-dark {
+            background: transparent;
+            color: var(--forest);
+            border-color: rgba(20, 39, 31, 0.26);
+        }
+        .btn--ghost-dark:hover { border-color: var(--forest); }
+
+        /* ---------- Hero ---------- */
+        .packages-hero {
+            position: relative;
+            display: flex;
+            align-items: flex-end;
+            min-height: clamp(360px, 48vh, 520px);
+            padding: calc(var(--header-h) + clamp(48px, 7vw, 90px)) 0 clamp(56px, 8vw, 96px);
+            overflow: hidden;
+            color: var(--ivory);
+            isolation: isolate;
+            background: var(--forest-deep);
+        }
+        .packages-hero::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            z-index: -1;
+            background:
+                radial-gradient(ellipse 70% 70% at 15% 20%, rgba(143, 168, 136, 0.18), transparent 60%),
+                radial-gradient(ellipse 60% 60% at 100% 100%, rgba(232, 223, 201, 0.08), transparent 65%),
+                linear-gradient(180deg, #173b32 0%, #1d3629 60%, #14271f 100%);
+        }
+        .packages-hero::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            z-index: -1;
+            opacity: 0.5;
+            background-image:
+                radial-gradient(circle at 20% 30%, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+                radial-gradient(circle at 80% 70%, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+            background-size: 40px 40px, 56px 56px;
+            pointer-events: none;
+        }
+        .packages-hero__inner {
+            position: relative;
+            z-index: 1;
+            max-width: 780px;
+        }
+        .packages-hero .eyebrow { color: var(--sage); }
+        .packages-hero h1 {
+            margin: 0 0 20px;
+            color: var(--ivory);
+            font-family: var(--serif);
+            font-size: clamp(2.4rem, 5vw, 4.2rem);
+            line-height: 1;
+            letter-spacing: -0.025em;
+            text-wrap: balance;
+        }
+        .packages-hero h1 em {
+            font-style: italic;
+            color: var(--sand);
+        }
+        .packages-hero p {
+            max-width: 58ch;
+            margin: 0;
+            color: rgba(248, 246, 240, 0.82);
+            font-size: clamp(1rem, 1.15vw, 1.08rem);
+            line-height: 1.7;
+        }
+        .packages-hero__context {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 10px 22px;
+            margin-top: 28px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(248, 246, 240, 0.18);
+            max-width: 620px;
+        }
+        .packages-hero__context span {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.62rem;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            color: rgba(248, 246, 240, 0.66);
+        }
+        .packages-hero__context span::before {
+            content: '';
+            width: 16px;
+            height: 1px;
+            background: currentColor;
+            opacity: 0.7;
+        }
+
+        .packages-hero__inner > * {
+            opacity: 0;
+            transform: translateY(28px);
+            filter: blur(8px);
+            animation: heroIn 1.05s var(--ease-out) forwards;
+        }
+        .packages-hero__inner > *:nth-child(1) { animation-delay: 0.15s; }
+        .packages-hero__inner > *:nth-child(2) { animation-delay: 0.33s; }
+        .packages-hero__inner > *:nth-child(3) { animation-delay: 0.51s; }
+        .packages-hero__inner > *:nth-child(4) { animation-delay: 0.69s; }
+
+        @@keyframes heroIn {
+            to { opacity: 1; transform: none; filter: blur(0); }
+        }
+
+        /* ---------- Collection section ---------- */
+        .collection {
+            padding: clamp(56px, 8vw, 96px) 0 clamp(64px, 9vw, 120px);
+            background: var(--ivory);
+        }
+        .collection__head {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            gap: clamp(20px, 4vw, 56px);
+            align-items: end;
+            padding-bottom: clamp(20px, 2.6vw, 30px);
+            border-bottom: 1px solid var(--line);
+            margin-bottom: clamp(28px, 3.6vw, 44px);
+        }
+        .collection__head h2 {
+            margin: 0;
+            font-size: clamp(1.9rem, 3.4vw, 2.9rem);
+            line-height: 1.05;
+            letter-spacing: -0.02em;
+            text-wrap: balance;
+        }
+        .collection__head__eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            margin: 0 0 12px;
+            font-size: 0.62rem;
+            letter-spacing: 0.24em;
+            text-transform: uppercase;
+            color: var(--moss);
+        }
+        .collection__head__eyebrow::before {
+            content: '';
+            width: 24px;
+            height: 1px;
+            background: currentColor;
+        }
+        .collection__count {
+            display: inline-flex;
+            align-items: baseline;
+            gap: 8px;
+            padding: 8px 16px;
+            border-radius: 999px;
+            background: var(--sand);
+            color: var(--forest-deep);
+            white-space: nowrap;
+        }
+        .collection__count strong {
+            font-family: var(--serif);
+            font-weight: 500;
+            font-size: 1.1rem;
+            line-height: 1;
+            letter-spacing: -0.01em;
+        }
+        .collection__count span {
+            font-size: 0.56rem;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+            color: var(--muted);
+        }
+
+        /* ---------- Package grid & cards ---------- */
+        .package-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
+            gap: clamp(18px, 2.6vw, 30px);
+        }
+        .package-card {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            background: var(--white);
+            border: 1px solid var(--line);
+            border-radius: var(--card-radius);
+            transition:
+                transform 0.5s var(--ease-out),
+                box-shadow 0.5s var(--ease-out),
+                border-color 0.4s var(--ease);
+        }
+        .package-card:hover {
+            transform: translateY(-5px);
+            border-color: rgba(83, 107, 80, 0.25);
+            box-shadow: 0 30px 60px -34px rgba(20, 39, 31, 0.4);
+        }
+
+        .package-card__media {
+            position: relative;
+            aspect-ratio: 16 / 10;
+            overflow: hidden;
+            background: var(--sand);
+        }
+        .package-card__media img,
+        .package-card__media .media--fallback {
+            display: block;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.95s var(--ease-out);
+        }
+        .package-card:hover .package-card__media img { transform: scale(1.06); }
+        .package-card__duration {
+            position: absolute;
+            top: 14px;
+            right: 14px;
+            padding: 6px 12px;
+            border-radius: 999px;
+            background: rgba(20, 39, 31, 0.82);
+            backdrop-filter: blur(8px);
+            color: var(--ivory);
+            font-size: 0.56rem;
+            font-weight: 600;
+            letter-spacing: 0.16em;
+            text-transform: uppercase;
+            box-shadow: 0 12px 24px -16px rgba(0, 0, 0, 0.5);
+        }
+
+        .package-card__body {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            flex: 1;
+            padding: clamp(18px, 2.4vw, 24px);
+        }
+        .package-card__location {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.58rem;
+            font-weight: 600;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+            color: var(--moss);
+        }
+        .package-card__location::before {
+            content: '';
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--sage);
+            box-shadow: 0 0 0 3px rgba(143, 168, 136, 0.2);
+            flex: 0 0 auto;
+        }
+        .package-card__body h3 {
+            margin: 0;
+            font-family: var(--serif);
+            font-size: clamp(1.2rem, 1.7vw, 1.4rem);
+            line-height: 1.15;
+            letter-spacing: -0.015em;
+            color: var(--charcoal);
+        }
+        .package-card__body p {
+            margin: 0;
+            color: var(--muted);
+            font-size: 0.88rem;
+            line-height: 1.6;
+            flex: 1;
+        }
+
+        .package-card__foot {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-top: 6px;
+            padding-top: 16px;
+            border-top: 1px solid var(--line);
+        }
+        .package-card__cta {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 16px;
+            border-radius: 10px;
+            background: var(--forest);
+            color: var(--ivory);
+            font-family: var(--sans);
+            font-size: 0.62rem;
+            font-weight: 600;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            text-decoration: none;
+            position: relative;
+            overflow: hidden;
+            isolation: isolate;
+            transition:
+                transform 0.4s var(--ease-out),
+                box-shadow 0.4s var(--ease-out),
+                background 0.3s var(--ease);
+        }
+        .package-card__cta::after {
+            content: '\2192';
+            font-size: 0.86rem;
+            transition: transform 0.4s var(--ease-out);
+        }
+        .package-card__cta:hover {
+            background: var(--forest-deep);
+            transform: translateY(-2px);
+            box-shadow: 0 14px 26px -16px rgba(20, 39, 31, 0.55);
+        }
+        .package-card__cta:hover::after { transform: translateX(3px); }
+
+        /* ---------- Empty state ---------- */
+        .empty-state {
+            position: relative;
+            overflow: hidden;
+            padding: clamp(56px, 8vw, 96px) clamp(24px, 4vw, 56px);
+            border: 1px solid var(--line);
+            border-radius: var(--radius-lg);
+            background: var(--white);
+            text-align: center;
+        }
+        .empty-state::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background:
+                radial-gradient(ellipse 60% 60% at 50% 0%, rgba(143, 168, 136, 0.14), transparent 70%),
+                radial-gradient(ellipse 50% 50% at 50% 100%, rgba(232, 223, 201, 0.4), transparent 70%);
+            pointer-events: none;
+        }
+        .empty-state > * { position: relative; z-index: 1; }
+        .empty-state h2 {
+            margin: 0 0 14px;
+            font-size: clamp(1.8rem, 3vw, 2.5rem);
+            line-height: 1.08;
+            letter-spacing: -0.02em;
+        }
+        .empty-state p {
+            max-width: 50ch;
+            margin: 0 auto;
+            color: var(--muted);
+            line-height: 1.7;
+        }
+        .empty-state__actions {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 12px;
+            margin-top: 28px;
+        }
+
+        /* ---------- Responsive ---------- */
+        @@media (max-width: 760px) {
+            .collection__head { grid-template-columns: 1fr; align-items: start; }
+            .collection__count { align-self: flex-start; }
+        }
+
+        @@media (max-width: 600px) {
+            .package-grid { grid-template-columns: 1fr; }
+            .empty-state__actions { flex-direction: column; }
+            .empty-state__actions .btn { width: 100%; }
+        }
+
+        /* ---------- Reduced motion ---------- */
+        @@media (prefers-reduced-motion: reduce) {
+            html { scroll-behavior: auto; }
+            .packages-hero__inner > * {
+                opacity: 1 !important;
+                transform: none !important;
+                filter: none !important;
+                animation: none !important;
+            }
+            .reveal-pending {
+                opacity: 1 !important;
+                transform: none !important;
+                filter: none !important;
+                transition: none !important;
+            }
+            .btn,
+            .package-card,
+            .package-card__media img,
+            .package-card__cta {
+                transition: none !important;
+            }
+            .btn:hover,
+            .package-card:hover,
+            .package-card__cta:hover {
+                transform: none !important;
+            }
+        }
+    </style>
+}
+
+<!-- ==================== HERO ==================== -->
+<header class="packages-hero">
+    <div class="container packages-hero__inner">
+        <p class="eyebrow">Discover Pakistan</p>
+        <h1>Find your next <em>journey.</em></h1>
+        <p>
+            Explore carefully planned journeys across Pakistan's extraordinary landscapes —
+            from northern peaks to coastal retreats, curated for the curious traveller.
+        </p>
+        <div class="packages-hero__context">
+            <span>Curated collections</span>
+            <span>Local expertise</span>
+            <span>@total package(s)</span>
         </div>
-        <span>@Model.Count() packages available</span>
     </div>
+</header>
 
-    @if (!Model.Any())
-    {
-        <p>No tour packages are currently available. Please check back soon.</p>
-    }
-    else
-    {
-        <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:25px;">
-            @foreach (var package in Model)
-            {
-                <article style="background:white; border-radius:12px; overflow:hidden; box-shadow:0 8px 30px rgba(0,0,0,.07);">
-                    <img src="@(string.IsNullOrWhiteSpace(package.ImageUrl) ? "/images/placeholder-tour.jpg" : package.ImageUrl)"
-                         alt="@package.Name"
-                         style="width:100%; height:230px; object-fit:cover;"
-                         onerror="this.onerror=null;this.src='https://placehold.co/800x500/e8e4d8/33483b?text=Tour+Package';" />
+<!-- ==================== COLLECTION ==================== -->
+<section class="collection" aria-labelledby="collection-title">
+    <div class="container">
 
-                    <div style="padding:24px;">
-                        <p style="font-size:13px; text-transform:uppercase; letter-spacing:1.5px; color:#718071;">
-                            @package.DestinationName
-                        </p>
+        <div class="collection__head" data-reveal>
+            <div>
+                <p class="collection__head__eyebrow">Our collection</p>
+                <h2 id="collection-title">Explore tour packages</h2>
+            </div>
+            <div class="collection__count">
+                <strong>@total</strong>
+                <span>package(s) available</span>
+            </div>
+        </div>
 
-                        <h3 style="font-size:24px; margin:10px 0;">@package.Name</h3>
-
-                        <p style="color:#66736a; line-height:1.7;">
-                            @package.ShortDescription
-                        </p>
-
-                        <div style="display:flex; justify-content:space-between; margin:20px 0;">
-                            <span>@package.DurationDays Days</span>
-                            <strong>
-                                @(package.PricePerAdult.HasValue
-                                    ? "PKR " + package.PricePerAdult.Value.ToString("N0")
-                                    : "Price on request")
-                            </strong>
+        @if (!packageList.Any())
+        {
+            <div class="empty-state" data-reveal>
+                <p class="eyebrow" style="justify-content:center;">Nothing here yet</p>
+                <h2>No packages available</h2>
+                <p>
+                    Our collection is being refreshed. New journeys are added regularly —
+                    please check back soon, or reach out to plan something bespoke.
+                </p>
+                <div class="empty-state__actions">
+                    <a class="btn" asp-controller="Home" asp-action="Index">Back to home</a>
+                    <a class="btn btn--ghost-dark" asp-controller="Contact" asp-action="Index">Plan with us</a>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="package-grid" data-reveal-group>
+                @foreach (var package in packageList)
+                {
+                    <article class="package-card">
+                        <div class="package-card__media">
+                            @if (!string.IsNullOrWhiteSpace(package.ImageUrl))
+                            {
+                                <img src="@package.ImageUrl"
+                                     alt="@package.Name"
+                                     loading="lazy" decoding="async"
+                                     onerror="this.onerror=null;this.parentElement.innerHTML='&lt;div class=&quot;media--fallback&quot; aria-hidden=&quot;true&quot;&gt;&lt;span&gt;@package.Name&lt;/span&gt;&lt;/div&gt;';" />
+                            }
+                            else
+                            {
+                                <div class="media--fallback" aria-hidden="true">
+                                    <span>@package.Name</span>
+                                </div>
+                            }
+                            <span class="package-card__duration">@package.DurationDays day(s)</span>
                         </div>
 
-                        <a asp-controller="Tours"
-                           asp-action="Details"
-                           asp-route-slug="@package.Slug"
-                           style="display:block; text-align:center; padding:14px; background:#24483b; color:white; text-decoration:none; border-radius:5px;">
-                            Explore Package
-                        </a>
-                    </div>
-                </article>
-            }
-        </div>
-    }
+                        <div class="package-card__body">
+                            <span class="package-card__location">@package.DestinationName</span>
+                            <h3>@package.Name</h3>
+                            <p>@package.ShortDescription</p>
+
+                            <div class="package-card__foot">
+                                <span class="price">
+                                    <small>Per adult</small>
+                                    @(package.PricePerAdult.HasValue
+                                        ? $"PKR {package.PricePerAdult.Value:N0}"
+                                        : "Price on request")
+                                </span>
+                                <a class="package-card__cta"
+                                   asp-controller="Tours"
+                                   asp-action="Details"
+                                   asp-route-slug="@package.Slug">
+                                    Explore
+                                </a>
+                            </div>
+                        </div>
+                    </article>
+                }
+            </div>
+        }
+
+    </div>
 </section>
+
+@section Scripts {
+    <script>
+        (function () {
+            'use strict';
+
+            var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            if (reduceMotion) return;
+
+            var observer = new IntersectionObserver(function (entries) {
+                entries.forEach(function (entry) {
+                    if (!entry.isIntersecting) return;
+                    var el = entry.target;
+
+                    if (el.hasAttribute('data-reveal-group')) {
+                        var children = el.children;
+                        for (var i = 0; i < children.length; i++) {
+                            children[i].style.transitionDelay = (i * 0.06) + 's';
+                            children[i].classList.add('is-revealed');
+                        }
+                    } else {
+                        el.classList.add('is-revealed');
+                    }
+                    observer.unobserve(el);
+                });
+            }, { threshold: 0.1, rootMargin: '0px 0px -60px 0px' });
+
+            document.querySelectorAll('[data-reveal]').forEach(function (el) {
+                if (el.closest('[data-reveal-group]')) return;
+                el.classList.add('reveal-pending');
+                observer.observe(el);
+            });
+
+            document.querySelectorAll('[data-reveal-group]').forEach(function (el) {
+                Array.prototype.forEach.call(el.children, function (child) {
+                    child.classList.add('reveal-pending');
+                });
+                observer.observe(el);
+            });
+        })();
+    </script>
+}
